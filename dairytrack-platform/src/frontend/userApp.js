@@ -1,5 +1,7 @@
 import React from "react";
 import "./../App.css";
+import { Link } from "react-router-dom";
+
 import logoImage from "./../assets/frontend/images/my-farm.png";
 import cuteCowImage from "./../assets/frontend/images/cute_cow.png";
 import freshMilkImage from "./../assets/frontend/images/fresh milk.png";
@@ -26,7 +28,7 @@ function App() {
             <a href="#home">Home</a>
           </li>
           <li className="item">
-            <a href="Login page/index.html">Login</a>
+            <Link to="/admin">Login</Link>
           </li>
           <li className="item">
             <a href="SignUp page/index.html">Sign Up</a>
