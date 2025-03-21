@@ -5,12 +5,20 @@ import "../assets/admin/vendor/bootstrap/css/bootstrap.min.css";
 import "../assets/admin/css/master.css";
 import $ from "jquery";
 import { useEffect } from "react";
+import "bootstrap/dist/js/bootstrap.bundle.min"; // Ensure Bootstrap JS is imported
 
 function AdminApp() {
   useEffect(() => {
-    $("#sidebarCollapse").on("click", function () {
+    const handleSidebarToggle = () => {
       $("#sidebar").toggleClass("active");
-    });
+    };
+
+    $("#sidebarCollapse").on("click", handleSidebarToggle);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      $("#sidebarCollapse").off("click", handleSidebarToggle);
+    };
   }, []);
 
   return (
@@ -50,15 +58,10 @@ function AdminApp() {
             </a>
           </li>
           <li>
-            <a
-              href="#uielementsmenu"
-              data-bs-toggle="collapse"
-              aria-expanded="false"
-              className="dropdown-toggle no-caret-down"
-            >
+            <a href="#uielementsmenu" className="dropdown-toggle no-caret-down">
               <i className="fas fa-layer-group"></i> UI Elements
             </a>
-            <ul className="collapse list-unstyled" id="uielementsmenu">
+            <ul className="list-unstyled" id="uielementsmenu">
               <li>
                 <a href="ui-buttons.html">
                   <i className="fas fa-angle-right"></i> Buttons
@@ -92,15 +95,10 @@ function AdminApp() {
             </ul>
           </li>
           <li>
-            <a
-              href="#authmenu"
-              data-bs-toggle="collapse"
-              aria-expanded="false"
-              className="dropdown-toggle no-caret-down"
-            >
+            <a href="#authmenu" className="dropdown-toggle no-caret-down">
               <i className="fas fa-user-shield"></i> Authentication
             </a>
-            <ul className="collapse list-unstyled" id="authmenu">
+            <ul className="list-unstyled" id="authmenu">
               <li>
                 <a href="login.html">
                   <i className="fas fa-lock"></i> Login
@@ -119,15 +117,10 @@ function AdminApp() {
             </ul>
           </li>
           <li>
-            <a
-              href="#pagesmenu"
-              data-bs-toggle="collapse"
-              aria-expanded="false"
-              className="dropdown-toggle no-caret-down"
-            >
+            <a href="#pagesmenu" className="dropdown-toggle no-caret-down">
               <i className="fas fa-copy"></i> Pages
             </a>
-            <ul className="collapse list-unstyled" id="pagesmenu">
+            <ul className="list-unstyled" id="pagesmenu">
               <li>
                 <a href="blank.html">
                   <i className="fas fa-file"></i> Blank page
