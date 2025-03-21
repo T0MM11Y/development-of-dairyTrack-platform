@@ -28,7 +28,7 @@ function App() {
             <a href="#home">Home</a>
           </li>
           <li className="item">
-            <Link to="/admin">Login</Link>
+            <Link to="/login">Login</Link>
           </li>
           <li className="item">
             <a href="SignUp page/index.html">Sign Up</a>

@@ -1,0 +1,97 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
+
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.login__container {
+    width: 100%;
+    max-width: 270px;
+  
+    padding: 20px;
+    background: linear-gradient(45deg, #89f7fe, #66a6ff, #89f7fe);
+    background-size: 300% 300%;
+    animation: gradientAnimation 3s ease infinite;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.login__body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #e0f7fa; /* Light cyan background */
+}
+
+.login__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #004d61; /* Dark cyan text */
+    margin-bottom: 20px;
+}
+
+.input__container {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.input__field {
+    width: 100%;
+    height: 30px;
+    padding: 0 12px;
+    background: #f0f4f8; /* Light blue-gray background */
+    border: 1px solid #b0bec5; /* Light blue-gray border */
+    border-radius: 4px;
+    font-size: 14px;
+    color: #004d61; /* Dark cyan text */
+    transition: border-color 0.3s;
+}
+
+.input__field:focus {
+    border-color: #66a6ff; /* Blue focus border */
+    outline: none;
+}
+
+.button--submit {
+    width: 100%;
+    height: 30px;
+    background: #f3d46d; /* Blue background */
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button--submit i {
+    margin-right: 8px;
+}
+
+
+
+.error-message {
+    display: none;
+    color: #e74c3c; /* Red for error messages */
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* ... existing code */
