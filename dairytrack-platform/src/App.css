@@ -12,27 +12,92 @@ body {
 
 nav {
     position: fixed;
-    background-color: rgb(230, 234, 245);
+    background-color: #66a6ff; /* Light blue background */
     width: 100%;
     height: 110px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+    z-index: 1000; /* Ensure nav is above other elements */
+    transition: background-color 0.3s; /* Smooth transition for background color */
 }
 
 nav ul {
     float: right;
     margin-right: 20px;
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 nav ul li {
     display: inline-block;
-    line-height: 110px;
-    margin: 0 7px;
+    margin: 0 15px; /* Increase spacing between items */
 }
 
 nav ul li a {
-    color: #001253;
+    color: #fff; /* White text */
     padding: 8px 18px;
     border-radius: 3px;
     font-size: 20px;
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effects */
+}
+
+nav ul li a:hover {
+    background: #0056b3; /* Darker blue on hover */
+    color: #fff;
+}
+
+.logo-image {
+    padding-left: 30px;
+    height: 80px; /* Adjusted for better alignment */
+    vertical-align: middle;
+}
+
+.checkbtn {
+    font-size: 35px;
+    color: #0cb648;
+    float: right;
+    line-height: 96px;
+    margin-right: 40px;
+    cursor: pointer;
+    display: none;
+}
+
+#check {
+    display: none;
+}
+
+/* Responsive Navigation */
+@media screen and (max-width: 767px) {
+    .checkbtn {
+        display: block;
+    }
+
+    nav ul {
+        position: fixed;
+        width: 100%;
+        height: 100vh;
+        background: #66a6ff; /* Light blue background */
+        top: 110px; /* Adjusted to align with nav height */
+        left: -100%;
+        text-align: center;
+        transition: all 0.5s;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 20px 0;
+    }
+
+    nav ul li a {
+        padding: 10px 25px;
+        font-size: 22px;
+    }
+
+    #check:checked ~ ul {
+        left: 0;
+    }
 }
 
 .logo-image {
@@ -41,7 +106,7 @@ nav ul li a {
 }
 
 nav ul li a:hover {
-    background: black;
+    background: #0056b3; /* Darker blue on hover */
     color: #fff;
 }
 
@@ -62,15 +127,16 @@ nav ul li a:hover {
 /* Home section */
 .home {
     width: 100%;
-    background-color: #0990ca;
+    background-color: #e0f7fa; /* Light cyan background */
     display: flex;
-    color: white;
+    color: #004d61; /* Dark cyan text */
     padding-top: 180px;
     padding-left: 30px;
 }
 
 .home h1 {
     font-size: 50px;
+    color: #007bff; /* Blue text */
 }
 
 .home p {
@@ -80,28 +146,28 @@ nav ul li a:hover {
 }
 
 .btn {
-    background-color: transparent;
-    color: white;
+    background-color: #007bff; /* Blue button */
+    color: #fff;
     font-size: large;
     height: 50px;
     width: 210px;
     border-radius: 6px;
-    border-color: white;
+    border: none;
     display: block;
     margin: auto;
     margin-left: 15px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 .home .btn a {
     background-color: transparent;
     text-decoration: none;
-    color: white;
+    color: #fff;
 }
 
 .btn:hover {
-    background-color: rgb(25, 81, 137);
-    transition: .1s;
+    background-color: #0056b3; /* Darker blue on hover */
 }
 
 /* Delivery process section */
@@ -113,7 +179,7 @@ nav ul li a:hover {
 }
 
 .delivery-process div {
-    background-color: #EEF1FF;
+    background-color: #f0f4f8; /* Light blue-gray background */
     border: 3px solid #7895B2;
     border-radius: 20px;
     height: 320px;
@@ -129,11 +195,12 @@ nav ul li a:hover {
 
 .delivery-process p {
     font-size: 18px;
+    color: #004d61; /* Dark cyan text */
 }
 
 /* Milk Product section */
 .product h2 {
-    color: #001253;
+    color: #007bff; /* Blue text */
     text-align: center;
     font-size: 38px;
 }
@@ -153,6 +220,7 @@ nav ul li a:hover {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    background-color: #f0f4f8; /* Light blue-gray background */
 }
 
 .product div img {
@@ -164,36 +232,36 @@ nav ul li a:hover {
 
 .product div p {
     font-size: 20px;
-    color: rgb(35, 34, 34);
+    color: #004d61; /* Dark cyan text */
     margin-bottom: 30px;
     padding: 0px 50px;
 }
 
 .product h3 {
-    color: black;
+    color: #007bff; /* Blue text */
     font-size: 24px;
     text-decoration: underline;
 }
 
 .product .btn {
-    background-color: #1D5D9B;
-    color: white;
+    background-color: #007bff; /* Blue button */
+    color: #fff;
     font-size: large;
     border-radius: 10px;
     padding: 10px 30px;
     margin: 0px;
     text-decoration: none;
     display: inline-block;
+    transition: background-color 0.3s;
 }
 
 .product .btn a {
     text-decoration: none;
-    color: white;
+    color: #fff;
 }
 
 .product .btn:hover {
-    background-color: #143f6a;
-    transition: .1s;
+    background-color: #0056b3; /* Darker blue on hover */
 }
 
 /* Guaranteed section */
@@ -202,8 +270,8 @@ nav ul li a:hover {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    background-color: #0990ca;
-    color: white;
+    background-color: #e0f7fa; /* Light cyan background */
+    color: #004d61; /* Dark cyan text */
     padding: 60px 20px;
 }
 
@@ -211,6 +279,7 @@ nav ul li a:hover {
     font-size: 40px;
     text-align: center;
     width: 100%;
+    color: #007bff; /* Blue text */
 }
 
 .guaranteed-section p {
@@ -235,27 +304,30 @@ nav ul li a:hover {
 /* Contact Us section */
 .section-contact-us {
     text-align: center;
-    background-color: white;
+    background-color: #66a6ff; /* Light blue background */
     padding: 40px;
+    color: #fff; /* White text */
 }
 
 .section-contact-us button {
-    background-color: #1D5D9B;
+    background-color: #007bff; /* Blue button */
     font-size: large;
     border-radius: 10px;
-    border-color: white;
+    border: none;
     padding: 10px 30px;
     margin-bottom: 30px;
     text-decoration: none;
+    color: #fff;
+    transition: background-color 0.3s;
 }
 
 .section-contact-us button a {
     text-decoration: none;
-    color: white;
+    color: #fff;
 }
 
 .section-contact-us button:hover {
-    background-color: #184c80;
+    background-color: #0056b3; /* Darker blue on hover */
 }
 
 .social-media {
@@ -265,11 +337,12 @@ nav ul li a:hover {
 .social-media a {
     font-size: 30px;
     padding: 0 15px;
-    color: black;
+    color: #fff; /* White icons */
+    transition: color 0.3s;
 }
 
 .social-media a:hover {
-    color: #184c80;
+    color: #0056b3; /* Darker blue on hover */
 }
 
 .social-media {
@@ -278,7 +351,7 @@ nav ul li a:hover {
 
 .copyright p {
     font-size: 20px;
-    color: grey;
+    color: #fff; /* White text */
 }
 
 /* Media Queries for Responsive Design */
@@ -304,7 +377,7 @@ nav ul li a:hover {
         position: fixed;
         width: 100%;
         height: 100vh;
-        background: rgb(230, 234, 245);
+        background: #66a6ff; /* Light blue background */
         top: 80px;
         left: -100%;
         text-align: center;
