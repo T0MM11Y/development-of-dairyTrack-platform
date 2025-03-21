@@ -1,8 +1,13 @@
+import React from "react";
+
 function Footer() {
   return (
-    <footer className="admin-footer">
-      <p>&copy; 2023 DairyTrack Platform. All rights reserved.</p>
-    </footer>
+    <div className="footer">
+      <hr />
+      <div className="stats">
+        <i className="fas fa-calendar"></i> For this Week
+      </div>
+    </div>
   );
 }
 
