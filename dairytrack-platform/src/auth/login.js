@@ -1,10 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 import styles from "../assets/admin/css/login.module.css";
 
 const Login = () => {
+  const navigate = useNavigate();
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    // Add form submission logic here
+
+    // Arahkan ke admin langsung
+    navigate("/admin");
   };
 
   return (
@@ -31,7 +37,6 @@ const Login = () => {
           <button type="submit" className={styles["button--submit"]}>
             <i className="fas fa-sign-in-alt"></i> Login
           </button>
-          <div className={styles.error__message}></div>
         </form>
       </div>
     </div>

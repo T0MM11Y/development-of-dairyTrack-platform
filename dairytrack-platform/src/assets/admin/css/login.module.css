@@ -1,28 +1,14 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
 
-@keyframes gradientAnimation {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
 .login__container {
     width: 100%;
-    max-width: 270px;
-  
+    max-width: 300px;
     padding: 20px;
-    background: linear-gradient(45deg, #89f7fe, #66a6ff, #89f7fe);
-    background-size: 300% 300%;
-    animation: gradientAnimation 3s ease infinite;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #ffffff; /* Solid white background */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     text-align: center;
+    margin: 20px auto; /* Center the container */
 }
 
 .login__body {
@@ -33,47 +19,47 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background: #e0f7fa; /* Light cyan background */
+    background: #f5f5f5; /* Light gray background */
 }
 
 .login__label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #004d61; /* Dark cyan text */
-    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333333; /* Darker text color */
+    margin-bottom: 15px;
 }
 
 .input__container {
     position: relative;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .input__field {
     width: 100%;
-    height: 30px;
+    height: 40px;
     padding: 0 12px;
-    background: #f0f4f8; /* Light blue-gray background */
-    border: 1px solid #b0bec5; /* Light blue-gray border */
+    background: #ffffff; /* White background */
+    border: 1px solid #cccccc; /* Light gray border */
     border-radius: 4px;
     font-size: 14px;
-    color: #004d61; /* Dark cyan text */
+    color: #333333; /* Darker text color */
     transition: border-color 0.3s;
 }
 
 .input__field:focus {
-    border-color: #66a6ff; /* Blue focus border */
+    border-color: #007bff; /* Blue focus border */
     outline: none;
 }
 
 .button--submit {
     width: 100%;
-    height: 30px;
-    background: #f3d46d; /* Blue background */
+    height: 35px;
+    background: #007bff; /* Blue background */
     border: none;
     border-radius: 4px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 500;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s;
     display: flex;
@@ -81,11 +67,13 @@
     justify-content: center;
 }
 
+.button--submit:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
 .button--submit i {
     margin-right: 8px;
 }
-
-
 
 .error-message {
     display: none;

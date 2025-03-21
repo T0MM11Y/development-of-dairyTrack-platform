@@ -1,8 +1,15 @@
 import React from "react";
-import "../../assets/admin/css/style.css";
-import "../../assets/admin/css/uikit.min.css";
-import "../../assets/admin/css/notyf.min.css";
+import {
+  FaUser,
+  FaTable,
+  FaCogs,
+  FaSignInAlt,
+  FaUserPlus,
+  FaFileAlt,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 
+import "../../assets/admin/css/style.css";
 function Sidebar({ setCurrentPage }) {
   return (
     <div id="sidebar" className="tm-sidebar-left uk-background-default">
@@ -38,27 +45,41 @@ function Sidebar({ setCurrentPage }) {
       <ul className="uk-nav uk-nav-default">
         <li className="uk-nav-header">UI Elements</li>
         <li>
-          <a href="buttons.html">Buttons</a>
+          <a href="#" onClick={() => setCurrentPage("buttons")}>
+            <FaCogs /> Buttons
+          </a>
         </li>
         <li>
-          <a href="components.html">Components</a>
+          <a href="#" onClick={() => setCurrentPage("components")}>
+            <FaCogs /> Components
+          </a>
         </li>
         <li>
-          <a href="tables.html">Tables</a>
+          <a href="#" onClick={() => setCurrentPage("tables")}>
+            <FaTable /> Tables
+          </a>
         </li>
 
         <li className="uk-nav-header">Pages</li>
         <li>
-          <a href="login.html">Login</a>
+          <a href="#" onClick={() => setCurrentPage("login")}>
+            <FaSignInAlt /> Login
+          </a>
         </li>
         <li>
-          <a href="register.html">Register</a>
+          <a href="#" onClick={() => setCurrentPage("register")}>
+            <FaUserPlus /> Register
+          </a>
         </li>
         <li>
-          <a href="article.html">Article</a>
+          <a href="#" onClick={() => setCurrentPage("article")}>
+            <FaFileAlt /> Article
+          </a>
         </li>
         <li>
-          <a href="404.html">404</a>
+          <a href="#" onClick={() => setCurrentPage("404")}>
+            <FaExclamationTriangle /> 404
+          </a>
         </li>
       </ul>
     </div>
