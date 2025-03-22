@@ -10,64 +10,82 @@ function Header() {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+    document.getElementById("sidebar").classList.toggle("active");
   };
 
   return (
-    <div className={`wrapper ${isSidebarOpen ? "sidebar-open" : ""}`} style={{ position: "relative" }}>
-      <nav className="navbar navbar-expand-lg navbar-light bg-white px-3">
-        <button className="btn btn-light" onClick={toggleSidebar}>
-          <i className="fas fa-bars"></i>
-        </button>
-        <div className="ms-auto d-flex align-items-center">
-          {/* Notifikasi */}
-          <div className="dropdown me-3" style={{ position: "relative" }}>
-            <button
-              className="btn btn-light position-relative dropdown-toggle"
-              data-bs-toggle="dropdown"
-              data-bs-display="static"
-              aria-expanded="false"
-            >
-              <i className="fas fa-bell"></i>
-              {notifications.length > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end" style={{ position: "absolute", zIndex: 1050, right: 0 }}>
-              {notifications.length > 0 ? (
-                notifications.map((notif) => (
-                  <li key={notif.id} className="dropdown-item">
-                    <strong>{notif.message}</strong>
-                    <div className="text-muted small">{notif.time}</div>
-                  </li>
-                ))
-              ) : (
-                <li className="dropdown-item text-center text-muted">No new notifications</li>
-              )}
-            </ul>
-          </div>
-
-          {/* Profil Pengguna */}
-          <div className="dropdown">
-            <button
-              className="btn btn-light dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="fas fa-user"></i> John Doe
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end" style={{ zIndex: 1050 }}>
-              <li><a className="dropdown-item" href="#"><i className="fas fa-address-card"></i> Profile</a></li>
-              <li><a className="dropdown-item" href="#"><i className="fas fa-envelope"></i> Messages</a></li>
-              <li><a className="dropdown-item" href="#"><i className="fas fa-cog"></i> Settings</a></li>
-              <li><hr className="dropdown-divider" /></li>
-              <li><a className="dropdown-item" href="#"><i className="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
-          </div>
+    <nav className="navbar navbar-expand-lg navbar-light bg-white px-3">
+      <button className="btn btn-light" onClick={toggleSidebar}>
+        <i className="fas fa-bars"></i>
+      </button>
+      <div className="ms-auto d-flex align-items-center">
+        {/* Notifications */}
+        <div className="dropdown me-3">
+          <button
+            className="btn btn-light position-relative dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i className="fas fa-bell"></i>
+            {notifications.length > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {notifications.length}
+              </span>
+            )}
+          </button>
+          <ul className="dropdown-menu dropdown-menu-end">
+            {notifications.length > 0 ? (
+              notifications.map((notif) => (
+                <li key={notif.id} className="dropdown-item">
+                  <strong>{notif.message}</strong>
+                  <div className="text-muted small">{notif.time}</div>
+                </li>
+              ))
+            ) : (
+              <li className="dropdown-item text-center text-muted">
+                No new notifications
+              </li>
+            )}
+          </ul>
         </div>
-      </nav>
-    </div>
+
+        {/* User Profile */}
+        <div className="dropdown">
+          <button
+            className="btn btn-light dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i className="fas fa-user"></i> John Doe
+          </button>
+          <ul className="dropdown-menu dropdown-menu-end">
+            <li>
+              <a className="dropdown-item" href="#">
+                <i className="fas fa-address-card me-2"></i> Profile
+              </a>
+            </li>
+            <li>
+              <a className="dropdown-item" href="#">
+                <i className="fas fa-envelope me-2"></i> Messages
+              </a>
+            </li>
+            <li>
+              <a className="dropdown-item" href="#">
+                <i className="fas fa-cog me-2"></i> Settings
+              </a>
+            </li>
+            <li>
+              <hr className="dropdown-divider" />
+            </li>
+            <li>
+              <a className="dropdown-item text-danger" href="#">
+                <i className="fas fa-sign-out-alt me-2"></i> Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
   );
 }
 
