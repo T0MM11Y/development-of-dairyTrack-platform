@@ -104,6 +104,61 @@ body {
     transition: all 0.3s;
 }
 
+/* Ensure the sidebar and header are positioned correctly */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: all 0.3s;
+  }
+  
+  #content {
+    margin-left: 250px; /* Adjust based on sidebar width */
+    padding-top: 60px; /* Adjust based on header height */
+    transition: all 0.3s;
+  }
+  
+  #sidebar.active + #content {
+    margin-left: 0;
+  }
+  
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+  }
+  
+  /* Dropdown Notifikasi */
+.dropdown-menu {
+    background-color: #ffffff; /* Warna background dropdown */
+    border: 1px solid rgba(0, 0, 0, 0.15); /* Border dropdown */
+    border-radius: 0.25rem; /* Sudut border */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Shadow untuk efek melayang */
+    padding: 0.5rem 0; /* Padding untuk dropdown */
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 1rem; /* Padding untuk setiap item */
+    color: #212529; /* Warna teks */
+    transition: background-color 0.2s ease; /* Efek transisi saat hover */
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa; /* Warna background saat hover */
+  }
+  
+  .dropdown-item strong {
+    display: block; /* Membuat teks kuat (strong) menjadi block */
+    font-size: 0.9rem; /* Ukuran font untuk pesan notifikasi */
+  }
+  
+  .dropdown-item .text-muted {
+    font-size: 0.8rem; /* Ukuran font untuk waktu notifikasi */
+  }
 /*------------------------------------------------------------------
 [2. Header / #header]
 */
