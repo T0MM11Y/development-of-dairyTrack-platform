@@ -218,11 +218,8 @@
       </div>
     </div>
                 {/* ... other cards ... */}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="row">
+              
+        <div className="row mt-4">
         {/* Grafik Penjualan dan Produksi Susu */}
         <div className="col-lg-8 mb-4">
           <div className="card p-3">
@@ -322,6 +319,10 @@
         </div>
       </div>
       </div>
+      </div>
+            </div>
+          </div>
+        </div>
     );
   }
 
