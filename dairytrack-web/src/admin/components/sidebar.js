@@ -57,7 +57,6 @@ const Sidebar = () => {
       width: isCollapsed ? "90px" : "250px",
       transition: "width 0.3s ease-in-out"
     }}>
-<<<<<<< Updated upstream
 <div
   data-simplebar
   style={{
@@ -65,19 +64,6 @@ const Sidebar = () => {
     overflowY: "auto",
   }}
 >
-=======
-      <div data-simplebar className="h-100">
-                {/* When collapsed, just show a smaller profile image */}
-        {isCollapsed && (
-          <div className="text-center mt-3">
-            <img
-              src={profileImage}
-              alt="User Avatar"
-              className="avatar-sm rounded-circle mx-auto d-block"
-            />
-          </div>
-        )}
->>>>>>> Stashed changes
 
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
