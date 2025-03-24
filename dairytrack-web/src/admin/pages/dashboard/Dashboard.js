@@ -1,6 +1,7 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
 
+
 const Card = ({ title, value, percentage, icon }) => {
   return (
     <div className="col-xl-3 col-md-6">

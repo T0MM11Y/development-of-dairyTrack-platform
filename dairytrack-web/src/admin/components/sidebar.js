@@ -21,10 +21,9 @@ const Sidebar = () => {
   };
 
   useEffect(() => {
-    // Apply the margin to the main content area when sidebar state changes
     const content = document.querySelector(".main-content");
     if (content) {
-      content.style.marginLeft = isCollapsed ? "90px" : "250px"; // Adjusted from 70px to 90px
+      content.style.marginLeft = isCollapsed ? "90px" : "250px";
       content.style.transition = "margin-left 0.3s ease-in-out";
     }
   }, [isCollapsed]);
@@ -32,19 +31,20 @@ const Sidebar = () => {
   const sidebarStyle = {
     width: isCollapsed ? "70px" : "250px",
     transition: "width 0.3s ease-in-out",
+    
   };
 
   return (
-    <div className="vertical-menu">
-      <div data-simplebar className="h-100">
-        <div className="user-profile text-center mt-3">
+    <div class="vertical-menu">
+                <div data-simplebar class="h-100">
+                <div className="user-profile text-center mt-3">
           <img
             src={profileImage}
             alt="User Avatar"
             className="avatar-md rounded-circle"
           />
           <div className="mt-3">
-            <h4 className="font-size-16 mb-1">Farm Manager</h4>
+            <h4 className="font-size-16 mb-1">JHON</h4>
             <span className="text-muted">
               <i className="ri-record-circle-line align-middle font-size-14 text-success"></i>
               Online
@@ -58,107 +58,79 @@ const Sidebar = () => {
               <i className="ri-menu-line me-2"></i>DairyTrack Menu
             </li>
 
-            <li className={isActive("/dashboard") ? "mm-active" : ""}>
-              <Link to="/dashboard" className="waves-effect">
-                <i className="ri-dashboard-line"></i> <span>Dashboard</span>
-              </Link>
-            </li>
-
-            <li className={isMenuOpen("farmOperations") ? "mm-active" : ""}>
-              <Link
-                to="#"
+            <li className={isActive("/admin/dashboard") ? "mm-active" : ""}>
+      <Link to="/admin/dashboard" className="waves-effect">
+        <i className="ri-dashboard-line"></i> <span>Dashboard</span>
+      </Link>
+    </li>
+            {/* Pakan Sapi */}
+            <li className={isMenuOpen("pakan") ? "mm-active" : ""}>
+              <a
+                href="#!"
+                onClick={() => toggleSubmenu("pakan")}
                 className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleSubmenu("farmOperations");
-                }}
-                aria-expanded={isMenuOpen("farmOperations")}
               >
-                <i className="ri-farm-line"></i> <span>Farm Operations</span>
-              </Link>
-              {isMenuOpen("farmOperations") && (
-                <ul className="sub-menu mm-show">
-                  <li>
-                    <Link
-                      to="/cows"
-                      className={isActive("/cows") ? "active" : ""}
-                    >
-                      <i className="dripicons-rocket"></i> Cow Management
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/milk/records"
-                      className={isActive("/milk/records") ? "active" : ""}
-                    >
-                      <i className="ri-file-list-3-line"></i> Milk Productions
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/feed/inventory"
-                      className={isActive("/feed/inventory") ? "active" : ""}
-                    >
-                      <i className="ri-stack-line"></i> Feed Management
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/breeding"
-                      className={isActive("/breeding") ? "active" : ""}
-                    >
-                      <i className="ri-parent-line"></i> Breeding Records
-                    </Link>
-                  </li>
-                </ul>
-              )}
+                <i className="ri-restaurant-line"></i>
+                <span>Pakan Sapi</span>
+              </a>
+              <ul className="sub-menu" style={{ display: isMenuOpen("pakan") ? "block" : "none" }}>
+              <li><Link to="/admin/pakan/harian">Pakan Harian</Link></li>
+              <li><Link to="/admin/pakan/stok">Stok Pakan</Link></li>
+              </ul>
             </li>
 
-            <li className={isMenuOpen("healthManagement") ? "mm-active" : ""}>
-              <Link
-                to="#"
+            {/* Produktivitas Susu */}
+            <li className={isMenuOpen("produktivitas") ? "mm-active" : ""}>
+              <a
+                href="#!"
+                onClick={() => toggleSubmenu("produktivitas")}
                 className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleSubmenu("healthManagement");
-                }}
               >
-                <i className="ri-heart-pulse-line"></i>{" "}
-                <span>Health Management</span>
-              </Link>
-              {isMenuOpen("healthManagement") && (
-                <ul className="sub-menu mm-show">
-                  <li>
-                    <Link
-                      to="/health/records"
-                      className={isActive("/health/records") ? "active" : ""}
-                    >
-                      <i className="ri-file-list-3-line"></i> Health Records
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/vaccinations"
-                      className={isActive("/vaccinations") ? "active" : ""}
-                    >
-                      <i className="fas fa-leaf"></i> Vaccinations
-                    </Link>
-                  </li>
-                </ul>
-              )}
+                <i className="ri-bar-chart-box-line"></i>
+                <span>Produktivitas Susu</span>
+              </a>
+              <ul className="sub-menu" style={{ display: isMenuOpen("produktivitas") ? "block" : "none" }}>
+              <li><Link to="/admin/susu/produksi">Data Produksi Susu</Link></li>
+              <li><Link to="/admin/susu/analisis">Analisis Produksi</Link></li>
+              </ul>
             </li>
 
-            <li className={isActive("/analytics") ? "mm-active" : ""}>
-              <Link to="/analytics" className="waves-effect">
-                <i className="ri-bar-chart-box-line"></i> <span>Analytics</span>
-              </Link>
+            {/* Kesehatan Sapi */}
+            <li className={isMenuOpen("kesehatan") ? "mm-active" : ""}>
+              <a
+                href="#!"
+                onClick={() => toggleSubmenu("kesehatan")}
+                className="has-arrow waves-effect"
+              >
+                <i className="ri-hospital-line"></i>
+                <span>Kesehatan Sapi</span>
+              </a>
+              <ul className="sub-menu" style={{ display: isMenuOpen("kesehatan") ? "block" : "none" }}>
+              <li><Link to="/admin/kesehatan/data-sapi">Data Sapi</Link></li>
+        <li><Link to="/admin/kesehatan/gejala">Gejala Penyakit Sapi</Link></li>
+        <li><Link to="/admin/kesehatan/riwayat">Riwayat Penyakit Sapi</Link></li>
+        <li><Link to="/admin/kesehatan/reproduksi">Reproduksi Sapi</Link></li>
+        <li><Link to="/admin/kesehatan/pemeriksaan">Pemeriksaan Penyakit</Link></li>
+              </ul>
             </li>
 
-            <li className={isActive("/settings") ? "mm-active" : ""}>
-              <Link to="/settings" className="waves-effect">
-                <i className="ri-settings-2-line"></i> <span>Settings</span>
-              </Link>
+            {/* Keuangan */}
+            <li className={isMenuOpen("keuangan") ? "mm-active" : ""}>
+              <a
+                href="#!"
+                onClick={() => toggleSubmenu("keuangan")}
+                className="has-arrow waves-effect"
+              >
+                <i className="ri-money-dollar-circle-line"></i>
+                <span>Keuangan</span>
+              </a>
+              <ul className="sub-menu" style={{ display: isMenuOpen("keuangan") ? "block" : "none" }}>
+                <li><Link to="/admin/keuangan/pemasukan">Pemasukan</Link></li>
+        <li><Link to="/admin/keuangan/pengeluaran">Pengeluaran</Link></li>
+        <li><Link to="/admin/keuangan/laporan">Laporan Keuangan</Link></li>
+              </ul>
             </li>
+
           </ul>
         </div>
       </div>

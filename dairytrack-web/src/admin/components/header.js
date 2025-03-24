@@ -254,7 +254,7 @@ const Header = () => {
                 src={avatar1}
                 alt="Header Avatar"
               />
-              <span className="d-none d-xl-inline-block ms-1">Julia</span>
+              <span className="d-none d-xl-inline-block ms-1">JHON</span>
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div
