@@ -1,8 +1,8 @@
 import React from "react";
-import Header from "./components/header";
-import Sidebar from "./components/sidebar";
-import Footer from "./components/footer";
-import Content from "./components/content";
+import Header from "./partials/header";
+import Sidebar from "./partials/sidebar";
+import Footer from "./partials/footer";
+import Content from "./partials/content";
 
 // Import CSS
 import "../assets/admin/css/bootstrap.min.css";
