@@ -106,129 +106,131 @@ const Content = () => {
   };
 
   return (
-    <div className="page-content">
-      <div className="row">
-        <Card
-          title="Total Milk Production"
-          value="14,520 L"
-          percentage={9.23}
-          icon="ri-drop-line"
-        />
-        <Card
-          title="Healthy Cows"
-          value="238"
-          percentage={2.4}
-          icon="ri-heart-pulse-line"
-        />
-        <Card
-          title="Feed Stock"
-          value="8,246 kg"
-          percentage={-3.2}
-          icon="ri-leaf-line"
-        />
-        <Card
-          title="Monthly Revenue"
-          value="$29,670"
-          percentage={11.7}
-          icon="ri-money-dollar-circle-line"
-        />
-      </div>
-      {/* Latest Transactions */}
-      <div className="row">
-        <div className="col-xl-8">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">Recent Milk Sales</h4>
-              <div className="table-responsive">
-                <table className="table table-centered mb-0 align-middle table-hover table-nowrap">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Quantity (L)</th>
-                      <th>Quality</th>
-                      <th>Price/L</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      ["2023-05-07", 1200, "A", 0.58, "Completed"],
-                      ["2023-05-06", 980, "B", 0.52, "Completed"],
-                      ["2023-05-05", 1150, "A", 0.58, "Completed"],
-                      ["2023-05-04", 1050, "A", 0.58, "Completed"],
-                      ["2023-05-03", 1100, "B", 0.52, "Completed"],
-                    ].map((sale, index) => (
-                      <tr key={index}>
-                        <td>{sale[0]}</td>
-                        <td>{sale[1]}</td>
-                        <td>{sale[2]}</td>
-                        <td>${sale[3].toFixed(2)}</td>
-                        <td>${(sale[1] * sale[3]).toFixed(2)}</td>
-                        <td>
-                          <div className="font-size-13">
-                            <i className="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"></i>
-                            {sale[4]}
-                          </div>
-                        </td>
+    <div className="page-content w-100 px-3">
+      <div className="container-fluid">
+        <div className="row">
+          <Card
+            title="Total Milk Production"
+            value="14,520 L"
+            percentage={9.23}
+            icon="ri-drop-line"
+          />
+          <Card
+            title="Healthy Cows"
+            value="238"
+            percentage={2.4}
+            icon="ri-heart-pulse-line"
+          />
+          <Card
+            title="Feed Stock"
+            value="8,246 kg"
+            percentage={-3.2}
+            icon="ri-leaf-line"
+          />
+          <Card
+            title="Monthly Revenue"
+            value="$29,670"
+            percentage={11.7}
+            icon="ri-money-dollar-circle-line"
+          />
+        </div>
+        {/* Latest Transactions */}
+        <div className="row mt-4">
+          <div className="col-xl-8">
+            <div className="card">
+              <div className="card-body">
+                <h4 className="card-title mb-4">Recent Milk Sales</h4>
+                <div className="table-responsive">
+                  <table className="table table-centered mb-0 align-middle table-hover table-nowrap">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Date</th>
+                        <th>Quantity (L)</th>
+                        <th>Quality</th>
+                        <th>Price/L</th>
+                        <th>Total</th>
+                        <th>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {[
+                        ["2023-05-07", 1200, "A", 0.58, "Completed"],
+                        ["2023-05-06", 980, "B", 0.52, "Completed"],
+                        ["2023-05-05", 1150, "A", 0.58, "Completed"],
+                        ["2023-05-04", 1050, "A", 0.58, "Completed"],
+                        ["2023-05-03", 1100, "B", 0.52, "Completed"],
+                      ].map((sale, index) => (
+                        <tr key={index}>
+                          <td>{sale[0]}</td>
+                          <td>{sale[1]}</td>
+                          <td>{sale[2]}</td>
+                          <td>${sale[3].toFixed(2)}</td>
+                          <td>${(sale[1] * sale[3]).toFixed(2)}</td>
+                          <td>
+                            <div className="font-size-13">
+                              <i className="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"></i>
+                              {sale[4]}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Monthly Summary */}
-        <div className="col-xl-4">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">Monthly Summary</h4>
-              <div className="row">
-                <div className="col-4 text-center">
-                  <h5>34,750 L</h5>
-                  <p className="mb-2 text-truncate">Milk Produced</p>
-                </div>
-                <div className="col-4 text-center">
-                  <h5>$20,158</h5>
-                  <p className="mb-2 text-truncate">Revenue</p>
-                </div>
-                <div className="col-4 text-center">
-                  <h5>26,200 kg</h5>
-                  <p className="mb-2 text-truncate">Feed Used</p>
+          {/* Monthly Summary */}
+          <div className="col-xl-4">
+            <div className="card">
+              <div className="card-body">
+                <h4 className="card-title mb-4">Monthly Summary</h4>
+                <div className="row">
+                  <div className="col-4 text-center">
+                    <h5>34,750 L</h5>
+                    <p className="mb-2 text-truncate">Milk Produced</p>
+                  </div>
+                  <div className="col-4 text-center">
+                    <h5>$20,158</h5>
+                    <p className="mb-2 text-truncate">Revenue</p>
+                  </div>
+                  <div className="col-4 text-center">
+                    <h5>26,200 kg</h5>
+                    <p className="mb-2 text-truncate">Feed Used</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div className="row">
-        <div className="col-xl-6">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">
-                Milk Production vs Feed Consumption
-              </h4>
-              <ReactApexChart
-                options={areaChartOptions}
-                series={areaChartOptions.series}
-                type="area"
-                height={350}
-              />
+        <div className="row mt-4">
+          <div className="col-xl-6">
+            <div className="card">
+              <div className="card-body">
+                <h4 className="card-title mb-4">
+                  Milk Production vs Feed Consumption
+                </h4>
+                <ReactApexChart
+                  options={areaChartOptions}
+                  series={areaChartOptions.series}
+                  type="area"
+                  height={350}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="col-xl-6">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">Milk Sales vs Expenses</h4>
-              <ReactApexChart
-                options={columnChartOptions}
-                series={columnChartOptions.series}
-                type="bar"
-                height={350}
-              />
+          <div className="col-xl-6">
+            <div className="card">
+              <div className="card-body">
+                <h4 className="card-title mb-4">Milk Sales vs Expenses</h4>
+                <ReactApexChart
+                  options={columnChartOptions}
+                  series={columnChartOptions.series}
+                  type="bar"
+                  height={350}
+                />
+              </div>
             </div>
           </div>
         </div>

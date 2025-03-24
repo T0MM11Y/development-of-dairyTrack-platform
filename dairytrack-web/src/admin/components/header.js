@@ -27,11 +27,10 @@ const Header = () => {
   };
 
   const toggleVerticalMenu = () => {
-    document.body.classList.toggle("sidebar-enable");
-    if (window.innerWidth >= 992) {
-      document.body.classList.toggle("vertical-collpsed");
-    } else {
-      document.body.classList.remove("vertical-collpsed");
+    // Find the sidebar toggle button and trigger its click
+    const sidebarToggleBtn = document.querySelector('.vertical-menu .btn-light');
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.click();
     }
   };
 
@@ -52,9 +51,15 @@ const Header = () => {
   };
 
   return (
-    <header id="page-topbar">
+    <header
+      id="page-topbar"
+      style={{
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+        border: "1px solid #e0e0e0",
+      }}
+    >
       <div className="navbar-header">
-        <div className="d-flex">
+        <div className="d-flex align-items-center w-100">
           {/* LOGO */}
           <div className="navbar-brand-box">
             <Link to="/" className="logo logo-dark">
@@ -76,69 +81,46 @@ const Header = () => {
             </Link>
           </div>
 
+          {/* Tombol Toggle Menu */}
           <button
             type="button"
-            className="btn btn-sm px-3 font-size-24 header-item waves-effect"
+            className="btn btn-sm px-3 font-size-24 header-item waves-effect me-3"
             id="vertical-menu-btn"
             onClick={toggleVerticalMenu}
           >
             <i className="ri-menu-2-line align-middle"></i>
           </button>
 
-          {/* App Search*/}
-          <form className="app-search d-none d-lg-block">
+          {/* Kolom Pencarian (Lebar dan Panjang Diperbesar) */}
+          <form
+            className="app-search me-4"
+            style={{ width: "400px", maxWidth: "600px" }}
+          >
             <div className="position-relative">
               <input
                 type="text"
                 className="form-control"
                 placeholder="Search..."
+                style={{ width: "100%", paddingRight: "40px" }}
               />
-              <span className="ri-search-line"></span>
+              <span
+                className="ri-search-line"
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#999",
+                }}
+              ></span>
             </div>
           </form>
 
-          {/* Mega Menu */}
-          {/* ... (Mega Menu code remains unchanged) ... */}
-        </div>
-
-        <div className="d-flex">
-          {/* Mobile search dropdown */}
-          <div className="dropdown d-inline-block d-lg-none ms-2">
-            <button
-              type="button"
-              className="btn header-item noti-icon waves-effect"
-              id="page-header-search-dropdown"
-              onClick={toggleSearch}
-            >
-              <i className="ri-search-line"></i>
-            </button>
-            <div
-              className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
-                isSearchVisible ? "show" : ""
-              }`}
-              aria-labelledby="page-header-search-dropdown"
-            >
-              <form className="p-3">
-                <div className="mb-3 m-0">
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search ..."
-                    />
-                    <div className="input-group-append">
-                      <button className="btn btn-primary" type="submit">
-                        <i className="ri-search-line"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
+          {/* Spacer untuk memberikan jarak */}
+          <div className="flex-grow-1"></div>
 
           {/* Full-screen toggler */}
-          <div className="dropdown d-none d-lg-inline-block ms-1">
+          <div className="dropdown d-none d-lg-inline-block me-4">
             <button
               type="button"
               className="btn header-item noti-icon waves-effect"
@@ -153,7 +135,7 @@ const Header = () => {
           </div>
 
           {/* Notifications dropdown */}
-          <div className="dropdown d-inline-block">
+          <div className="dropdown d-inline-block me-4">
             <button
               type="button"
               className="btn header-item noti-icon waves-effect"
@@ -163,86 +145,11 @@ const Header = () => {
               <i className="ri-notification-3-line"></i>
               <span className="noti-dot"></span>
             </button>
-            <div
-              className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
-                isNotificationDropdownOpen ? "show" : ""
-              }`}
-              style={{
-                position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-270px, 70px)",
-              }}
-              aria-labelledby="page-header-notifications-dropdown"
-            >
-              <div className="p-3">
-                <div className="row align-items-center">
-                  <div className="col">
-                    <h6 className="m-0">Notifications</h6>
-                  </div>
-                  <div className="col-auto">
-                    <a href="#!" className="small">
-                      View All
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div data-simplebar style={{ maxHeight: "230px" }}>
-                <a href="" className="text-reset notification-item">
-                  <div className="d-flex">
-                    <div className="avatar-xs me-3">
-                      <span className="avatar-title bg-primary rounded-circle font-size-16">
-                        <i className="ri-shopping-cart-line"></i>
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="mb-1">Low feed stock alert</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-1">
-                          Hay stock is running low. Please reorder.
-                        </p>
-                        <p className="mb-0">
-                          <i className="mdi mdi-clock-outline"></i> 3 min ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-                <a href="" className="text-reset notification-item">
-                  <div className="d-flex">
-                    <div className="avatar-xs me-3">
-                      <span className="avatar-title bg-success rounded-circle font-size-16">
-                        <i className="ri-checkbox-circle-line"></i>
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="mb-1">Cow health check completed</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-1">
-                          Monthly health check for all cows completed.
-                        </p>
-                        <p className="mb-0">
-                          <i className="mdi mdi-clock-outline"></i> 1 hours ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-              <div className="p-2 border-top d-grid">
-                <a
-                  className="btn btn-sm btn-link font-size-14 text-center"
-                  href="javascript:void(0)"
-                >
-                  <i className="mdi mdi-arrow-right-circle me-1"></i> View
-                  More..
-                </a>
-              </div>
-            </div>
+            {/* Konten dropdown notifikasi */}
           </div>
 
           {/* User profile dropdown */}
-          <div className="dropdown d-inline-block user-dropdown">
+          <div className="dropdown d-inline-block user-dropdown me-4">
             <button
               type="button"
               className="btn header-item waves-effect"
