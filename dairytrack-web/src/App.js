@@ -20,10 +20,10 @@ import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
 import DataSapi from "./admin/pages/kesehatan/DataSapi";
-import GejalaPenyakit from "./admin/pages/kesehatan/GejalaPenyakit";
+import GejalaPenyakit from "./admin/pages/kesehatan/GejalaSapi";
 import RiwayatPenyakit from "./admin/pages/kesehatan/RiwayatPenyakit";
 import ReproduksiSapi from "./admin/pages/kesehatan/ReproduksiSapi";
-import PemeriksaanPenyakit from "./admin/pages/kesehatan/PemeriksaanPenyakit";
+import PemeriksaanPenyakit from "./admin/pages/kesehatan/PemeriksaanKesehatan";
 
 import Pemasukan from "./admin/pages/keuangan/Pemasukan";
 import Pengeluaran from "./admin/pages/keuangan/Pengeluaran";
@@ -35,6 +35,7 @@ import "./assets/admin/css/icons.min.css";
 import "./assets/admin/css/app.css";
 
 
+import 'simplebar-react/dist/simplebar.min.css';
 
 // Admin Layout Wrapper
 const withAdminLayout = (Component) => (
@@ -42,7 +43,7 @@ const withAdminLayout = (Component) => (
     <Header />
     <Sidebar />
     <div className="main-content">
-      <div className="content p-4">
+    <div className="content px-12">
         <Component />
       </div>
       <Footer />

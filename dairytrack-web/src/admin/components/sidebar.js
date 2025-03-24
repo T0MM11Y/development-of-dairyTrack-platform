@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import profileImage from "../../assets/admin/images/users/avatar-1.jpg";
+import 'simplebar-react/dist/simplebar.min.css';
+
 
 const Sidebar = () => {
   const location = useLocation();
@@ -55,44 +57,16 @@ const Sidebar = () => {
       width: isCollapsed ? "90px" : "250px",
       transition: "width 0.3s ease-in-out"
     }}>
-      <div data-simplebar className="h-100">
-        {/* Only show profile details when expanded */}
-        {!isCollapsed && (
-          <div className="user-profile text-center mt-3">
-            <img
-              src={profileImage}
-              alt="User Avatar"
-              className="avatar-md rounded-circle"
-            />
-            <div className="mt-3">
-              <h4 className="font-size-16 mb-1">JHON</h4>
-              <span className="text-muted">
-                <i className="ri-record-circle-line align-middle font-size-14 text-success"></i>
-                Online
-              </span>
-            </div>
-          </div>
-        )}
-        
-        {/* When collapsed, just show a smaller profile image */}
-        {isCollapsed && (
-          <div className="text-center mt-3">
-            <img
-              src={profileImage}
-              alt="User Avatar"
-              className="avatar-sm rounded-circle mx-auto d-block"
-            />
-          </div>
-        )}
+<div
+  data-simplebar
+  style={{
+    height: "100vh",
+    overflowY: "auto",
+  }}
+>
 
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
-            {!isCollapsed && (
-              <li className="menu-title">
-                <i className="ri-menu-line me-2"></i>DairyTrack Menu
-              </li>
-            )}
-
             <li className={isActive("/admin/dashboard") ? "mm-active" : ""}>
               <Link to="/admin/dashboard" className={`waves-effect ${isCollapsed ? 'text-center' : ''}`}>
                 <i className="ri-dashboard-line"></i> 
