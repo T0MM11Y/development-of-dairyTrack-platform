@@ -104,18 +104,21 @@ const Sidebar = () => {
             <li className={isMenuOpen("pakan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`has-arrow waves-effect ${isCollapsed ? 'text-center' : ''}`}
+                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("pakan");
                 }}
                 aria-expanded={isMenuOpen("pakan")}
               >
-                <i className="ri-restaurant-line"></i> 
-                {!isCollapsed && <span>Pakan Sapi</span>}
+                <div>
+                  <i className="ri-restaurant-line"></i> 
+                  {!isCollapsed && <span>Pakan Sapi</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("pakan") && !isCollapsed && (
-                <ul className="sub-menu mm-show">
+                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
                   <li>
                     <Link
                       to="/admin/pakan/harian"
@@ -140,18 +143,21 @@ const Sidebar = () => {
             <li className={isMenuOpen("produktivitas") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`has-arrow waves-effect ${isCollapsed ? 'text-center' : ''}`}
+                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("produktivitas");
                 }}
                 aria-expanded={isMenuOpen("produktivitas")}
               >
-                <i className="ri-bar-chart-box-line"></i> 
-                {!isCollapsed && <span>Produktivitas Susu</span>}
+                <div>
+                  <i className="ri-bar-chart-box-line"></i> 
+                  {!isCollapsed && <span>Produktivitas Susu</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("produktivitas") && !isCollapsed && (
-                <ul className="sub-menu mm-show">
+                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
                   <li>
                     <Link
                       to="/admin/susu/produksi"
@@ -176,18 +182,21 @@ const Sidebar = () => {
             <li className={isMenuOpen("kesehatan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`has-arrow waves-effect ${isCollapsed ? 'text-center' : ''}`}
+                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("kesehatan");
                 }}
                 aria-expanded={isMenuOpen("kesehatan")}
               >
-                <i className="ri-hospital-line"></i> 
-                {!isCollapsed && <span>Kesehatan Sapi</span>}
+                <div>
+                  <i className="ri-hospital-line"></i> 
+                  {!isCollapsed && <span>Kesehatan Sapi</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("kesehatan") && !isCollapsed && (
-                <ul className="sub-menu mm-show">
+                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
                   <li>
                     <Link
                       to="/admin/kesehatan/data-sapi"
@@ -236,18 +245,21 @@ const Sidebar = () => {
             <li className={isMenuOpen("keuangan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`has-arrow waves-effect ${isCollapsed ? 'text-center' : ''}`}
+                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("keuangan");
                 }}
                 aria-expanded={isMenuOpen("keuangan")}
               >
-                <i className="ri-money-dollar-circle-line"></i> 
-                {!isCollapsed && <span>Keuangan</span>}
+                <div>
+                  <i className="ri-money-dollar-circle-line"></i> 
+                  {!isCollapsed && <span>Keuangan</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("keuangan") && !isCollapsed && (
-                <ul className="sub-menu mm-show">
+                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
                   <li>
                     <Link
                       to="/admin/keuangan/pemasukan"
