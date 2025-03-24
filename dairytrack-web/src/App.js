@@ -76,6 +76,7 @@ function App() {
       <Route path="/admin/keuangan/pengeluaran" element={withAdminLayout(Pengeluaran)} />
       <Route path="/admin/keuangan/laporan" element={withAdminLayout(LaporanKeuangan)} />
     </Routes>
+
   );
 }
 
