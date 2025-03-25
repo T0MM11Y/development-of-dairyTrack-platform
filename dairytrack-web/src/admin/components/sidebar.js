@@ -163,55 +163,56 @@ const Sidebar = () => {
                 }}
                 aria-expanded={isMenuOpen("kesehatan")}
               >
-                <div>
-                  <i className="ri-hospital-line"></i> 
-                  {!isCollapsed && <span>Kesehatan Sapi</span>}
-                </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
-              </Link>
-              {isMenuOpen("kesehatan") && !isCollapsed && (
-                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
-                  <li>
-                    <Link
-                      to="/admin/kesehatan/data-sapi"
-                      className={isActive("/admin/kesehatan/data-sapi") ? "active" : ""}
-                    >
-                      <i className="ri-file-list-3-line"></i> Data Sapi
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/kesehatan/gejala"
-                      className={isActive("/admin/kesehatan/gejala") ? "active" : ""}
-                    >
-                      <i className="ri-health-book-line"></i> Gejala Penyakit Sapi
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/kesehatan/riwayat"
-                      className={isActive("/admin/kesehatan/riwayat") ? "active" : ""}
-                    >
-                      <i className="ri-history-line"></i> Riwayat Penyakit Sapi
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/kesehatan/reproduksi"
-                      className={isActive("/admin/kesehatan/reproduksi") ? "active" : ""}
-                    >
-                      <i className="ri-parent-line"></i> Reproduksi Sapi
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/kesehatan/pemeriksaan"
-                      className={isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""}
-                    >
-                      <i className="ri-stethoscope-line"></i> Pemeriksaan Penyakit
-                    </Link>
-                  </li>
-                </ul>
+ <div>
+      <i className="ri-hospital-line"></i>
+      {!isCollapsed && <span>Kesehatan Sapi</span>}
+    </div>
+    {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+  </Link>
+
+  {isMenuOpen("kesehatan") && !isCollapsed && (
+    <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
+      <li>
+        <Link
+          to="/admin/kesehatan/sapi"
+          className={isActive("/admin/kesehatan/sapi") ? "active" : ""}
+        >
+          <i className="ri-file-list-3-line"></i> Data Sapi
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/admin/kesehatan/gejala"
+          className={isActive("/admin/kesehatan/gejala") ? "active" : ""}
+        >
+          <i className="ri-health-book-line"></i> Gejala Penyakit Sapi
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/admin/kesehatan/riwayat"
+          className={isActive("/admin/kesehatan/riwayat") ? "active" : ""}
+        >
+          <i className="ri-history-line"></i> Riwayat Penyakit Sapi
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/admin/kesehatan/reproduksi"
+          className={isActive("/admin/kesehatan/reproduksi") ? "active" : ""}
+        >
+          <i className="ri-parent-line"></i> Reproduksi Sapi
+        </Link>
+      </li>
+      <li>
+        <Link
+          to="/admin/kesehatan/pemeriksaan"
+          className={isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""}
+        >
+          <i className="ri-stethoscope-line"></i> Pemeriksaan Penyakit
+        </Link>
+      </li>
+    </ul>
               )}
             </li>
 
