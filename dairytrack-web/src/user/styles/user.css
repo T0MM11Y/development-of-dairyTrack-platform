@@ -1,0 +1,33 @@
+.user-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Pastikan tinggi penuh */
+}
+
+.user-body {
+    flex: 1; /* Membuat konten utama fleksibel */
+    display: flex;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+    margin-left: 5em; /* Menyesuaikan dengan sidebar */
+}
+
+.sidebar {
+    width: 5em;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    background: #333; /* Sesuaikan warna sidebar */
+    color: white;
+}
+
+.footer {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: center;
+    width: 100%;
+}

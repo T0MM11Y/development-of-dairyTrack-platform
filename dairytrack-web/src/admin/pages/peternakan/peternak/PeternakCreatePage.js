@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createCow } from "../../../../api/kesehatan/cow";
+import { createCow } from "../../../../api/peternakan/cow";
 import { useNavigate } from "react-router-dom";
 
 const CowCreatePage = () => {
@@ -34,7 +34,7 @@ const CowCreatePage = () => {
     e.preventDefault();
     try {
       await createCow(form);
-      navigate("/admin/kesehatan/sapi");
+      navigate("/admin/peternakan/sapi");
     } catch (err) {
       console.error("Create cow error:", err);
       setError("Gagal membuat data sapi: " + err.message);

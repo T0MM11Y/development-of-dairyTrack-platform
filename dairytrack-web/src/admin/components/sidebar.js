@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import profileImage from "../../assets/admin/images/users/avatar-1.jpg";
-import 'simplebar-react/dist/simplebar.min.css';
-
+import "simplebar-react/dist/simplebar.min.css";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -29,10 +28,12 @@ const Sidebar = () => {
     if (content) {
       // When collapsed, content takes up more space (remains in place but expands)
       content.style.marginLeft = isCollapsed ? "90px" : "250px";
-      content.style.width = isCollapsed ? "calc(100% - 90px)" : "calc(100% - 250px)";
+      content.style.width = isCollapsed
+        ? "calc(100% - 90px)"
+        : "calc(100% - 250px)";
       content.style.transition = "all 0.3s ease-in-out";
     }
-    
+
     // Apply this effect on component mount to ensure default collapsed state
   }, [isCollapsed]);
 
@@ -44,7 +45,7 @@ const Sidebar = () => {
       content.style.marginLeft = "90px";
       content.style.width = "calc(100% - 90px)";
     }
-    
+
     // Also add styles to the sidebar
     const sidebar = document.querySelector(".vertical-menu");
     if (sidebar) {
@@ -53,32 +54,89 @@ const Sidebar = () => {
   }, []);
 
   return (
-    <div className="vertical-menu" style={{ 
-      width: isCollapsed ? "90px" : "250px",
-      transition: "width 0.3s ease-in-out"
-    }}>
-<div
-  data-simplebar
-  style={{
-    height: "100vh",
-    overflowY: "auto",
-  }}
->
-
+    <div
+      className="vertical-menu"
+      style={{
+        width: isCollapsed ? "90px" : "250px",
+        transition: "width 0.3s ease-in-out",
+      }}
+    >
+      <div
+        data-simplebar
+        style={{
+          height: "100vh",
+          overflowY: "auto",
+        }}
+      >
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className={isActive("/admin/dashboard") ? "mm-active" : ""}>
-              <Link to="/admin/dashboard" className={`waves-effect ${isCollapsed ? 'text-center' : ''}`}>
-                <i className="ri-dashboard-line"></i> 
+              <Link
+                to="/admin/dashboard"
+                className={`waves-effect ${isCollapsed ? "text-center" : ""}`}
+              >
+                <i className="ri-dashboard-line"></i>
                 {!isCollapsed && <span>Dashboard</span>}
               </Link>
+            </li>
+
+            {/* Peternakan  */}
+
+            <li className={isMenuOpen("peternakan") ? "mm-active" : ""}>
+              <Link
+                to="#"
+                className={`waves-effect ${
+                  isCollapsed ? "text-center" : ""
+                } d-flex justify-content-between align-items-center`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu("peternakan");
+                }}
+                aria-expanded={isMenuOpen("peternakan")}
+              >
+                <div>
+                  <i className="ri-bar-chart-box-line"></i>
+                  {!isCollapsed && <span>Peternakan</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+              </Link>
+              {isMenuOpen("peternakan") && !isCollapsed && (
+                <ul
+                  className="sub-menu mm-show"
+                  style={{ paddingLeft: "20px" }}
+                >
+                  {" "}
+                  <li>
+                    <Link
+                      to="/admin/peternakan/peternak"
+                      className={
+                        isActive("/admin/peternakan/peternak") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-line-chart-line"></i> Data Peternak
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/peternakan/sapi"
+                      className={
+                        isActive("/admin/peternakan/sapi") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-file-list-3-line"></i> Data Sapi
+                    </Link>
+                  </li>
+                </ul>
+              )}
             </li>
 
             {/* Pakan Sapi */}
             <li className={isMenuOpen("pakan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
+                className={`waves-effect ${
+                  isCollapsed ? "text-center" : ""
+                } d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("pakan");
@@ -86,17 +144,22 @@ const Sidebar = () => {
                 aria-expanded={isMenuOpen("pakan")}
               >
                 <div>
-                  <i className="ri-restaurant-line"></i> 
+                  <i className="ri-restaurant-line"></i>
                   {!isCollapsed && <span>Pakan Sapi</span>}
                 </div>
                 {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("pakan") && !isCollapsed && (
-                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
+                <ul
+                  className="sub-menu mm-show"
+                  style={{ paddingLeft: "20px" }}
+                >
                   <li>
                     <Link
                       to="/admin/pakan/harian"
-                      className={isActive("/admin/pakan/harian") ? "active" : ""}
+                      className={
+                        isActive("/admin/pakan/harian") ? "active" : ""
+                      }
                     >
                       <i className="ri-calendar-line"></i> Pakan Harian
                     </Link>
@@ -117,7 +180,9 @@ const Sidebar = () => {
             <li className={isMenuOpen("produktivitas") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
+                className={`waves-effect ${
+                  isCollapsed ? "text-center" : ""
+                } d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("produktivitas");
@@ -125,17 +190,22 @@ const Sidebar = () => {
                 aria-expanded={isMenuOpen("produktivitas")}
               >
                 <div>
-                  <i className="ri-bar-chart-box-line"></i> 
+                  <i className="ri-bar-chart-box-line"></i>
                   {!isCollapsed && <span>Produktivitas Susu</span>}
                 </div>
                 {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("produktivitas") && !isCollapsed && (
-                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
+                <ul
+                  className="sub-menu mm-show"
+                  style={{ paddingLeft: "20px" }}
+                >
                   <li>
                     <Link
                       to="/admin/susu/produksi"
-                      className={isActive("/admin/susu/produksi") ? "active" : ""}
+                      className={
+                        isActive("/admin/susu/produksi") ? "active" : ""
+                      }
                     >
                       <i className="ri-database-2-line"></i> Data Produksi Susu
                     </Link>
@@ -143,7 +213,9 @@ const Sidebar = () => {
                   <li>
                     <Link
                       to="/admin/susu/analisis"
-                      className={isActive("/admin/susu/analisis") ? "active" : ""}
+                      className={
+                        isActive("/admin/susu/analisis") ? "active" : ""
+                      }
                     >
                       <i className="ri-line-chart-line"></i> Analisis Produksi
                     </Link>
@@ -156,63 +228,70 @@ const Sidebar = () => {
             <li className={isMenuOpen("kesehatan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
+                className={`waves-effect ${
+                  isCollapsed ? "text-center" : ""
+                } d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("kesehatan");
                 }}
                 aria-expanded={isMenuOpen("kesehatan")}
               >
- <div>
-      <i className="ri-hospital-line"></i>
-      {!isCollapsed && <span>Kesehatan Sapi</span>}
-    </div>
-    {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
-  </Link>
+                <div>
+                  <i className="ri-hospital-line"></i>
+                  {!isCollapsed && <span>Kesehatan Sapi</span>}
+                </div>
+                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+              </Link>
 
-  {isMenuOpen("kesehatan") && !isCollapsed && (
-    <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
-      <li>
-        <Link
-          to="/admin/kesehatan/sapi"
-          className={isActive("/admin/kesehatan/sapi") ? "active" : ""}
-        >
-          <i className="ri-file-list-3-line"></i> Data Sapi
-        </Link>
-      </li>
-      <li>
-        <Link
-          to="/admin/kesehatan/gejala"
-          className={isActive("/admin/kesehatan/gejala") ? "active" : ""}
-        >
-          <i className="ri-health-book-line"></i> Gejala Penyakit Sapi
-        </Link>
-      </li>
-      <li>
-        <Link
-          to="/admin/kesehatan/riwayat"
-          className={isActive("/admin/kesehatan/riwayat") ? "active" : ""}
-        >
-          <i className="ri-history-line"></i> Riwayat Penyakit Sapi
-        </Link>
-      </li>
-      <li>
-        <Link
-          to="/admin/kesehatan/reproduksi"
-          className={isActive("/admin/kesehatan/reproduksi") ? "active" : ""}
-        >
-          <i className="ri-parent-line"></i> Reproduksi Sapi
-        </Link>
-      </li>
-      <li>
-        <Link
-          to="/admin/kesehatan/pemeriksaan"
-          className={isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""}
-        >
-          <i className="ri-stethoscope-line"></i> Pemeriksaan Penyakit
-        </Link>
-      </li>
-    </ul>
+              {isMenuOpen("kesehatan") && !isCollapsed && (
+                <ul
+                  className="sub-menu mm-show"
+                  style={{ paddingLeft: "20px" }}
+                >
+                  <li>
+                    <Link
+                      to="/admin/kesehatan/gejala"
+                      className={
+                        isActive("/admin/kesehatan/gejala") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-health-book-line"></i> Gejala Penyakit
+                      Sapi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/kesehatan/riwayat"
+                      className={
+                        isActive("/admin/kesehatan/riwayat") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-history-line"></i> Riwayat Penyakit Sapi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/kesehatan/reproduksi"
+                      className={
+                        isActive("/admin/kesehatan/reproduksi") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-parent-line"></i> Reproduksi Sapi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/kesehatan/pemeriksaan"
+                      className={
+                        isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-stethoscope-line"></i> Pemeriksaan
+                      Penyakit
+                    </Link>
+                  </li>
+                </ul>
               )}
             </li>
 
@@ -220,7 +299,9 @@ const Sidebar = () => {
             <li className={isMenuOpen("keuangan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${isCollapsed ? 'text-center' : ''} d-flex justify-content-between align-items-center`}
+                className={`waves-effect ${
+                  isCollapsed ? "text-center" : ""
+                } d-flex justify-content-between align-items-center`}
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("keuangan");
@@ -228,17 +309,22 @@ const Sidebar = () => {
                 aria-expanded={isMenuOpen("keuangan")}
               >
                 <div>
-                  <i className="ri-money-dollar-circle-line"></i> 
+                  <i className="ri-money-dollar-circle-line"></i>
                   {!isCollapsed && <span>Keuangan</span>}
                 </div>
                 {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
               </Link>
               {isMenuOpen("keuangan") && !isCollapsed && (
-                <ul className="sub-menu mm-show" style={{ paddingLeft: "20px" }}>
+                <ul
+                  className="sub-menu mm-show"
+                  style={{ paddingLeft: "20px" }}
+                >
                   <li>
                     <Link
                       to="/admin/keuangan/pemasukan"
-                      className={isActive("/admin/keuangan/pemasukan") ? "active" : ""}
+                      className={
+                        isActive("/admin/keuangan/pemasukan") ? "active" : ""
+                      }
                     >
                       <i className="ri-arrow-up-circle-line"></i> Pemasukan
                     </Link>
@@ -246,7 +332,9 @@ const Sidebar = () => {
                   <li>
                     <Link
                       to="/admin/keuangan/pengeluaran"
-                      className={isActive("/admin/keuangan/pengeluaran") ? "active" : ""}
+                      className={
+                        isActive("/admin/keuangan/pengeluaran") ? "active" : ""
+                      }
                     >
                       <i className="ri-arrow-down-circle-line"></i> Pengeluaran
                     </Link>
@@ -254,7 +342,9 @@ const Sidebar = () => {
                   <li>
                     <Link
                       to="/admin/keuangan/laporan"
-                      className={isActive("/admin/keuangan/laporan") ? "active" : ""}
+                      className={
+                        isActive("/admin/keuangan/laporan") ? "active" : ""
+                      }
                     >
                       <i className="ri-file-chart-line"></i> Laporan Keuangan
                     </Link>
@@ -265,20 +355,25 @@ const Sidebar = () => {
           </ul>
         </div>
       </div>
-      
+
       {/* Add toggle button to the bottom of sidebar */}
-      <div className="text-center py-3" style={{
-        position: "absolute",
-        bottom: "0",
-        width: "100%",
-        borderTop: "1px solid rgba(0,0,0,0.1)"
-      }}>
-        <button 
-          onClick={toggleSidebar} 
+      <div
+        className="text-center py-3"
+        style={{
+          position: "absolute",
+          bottom: "0",
+          width: "100%",
+          borderTop: "1px solid rgba(0,0,0,0.1)",
+        }}
+      >
+        <button
+          onClick={toggleSidebar}
           className="btn btn-sm btn-light"
           title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <i className={`ri-arrow-${isCollapsed ? 'right' : 'left'}-s-line`}></i>
+          <i
+            className={`ri-arrow-${isCollapsed ? "right" : "left"}-s-line`}
+          ></i>
         </button>
       </div>
     </div>

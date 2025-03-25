@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { getCows } from "../../../../api/kesehatan/cow";
-import { getDiseaseHistories, deleteDiseaseHistory } from "../../../../api/kesehatan/diseaseHistory";
+import { getCows } from "../../../../api/peternakan/cow";
+import {
+  getDiseaseHistories,
+  deleteDiseaseHistory,
+} from "../../../../api/kesehatan/diseaseHistory";
 import { Link } from "react-router-dom";
 
 const DiseaseHistoryListPage = () => {

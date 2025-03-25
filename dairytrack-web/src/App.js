@@ -26,9 +26,9 @@ import LaporanKeuangan from "./admin/pages/keuangan/LaporanKeuangan";
 //kesehatan
 // BENAR ✅ (folder sesuai yang kamu punya)
 // Cows
-import CowListPage from "./admin/pages/kesehatan/cows/CowListPage.js";
-import CowCreatePage from "./admin/pages/kesehatan/cows/CowCreatePage.js";
-import CowEditPage from "./admin/pages/kesehatan/cows/CowEditPage.js";
+import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
+import CowCreatePage from "./admin/pages/peternakan/cows/CowCreatePage.js";
+import CowEditPage from "./admin/pages/peternakan/cows/CowEditPage.js";
 
 // Symptoms
 import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage.js";
@@ -47,14 +47,12 @@ import ReproductionListPage from "./admin/pages/kesehatan/reproduction/Reproduct
 import ReproductionCreatePage from "./admin/pages/kesehatan/reproduction/ReproductionCreatePage.js";
 import ReproductionEditPage from "./admin/pages/kesehatan/reproduction/ReproductionEditPage.js";
 
-
 // Import CSS
-import "./assets/admin/css/bootstrap.min.css";
 import "./assets/admin/css/icons.min.css";
 import "./assets/admin/css/app.css";
+import "./assets/admin/css/bootstrap.min.css";
 
-
-import 'simplebar-react/dist/simplebar.min.css';
+import "simplebar-react/dist/simplebar.min.css";
 
 // Admin Layout Wrapper
 const withAdminLayout = (Component) => (
@@ -62,7 +60,7 @@ const withAdminLayout = (Component) => (
     <Header />
     <Sidebar />
     <div className="main-content">
-    <div className="content px-12">
+      <div className="content px-12">
         <Component />
       </div>
       <Footer />
@@ -79,44 +77,109 @@ function App() {
       <Route path="/logout" element={<UserApp />} />
 
       {/* Admin Default Redirect */}
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route
+        path="/admin"
+        element={<Navigate to="/admin/dashboard" replace />}
+      />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={withAdminLayout(Dashboard)} />
-      <Route path="/admin/pakan/harian" element={withAdminLayout(PakanHarian)} />
+      <Route
+        path="/admin/pakan/harian"
+        element={withAdminLayout(PakanHarian)}
+      />
       <Route path="/admin/pakan/stok" element={withAdminLayout(StokPakan)} />
-      <Route path="/admin/susu/produksi" element={withAdminLayout(DataProduksiSusu)} />
-      <Route path="/admin/susu/analisis" element={withAdminLayout(AnalisisProduksi)} />
+      <Route
+        path="/admin/susu/produksi"
+        element={withAdminLayout(DataProduksiSusu)}
+      />
+      <Route
+        path="/admin/susu/analisis"
+        element={withAdminLayout(AnalisisProduksi)}
+      />
 
-      {/* Admin Kesehatan - Sapi */}
-<Route path="/admin/kesehatan/sapi" element={withAdminLayout(CowListPage)} />
-<Route path="/admin/kesehatan/sapi/create" element={withAdminLayout(CowCreatePage)} />
-<Route path="/admin/kesehatan/sapi/edit/:id" element={withAdminLayout(CowEditPage)} />
+      {/* Admin peternakan - Sapi */}
+      <Route
+        path="/admin/peternakan/sapi"
+        element={withAdminLayout(CowListPage)}
+      />
+      <Route
+        path="/admin/peternakan/sapi/create"
+        element={withAdminLayout(CowCreatePage)}
+      />
+      <Route
+        path="/admin/peternakan/sapi/edit/:id"
+        element={withAdminLayout(CowEditPage)}
+      />
       {/* Admin Kesehatan - Pemeriksaan */}
-      <Route path="/admin/kesehatan/pemeriksaan" element={withAdminLayout(HealthCheckListPage)} />
-      <Route path="/admin/kesehatan/pemeriksaan/create" element={withAdminLayout(HealthCheckCreatePage)} />
-      <Route path="/admin/kesehatan/pemeriksaan/edit/:id" element={withAdminLayout(HealthCheckEditPage)} />
+      <Route
+        path="/admin/kesehatan/pemeriksaan"
+        element={withAdminLayout(HealthCheckListPage)}
+      />
+      <Route
+        path="/admin/kesehatan/pemeriksaan/create"
+        element={withAdminLayout(HealthCheckCreatePage)}
+      />
+      <Route
+        path="/admin/kesehatan/pemeriksaan/edit/:id"
+        element={withAdminLayout(HealthCheckEditPage)}
+      />
 
       {/* Admin Kesehatan - Gejala */}
-      <Route path="/admin/kesehatan/gejala" element={withAdminLayout(SymptomListPage)} />
-      <Route path="/admin/kesehatan/gejala/create" element={withAdminLayout(SymptomCreatePage)} />
-      <Route path="/admin/kesehatan/gejala/edit/:id" element={withAdminLayout(SymptomEditPage)} />
+      <Route
+        path="/admin/kesehatan/gejala"
+        element={withAdminLayout(SymptomListPage)}
+      />
+      <Route
+        path="/admin/kesehatan/gejala/create"
+        element={withAdminLayout(SymptomCreatePage)}
+      />
+      <Route
+        path="/admin/kesehatan/gejala/edit/:id"
+        element={withAdminLayout(SymptomEditPage)}
+      />
 
       {/* Admin Kesehatan - Riwayat Penyakit */}
-      <Route path="/admin/kesehatan/riwayat" element={withAdminLayout(DiseaseHistoryListPage)} />
-      <Route path="/admin/kesehatan/riwayat/create" element={withAdminLayout(DiseaseHistoryCreatePage)} />
-      <Route path="/admin/kesehatan/riwayat/edit/:id" element={withAdminLayout(DiseaseHistoryEditPage)} />
+      <Route
+        path="/admin/kesehatan/riwayat"
+        element={withAdminLayout(DiseaseHistoryListPage)}
+      />
+      <Route
+        path="/admin/kesehatan/riwayat/create"
+        element={withAdminLayout(DiseaseHistoryCreatePage)}
+      />
+      <Route
+        path="/admin/kesehatan/riwayat/edit/:id"
+        element={withAdminLayout(DiseaseHistoryEditPage)}
+      />
 
       {/* Admin Kesehatan - Reproduksi */}
-      <Route path="/admin/kesehatan/reproduksi" element={withAdminLayout(ReproductionListPage)} />
-      <Route path="/admin/kesehatan/reproduksi/create" element={withAdminLayout(ReproductionCreatePage)} />
-      <Route path="/admin/kesehatan/reproduksi/edit/:id" element={withAdminLayout(ReproductionEditPage)} />
+      <Route
+        path="/admin/kesehatan/reproduksi"
+        element={withAdminLayout(ReproductionListPage)}
+      />
+      <Route
+        path="/admin/kesehatan/reproduksi/create"
+        element={withAdminLayout(ReproductionCreatePage)}
+      />
+      <Route
+        path="/admin/kesehatan/reproduksi/edit/:id"
+        element={withAdminLayout(ReproductionEditPage)}
+      />
 
-      <Route path="/admin/keuangan/pemasukan" element={withAdminLayout(Pemasukan)} />
-      <Route path="/admin/keuangan/pengeluaran" element={withAdminLayout(Pengeluaran)} />
-      <Route path="/admin/keuangan/laporan" element={withAdminLayout(LaporanKeuangan)} />
+      <Route
+        path="/admin/keuangan/pemasukan"
+        element={withAdminLayout(Pemasukan)}
+      />
+      <Route
+        path="/admin/keuangan/pengeluaran"
+        element={withAdminLayout(Pengeluaran)}
+      />
+      <Route
+        path="/admin/keuangan/laporan"
+        element={withAdminLayout(LaporanKeuangan)}
+      />
     </Routes>
-
   );
 }
 

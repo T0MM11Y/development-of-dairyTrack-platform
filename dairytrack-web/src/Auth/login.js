@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "../assets/admin/css/bootstrap.min.css";
 import "../assets/client/css/style.css";
 
 import iconLogin from "../assets/admin/images/logo-dark.png";
@@ -144,7 +143,6 @@ const Login = () => {
                 alt="Login Security"
                 className="img-fluid"
               />
-
             </div>
           </div>
         </div>

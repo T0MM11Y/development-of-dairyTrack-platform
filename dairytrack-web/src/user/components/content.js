@@ -4,6 +4,7 @@ import React from "react";
 
 import bannerImg from "../../assets/client/img/banner/banner_img.png";
 import aboutIcon from "../../assets/client/img/icons/about_icon.png";
+import "../../assets/client/css/bootstrap.min.css";
 
 // Import service images
 import servicesImg01 from "../../assets/client/img/images/services_img01.jpg";

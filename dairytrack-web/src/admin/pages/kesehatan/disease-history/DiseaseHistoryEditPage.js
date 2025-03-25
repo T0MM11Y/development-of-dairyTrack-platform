@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getDiseaseHistoryById, updateDiseaseHistory } from "../../../../api/kesehatan/diseaseHistory";
+import {
+  getDiseaseHistoryById,
+  updateDiseaseHistory,
+} from "../../../../api/kesehatan/diseaseHistory";
 import { useNavigate, useParams } from "react-router-dom";
 
 const DiseaseHistoryEditPage = () => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createDiseaseHistory } from "../../../../api/kesehatan/diseaseHistory";
-import { getCows } from "../../../../api/kesehatan/cow";
+import { getCows } from "../../../../api/peternakan/cow";
 import { useNavigate } from "react-router-dom";
 
 const DiseaseHistoryCreatePage = () => {

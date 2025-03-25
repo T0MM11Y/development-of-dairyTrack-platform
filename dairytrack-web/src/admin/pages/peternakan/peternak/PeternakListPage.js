@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCows, deleteCow } from "../../../../api/kesehatan/cow";
+import { getCows, deleteCow } from "../../../../api/peternakan/cow";
 import { useNavigate } from "react-router-dom";
 
 const CowListPage = () => {
@@ -34,7 +34,7 @@ const CowListPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Sapi</h2>
         <button
-          onClick={() => navigate("/admin/kesehatan/sapi/create")}
+          onClick={() => navigate("/admin/peternakan/sapi/create")}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow"
         >
           + Tambah Sapi
@@ -70,11 +70,15 @@ const CowListPage = () => {
                   <td className="p-2 border">{cow.reproductive_status}</td>
                   <td className="p-2 border">{cow.gender}</td>
                   <td className="p-2 border">{cow.entry_date}</td>
-                  <td className="p-2 border">{cow.lactation_status ? "Ya" : "Tidak"}</td>
+                  <td className="p-2 border">
+                    {cow.lactation_status ? "Ya" : "Tidak"}
+                  </td>
                   <td className="p-2 border">{cow.lactation_phase || "-"}</td>
                   <td className="p-2 border whitespace-nowrap">
                     <button
-                      onClick={() => navigate(`/admin/kesehatan/sapi/edit/${cow.id}`)}
+                      onClick={() =>
+                        navigate(`/admin/peternakan/sapi/edit/${cow.id}`)
+                      }
                       className="text-blue-600 hover:underline mr-2"
                     >
                       Edit

@@ -1,4 +1,7 @@
-const BASE_URL = "http://127.0.0.1:8000/api";
+// const BASE_URL = "http://127.0.0.1:8000/api";
+
+//pny T0mm11y
+const BASE_URL = "http://127.0.0.1:5000/api";
 
 export const fetchAPI = async (endpoint, method = "GET", data = null) => {
   const options = {
