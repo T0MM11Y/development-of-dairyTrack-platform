@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 // Import images
@@ -12,71 +12,75 @@ const Header = () => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  // Track if sidebar is collapsed
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Default to true since sidebar starts collapsed
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Default expanded
+
+  // Refs
+  const notificationDropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
+  const notificationButtonRef = useRef(null);
+  const userButtonRef = useRef(null);
 
   useEffect(() => {
-    // Check the initial state of the sidebar by checking its width
-    const sidebar = document.querySelector(".vertical-menu");
-    if (sidebar) {
-      setIsSidebarCollapsed(sidebar.offsetWidth <= 100);
-    }
-  }, []);
+    const handleClickOutside = (event) => {
+      if (isNotificationDropdownOpen && 
+          notificationDropdownRef.current && 
+          !notificationDropdownRef.current.contains(event.target) &&
+          !notificationButtonRef.current.contains(event.target)) {
+        setIsNotificationDropdownOpen(false);
+      }
+      
+      if (isUserDropdownOpen && 
+          userDropdownRef.current && 
+          !userDropdownRef.current.contains(event.target) &&
+          !userButtonRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNotificationDropdownOpen, isUserDropdownOpen]);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       setIsFullScreen(true);
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullScreen(false);
-      }
+      document.exitFullscreen();
+      setIsFullScreen(false);
     }
   };
 
   const toggleVerticalMenu = () => {
-    // Find the sidebar toggle button and trigger its click
-    const sidebarToggleBtn = document.querySelector('.vertical-menu .btn-light');
-    if (sidebarToggleBtn) {
-      sidebarToggleBtn.click();
-      // Toggle the state after clicking
-      setIsSidebarCollapsed(!isSidebarCollapsed);
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    
+    // Update main content
+    const content = document.querySelector(".main-content");
+    if (content) {
+      content.style.marginLeft = newState ? "90px" : "250px";
+      content.style.width = newState ? "calc(100% - 90px)" : "calc(100% - 250px)";
     }
   };
 
-  const toggleSearch = () => {
-    setIsSearchVisible(!isSearchVisible);
-  };
-
-  const toggleNotificationDropdown = () => {
+  const toggleNotificationDropdown = (e) => {
+    e.stopPropagation();
     setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
+    if (isUserDropdownOpen) setIsUserDropdownOpen(false);
   };
 
-  const toggleUserDropdown = () => {
+  const toggleUserDropdown = (e) => {
+    e.stopPropagation();
     setIsUserDropdownOpen(!isUserDropdownOpen);
-  };
-
-  const toggleRightSidebar = () => {
-    document.body.classList.toggle("right-bar-enabled");
+    if (isNotificationDropdownOpen) setIsNotificationDropdownOpen(false);
   };
 
   return (
-    <header
-      id="page-topbar"
-      style={{
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-        border: "1px solid #e0e0e0",
-      }}
-    >
+    <header id="page-topbar" className="header">
       <div className="navbar-header">
         <div className="d-flex align-items-center w-100">
-          {/* LOGO */}
-          <div className="navbar-brand-box" style={{ 
-            width: isSidebarCollapsed ? "90px" : "250px",
-            transition: "width 0.3s ease-in-out",
-            overflow: "hidden"
-          }}>
+          {/* Logo - Default expanded */}
+          <div className="navbar-brand-box" style={{ width: isSidebarCollapsed ? "90px" : "250px" }}>
             <Link to="/" className="logo logo-dark">
               <span className="logo-sm" style={{ display: isSidebarCollapsed ? "block" : "none" }}>
                 <img src={logoSm} alt="logo-sm" height="22" />
@@ -85,7 +89,6 @@ const Header = () => {
                 <img src={logoDark} alt="logo-dark" height="20" />
               </span>
             </Link>
-
             <Link to="/" className="logo logo-light">
               <span className="logo-sm" style={{ display: isSidebarCollapsed ? "block" : "none" }}>
                 <img src={logoSm} alt="logo-sm-light" height="22" />
@@ -96,7 +99,7 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Tombol Toggle Menu */}
+          {/* Menu Toggle Button */}
           <button
             type="button"
             className="btn btn-sm px-3 font-size-24 header-item waves-effect me-3"
@@ -106,7 +109,7 @@ const Header = () => {
             <i className="ri-menu-2-line align-middle"></i>
           </button>
 
-          {/* Kolom Pencarian (Lebar dan Panjang Diperbesar) */}
+          {/* Search Form */}
           <form
             className="app-search me-4"
             style={{ width: "400px", maxWidth: "600px" }}
@@ -131,10 +134,9 @@ const Header = () => {
             </div>
           </form>
 
-          {/* Spacer untuk memberikan jarak */}
           <div className="flex-grow-1"></div>
 
-          {/* Full-screen toggler */}
+          {/* Full-screen Toggle */}
           <div className="dropdown d-none d-lg-inline-block me-4">
             <button
               type="button"
@@ -149,9 +151,10 @@ const Header = () => {
             </button>
           </div>
 
-          {/* Notifications dropdown */}
+          {/* Notifications Dropdown */}
           <div className="dropdown d-inline-block me-4">
             <button
+              ref={notificationButtonRef}
               type="button"
               className="btn header-item noti-icon waves-effect"
               id="page-header-notifications-dropdown"
@@ -160,8 +163,8 @@ const Header = () => {
               <i className="ri-notification-3-line"></i>
               <span className="noti-dot"></span>
             </button>
-            {/* Konten dropdown notifikasi */}
             <div
+              ref={notificationDropdownRef}
               className={`dropdown-menu dropdown-menu-end ${
                 isNotificationDropdownOpen ? "show" : ""
               }`}
@@ -170,51 +173,72 @@ const Header = () => {
                 inset: "0px auto auto 0px",
                 margin: "0px",
                 transform: "translate(-225px, 70px)",
+                width: "380px",
+                padding: "0",
               }}
             >
-              <div className="p-3">
+              <div className="p-3 border-bottom">
                 <div className="row align-items-center">
                   <div className="col">
-                    <h6 className="m-0"> Notifications </h6>
+                    <h5 className="m-0" style={{ fontSize: "1.1rem" }}>Notifications</h5>
                   </div>
                   <div className="col-auto">
-                    <a href="#!" className="small"> View All</a>
+                    <a href="#!" className="small text-primary">View All</a>
                   </div>
                 </div>
               </div>
-              <div style={{ maxHeight: "230px" }} className="p-2">
-                <div className="text-reset notification-item d-block">
+              <div style={{ maxHeight: "350px", overflowY: "auto" }} className="p-3">
+                <div className="text-reset notification-item d-block p-3">
                   <div className="d-flex">
                     <div className="flex-shrink-0 me-3">
-                      <div className="avatar-xs">
+                      <div className="avatar-md">
                         <span className="avatar-title bg-primary rounded-circle">
-                          <i className="ri-message-3-line"></i>
+                          <i className="ri-message-3-line fs-4"></i>
                         </span>
                       </div>
                     </div>
                     <div className="flex-grow-1">
-                      <h6 className="mt-0 mb-1">New message received</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-0">You have 87 unread messages</p>
+                      <h6 className="mt-0 mb-2 fs-6 fw-semibold">New message received</h6>
+                      <div className="text-muted">
+                        <p className="mb-1">You have 87 unread messages</p>
                         <p className="mb-0 small text-muted">3 min ago</p>
                       </div>
                     </div>
                   </div>
                 </div>
+                <div className="text-reset notification-item d-block p-3">
+                  <div className="d-flex">
+                    <div className="flex-shrink-0 me-3">
+                      <div className="avatar-md">
+                        <span className="avatar-title bg-success rounded-circle">
+                          <i className="ri-bar-chart-line fs-4"></i>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-grow-1">
+                      <h6 className="mt-0 mb-2 fs-6 fw-semibold">Feed Usage Report</h6>
+                      <div className="text-muted">
+                        <p className="mb-1">26,200 kg Feed Used</p>
+                        <p className="mb-0 small text-muted">Today</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="p-2 border-top">
+              <div className="p-3 border-top">
                 <div className="d-grid">
-                  <a className="btn btn-sm btn-link font-size-14 text-center" href="#!">
-                    <i className="ri-arrow-right-s-line me-1"></i> View More
+                  <a className="btn btn-link font-size-14 text-center py-2" href="#!">
+                    <i className="ri-arrow-right-s-line me-1"></i> VIEW MORE
                   </a>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* User profile dropdown */}
+          {/* User Dropdown */}
           <div className="dropdown d-inline-block user-dropdown me-4">
             <button
+              ref={userButtonRef}
               type="button"
               className="btn header-item waves-effect"
               id="page-header-user-dropdown"
@@ -229,6 +253,7 @@ const Header = () => {
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div
+              ref={userDropdownRef}
               className={`dropdown-menu dropdown-menu-end ${
                 isUserDropdownOpen ? "show" : ""
               }`}
@@ -247,17 +272,14 @@ const Header = () => {
               </a>
               <a className="dropdown-item d-block" href="#">
                 <span className="badge bg-success float-end mt-1">11</span>
-                <i className="ri-settings-2-line align-middle me-1"></i>{" "}
-                Settings
+                <i className="ri-settings-2-line align-middle me-1"></i> Settings
               </a>
               <a className="dropdown-item" href="#">
-                <i className="ri-lock-unlock-line align-middle me-1"></i> Lock
-                screen
+                <i className="ri-lock-unlock-line align-middle me-1"></i> Lock screen
               </a>
               <div className="dropdown-divider"></div>
               <Link to="/logout" className="dropdown-item">
-                <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
-                Logout
+                <i className="ri-logout-circle-r-line align-middle me-1"></i> Logout
               </Link>
             </div>
           </div>
