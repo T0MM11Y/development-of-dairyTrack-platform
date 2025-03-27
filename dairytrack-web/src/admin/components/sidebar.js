@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import profileImage from "../../assets/admin/images/users/avatar-1.jpg";
 import "simplebar-react/dist/simplebar.min.css";
 
 const Sidebar = () => {
