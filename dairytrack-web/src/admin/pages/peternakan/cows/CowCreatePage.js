@@ -20,6 +20,7 @@ const CowCreatePage = () => {
 
   const [error, setError] = useState("");
   const [farmers, setFarmers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFarmers = async () => {
@@ -27,23 +28,14 @@ const CowCreatePage = () => {
         const farmerList = await getFarmers();
         setFarmers(farmerList);
       } catch (err) {
-        console.error("Gagal mengambil data peternak:", err);
+        console.error("Error fetching farmers:", err);
+        setError("Gagal mengambil data peternak.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchFarmers();
-    setForm({
-      name: "",
-      breed: "Girolando",
-      birth_date: "",
-      weight_kg: "",
-      reproductive_status: "Open",
-      gender: "Female",
-      entry_date: "",
-      lactation_status: false,
-      lactation_phase: "Early",
-      farmer: "",
-    });
   }, []);
 
   const handleChange = (e) => {
@@ -51,10 +43,10 @@ const CowCreatePage = () => {
     let finalValue = type === "checkbox" ? checked : value;
 
     if (name === "weight_kg") {
-      finalValue = value ? parseFloat(value) : "";
+      finalValue = value ? Math.max(0, parseFloat(value)) : "";
     }
 
-    setForm({ ...form, [name]: finalValue });
+    setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
 
   const handleSubmit = async (e) => {
@@ -63,127 +55,159 @@ const CowCreatePage = () => {
       await createCow(form);
       navigate("/admin/peternakan/sapi");
     } catch (err) {
-      console.error("Gagal membuat data sapi:", err);
-      setError("Gagal membuat data sapi: " + err.message);
+      console.error("Failed to create cow:", err);
+      setError(
+        err.response?.data?.message || "Gagal membuat data sapi. Coba lagi!"
+      );
     }
   };
 
   return (
-    <div className="card" style={{ width: "100%", marginTop: "8rem" }}>
+    <div
+      className="card shadow-lg p-4 bg-white rounded"
+      style={{ width: "30%", margin: "12rem auto" }}
+    >
       <div className="card-body">
-        <h4 className="card-title">Tambah Data Sapi</h4>
-        {error && <p className="text-danger">{error}</p>}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Nama</label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Jenis</label>
-            <input
-              type="text"
-              className="form-control"
-              value={form.breed}
-              readOnly
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Tanggal Lahir</label>
-            <input
-              type="date"
-              name="birth_date"
-              value={form.birth_date}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Berat (kg)</label>
-            <input
-              type="number"
-              name="weight_kg"
-              value={form.weight_kg}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Status Reproduksi</label>
-            <select
-              name="reproductive_status"
-              value={form.reproductive_status}
-              onChange={handleChange}
-              className="form-select"
+        <h4 className="card-title text-center mb-4 text-info">
+          Tambah Data Sapi
+        </h4>
+        {error && <p className="text-danger text-center">{error}</p>}
+        {loading ? (
+          <p className="text-center">Memuat data peternak...</p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Nama</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                  placeholder="Masukkan nama sapi"
+                />
+              </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Jenis</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={form.breed}
+                  readOnly
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Tanggal Lahir</label>
+                <input
+                  type="date"
+                  name="birth_date"
+                  value={form.birth_date}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                />
+              </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Berat (kg)</label>
+                <input
+                  type="number"
+                  name="weight_kg"
+                  value={form.weight_kg}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                  placeholder="Masukkan berat sapi"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Status Reproduksi</label>
+                <select
+                  name="reproductive_status"
+                  value={form.reproductive_status}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="Pregnant">Pregnant</option>
+                  <option value="Open">Open</option>
+                </select>
+              </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Tanggal Masuk</label>
+                <input
+                  type="date"
+                  name="entry_date"
+                  value={form.entry_date}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Fase Laktasi</label>
+                <select
+                  name="lactation_phase"
+                  value={form.lactation_phase}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="Early">Early</option>
+                  <option value="Mid">Mid</option>
+                  <option value="Late">Late</option>
+                  <option value="Dry">Dry</option>
+                </select>
+              </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">Peternak</label>
+                <select
+                  name="farmer"
+                  value={form.farmer}
+                  onChange={handleChange}
+                  className="form-select"
+                  required
+                >
+                  <option value="">Pilih Peternak</option>
+                  {farmers.map((farmer) => (
+                    <option key={farmer.id} value={farmer.id}>
+                      {farmer.first_name} {farmer.last_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-3 d-flex align-items-center gap-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                name="lactation_status"
+                checked={form.lactation_status}
+                onChange={handleChange}
+              />
+              <label className="form-check-label fw-bold">
+                Status Laktasi Aktif
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-info w-100 py-2 mt-3 fw-bold"
             >
-              <option value="Pregnant">Pregnant</option>
-              <option value="Open">Open</option>
-            </select>
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Tanggal Masuk</label>
-            <input
-              type="date"
-              name="entry_date"
-              value={form.entry_date}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Fase Laktasi</label>
-            <select
-              name="lactation_phase"
-              value={form.lactation_phase}
-              onChange={handleChange}
-              className="form-select"
-            >
-              <option value="Early">Early</option>
-              <option value="Mid">Mid</option>
-              <option value="Late">Late</option>
-              <option value="Dry">Dry</option>
-            </select>
-          </div>
-          <div className="mb-3 form-check">
-            <input
-              type="checkbox"
-              className="form-check-input"
-              name="lactation_status"
-              checked={form.lactation_status}
-              onChange={handleChange}
-            />
-            <label className="form-check-label">Status Laktasi Aktif</label>
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Peternak</label>
-            <select
-              name="farmer"
-              value={form.farmer}
-              onChange={handleChange}
-              className="form-select"
-              required
-            >
-              <option value="">Pilih Peternak</option>
-              {farmers.map((farmer) => (
-                <option key={farmer.id} value={farmer.id}>
-                  {farmer.first_name} {farmer.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Simpan
-          </button>
-        </form>
+              Simpan
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

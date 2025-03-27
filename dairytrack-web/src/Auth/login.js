@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import "../assets/client/css/style.css";
 
-import iconLogin from "../assets/admin/images/logo-dark.png";
-// You'll need to import your right-side image from your directory
-import loginSecurityImage from "../assets/admin/images/login.png";
+import iconLogin from "../assets/client/img/logo/logo_white.png";
+import loginSecurityImage from "../assets/admin/images/login.jpg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = (e) => {
@@ -17,132 +15,138 @@ const Login = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-white">
+    <div className="d-flex justify-content-center align-items-center vh-100">
       <div className="container">
-        <div className="row">
-          {/* Left side - Login form */}
-          <div className="col-md-6 d-flex flex-column justify-content-center p-4">
-            <div className="text-start mb-4">
-              <a
-                href="/"
-                className="d-flex justify-content-center align-items-center text-decoration-none"
-              >
-                <img src={iconLogin} height="30" alt="Logo" />
-              </a>
-            </div>
-
-            <div className="mb-4 text-center">
-              <h2 className="fw-bold mb-3">Hello!</h2>
-              <p className="text-muted">
-                Sign in to access your cattle farm admin account
-              </p>
-            </div>
-
-            <form onSubmit={handleLogin}>
-              <div className="mb-3">
-                <label htmlFor="email" className="form-label fw-medium">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  className="form-control py-2"
-                  id="email"
-                  placeholder="bima@gmail.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label htmlFor="password" className="form-label fw-medium">
-                  Password
-                </label>
-                <div className="input-group">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="form-control py-2"
-                    id="password"
-                    placeholder="••••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <span
-                    className="input-group-text"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <i
-                      className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}
-                    ></i>
-                  </span>
-                </div>
-              </div>
-
-              <div className="d-flex justify-content-between mb-4">
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="rememberMe"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <label className="form-check-label" htmlFor="rememberMe">
-                    Remember me
-                  </label>
-                </div>
-                <a
-                  href="/forgot-password"
-                  className="text-decoration-none"
-                  style={{ color: "#3299FF" }}
+        <div className="row justify-content-center">
+          <div className="col-md-6 col-lg-5">
+            <div
+              className="card shadow-lg border-0"
+              style={{ borderRadius: "15px" }}
+            >
+              <div className="row g-0">
+                {/* Left side - Login form */}
+                <div
+                  className="col-md-6 d-flex flex-column justify-content-center p-4"
+                  style={{
+                    backgroundColor: "#ffffff",
+                    borderRadius: "15px 0 0 15px",
+                  }}
                 >
-                  Forgot Password
-                </a>
+                  <div className="text-center mb-2">
+                    <img src={iconLogin} height="40" alt="Logo" />
+                  </div>
+
+                  <div className="mb-1 text-center">
+                    <p className="text-muted small">
+                      Sign in to access your cattle farm admin account
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleLogin}>
+                    <div className="mb-3">
+                      <label
+                        htmlFor="email"
+                        className="form-label fw-medium small"
+                      >
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        className="form-control form-control-sm"
+                        id="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={{
+                          borderRadius: "8px",
+                          border: "1px solid #ccc",
+                          padding: "5px",
+                          transition: "0.3s ease-in-out",
+                        }}
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label
+                        htmlFor="password"
+                        className="form-label fw-medium small"
+                      >
+                        Password
+                      </label>
+                      <div className="input-group input-group-sm">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="form-control"
+                          id="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          style={{
+                            borderRadius: "8px",
+                            border: "1px solid #ccc",
+                            padding: "5px",
+                            transition: "0.3s ease-in-out",
+                          }}
+                        />
+                        <span
+                          className="input-group-text"
+                          style={{
+                            cursor: "pointer",
+                            background: "none",
+                            border: "none",
+                          }}
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          <i
+                            className={
+                              showPassword ? "fa fa-eye-slash" : "fa fa-eye"
+                            }
+                            style={{ fontSize: "1rem", color: "#666" }}
+                          ></i>
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn w-100 py-2 mb-2"
+                      style={{
+                        background: "#34C8D3FF",
+                        color: "white",
+                        borderRadius: "8px",
+                        fontWeight: "bold",
+                        transition: "0.3s",
+                      }}
+                      onMouseOver={(e) =>
+                        (e.target.style.background = "#34C8D3FF")
+                      }
+                      onMouseOut={(e) =>
+                        (e.target.style.background = "#34C8D3FF")
+                      }
+                    >
+                      Sign in
+                    </button>
+                  </form>
+                </div>
+
+                {/* Right side - Image */}
+                <div className="col-md-5 d-none d-md-block">
+                  <div className="d-flex justify-content-center align-items-center h-100">
+                    <img
+                      src={loginSecurityImage}
+                      alt="Login Security"
+                      className="img-fluid"
+                      style={{
+                        borderRadius: "0 15px 15px 0",
+                        maxHeight: "80%", // Reduce height to 80% of the container
+                        maxWidth: "80%", // Reduce width to 80% of the container
+                        width: "auto", // Maintain aspect ratio
+                        objectFit: "cover", // Scale the image to cover the container
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-
-              <button
-                type="submit"
-                className="btn w-100 py-2 mb-3"
-                style={{ backgroundColor: "#3299FF", color: "white" }}
-              >
-                Sign in
-              </button>
-            </form>
-
-            <div className="text-center mt-3">
-              <p>
-                Don't have an account?{" "}
-                <a href="/sign-up" style={{ color: "#3299FF" }}>
-                  Sign up
-                </a>
-              </p>
-            </div>
-
-            <div className="text-center mt-3">
-              <p className="text-muted">Or login with</p>
-              <button className="btn btn-outline-secondary w-100">
-                <img
-                  src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
-                  alt="Google"
-                  height="20"
-                  className="me-2"
-                />
-                Google
-              </button>
-            </div>
-          </div>
-
-          {/* Right side - Image */}
-          <div className="col-md-6 d-flex align-items-center justify-content-center bg-light rounded-4">
-            <div className="p-4 text-center">
-              {/* Replace this comment with your image from your directory */}
-              <img
-                src={loginSecurityImage}
-                alt="Login Security"
-                className="img-fluid"
-              />
             </div>
           </div>
         </div>

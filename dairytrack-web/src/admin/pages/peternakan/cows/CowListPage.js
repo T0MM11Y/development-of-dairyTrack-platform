@@ -4,14 +4,18 @@ import { useNavigate } from "react-router-dom";
 
 const CowListPage = () => {
   const [cows, setCows] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const data = await getCows();
       setCows(data);
     } catch (error) {
       console.error("Gagal mengambil data sapi:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,7 +45,14 @@ const CowListPage = () => {
         </button>
       </div>
 
-      {cows.length === 0 ? (
+      {loading ? (
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+          <p className="mt-2">Loading cow data...</p>
+        </div>
+      ) : cows.length === 0 ? (
         <p className="text-gray-500">No cow data available.</p>
       ) : (
         <div className="col-lg-12">
@@ -97,15 +108,15 @@ const CowListPage = () => {
                           )}
                         </td>
                         <td>{cow.lactation_phase || "-"}</td>
-                        <td className="whitespace-nowrap">
+                        <td className="">
                           <button
-                            className="btn btn-warning waves-effect waves-light mr-2"
+                            className="btn btn-warning waves-effect waves-light mr-5"
                             onClick={() =>
                               navigate(`/admin/peternakan/sapi/edit/${cow.id}`)
                             }
                             aria-label={`Edit cow ${cow.name}`}
                           >
-                            Edit
+                            <i class="ri-edit-line"></i>
                           </button>
 
                           <button
@@ -113,7 +124,7 @@ const CowListPage = () => {
                             className="btn btn-danger waves-effect waves-light"
                             aria-label={`Delete cow ${cow.name}`}
                           >
-                            Delete
+                            <i class=" ri-delete-bin-6-line"></i>
                           </button>
                         </td>
                       </tr>
