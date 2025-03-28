@@ -4,16 +4,27 @@ import { Link } from "react-router-dom";
 
 const SymptomListPage = () => {
   const [data, setData] = useState([]);
+  const [error, setError] = useState(""); // TAMBAHAN: state untuk error
 
   const fetchData = async () => {
-    const res = await getSymptoms();
-    setData(res);
+    try {
+      const res = await getSymptoms();
+      setData(res);
+      setError(""); // reset error jika berhasil
+    } catch (err) {
+      console.error("Gagal mengambil data gejala:", err.message);
+      setError("Gagal mengambil data gejala. Pastikan server API aktif.");
+    }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Hapus data ini?")) {
-      await deleteSymptom(id);
-      fetchData();
+      try {
+        await deleteSymptom(id);
+        fetchData();
+      } catch (err) {
+        alert("Gagal menghapus data: " + err.message);
+      }
     }
   };
 
@@ -33,7 +44,13 @@ const SymptomListPage = () => {
         </Link>
       </div>
 
-      {data.length === 0 ? (
+      {error && (
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      {data.length === 0 && !error ? (
         <p className="text-gray-500">Belum ada data gejala.</p>
       ) : (
         <div className="overflow-auto">
