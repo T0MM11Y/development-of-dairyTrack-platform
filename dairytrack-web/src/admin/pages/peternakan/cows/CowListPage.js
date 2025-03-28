@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getCows, deleteCow } from "../../../../api/peternakan/cow";
-import { useNavigate } from "react-router-dom";
+import CowCreatePage from "./CowCreatePage";
+import CowEditPage from "./CowEditPage";
 
 const CowListPage = () => {
   const [cows, setCows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [modalType, setModalType] = useState(null); // "create" | "edit"
+  const [editCowId, setEditCowId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -33,14 +35,24 @@ const CowListPage = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setModalType(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Cow Data</h2>
-        <button
-          onClick={() => navigate("/admin/peternakan/sapi/create")}
-          className="btn btn-info waves-effect waves-light"
-        >
+        <button onClick={() => setModalType("create")} className="btn btn-info">
           + Add Cow
         </button>
       </div>
@@ -59,13 +71,6 @@ const CowListPage = () => {
           <div className="card">
             <div className="card-body">
               <h4 className="card-title">Cow Data</h4>
-              <p className="card-title-desc">
-                This table provides a comprehensive list of cows registered on
-                the farm. You can view detailed information such as name, breed,
-                birth date, and lactation status. The table uses alternating row
-                colors for better readability.
-              </p>
-
               <div className="table-responsive">
                 <table className="table table-striped mb-0">
                   <thead>
@@ -94,43 +99,75 @@ const CowListPage = () => {
                         <td>{cow.reproductive_status}</td>
                         <td>{cow.gender}</td>
                         <td>{cow.entry_date}</td>
-                        <td>
-                          {cow.lactation_status ? (
-                            <div className="d-flex align-items-center">
-                              <i className="ri-checkbox-blank-circle-fill font-size-10 text-success align-middle me-2"></i>
-                              <span className="text-black">Yes</span>
-                            </div>
-                          ) : (
-                            <div className="d-flex align-items-center">
-                              <i className="ri-checkbox-blank-circle-fill font-size-10 text-warning align-middle me-2"></i>
-                              <span className="text-black">No</span>
-                            </div>
-                          )}
-                        </td>
+                        <td>{cow.lactation_status ? "Yes" : "No"}</td>
                         <td>{cow.lactation_phase || "-"}</td>
-                        <td className="">
-                          <button
-                            className="btn btn-warning waves-effect waves-light mr-5"
-                            onClick={() =>
-                              navigate(`/admin/peternakan/sapi/edit/${cow.id}`)
-                            }
-                            aria-label={`Edit cow ${cow.name}`}
-                          >
-                            <i class="ri-edit-line"></i>
-                          </button>
 
+                        <td>
+                          <button
+                            className="btn btn-warning me-2"
+                            onClick={() => {
+                              setEditCowId(cow.id);
+                              setModalType("edit");
+                            }}
+                          >
+                            <i className="ri-edit-line"></i>
+                          </button>
                           <button
                             onClick={() => handleDelete(cow.id)}
-                            className="btn btn-danger waves-effect waves-light"
-                            aria-label={`Delete cow ${cow.name}`}
+                            className="btn btn-danger"
                           >
-                            <i class=" ri-delete-bin-6-line"></i>
+                            <i className="ri-delete-bin-6-line"></i>
                           </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal */}
+      {modalType && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          role="dialog"
+          onClick={() => setModalType(null)}
+        >
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {modalType === "create" ? "Tambah Sapi" : "Edit Sapi"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setModalType(null)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {modalType === "create" ? (
+                  <CowCreatePage
+                    onCowAdded={() => {
+                      fetchData();
+                      setModalType(null); // Ini penting untuk menutup modal
+                    }}
+                    onClose={() => setModalType(null)} // Tambahkan ini untuk menutup modal
+                  />
+                ) : (
+                  <CowEditPage
+                    cowId={editCowId}
+                    onCowUpdated={() => {
+                      fetchData();
+                      setModalType(null);
+                    }}
+                    onClose={() => setModalType(null)} // Tambahkan ini
+                  />
+                )}
               </div>
             </div>
           </div>
