@@ -5,8 +5,6 @@ import "simplebar-react/dist/simplebar.min.css";
 const Sidebar = () => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
-  // Start with the sidebar collapsed by default
-  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) =>
@@ -17,38 +15,16 @@ const Sidebar = () => {
   const isMenuOpen = (key) => openMenus.includes(key);
   const isActive = (path) => location.pathname.startsWith(path);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   useEffect(() => {
-    // Apply the styles when component mounts and when sidebar state changes
     const content = document.querySelector(".main-content");
     if (content) {
-      // When collapsed, content takes up more space (remains in place but expands)
-      content.style.marginLeft = isCollapsed ? "90px" : "250px";
-      content.style.width = isCollapsed
-        ? "calc(100% - 90px)"
-        : "calc(100% - 250px)";
-      content.style.transition = "all 0.3s ease-in-out";
+      content.style.marginLeft = "250px";
+      content.style.width = "calc(100% - 250px)";
     }
 
-    // Apply this effect on component mount to ensure default collapsed state
-  }, [isCollapsed]);
-
-  // Run this effect only once when component mounts
-  useEffect(() => {
-    // Set the initial state for the sidebar and content
-    const content = document.querySelector(".main-content");
-    if (content) {
-      content.style.marginLeft = "90px";
-      content.style.width = "calc(100% - 90px)";
-    }
-
-    // Also add styles to the sidebar
     const sidebar = document.querySelector(".vertical-menu");
     if (sidebar) {
-      sidebar.style.width = "90px";
+      sidebar.style.width = "250px";
     }
   }, []);
 
@@ -56,7 +32,7 @@ const Sidebar = () => {
     <div
       className="vertical-menu"
       style={{
-        width: isCollapsed ? "90px" : "250px",
+        width: "250px",
         transition: "width 0.3s ease-in-out",
       }}
     >
@@ -70,23 +46,17 @@ const Sidebar = () => {
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className={isActive("/admin/dashboard") ? "mm-active" : ""}>
-              <Link
-                to="/admin/dashboard"
-                className={`waves-effect ${isCollapsed ? "text-center" : ""}`}
-              >
+              <Link to="/admin/dashboard" className="waves-effect d-flex">
                 <i className="ri-dashboard-line"></i>
-                {!isCollapsed && <span>Dashboard</span>}
+                <span>Dashboard</span>
               </Link>
             </li>
 
-            {/* Peternakan  */}
-
+            {/* Peternakan */}
             <li className={isMenuOpen("peternakan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${
-                  isCollapsed ? "text-center" : ""
-                } d-flex justify-content-between align-items-center`}
+                className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("peternakan");
@@ -95,21 +65,20 @@ const Sidebar = () => {
               >
                 <div>
                   <i className="ri-bar-chart-box-line"></i>
-                  {!isCollapsed && <span>Peternakan</span>}
+                  <span>Peternakan</span>
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                <i className="ri-arrow-down-s-line"></i>
               </Link>
-              {isMenuOpen("peternakan") && !isCollapsed && (
+              {isMenuOpen("peternakan") && (
                 <ul
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
                 >
-                  {" "}
                   <li>
                     <Link
-                      to="/admin/peternakan/peternak"
+                      to="/admin/peternakan/farmer"
                       className={
-                        isActive("/admin/peternakan/peternak") ? "active" : ""
+                        isActive("/admin/peternakan/farmer") ? "active" : ""
                       }
                     >
                       <i className="ri-line-chart-line"></i> Data Peternak
@@ -125,6 +94,16 @@ const Sidebar = () => {
                       <i className="ri-file-list-3-line"></i> Data Sapi
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      to="/admin/peternakan/supervisor"
+                      className={
+                        isActive("/admin/peternakan/supervisor") ? "active" : ""
+                      }
+                    >
+                      <i className="ri-file-list-3-line"></i> Data Supervisor
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>
@@ -133,9 +112,7 @@ const Sidebar = () => {
             <li className={isMenuOpen("pakan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${
-                  isCollapsed ? "text-center" : ""
-                } d-flex justify-content-between align-items-center`}
+                className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("pakan");
@@ -144,11 +121,11 @@ const Sidebar = () => {
               >
                 <div>
                   <i className="ri-restaurant-line"></i>
-                  {!isCollapsed && <span>Pakan Sapi</span>}
+                  <span>Pakan Sapi</span>
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                <i className="ri-arrow-down-s-line"></i>
               </Link>
-              {isMenuOpen("pakan") && !isCollapsed && (
+              {isMenuOpen("pakan") && (
                 <ul
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
@@ -179,9 +156,7 @@ const Sidebar = () => {
             <li className={isMenuOpen("produktivitas") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${
-                  isCollapsed ? "text-center" : ""
-                } d-flex justify-content-between align-items-center`}
+                className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("produktivitas");
@@ -190,11 +165,11 @@ const Sidebar = () => {
               >
                 <div>
                   <i className="ri-bar-chart-box-line"></i>
-                  {!isCollapsed && <span>Produktivitas Susu</span>}
+                  <span>Produktivitas Susu</span>
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                <i className="ri-arrow-down-s-line"></i>
               </Link>
-              {isMenuOpen("produktivitas") && !isCollapsed && (
+              {isMenuOpen("produktivitas") && (
                 <ul
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
@@ -227,9 +202,7 @@ const Sidebar = () => {
             <li className={isMenuOpen("kesehatan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${
-                  isCollapsed ? "text-center" : ""
-                } d-flex justify-content-between align-items-center`}
+                className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("kesehatan");
@@ -238,12 +211,12 @@ const Sidebar = () => {
               >
                 <div>
                   <i className="ri-hospital-line"></i>
-                  {!isCollapsed && <span>Kesehatan Sapi</span>}
+                  <span>Kesehatan Sapi</span>
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                <i className="ri-arrow-down-s-line"></i>
               </Link>
 
-              {isMenuOpen("kesehatan") && !isCollapsed && (
+              {isMenuOpen("kesehatan") && (
                 <ul
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
@@ -298,9 +271,7 @@ const Sidebar = () => {
             <li className={isMenuOpen("keuangan") ? "mm-active" : ""}>
               <Link
                 to="#"
-                className={`waves-effect ${
-                  isCollapsed ? "text-center" : ""
-                } d-flex justify-content-between align-items-center`}
+                className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
                   toggleSubmenu("keuangan");
@@ -309,11 +280,11 @@ const Sidebar = () => {
               >
                 <div>
                   <i className="ri-money-dollar-circle-line"></i>
-                  {!isCollapsed && <span>Keuangan</span>}
+                  <span>Keuangan</span>
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                <i className="ri-arrow-down-s-line"></i>
               </Link>
-              {isMenuOpen("keuangan") && !isCollapsed && (
+              {isMenuOpen("keuangan") && (
                 <ul
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
@@ -353,27 +324,6 @@ const Sidebar = () => {
             </li>
           </ul>
         </div>
-      </div>
-
-      {/* Add toggle button to the bottom of sidebar */}
-      <div
-        className="text-center py-3"
-        style={{
-          position: "absolute",
-          bottom: "0",
-          width: "100%",
-          borderTop: "1px solid rgba(0,0,0,0.1)",
-        }}
-      >
-        <button
-          onClick={toggleSidebar}
-          className="btn btn-sm btn-light"
-          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-        >
-          <i
-            className={`ri-arrow-${isCollapsed ? "right" : "left"}-s-line`}
-          ></i>
-        </button>
       </div>
     </div>
   );

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 // Import images
+import logoBlack from "../../assets/client/img/logo/logo_black.png";
+import logoWhite from "../../assets/client/img/logo/logo_white.png";
 import logoSm from "../../assets/admin/images/logo-sm.png";
 import logoDark from "../../assets/admin/images/logo-dark.png";
 import logoLight from "../../assets/admin/images/logo-light.png";
@@ -13,7 +15,6 @@ const Header = () => {
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Default expanded
 
   // Refs
   const notificationDropdownRef = useRef(null);
@@ -56,20 +57,6 @@ const Header = () => {
     }
   };
 
-  const toggleVerticalMenu = () => {
-    const newState = !isSidebarCollapsed;
-    setIsSidebarCollapsed(newState);
-
-    // Update main content
-    const content = document.querySelector(".main-content");
-    if (content) {
-      content.style.marginLeft = newState ? "90px" : "250px";
-      content.style.width = newState
-        ? "calc(100% - 90px)"
-        : "calc(100% - 250px)";
-    }
-  };
-
   const toggleNotificationDropdown = (e) => {
     e.stopPropagation();
     setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
@@ -86,50 +73,25 @@ const Header = () => {
     <header id="page-topbar" className="header">
       <div className="navbar-header">
         <div className="d-flex align-items-center w-100">
-          {/* Logo - Default expanded */}
-          <div
-            className="navbar-brand-box"
-            style={{ width: isSidebarCollapsed ? "90px" : "250px" }}
-          >
+          {/* Logo */}
+          <div className="navbar-brand-box">
             <Link to="/" className="logo logo-dark">
-              <span
-                className="logo-sm"
-                style={{ display: isSidebarCollapsed ? "block" : "none" }}
-              >
-                <img src={logoSm} alt="logo-sm" height="22" />
+              <span className="logo-sm">
+                <img src={logoSm} alt="logo-sm" height="24" />
               </span>
-              <span
-                className="logo-lg"
-                style={{ display: isSidebarCollapsed ? "none" : "block" }}
-              >
-                <img src={logoDark} alt="logo-dark" height="20" />
+              <span className="logo-lg">
+                <img src={logoDark} alt="logo-dark" height="22" />
               </span>
             </Link>
             <Link to="/" className="logo logo-light">
-              <span
-                className="logo-sm"
-                style={{ display: isSidebarCollapsed ? "block" : "none" }}
-              >
-                <img src={logoSm} alt="logo-sm-light" height="22" />
+              <span className="logo-sm">
+                <img src={logoSm} alt="logo-sm-light" height="24" />
               </span>
-              <span
-                className="logo-lg"
-                style={{ display: isSidebarCollapsed ? "none" : "block" }}
-              >
-                <img src={logoLight} alt="logo-light" height="20" />
+              <span className="logo-lg">
+                <img src={logoLight} alt="logo-light" height="22" />
               </span>
             </Link>
           </div>
-
-          {/* Menu Toggle Button */}
-          <button
-            type="button"
-            className="btn btn-sm px-3 font-size-24 header-item waves-effect me-3"
-            id="vertical-menu-btn"
-            onClick={toggleVerticalMenu}
-          >
-            <i className="ri-menu-2-line align-middle"></i>
-          </button>
 
           {/* Search Form */}
           <form
@@ -190,84 +152,8 @@ const Header = () => {
               className={`dropdown-menu dropdown-menu-end ${
                 isNotificationDropdownOpen ? "show" : ""
               }`}
-              style={{
-                position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-225px, 70px)",
-                width: "380px",
-                padding: "0",
-              }}
             >
-              <div className="p-3 border-bottom">
-                <div className="row align-items-center">
-                  <div className="col">
-                    <h5 className="m-0" style={{ fontSize: "1.1rem" }}>
-                      Notifications
-                    </h5>
-                  </div>
-                  <div className="col-auto">
-                    <a href="#!" className="small text-primary">
-                      View All
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div
-                style={{ maxHeight: "350px", overflowY: "auto" }}
-                className="p-3"
-              >
-                <div className="text-reset notification-item d-block p-3">
-                  <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <div className="avatar-md">
-                        <span className="avatar-title bg-primary rounded-circle">
-                          <i className="ri-message-3-line fs-4"></i>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-grow-1">
-                      <h6 className="mt-0 mb-2 fs-6 fw-semibold">
-                        New message received
-                      </h6>
-                      <div className="text-muted">
-                        <p className="mb-1">You have 87 unread messages</p>
-                        <p className="mb-0 small text-muted">3 min ago</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-reset notification-item d-block p-3">
-                  <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <div className="avatar-md">
-                        <span className="avatar-title bg-success rounded-circle">
-                          <i className="ri-bar-chart-line fs-4"></i>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-grow-1">
-                      <h6 className="mt-0 mb-2 fs-6 fw-semibold">
-                        Feed Usage Report
-                      </h6>
-                      <div className="text-muted">
-                        <p className="mb-1">26,200 kg Feed Used</p>
-                        <p className="mb-0 small text-muted">Today</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-3 border-top">
-                <div className="d-grid">
-                  <a
-                    className="btn btn-link font-size-14 text-center py-2"
-                    href="#!"
-                  >
-                    <i className="ri-arrow-right-s-line me-1"></i> VIEW MORE
-                  </a>
-                </div>
-              </div>
+              {/* Notification content */}
             </div>
           </div>
 
@@ -293,33 +179,8 @@ const Header = () => {
               className={`dropdown-menu dropdown-menu-end ${
                 isUserDropdownOpen ? "show" : ""
               }`}
-              style={{
-                position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-45px, 70px)",
-              }}
             >
-              <a className="dropdown-item" href="#">
-                <i className="ri-user-line align-middle me-1"></i> Profile
-              </a>
-              <a className="dropdown-item" href="#">
-                <i className="ri-wallet-2-line align-middle me-1"></i> My Wallet
-              </a>
-              <a className="dropdown-item d-block" href="#">
-                <span className="badge bg-success float-end mt-1">11</span>
-                <i className="ri-settings-2-line align-middle me-1"></i>{" "}
-                Settings
-              </a>
-              <a className="dropdown-item" href="#">
-                <i className="ri-lock-unlock-line align-middle me-1"></i> Lock
-                screen
-              </a>
-              <div className="dropdown-divider"></div>
-              <Link to="/logout" className="dropdown-item">
-                <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
-                Logout
-              </Link>
+              {/* User dropdown content */}
             </div>
           </div>
         </div>

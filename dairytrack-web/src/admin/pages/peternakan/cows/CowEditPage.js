@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { getCowById, updateCow } from "../../../../api/peternakan/cow";
-import { getFarmers } from "../../../../api/peternakan/peternak";
+import { getFarmers } from "../../../../api/peternakan/farmer";
 
-const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
+const CowEditPage = ({ cowId, onClose, onCowUpdated }) => {
   const [form, setForm] = useState(null);
   const [error, setError] = useState("");
   const [farmers, setFarmers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +40,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       await updateCow(cowId, form);
       onCowUpdated();
@@ -46,19 +48,25 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
     } catch (err) {
       console.error("Failed to update cow:", err);
       setError("Gagal memperbarui data sapi. Coba lagi!");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div
       className="modal show d-block"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
     >
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Edit Data Sapi</h4>
-            <button className="btn-close" onClick={onClose}></button>
+            <button
+              className="btn-close"
+              onClick={onClose}
+              disabled={submitting}
+            ></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -76,6 +84,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       onChange={handleChange}
                       required
                       className="form-control"
+                      disabled={submitting}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -85,6 +94,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       className="form-control"
                       value={form.breed}
                       readOnly
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -101,6 +111,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       onChange={handleChange}
                       required
                       className="form-control"
+                      disabled={submitting}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -113,6 +124,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       required
                       className="form-control"
                       min="0"
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -127,6 +139,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       value={form.reproductive_status}
                       onChange={handleChange}
                       className="form-select"
+                      disabled={submitting}
                     >
                       <option value="Pregnant">Pregnant</option>
                       <option value="Open">Open</option>
@@ -143,6 +156,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       onChange={handleChange}
                       required
                       className="form-control"
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -157,6 +171,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       value={form.lactation_phase}
                       onChange={handleChange}
                       className="form-select"
+                      disabled={submitting}
                     >
                       <option value="Early">Early</option>
                       <option value="Mid">Mid</option>
@@ -172,6 +187,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                       onChange={handleChange}
                       className="form-select"
                       required
+                      disabled={submitting || loading}
                     >
                       <option value="">Pilih Peternak</option>
                       {farmers.map((farmer) => (
@@ -190,6 +206,7 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                     name="lactation_status"
                     checked={form.lactation_status}
                     onChange={handleChange}
+                    disabled={submitting}
                   />
                   <label className="form-check-label fw-semibold">
                     Status Laktasi Aktif
@@ -199,8 +216,9 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
                 <button
                   type="submit"
                   className="btn btn-info w-100 fw-semibold"
+                  disabled={submitting}
                 >
-                  Perbarui Data
+                  {submitting ? "Memperbarui..." : "Perbarui Data"}
                 </button>
               </form>
             )}
@@ -211,4 +229,4 @@ const CowEditModal = ({ cowId, onClose, onCowUpdated }) => {
   );
 };
 
-export default CowEditModal;
+export default CowEditPage;

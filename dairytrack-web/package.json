@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "apexcharts": "^4.5.0",
     "bootstrap": "^5.3.3",
+    "classnames": "^2.5.1",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",

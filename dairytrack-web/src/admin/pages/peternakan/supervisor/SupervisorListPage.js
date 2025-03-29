@@ -1,42 +1,45 @@
 import { useEffect, useState } from "react";
-import { getCows, deleteCow } from "../../../../api/peternakan/cow";
-import CowCreatePage from "./CowCreatePage";
-import CowEditPage from "./CowEditPage";
+import {
+  getSupervisors,
+  deleteSupervisor,
+} from "../../../../api/peternakan/supervisor";
+import SupervisorCreatePage from "./SupervisorCreatePage";
+import SupervisorEditPage from "./SupervisorEditPage";
 
-const CowListPage = () => {
-  const [cows, setCows] = useState([]);
+const SupervisorListPage = () => {
+  const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState(null); // "create" | "edit" | "delete"
-  const [editCowId, setEditCowId] = useState(null);
-  const [deleteCowId, setDeleteCowId] = useState(null);
+  const [editSupervisorId, setEditSupervisorId] = useState(null);
+  const [deleteSupervisorId, setDeleteSupervisorId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const data = await getCows();
-      setCows(data);
+      const data = await getSupervisors();
+      setSupervisors(data);
     } catch (error) {
-      console.error("Gagal mengambil data sapi:", error.message);
+      console.error("Failed to fetch supervisors:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!deleteCowId) return;
+    if (!deleteSupervisorId) return;
 
     setSubmitting(true);
     try {
-      await deleteCow(deleteCowId);
+      await deleteSupervisor(deleteSupervisorId);
       fetchData();
       setModalType(null);
     } catch (error) {
-      console.error("Gagal menghapus sapi:", error.message);
-      alert("Gagal menghapus sapi: " + error.message);
+      console.error("Failed to delete supervisor:", error.message);
+      alert("Failed to delete supervisor: " + error.message);
     } finally {
       setSubmitting(false);
-      setDeleteCowId(null);
+      setDeleteSupervisorId(null);
     }
   };
 
@@ -57,16 +60,18 @@ const CowListPage = () => {
     };
   }, []);
 
-  const getSelectedCow = () => {
-    return cows.find((cow) => cow.id === deleteCowId);
+  const getSelectedSupervisor = () => {
+    return supervisors.find(
+      (supervisor) => supervisor.id === deleteSupervisorId
+    );
   };
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Cow Data</h2>
+        <h2 className="text-xl font-bold text-gray-800">Supervisor Data</h2>
         <button onClick={() => setModalType("create")} className="btn btn-info">
-          + Add Cow
+          + Add Supervisor
         </button>
       </div>
 
@@ -75,50 +80,40 @@ const CowListPage = () => {
           <div className="spinner-border text-primary" role="status">
             <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-2">Loading cow data...</p>
+          <p className="mt-2">Loading supervisor data...</p>
         </div>
-      ) : cows.length === 0 ? (
-        <p className="text-gray-500">No cow data available.</p>
+      ) : supervisors.length === 0 ? (
+        <p className="text-gray-500">No supervisor data available.</p>
       ) : (
         <div className="col-lg-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">Cow Data</h4>
+              <h4 className="card-title">Supervisor Data</h4>
               <div className="table-responsive">
                 <table className="table table-striped mb-0">
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Name</th>
-                      <th>Breed</th>
-                      <th>Birth Date</th>
-                      <th>Weight (kg)</th>
-                      <th>Reproductive Status</th>
-                      <th>Gender</th>
-                      <th>Entry Date</th>
-                      <th>Lactation Status</th>
-                      <th>Lactation Phase</th>
+                      <th>Email</th>
+                      <th>First Name</th>
+                      <th>Last Name</th>
+                      <th>Contact</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {cows.map((cow, index) => (
-                      <tr key={cow.id}>
+                    {supervisors.map((supervisor, index) => (
+                      <tr key={supervisor.id}>
                         <th scope="row">{index + 1}</th>
-                        <td>{cow.name}</td>
-                        <td>{cow.breed}</td>
-                        <td>{cow.birth_date}</td>
-                        <td>{cow.weight_kg}</td>
-                        <td>{cow.reproductive_status}</td>
-                        <td>{cow.gender}</td>
-                        <td>{cow.entry_date}</td>
-                        <td>{cow.lactation_status ? "Yes" : "No"}</td>
-                        <td>{cow.lactation_phase || "-"}</td>
+                        <td>{supervisor.email}</td>
+                        <td>{supervisor.first_name}</td>
+                        <td>{supervisor.last_name}</td>
+                        <td>{supervisor.contact}</td>
                         <td>
                           <button
                             className="btn btn-warning me-2"
                             onClick={() => {
-                              setEditCowId(cow.id);
+                              setEditSupervisorId(supervisor.id);
                               setModalType("edit");
                             }}
                           >
@@ -126,7 +121,7 @@ const CowListPage = () => {
                           </button>
                           <button
                             onClick={() => {
-                              setDeleteCowId(cow.id);
+                              setDeleteSupervisorId(supervisor.id);
                               setModalType("delete");
                             }}
                             className="btn btn-danger"
@@ -157,7 +152,9 @@ const CowListPage = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {modalType === "create" ? "Tambah Sapi" : "Edit Sapi"}
+                  {modalType === "create"
+                    ? "Add Supervisor"
+                    : "Edit Supervisor"}
                 </h5>
                 <button
                   type="button"
@@ -168,17 +165,17 @@ const CowListPage = () => {
               </div>
               <div className="modal-body">
                 {modalType === "create" ? (
-                  <CowCreatePage
-                    onCowAdded={() => {
+                  <SupervisorCreatePage
+                    onSupervisorAdded={() => {
                       fetchData();
                       setModalType(null);
                     }}
                     onClose={() => setModalType(null)}
                   />
                 ) : (
-                  <CowEditPage
-                    cowId={editCowId}
-                    onCowUpdated={() => {
+                  <SupervisorEditPage
+                    supervisorId={editSupervisorId}
+                    onSupervisorUpdated={() => {
                       fetchData();
                       setModalType(null);
                     }}
@@ -204,7 +201,7 @@ const CowListPage = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
+                <h5 className="modal-title text-danger">Delete Confirmation</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -214,10 +211,10 @@ const CowListPage = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Apakah Anda yakin ingin menghapus sapi{" "}
-                  <strong>{getSelectedCow()?.name || "ini"}</strong>?
+                  Are you sure you want to delete supervisor{" "}
+                  <strong>{getSelectedSupervisor()?.email || "this"}</strong>?
                   <br />
-                  Data yang sudah dihapus tidak dapat dikembalikan.
+                  This action cannot be undone.
                 </p>
               </div>
               <div className="modal-footer">
@@ -227,7 +224,7 @@ const CowListPage = () => {
                   onClick={() => setModalType(null)}
                   disabled={submitting}
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -242,10 +239,10 @@ const CowListPage = () => {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      Menghapus...
+                      Deleting...
                     </>
                   ) : (
-                    "Hapus"
+                    "Delete"
                   )}
                 </button>
               </div>
@@ -257,4 +254,4 @@ const CowListPage = () => {
   );
 };
 
-export default CowListPage;
+export default SupervisorListPage;

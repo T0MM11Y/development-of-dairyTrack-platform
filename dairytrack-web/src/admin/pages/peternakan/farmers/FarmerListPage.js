@@ -1,42 +1,42 @@
 import { useEffect, useState } from "react";
-import { getCows, deleteCow } from "../../../../api/peternakan/cow";
-import CowCreatePage from "./CowCreatePage";
-import CowEditPage from "./CowEditPage";
+import { getFarmers, deleteFarmer } from "../../../../api/peternakan/farmer";
+import FarmerCreatePage from "./FarmerCreatePage";
+import FarmerEditPage from "./FarmerEditPage";
 
-const CowListPage = () => {
-  const [cows, setCows] = useState([]);
+const FarmerListPage = () => {
+  const [farmers, setFarmers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState(null); // "create" | "edit" | "delete"
-  const [editCowId, setEditCowId] = useState(null);
-  const [deleteCowId, setDeleteCowId] = useState(null);
+  const [editFarmerId, setEditFarmerId] = useState(null);
+  const [deleteFarmerId, setDeleteFarmerId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const data = await getCows();
-      setCows(data);
+      const data = await getFarmers();
+      setFarmers(data);
     } catch (error) {
-      console.error("Gagal mengambil data sapi:", error.message);
+      console.error("Failed to fetch farmers:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!deleteCowId) return;
+    if (!deleteFarmerId) return;
 
     setSubmitting(true);
     try {
-      await deleteCow(deleteCowId);
+      await deleteFarmer(deleteFarmerId);
       fetchData();
       setModalType(null);
     } catch (error) {
-      console.error("Gagal menghapus sapi:", error.message);
-      alert("Gagal menghapus sapi: " + error.message);
+      console.error("Failed to delete farmer:", error.message);
+      alert("Failed to delete farmer: " + error.message);
     } finally {
       setSubmitting(false);
-      setDeleteCowId(null);
+      setDeleteFarmerId(null);
     }
   };
 
@@ -57,16 +57,16 @@ const CowListPage = () => {
     };
   }, []);
 
-  const getSelectedCow = () => {
-    return cows.find((cow) => cow.id === deleteCowId);
+  const getSelectedFarmer = () => {
+    return farmers.find((farmer) => farmer.id === deleteFarmerId);
   };
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Cow Data</h2>
+        <h2 className="text-xl font-bold text-gray-800">Farmer Data</h2>
         <button onClick={() => setModalType("create")} className="btn btn-info">
-          + Add Cow
+          + Add Farmer
         </button>
       </div>
 
@@ -75,50 +75,54 @@ const CowListPage = () => {
           <div className="spinner-border text-primary" role="status">
             <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-2">Loading cow data...</p>
+          <p className="mt-2">Loading Farmer Data...</p>
         </div>
-      ) : cows.length === 0 ? (
-        <p className="text-gray-500">No cow data available.</p>
+      ) : farmers.length === 0 ? (
+        <p className="text-gray-500">No Farmer data available.</p>
       ) : (
         <div className="col-lg-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">Cow Data</h4>
+              <h4 className="card-title">Farmer Data</h4>
               <div className="table-responsive">
                 <table className="table table-striped mb-0">
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Name</th>
-                      <th>Breed</th>
+                      <th>Email</th>
+                      <th>First Name</th>
+                      <th>Last Name</th>
                       <th>Birth Date</th>
-                      <th>Weight (kg)</th>
-                      <th>Reproductive Status</th>
+                      <th>Contact</th>
+                      <th>Religion</th>
+                      <th>Address</th>
                       <th>Gender</th>
-                      <th>Entry Date</th>
-                      <th>Lactation Status</th>
-                      <th>Lactation Phase</th>
+                      <th>Total Cattle</th>
+                      <th>Join Date</th>
+                      <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {cows.map((cow, index) => (
-                      <tr key={cow.id}>
+                    {farmers.map((farmer, index) => (
+                      <tr key={farmer.id}>
                         <th scope="row">{index + 1}</th>
-                        <td>{cow.name}</td>
-                        <td>{cow.breed}</td>
-                        <td>{cow.birth_date}</td>
-                        <td>{cow.weight_kg}</td>
-                        <td>{cow.reproductive_status}</td>
-                        <td>{cow.gender}</td>
-                        <td>{cow.entry_date}</td>
-                        <td>{cow.lactation_status ? "Yes" : "No"}</td>
-                        <td>{cow.lactation_phase || "-"}</td>
+                        <td>{farmer.email}</td>
+                        <td>{farmer.first_name}</td>
+                        <td>{farmer.last_name}</td>
+                        <td>{farmer.birth_date}</td>
+                        <td>{farmer.contact}</td>
+                        <td>{farmer.religion}</td>
+                        <td>{farmer.address}</td>
+                        <td>{farmer.gender}</td>
+                        <td>{farmer.total_cattle}</td>
+                        <td>{farmer.join_date}</td>
+                        <td>{farmer.status}</td>
                         <td>
                           <button
                             className="btn btn-warning me-2"
                             onClick={() => {
-                              setEditCowId(cow.id);
+                              setEditFarmerId(farmer.id);
                               setModalType("edit");
                             }}
                           >
@@ -126,7 +130,7 @@ const CowListPage = () => {
                           </button>
                           <button
                             onClick={() => {
-                              setDeleteCowId(cow.id);
+                              setDeleteFarmerId(farmer.id);
                               setModalType("delete");
                             }}
                             className="btn btn-danger"
@@ -157,7 +161,7 @@ const CowListPage = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {modalType === "create" ? "Tambah Sapi" : "Edit Sapi"}
+                  {modalType === "create" ? "Add Farmer" : "Edit Farmer"}
                 </h5>
                 <button
                   type="button"
@@ -168,17 +172,17 @@ const CowListPage = () => {
               </div>
               <div className="modal-body">
                 {modalType === "create" ? (
-                  <CowCreatePage
-                    onCowAdded={() => {
+                  <FarmerCreatePage
+                    onFarmerAdded={() => {
                       fetchData();
                       setModalType(null);
                     }}
                     onClose={() => setModalType(null)}
                   />
                 ) : (
-                  <CowEditPage
-                    cowId={editCowId}
-                    onCowUpdated={() => {
+                  <FarmerEditPage
+                    farmerId={editFarmerId}
+                    onFarmerUpdated={() => {
                       fetchData();
                       setModalType(null);
                     }}
@@ -204,7 +208,7 @@ const CowListPage = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
+                <h5 className="modal-title text-danger">Delete Confirmation</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -214,10 +218,10 @@ const CowListPage = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Apakah Anda yakin ingin menghapus sapi{" "}
-                  <strong>{getSelectedCow()?.name || "ini"}</strong>?
+                  Are you sure you want to delete farmer{" "}
+                  <strong>{getSelectedFarmer()?.first_name || "this"}</strong>?
                   <br />
-                  Data yang sudah dihapus tidak dapat dikembalikan.
+                  Deleted data cannot be recovered.
                 </p>
               </div>
               <div className="modal-footer">
@@ -227,7 +231,7 @@ const CowListPage = () => {
                   onClick={() => setModalType(null)}
                   disabled={submitting}
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -242,10 +246,10 @@ const CowListPage = () => {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      Menghapus...
+                      Deleting...
                     </>
                   ) : (
-                    "Hapus"
+                    "Delete"
                   )}
                 </button>
               </div>
@@ -257,4 +261,4 @@ const CowListPage = () => {
   );
 };
 
-export default CowListPage;
+export default FarmerListPage;

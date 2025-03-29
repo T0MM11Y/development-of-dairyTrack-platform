@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { createCow } from "../../../../api/peternakan/cow";
 import { useNavigate } from "react-router-dom";
-import { getFarmers } from "../../../../api/peternakan/peternak";
+import { getFarmers } from "../../../../api/peternakan/farmer";
 
 const CowCreatePage = ({ onCowAdded, onClose }) => {
-  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     breed: "Girolando",
@@ -20,6 +19,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
   const [error, setError] = useState("");
   const [farmers, setFarmers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchFarmers = async () => {
@@ -47,8 +47,11 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
-      await createCow(form);
+      const cowData = { ...form, farmer_id: Number(form.farmer) };
+      console.log("Submitting cow data:", cowData);
+      await createCow(cowData);
       if (onCowAdded) onCowAdded();
       onClose();
     } catch (err) {
@@ -56,19 +59,25 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
       setError(
         err.response?.data?.message || "Gagal membuat data sapi. Coba lagi!"
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div
       className="modal show d-block"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
     >
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Data Sapi</h4>
-            <button className="btn-close" onClick={onClose}></button>
+            <button
+              className="btn-close"
+              onClick={onClose}
+              disabled={submitting}
+            ></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -197,8 +206,12 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                     Status Laktasi Aktif
                   </label>
                 </div>
-                <button type="submit" className="btn btn-info w-100">
-                  Simpan
+                <button
+                  type="submit"
+                  className="btn btn-info w-100"
+                  disabled={submitting}
+                >
+                  {submitting ? "Menyimpan..." : "Simpan"}
                 </button>
               </form>
             )}

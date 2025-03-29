@@ -30,6 +30,14 @@ import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
 import CowCreatePage from "./admin/pages/peternakan/cows/CowCreatePage.js";
 import CowEditPage from "./admin/pages/peternakan/cows/CowEditPage.js";
 
+import FarmerListPage from "./admin/pages/peternakan/farmers/FarmerListPage.js";
+import FarmerCreatePage from "./admin/pages/peternakan/farmers/FarmerCreatePage.js";
+import FarmerEditPage from "./admin/pages/peternakan/farmers/FarmerEditPage.js";
+
+import SupervisorListPage from "./admin/pages/peternakan/supervisor/SupervisorListPage.js";
+import SupervisorCreatePage from "./admin/pages/peternakan/supervisor/SupervisorCreatePage.js";
+import SupervisorEditPage from "./admin/pages/peternakan/supervisor/SupervisorEditPage.js";
+
 // Symptoms
 import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage.js";
 import SymptomCreatePage from "./admin/pages/kesehatan/symptoms/SymptomCreatePage.js";
@@ -110,6 +118,34 @@ function App() {
       <Route
         path="/admin/peternakan/sapi/edit/:id"
         element={withAdminLayout(CowEditPage)}
+      />
+
+      {/* Admin peternakan - Farmers */}
+      <Route
+        path="/admin/peternakan/farmer"
+        element={withAdminLayout(FarmerListPage)}
+      />
+      <Route
+        path="/admin/peternakan/farmer/create"
+        element={withAdminLayout(FarmerCreatePage)}
+      />
+      <Route
+        path="/admin/peternakan/farmer/edit/:id"
+        element={withAdminLayout(FarmerEditPage)}
+      />
+
+      {/* Admin peternakan - Supervisor */}
+      <Route
+        path="/admin/peternakan/supervisor"
+        element={withAdminLayout(SupervisorListPage)}
+      />
+      <Route
+        path="/admin/peternakan/supervisor/create"
+        element={withAdminLayout(SupervisorCreatePage)}
+      />
+      <Route
+        path="/admin/peternakan/supervisor/edit/:id"
+        element={withAdminLayout(SupervisorEditPage)}
       />
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route
