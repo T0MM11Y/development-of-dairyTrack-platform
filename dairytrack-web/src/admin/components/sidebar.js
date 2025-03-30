@@ -18,13 +18,13 @@ const Sidebar = () => {
   useEffect(() => {
     const content = document.querySelector(".main-content");
     if (content) {
-      content.style.marginLeft = "250px";
-      content.style.width = "calc(100% - 250px)";
+      content.style.marginLeft = "200px"; // Sesuaikan dengan lebar sidebar
+      content.style.width = "calc(100% - 200px)"; // Sesuaikan dengan lebar sidebar
     }
 
     const sidebar = document.querySelector(".vertical-menu");
     if (sidebar) {
-      sidebar.style.width = "250px";
+      sidebar.style.width = "200px"; // Lebar sidebar yang baru
     }
   }, []);
 
@@ -32,7 +32,7 @@ const Sidebar = () => {
     <div
       className="vertical-menu"
       style={{
-        width: "250px",
+        width: "200px", // Lebar sidebar yang baru
         transition: "width 0.3s ease-in-out",
       }}
     >
