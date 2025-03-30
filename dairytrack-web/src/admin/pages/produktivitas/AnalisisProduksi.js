@@ -107,12 +107,15 @@ const AnalisisProduksi = () => {
             style={{
               marginBottom: "20px",
               display: "flex",
-              justifyContent: "center",
+              justifyContent: "flex-end",
               alignItems: "center",
               gap: "10px",
             }}
           >
-            <label htmlFor="timeFilter" style={{ fontWeight: "bold" }}>
+            <label
+              htmlFor="timeFilter"
+              style={{ fontWeight: "bold", color: "#555" }}
+            >
               Filter Waktu:
             </label>
             <select

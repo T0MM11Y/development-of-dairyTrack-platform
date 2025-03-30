@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "simplebar-react/dist/simplebar.min.css";
+import avatar1 from "../../assets/admin/images/users/toon_9.png"; // Import gambar avatar
 
 const Sidebar = () => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
+
+  // Data statis untuk nama dan email
+  const userData = {
+    name: "Christian Yehezkil",
+    email: "tiantomm@example.com",
+  };
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) =>
@@ -18,13 +25,13 @@ const Sidebar = () => {
   useEffect(() => {
     const content = document.querySelector(".main-content");
     if (content) {
-      content.style.marginLeft = "200px"; // Sesuaikan dengan lebar sidebar
-      content.style.width = "calc(100% - 200px)"; // Sesuaikan dengan lebar sidebar
+      content.style.marginLeft = "225px"; // Sesuaikan dengan lebar sidebar
+      content.style.width = "calc(100% - 225px)"; // Sesuaikan dengan lebar sidebar
     }
 
     const sidebar = document.querySelector(".vertical-menu");
     if (sidebar) {
-      sidebar.style.width = "200px"; // Lebar sidebar yang baru
+      sidebar.style.width = "225px"; // Lebar sidebar yang baru
     }
   }, []);
 
@@ -43,6 +50,42 @@ const Sidebar = () => {
           overflowY: "auto",
         }}
       >
+        {/* Avatar dan Email */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "20px",
+            borderBottom: "1px solid #ddd",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              marginRight: "10px",
+            }}
+          >
+            <img
+              src={avatar1}
+              alt="Avatar"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+          <div>
+            <div style={{ fontWeight: "bold" }}>{userData.name}</div>
+            <div style={{ fontSize: "12px", color: "#666" }}>
+              {userData.email}
+            </div>
+          </div>
+        </div>
+
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className={isActive("/admin/dashboard") ? "mm-active" : ""}>

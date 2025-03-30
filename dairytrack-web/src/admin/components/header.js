@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 // Import images
-import logoBlack from "../../assets/client/img/logo/logo_black.png";
-import logoWhite from "../../assets/client/img/logo/logo_white.png";
+
 import logoSm from "../../assets/admin/images/logo-sm.png";
 import logoDark from "../../assets/admin/images/logo-dark.png";
 import logoLight from "../../assets/admin/images/logo-light.png";
-import avatar1 from "../../assets/admin/images/users/avatar-1.jpg";
+import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
 const Header = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -171,7 +170,7 @@ const Header = () => {
                 src={avatar1}
                 alt="Header Avatar"
               />
-              <span className="d-none d-xl-inline-block ms-1">JHON</span>
+              <span className="d-none d-xl-inline-block ms-1">Kiel</span>
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div
