@@ -13,16 +13,16 @@ import Header from "./components/header";
 import Content from "./components/content";
 import Footer from "./components/footer";
 
-function UserApp() {
+const withUserLayout = (Component) => {
   return (
     <div className="user-app">
       <Header />
       <div className="user-body">
-        <Content />
+        <Component />
       </div>
       <Footer />
     </div>
   );
-}
+};
 
-export default UserApp;
+export default withUserLayout;

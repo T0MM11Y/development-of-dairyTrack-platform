@@ -3,7 +3,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 
 // Public
 import Login from "./Auth/login";
-import UserApp from "./user/UserApp";
+import withUserLayout from "./user/withUserLayout";
 
 // Admin Layout
 import Header from "./admin/components/header";
@@ -62,6 +62,14 @@ import "./assets/admin/css/bootstrap.min.css";
 
 import "simplebar-react/dist/simplebar.min.css";
 
+// User Pages
+import IdentitasPeternakanPage from "./user/pages/IdentitasPeternakanPage";
+import SejarahPage from "./user/pages/SejarahPage";
+import FasilitasPage from "./user/pages/FasilitasPage";
+import ProduksiSusuPage from "./user/pages/ProduksiSusuPage";
+import ProdukPage from "./user/pages/ProdukPage";
+import GaleriPage from "./user/pages/GaleriPage";
+import DashboardUser from "./user/pages/Dashboard";
 // Admin Layout Wrapper
 const withAdminLayout = (Component) => (
   <div id="layout-wrapper">
@@ -79,10 +87,18 @@ const withAdminLayout = (Component) => (
 function App() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<UserApp />} />
+       {/* Public Routes */}
+      <Route path="/" element={withUserLayout(DashboardUser)} />
+      <Route path="/logout" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/logout" element={<UserApp />} />
+       {/* User Routes */}
+      <Route path="/dashboard" element={withUserLayout(DashboardUser)} />
+      <Route path="/sejarah" element={withUserLayout(SejarahPage)} />
+      <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
+      <Route path="/produksi-susu" element={withUserLayout(ProduksiSusuPage)} />
+      <Route path="/produk" element={withUserLayout(ProdukPage)} />
+      <Route path="/galeri" element={withUserLayout(GaleriPage)} />
+      <Route path="/identitas-peternakan" element={withUserLayout(IdentitasPeternakanPage)} />
 
       {/* Admin Default Redirect */}
       <Route
