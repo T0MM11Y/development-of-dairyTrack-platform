@@ -9,8 +9,8 @@ const Sidebar = () => {
 
   // Data statis untuk nama dan email
   const userData = {
-    name: "Christian Yehezkil",
-    email: "tiantomm@example.com",
+    name: "Gustavo Brazillian",
+    email: "gus.tavo@example.com",
   };
 
   const toggleSubmenu = (key) => {

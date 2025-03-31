@@ -25,10 +25,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "concurrently \"npm run react-start\" \"npm run flask-start\"",
+    "react-start": "react-scripts start",
+    "flask-start": "cd ../dairytrack-api/MilkProduction && flask run"
   },
   "eslintConfig": {
     "extends": [
@@ -47,5 +46,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { updateRawMilk } from "../../../api/produktivitas/rawMilk"; // Import the API function
 
 const Modal = ({
   modalType,
@@ -14,7 +15,7 @@ const Modal = ({
   const [timeLeft, setTimeLeft] = useState("");
 
   // Fungsi untuk menghitung sisa waktu
-  const calculateTimeLeft = () => {
+  const calculateTimeLeft = async () => {
     const productionTime = new Date(formData.production_time);
     const currentTime = new Date();
     const diffInMs =
@@ -22,7 +23,22 @@ const Modal = ({
 
     if (diffInMs <= 0) {
       // Jika sudah lebih dari 8 jam, ubah status menjadi expired
-      setFormData({ ...formData, status: "expired" });
+      if (formData.status !== "expired") {
+        console.log("Updating status to expired...");
+        console.log("Selected Raw Milk ID:", selectedRawMilk?.id);
+        console.log("Form Data Before Update:", formData);
+
+        try {
+          const response = await updateRawMilk(selectedRawMilk.id, {
+            ...formData,
+            status: "expired",
+          });
+          console.log("API Response:", response);
+          setFormData({ ...formData, status: "expired" });
+        } catch (error) {
+          console.error("Failed to update status to expired:", error.message);
+        }
+      }
       return "Expired";
     }
 
@@ -33,12 +49,13 @@ const Modal = ({
 
   // Perbarui sisa waktu setiap detik
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+    const interval = setInterval(async () => {
+      const time = await calculateTimeLeft();
+      setTimeLeft(time);
     }, 1000); // Perbarui setiap 1 detik
 
     // Hitung waktu saat pertama kali render
-    setTimeLeft(calculateTimeLeft());
+    calculateTimeLeft().then(setTimeLeft);
 
     return () => clearInterval(interval); // Bersihkan interval saat komponen unmount
   }, [formData.production_time]);

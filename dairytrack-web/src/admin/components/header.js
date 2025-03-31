@@ -134,10 +134,9 @@ const Header = () => {
             </button>
           </div>
 
-          {/* Notifications Dropdown */}
-          <div className="dropdown d-inline-block me-4">
+          {/* Notifications dropdown */}
+          <div className="dropdown d-inline-block">
             <button
-              ref={notificationButtonRef}
               type="button"
               className="btn header-item noti-icon waves-effect"
               id="page-header-notifications-dropdown"
@@ -147,12 +146,101 @@ const Header = () => {
               <span className="noti-dot"></span>
             </button>
             <div
-              ref={notificationDropdownRef}
-              className={`dropdown-menu dropdown-menu-end ${
+              className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
                 isNotificationDropdownOpen ? "show" : ""
               }`}
+              style={{
+                position: "absolute",
+                inset: "0px auto auto 0px",
+                margin: "0px",
+                transform: "translate(-270px, 70px)",
+              }}
+              aria-labelledby="page-header-notifications-dropdown"
             >
-              {/* Notification content */}
+              <div className="p-3">
+                <div className="row align-items-center">
+                  <div className="col">
+                    <h6 className="m-0">Notifications</h6>
+                  </div>
+                  <div className="col-auto">
+                    <a href="#!" className="small">
+                      View All
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div data-simplebar style={{ maxHeight: "370px" }}>
+                <a href="" className="text-reset notification-item">
+                  <div className="d-flex">
+                    <div className="avatar-xs me-3">
+                      <span className="avatar-title bg-danger rounded-circle font-size-16">
+                        <i className="ri-shopping-cart-line"></i>
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h6 className="mb-1">Low feed stock alert</h6>
+                      <div className="font-size-12 text-muted">
+                        <p className="mb-1">
+                          Hay stock is running low. Please reorder.
+                        </p>
+                        <p className="mb-0">
+                          <i className="mdi mdi-clock-outline"></i> 3 min ago
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+                <a href="" className="text-reset notification-item">
+                  <div className="d-flex">
+                    <div className="avatar-xs me-3">
+                      <span className="avatar-title bg-success rounded-circle font-size-16">
+                        <i className="ri-checkbox-circle-line"></i>
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h6 className="mb-1">Cow health check completed</h6>
+                      <div className="font-size-12 text-muted">
+                        <p className="mb-1">
+                          Monthly health check for all cows completed.
+                        </p>
+                        <p className="mb-0">
+                          <i className="mdi mdi-clock-outline"></i> 1 hours ago
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+                <a href="" className="text-reset notification-item">
+                  <div className="d-flex">
+                    <div className="avatar-xs me-3">
+                      <span className="avatar-title bg-success rounded-circle font-size-16">
+                        <i className=" ri-arrow-up-circle-line"></i>
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h6 className="mb-1">Milk production update</h6>
+                      <div className="font-size-12 text-muted">
+                        <p className="mb-1">
+                          Today's milk production reached 500 liters, a
+                          significant 50% increase compared to yesterday.
+                        </p>
+                        <p className="mb-0">
+                          <i className="mdi mdi-clock-outline"></i> 2 hours ago
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+              <div className="p-2 border-top d-grid">
+                <a
+                  className="btn btn-sm btn-link font-size-14 text-center"
+                  href="javascript:void(0)"
+                >
+                  <i className="mdi mdi-arrow-right-circle me-1"></i> View
+                  More..
+                </a>
+              </div>
             </div>
           </div>
 
@@ -170,7 +258,7 @@ const Header = () => {
                 src={avatar1}
                 alt="Header Avatar"
               />
-              <span className="d-none d-xl-inline-block ms-1">Kiel</span>
+              <span className="d-none d-xl-inline-block ms-1">Gustavo</span>
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div
@@ -180,6 +268,27 @@ const Header = () => {
               }`}
             >
               {/* User dropdown content */}
+            </div>
+            <div
+              className={`dropdown-menu dropdown-menu-end ${
+                isUserDropdownOpen ? "show" : ""
+              }`}
+              style={{
+                position: "absolute",
+                inset: "0px auto auto 0px",
+                margin: "0px",
+                transform: "translate(-45px, 70px)",
+              }}
+            >
+              <a className="dropdown-item" href="#">
+                <i className="ri-user-line align-middle me-1"></i> Profile
+              </a>
+
+              <div className="dropdown-divider"></div>
+              <Link to="/logout" className="dropdown-item">
+                <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
+                Logout
+              </Link>
             </div>
           </div>
         </div>
