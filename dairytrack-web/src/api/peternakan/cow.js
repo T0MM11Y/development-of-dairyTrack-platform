@@ -6,11 +6,11 @@ export const getCows = () => fetchAPI("cows");
 // GET satu sapi by ID
 export const getCowById = (id) => fetchAPI(`cows/${id}`);
 
-// CREATE sapi baru
-export const createCow = (data) => fetchAPI("cows/", "POST", data);
+// CREATE sapi baru (HAPUS `/` setelah "cows")
+export const createCow = (data) => fetchAPI("cows", "POST", data);
 
-// UPDATE sapi
-export const updateCow = (id, data) => fetchAPI(`cows/${id}/`, "PUT", data);
+// UPDATE sapi (HAPUS `/` setelah ID)
+export const updateCow = (id, data) => fetchAPI(`cows/${id}`, "PUT", data);
 
-// DELETE sapi
-export const deleteCow = (id) => fetchAPI(`cows/${id}/`, "DELETE");
+// DELETE sapi (HAPUS `/` setelah ID)
+export const deleteCow = (id) => fetchAPI(`cows/${id}`, "DELETE");
