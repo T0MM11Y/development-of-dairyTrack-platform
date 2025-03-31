@@ -43,7 +43,7 @@ function Content() {
               <div className="col-xl-5 col-lg-6">
                 <div className="banner__content">
                   <h2 className="title wow fadeInUp" data-wow-delay=".2s">
-                    <span>Optimize Your Dairy Farm</span> <br /> with DairyTrack
+                    <span>Optimize Your Dairy Farm</span> <br /> with DairyTrack 
                   </h2>
                   <p className="wow fadeInUp" data-wow-delay=".4s">
                     DairyTrack is a comprehensive platform designed to
