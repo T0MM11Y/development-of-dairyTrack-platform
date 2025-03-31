@@ -66,6 +66,7 @@ const SymptomListPage = () => {
                 <th className="border px-2 py-1">Skin</th>
                 <th className="border px-2 py-1">Behavior</th>
                 <th className="border px-2 py-1">Weight</th>
+                <th className="border px-2 py-1">Temperature</th>
                 <th className="border px-2 py-1">Reproductive</th>
                 <th className="border px-2 py-1">Status</th>
                 <th className="border px-2 py-1">Aksi</th>
@@ -83,6 +84,7 @@ const SymptomListPage = () => {
                   <td className="border px-2 py-1">{item.skin_condition}</td>
                   <td className="border px-2 py-1">{item.behavior}</td>
                   <td className="border px-2 py-1">{item.weight_condition}</td>
+                  <td className="border px-2 py-1">{item.body_temperature}</td>
                   <td className="border px-2 py-1">{item.reproductive_condition}</td>
                   <td className="border px-2 py-1">{item.treatment_status}</td>
                   <td className="border px-2 py-1 space-x-2">
