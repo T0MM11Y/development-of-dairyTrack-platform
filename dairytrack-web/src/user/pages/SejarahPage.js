@@ -2,26 +2,45 @@ import React from "react";
 
 const SejarahPage = () => {
   return (
-    <div className="container py-5">
-      <h2 className="text-2xl font-bold mb-4">Sejarah & Latar Belakang</h2>
-      <p>Peternakan Sapi Sejahtera didirikan pada tahun 2005 oleh sekelompok peternak yang memiliki visi untuk menyediakan susu berkualitas tinggi di wilayah Sumatera Utara.</p>
+    <div className="container custom-container">
+      <div className="row justify-content-center">
+        <div className="col-xl-6 col-lg-8 col-md-10">
+          <div className="breadcrumb__wrap__content">
+            <h2 className="title">Case Study</h2>
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb">
+                <li className="breadcrumb-item">
+                  <a href="index.html">Home</a>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Portfolio
+                </li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </div>
 
-      <div className="mt-4">
-        <h4 className="font-semibold">Visi:</h4>
-        <p>Menjadi peternakan sapi perah terbaik dan terpercaya di Indonesia.</p>
-
-        <h4 className="font-semibold mt-3">Misi:</h4>
-        <ul className="list-disc ml-6">
-          <li>Memberikan produk susu sehat dan alami</li>
-          <li>Meningkatkan kesejahteraan peternak</li>
-          <li>Menjaga kelestarian lingkungan</li>
-        </ul>
-
-        <h4 className="font-semibold mt-3">Nilai-nilai:</h4>
-        <ul className="list-disc ml-6">
-          <li>Kesejahteraan hewan</li>
-          <li>Transparansi dan kualitas</li>
-          <li>Keberlanjutan produksi</li>
+      <div className="breadcrumb__wrap__icon">
+        <ul>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon01.png" alt="" />
+          </li>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon02.png" alt="" />
+          </li>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon03.png" alt="" />
+          </li>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon04.png" alt="" />
+          </li>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon05.png" alt="" />
+          </li>
+          <li>
+            <img src="assets/img/icons/breadcrumb_icon06.png" alt="" />
+          </li>
         </ul>
       </div>
     </div>
