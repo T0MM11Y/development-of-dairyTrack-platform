@@ -1,4 +1,4 @@
-import { fetchAPI } from "../apiClient";
+import { fetchAPI } from "../apiClient3";
 
 export const getReproductions = () => fetchAPI("reproduction/");
 export const getReproductionById = (id) => fetchAPI(`reproduction/${id}/`);
