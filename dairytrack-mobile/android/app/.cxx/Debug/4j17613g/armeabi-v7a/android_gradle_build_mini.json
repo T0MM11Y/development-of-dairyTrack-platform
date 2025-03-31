@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\T0MM11Y\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\T0MM11Y\\Documents\\TA\\C0D3~Independent\\dairy_track\\mobile_interface\\dairy_track\\android\\app\\.cxx\\Debug\\4j17613g\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\T0MM11Y\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\T0MM11Y\\Documents\\TA\\C0D3~Independent\\dairy_track\\mobile_interface\\dairy_track\\android\\app\\.cxx\\Debug\\4j17613g\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
