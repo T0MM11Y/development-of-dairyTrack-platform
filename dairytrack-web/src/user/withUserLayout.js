@@ -10,7 +10,6 @@ import "../assets/client/css/slick.css";
 import "../assets/client/css/animate.min.css";
 
 import Header from "./components/header";
-import Content from "./components/content";
 import Footer from "./components/footer";
 
 const withUserLayout = (Component) => {

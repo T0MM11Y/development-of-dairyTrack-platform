@@ -1,4 +1,4 @@
-import { fetchAPI } from "../apiClient";
+import { fetchAPI } from "../apiClient3";
 
 export const getDiseaseHistories = () => fetchAPI("disease-history/");
 export const getDiseaseHistoryById = (id) => fetchAPI(`disease-history/${id}/`);
