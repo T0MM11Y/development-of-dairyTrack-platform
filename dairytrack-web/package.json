@@ -23,6 +23,7 @@
     "recharts": "^2.15.1",
     "simplebar": "^6.3.0",
     "simplebar-react": "^3.3.0",
+    "sweetalert2": "^11.17.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -43,7 +44,7 @@
       "not dead",
       "not op_mini all"
     ],
-    "development": [
+    "development": [  
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"

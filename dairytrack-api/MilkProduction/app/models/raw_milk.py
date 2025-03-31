@@ -11,7 +11,8 @@ class RawMilk(db.Model):
     previous_volume = db.Column(db.Numeric(5, 2), nullable=True)
     status = db.Column(db.String(20), nullable=False)
     session = db.Column(db.Integer, nullable=False)  # Kolom baru untuk sesi pemerahan
-    daily_total_id = db.Column(db.Integer, db.ForeignKey('daily_milk_totals.id'), nullable=True)  # Foreign key to DailyMilkTotal
+    daily_total_id = db.Column(db.Integer, db.ForeignKey('daily_milk_totals.id'), nullable=True)
+    available_stocks = db.Column(db.Numeric(5, 2), nullable=False, default=0.0)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
@@ -42,6 +43,7 @@ class RawMilk(db.Model):
             'session': self.session,  # Tambahkan sesi ke output
             'daily_total_id': self.daily_total_id,
             'timeLeft': time_left_str,
+            'available_stocks': self.volume_liters,
             'created_at': self.created_at,
         }
 

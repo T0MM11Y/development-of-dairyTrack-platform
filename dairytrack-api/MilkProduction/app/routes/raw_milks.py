@@ -40,7 +40,9 @@ def create_raw_milk():
         volume_liters=data.get('volume_liters'),
         previous_volume=previous_volume,
         status=data.get('status', 'fresh'),
-        session=data.get('session', 1)  # Set default value for session
+        session=data.get('session', 1),  # Set default value for session
+        daily_total_id=data.get('daily_total_id'),
+        available_stocks = data.get(' available_stocks', data.get('volume_liters')),
     )
 
     db.session.add(raw_milk)
@@ -66,6 +68,7 @@ def update_raw_milk(id):
     raw_milk.previous_volume = previous_volume
     raw_milk.status = data.get('status', raw_milk.status)
     raw_milk.session = data.get('session', raw_milk.session)
+    raw_milk.available_stocks = data.get('available_stocks', raw_milk.available_stocks)
 
     db.session.commit()
     return jsonify(raw_milk.to_dict())
