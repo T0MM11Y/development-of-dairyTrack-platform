@@ -19,8 +19,10 @@ const DataProduksiSusu = () => {
     cow_id: "",
     production_time: "",
     volume_liters: "",
-    previous_volume: "",
+    previous_volume: 0,
+    last_session: 0,
     status: "fresh",
+    formDataHidden: "", // Properti baru untuk menyimpan nilai tersembunyi
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,10 +67,15 @@ const DataProduksiSusu = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const updatedFormData = {
+        ...formData,
+        session_description: formData.formDataHidden, // Gunakan formDataHidden
+      };
+
       if (modalType === "create") {
-        await createRawMilk(formData);
+        await createRawMilk(updatedFormData);
       } else if (modalType === "edit") {
-        await updateRawMilk(selectedRawMilk.id, formData);
+        await updateRawMilk(selectedRawMilk.id, updatedFormData);
       }
       fetchData();
       setModalType(null);
@@ -81,16 +88,22 @@ const DataProduksiSusu = () => {
         cow_id: "",
         production_time: "",
         volume_liters: "",
-        previous_volume: "",
+        previous_volume: 0,
+        last_session: 0,
         status: "fresh",
+        formDataHidden: "", // Reset formDataHidden
       });
     }
   };
 
   useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      formDataHidden: "Add Raw Milk for session " + (prev.last_session + 1),
+    }));
     fetchData();
     fetchCows();
-  }, []);
+  }, [formData.last_session]);
 
   const openModal = (type, rawMilk = null) => {
     setModalType(type);

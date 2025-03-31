@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 # Configure CORS
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE"])
 
-from app.models import Farmer, Cow, RawMilk, Supervisor, Admin
+from app.models import Farmer, Cow, RawMilk, Supervisor, Admin,daily_milk_total
 from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp
 
 app.register_blueprint(farmers_bp, url_prefix='/api')

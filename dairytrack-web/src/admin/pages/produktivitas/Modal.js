@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { updateRawMilk } from "../../../api/produktivitas/rawMilk"; // Import the API function
+import {
+  getRawMilksByCowId,
+  getTodayLastSessionbyCowID,
+} from "../../../api/produktivitas/rawMilk";
 
 const Modal = ({
   modalType,
@@ -12,60 +15,80 @@ const Modal = ({
   selectedRawMilk,
   submitting,
 }) => {
-  const [timeLeft, setTimeLeft] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fungsi untuk menghitung sisa waktu
-  const calculateTimeLeft = async () => {
-    const productionTime = new Date(formData.production_time);
-    const currentTime = new Date();
-    const diffInMs =
-      productionTime.getTime() + 8 * 60 * 60 * 1000 - currentTime.getTime(); // 8 jam dalam milidetik
-
-    if (diffInMs <= 0) {
-      // Jika sudah lebih dari 8 jam, ubah status menjadi expired
-      if (formData.status !== "expired") {
-        console.log("Updating status to expired...");
-        console.log("Selected Raw Milk ID:", selectedRawMilk?.id);
-        console.log("Form Data Before Update:", formData);
-
-        try {
-          const response = await updateRawMilk(selectedRawMilk.id, {
-            ...formData,
-            status: "expired",
-          });
-          console.log("API Response:", response);
-          setFormData({ ...formData, status: "expired" });
-        } catch (error) {
-          console.error("Failed to update status to expired:", error.message);
-        }
-      }
-      return "Expired";
+  // Reset formData setiap kali modalType berubah
+  useEffect(() => {
+    if (modalType) {
+      setFormData({
+        cow_id: "",
+        production_time: "",
+        volume_liters: "",
+        previous_volume: 0,
+        status: "fresh",
+      });
+    } else {
+      // Reset formData saat modal ditutup
+      setFormData({
+        cow_id: "",
+        production_time: "",
+        volume_liters: "",
+        previous_volume: 0,
+        status: "fresh",
+      });
     }
+  }, [modalType, setFormData]);
+  const fetchPreviousVolume = async (cowId) => {
+    if (!cowId) return;
 
-    const hours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+    setIsLoading(true); // Set loading to true
+    try {
+      // Panggil API untuk mendapatkan data susu terakhir
+      const rawMilks = await getRawMilksByCowId(cowId);
+      const lastMilkData = rawMilks?.[0]; // Ambil data susu terakhir
+
+      // Panggil API untuk mendapatkan session terakhir hari ini
+      const lastSession = await getTodayLastSessionbyCowID(cowId);
+
+      // Update formData dengan previous_volume dan last_session
+      setFormData((prev) => ({
+        ...prev,
+        previous_volume: lastMilkData?.volume_liters || 0,
+        last_session: lastSession.session || 0, // Update last_session
+      }));
+    } catch (error) {
+      console.error(
+        "Error fetching previous volume or last session:",
+        error.message
+      );
+
+      // Jika terjadi error, set previous_volume dan last_session ke 0
+      setFormData((prev) => ({
+        ...prev,
+        previous_volume: 0,
+        last_session: 0,
+      }));
+    } finally {
+      setIsLoading(false); // Set loading to false
+    }
   };
 
-  // Perbarui sisa waktu setiap detik
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const time = await calculateTimeLeft();
-      setTimeLeft(time);
-    }, 1000); // Perbarui setiap 1 detik
-
-    // Hitung waktu saat pertama kali render
-    calculateTimeLeft().then(setTimeLeft);
-
-    return () => clearInterval(interval); // Bersihkan interval saat komponen unmount
-  }, [formData.production_time]);
-
+    if (formData.cow_id) {
+      fetchPreviousVolume(formData.cow_id); // Panggil ulang fungsi saat cow_id berubah
+    } else {
+      // Reset previous_volume dan last_session jika cow_id kosong
+      setFormData((prev) => ({
+        ...prev,
+        previous_volume: 0,
+        last_session: 0,
+      }));
+    }
+  }, [formData.cow_id]); // Tambahkan dependensi cow_id
   return (
     <div
       className="modal fade show d-block"
-      style={{
-        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-      }}
+      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
       tabIndex="-1"
       role="dialog"
       onClick={() => setModalType(null)}
@@ -75,7 +98,7 @@ const Modal = ({
           <div className="modal-header">
             <h5 className="modal-title">
               {modalType === "create"
-                ? "Add Raw Milk"
+                ? "Add Raw Milk for session " + (formData.last_session + 1)
                 : modalType === "edit"
                 ? "Edit Raw Milk"
                 : "Delete Confirmation"}
@@ -83,17 +106,26 @@ const Modal = ({
             <button
               type="button"
               className="btn-close"
-              onClick={() => setModalType(null)}
-              disabled={submitting}
+              onClick={() => {
+                setModalType(null); // Menutup modal
+                setFormData({
+                  cow_id: "",
+                  production_time: "",
+                  volume_liters: "",
+                  previous_volume: 0,
+                  status: "fresh",
+                }); // Mereset formData
+              }}
+              disabled={submitting || isLoading}
             ></button>
           </div>
           <div className="modal-body">
-            {submitting ? (
+            {submitting || isLoading ? (
               <div className="text-center">
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p>Processing...</p>
+                <p>{submitting ? "Processing..." : "Loading data..."}</p>
               </div>
             ) : modalType === "delete" ? (
               <p>
@@ -111,6 +143,7 @@ const Modal = ({
                     onChange={(e) =>
                       setFormData({ ...formData, cow_id: e.target.value })
                     }
+                    disabled={isLoading}
                   >
                     <option value="">Select Cow</option>
                     {cows.map((cow) => (
@@ -132,6 +165,7 @@ const Modal = ({
                         production_time: e.target.value,
                       })
                     }
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="mb-3">
@@ -140,13 +174,13 @@ const Modal = ({
                     type="number"
                     className="form-control"
                     value={formData.volume_liters}
-                    step="0.01"
                     onChange={(e) =>
                       setFormData({
                         ...formData,
                         volume_liters: e.target.value,
                       })
                     }
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="mb-3">
@@ -154,43 +188,22 @@ const Modal = ({
                   <input
                     type="number"
                     className="form-control"
-                    value={formData.previous_volume}
-                    step="0.01"
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        previous_volume: e.target.value,
-                      })
-                    }
+                    value={formData.previous_volume || 0}
+                    readOnly
+                    disabled={isLoading}
                   />
                 </div>
-                <div className="mb-2">
+                <div className="mb-3">
                   <label className="form-label">Status</label>
                   <div className="d-flex align-items-center">
                     <select
                       className="form-control"
                       value={formData.status}
                       disabled
-                      style={{
-                        color: formData.status === "fresh" ? "green" : "red",
-                        fontWeight: "bold",
-                      }}
                     >
                       <option value="fresh">Fresh</option>
                       <option value="expired">Expired</option>
                     </select>
-                    <span
-                      className="ms-4"
-                      style={{
-                        color: formData.status === "fresh" ? "green" : "red",
-                        fontWeight: "bold",
-                        fontSize: "0.8rem", // Ukuran font lebih kecil
-                      }}
-                    >
-                      {formData.status === "fresh"
-                        ? `(${timeLeft} left)`
-                        : "Expired"}
-                    </span>
                   </div>
                 </div>
               </form>
@@ -200,8 +213,17 @@ const Modal = ({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setModalType(null)}
-              disabled={submitting}
+              onClick={() => {
+                setModalType(null); // Menutup modal
+                setFormData({
+                  cow_id: "",
+                  production_time: "",
+                  volume_liters: "",
+                  previous_volume: 0,
+                  status: "fresh",
+                }); // Mereset formData
+              }}
+              disabled={submitting || isLoading}
             >
               Cancel
             </button>
@@ -210,7 +232,7 @@ const Modal = ({
                 type="button"
                 className="btn btn-danger"
                 onClick={handleDelete}
-                disabled={submitting}
+                disabled={submitting || isLoading}
               >
                 {submitting ? "Deleting..." : "Delete"}
               </button>
@@ -219,7 +241,7 @@ const Modal = ({
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || isLoading}
               >
                 {submitting ? "Saving..." : "Save"}
               </button>
