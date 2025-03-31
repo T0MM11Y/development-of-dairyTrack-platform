@@ -56,6 +56,23 @@ const Header = () => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  const toggleVerticalMenu = () => {
+    const verticalMenu = document.querySelector(".vertical-menu");
+    const mainContent = document.querySelector(".main-content");
+
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    
+    if (verticalMenu && mainContent) {
+      verticalMenu.style.width = newState ? "90px" : "250px";
+      mainContent.style.marginLeft = newState ? "90px" : "250px";
+      mainContent.style.width = newState ? "calc(100% - 90px)" : "calc(100% - 250px)";
+    }
+  };
+
+>>>>>>> c5bd6d9a (api hasan)
   const toggleNotificationDropdown = (e) => {
     e.stopPropagation();
     setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
