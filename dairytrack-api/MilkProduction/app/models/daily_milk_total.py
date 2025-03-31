@@ -13,6 +13,7 @@ class DailyMilkTotal(db.Model):
     date = db.Column(db.Date, nullable=False, unique=True)  # Tanggal pemerahan
     total_volume = db.Column(db.Numeric(10, 2), nullable=False, default=0)  # Total volume susu per hari
     total_sessions = db.Column(db.Integer, nullable=False, default=0)  # Total sesi pemerahan per hari
+    cow_id = db.Column(db.Integer, db.ForeignKey('cows.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
@@ -32,14 +33,18 @@ class DailyMilkTotal(db.Model):
     def __repr__(self):
         return f"DailyMilkTotal('{self.date}', '{self.total_volume}', '{self.total_sessions}')"
 
-
-@event.listens_for(RawMilk, 'after_delete')
-def update_daily_milk_total_after_delete(mapper, connection, target):
+@event.listens_for(RawMilk, 'after_insert')
+@event.listens_for(RawMilk, 'after_update')
+def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
     # Pastikan production_time adalah objek datetime
     if isinstance(target.production_time, str):
-        try:
-            production_time = datetime.strptime(target.production_time, "%Y-%m-%dT%H:%M")
-        except ValueError:
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+            try:
+                production_time = datetime.strptime(target.production_time, fmt)
+                break
+            except ValueError:
+                continue
+        else:
             raise ValueError(f"Invalid datetime format: {target.production_time}")
     else:
         production_time = target.production_time
@@ -47,28 +52,129 @@ def update_daily_milk_total_after_delete(mapper, connection, target):
     # Ambil tanggal dari waktu produksi
     production_date = production_time.date()
 
-    # Query untuk mencari entri di tabel daily_milk_totals berdasarkan tanggal
+    # Periksa apakah entri di daily_milk_totals sudah ada untuk kombinasi tanggal dan cow_id
     daily_total = connection.execute(
-        db.select(DailyMilkTotal).where(DailyMilkTotal.date == production_date)
+        db.select(DailyMilkTotal).where(
+            DailyMilkTotal.date == production_date,
+            DailyMilkTotal.cow_id == target.cow_id
+        )
     ).fetchone()
 
-    if daily_total:
-        # Jika entri ditemukan, kurangi total volume dan jumlah sesi
-        new_total_volume = daily_total.total_volume - target.volume_liters
-        new_total_sessions = daily_total.total_sessions - 1
+    if not daily_total:
+        # Jika entri belum ada, tambahkan entri baru di daily_milk_totals
+        connection.execute(
+            db.insert(DailyMilkTotal).values(
+                date=production_date,
+                cow_id=target.cow_id,
+                total_volume=target.volume_liters,
+                total_sessions=1
+            )
+        )
 
-        # Jika total_sessions menjadi 0, hapus entri dari DailyMilkTotal
-        if new_total_sessions <= 0:
-            connection.execute(
-                db.delete(DailyMilkTotal).where(DailyMilkTotal.date == production_date)
+        # Ambil ID dari entri yang baru saja dimasukkan
+        daily_total_id = connection.execute(
+            db.select(DailyMilkTotal.id).where(
+                DailyMilkTotal.date == production_date,
+                DailyMilkTotal.cow_id == target.cow_id
             )
+        ).scalar()
+    else:
+        # Jika entri sudah ada, hitung ulang total_volume dan total_sessions
+        result = connection.execute(
+            db.select(
+                db.func.sum(RawMilk.volume_liters).label('total_volume'),
+                db.func.count(RawMilk.id).label('total_sessions')
+            ).where(
+                db.func.date(RawMilk.production_time) == production_date,
+                RawMilk.cow_id == target.cow_id
+            )
+        ).fetchone()
+
+        total_volume = result.total_volume or 0
+        total_sessions = result.total_sessions or 0
+
+        # Perbarui entri di daily_milk_totals
+        connection.execute(
+            db.update(DailyMilkTotal)
+            .where(
+                DailyMilkTotal.date == production_date,
+                DailyMilkTotal.cow_id == target.cow_id
+            )
+            .values(
+                total_volume=total_volume,
+                total_sessions=total_sessions
+            )
+        )
+
+        # Ambil ID dari daily_milk_totals
+        daily_total_id = daily_total.id
+
+    # Perbarui kolom daily_total_id di raw_milks
+    connection.execute(
+        db.update(RawMilk)
+        .where(RawMilk.id == target.id)
+        .values(daily_total_id=daily_total_id)
+    )
+
+    @event.listens_for(RawMilk, 'after_delete')
+    def update_daily_milk_total_after_delete(mapper, connection, target):
+        # Pastikan production_time adalah objek datetime
+        if isinstance(target.production_time, str):
+            for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+                try:
+                    production_time = datetime.strptime(target.production_time, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise ValueError(f"Invalid datetime format: {target.production_time}")
         else:
-            # Perbarui entri di DailyMilkTotal
-            connection.execute(
-                db.update(DailyMilkTotal)
-                .where(DailyMilkTotal.date == production_date)
-                .values(
-                    total_volume=new_total_volume,
-                    total_sessions=new_total_sessions
-                )
+            production_time = target.production_time
+    
+        # Ambil tanggal dari waktu produksi
+        production_date = production_time.date()
+    
+        # Periksa apakah entri di daily_milk_totals sudah ada untuk kombinasi tanggal dan cow_id
+        daily_total = connection.execute(
+            db.select(DailyMilkTotal).where(
+                DailyMilkTotal.date == production_date,
+                DailyMilkTotal.cow_id == target.cow_id
             )
+        ).fetchone()
+    
+        if daily_total:
+            # Hitung ulang total_volume dan total_sessions
+            result = connection.execute(
+                db.select(
+                    db.func.sum(RawMilk.volume_liters).label('total_volume'),
+                    db.func.count(RawMilk.id).label('total_sessions')
+                ).where(
+                    db.func.date(RawMilk.production_time) == production_date,
+                    RawMilk.cow_id == target.cow_id
+                )
+            ).fetchone()
+    
+            total_volume = result.total_volume or 0
+            total_sessions = result.total_sessions or 0
+    
+            if total_sessions == 0:
+                # Jika tidak ada sesi tersisa, hapus entri dari daily_milk_totals
+                connection.execute(
+                    db.delete(DailyMilkTotal).where(
+                        DailyMilkTotal.date == production_date,
+                        DailyMilkTotal.cow_id == target.cow_id
+                    )
+                )
+            else:
+                # Perbarui entri di daily_milk_totals
+                connection.execute(
+                    db.update(DailyMilkTotal)
+                    .where(
+                        DailyMilkTotal.date == production_date,
+                        DailyMilkTotal.cow_id == target.cow_id
+                    )
+                    .values(
+                        total_volume=total_volume,
+                        total_sessions=total_sessions
+                    )
+                )

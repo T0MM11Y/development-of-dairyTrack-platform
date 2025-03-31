@@ -3,6 +3,7 @@ from app import db
 from app.models import RawMilk
 from datetime import datetime, timedelta
 
+
 # Define Blueprint
 raw_milks_bp = Blueprint('raw_milks', __name__)
 
@@ -40,7 +41,7 @@ def create_raw_milk():
         volume_liters=data.get('volume_liters'),
         previous_volume=previous_volume,
         status=data.get('status', 'fresh'),
-        session=data.get('session', 1),  # Set default value for session
+        session=data.get('session' ),
         daily_total_id=data.get('daily_total_id'),
         available_stocks = data.get(' available_stocks', data.get('volume_liters')),
     )
@@ -83,7 +84,6 @@ def get_raw_milks_by_cow_id(cow_id):
     return jsonify(result)    
 
 
-
 @raw_milks_bp.route('/raw_milks/today_last_session/<int:cow_id>', methods=['GET'])
 def get_today_last_session_by_cow_id(cow_id):
     # Get today's date in YYYY-MM-DD format
@@ -99,7 +99,9 @@ def get_today_last_session_by_cow_id(cow_id):
     if last_session is None:
         last_session = 0
 
-    return jsonify({'cow_id': cow_id, 'session': last_session})
+    # Return the last session as a JSON response
+    return jsonify({'cow_id': cow_id, 'date': str(today), 'session': last_session}), 200
+
 
 @raw_milks_bp.route('/raw_milks/<int:id>', methods=['DELETE'])
 def delete_raw_milk(id):

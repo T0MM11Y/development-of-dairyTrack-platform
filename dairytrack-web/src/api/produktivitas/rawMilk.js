@@ -20,27 +20,13 @@ export const getRawMilksByCowId = async (cowId) => {
     throw error; // Lempar error agar bisa ditangani di tempat lain
   }
 };
+
 // CREATE raw milk baru
 export const createRawMilk = (data) => fetchAPI("raw_milks", "POST", data);
 
 // UPDATE raw milk
 export const updateRawMilk = (id, data) =>
   fetchAPI(`raw_milks/${id}`, "PUT", data);
-
-// GET session terakhir hari ini berdasarkan cow_id
-export const getTodayLastSessionbyCowID = async (cowId) => {
-  try {
-    // Panggil endpoint API untuk mendapatkan session terakhir hari ini
-    const response = await fetchAPI(`raw_milks/today_last_session/${cowId}`);
-    return response;
-  } catch (error) {
-    console.error(
-      `Failed to fetch today's last session for cow_id (${cowId}):`,
-      error.message
-    );
-    throw error; // Lempar error agar bisa ditangani di tempat lain
-  }
-};
 
 // DELETE raw milk
 export const deleteRawMilk = (id) => fetchAPI(`raw_milks/${id}`, "DELETE");

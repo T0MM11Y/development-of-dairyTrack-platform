@@ -1,4 +1,6 @@
 from app import db
+from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime
 
 class RawMilk(db.Model):
@@ -49,3 +51,36 @@ class RawMilk(db.Model):
 
     def __repr__(self):
         return f"RawMilk('{self.cow_id}', '{self.production_time}', 'Session {self.session}')"
+
+
+
+
+
+@db.event.listens_for(RawMilk, 'before_insert')
+def set_session_for_today(mapper, connection, target):
+    # Pastikan production_time adalah objek datetime
+    if isinstance(target.production_time, str):
+        # Coba beberapa format datetime yang mungkin
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+            try:
+                # Ubah string menjadi objek datetime
+                target.production_time = datetime.strptime(target.production_time, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            # Jika tidak ada format yang cocok, lemparkan error
+            raise ValueError(f"Invalid datetime format: {target.production_time}")
+
+    # Ambil tanggal produksi (hanya tanggal, tanpa waktu)
+    production_date = target.production_time.date()
+
+    # Hitung jumlah sesi yang sudah ada untuk cow_id pada hari itu
+    session = Session(connection)
+    session_count = session.query(func.count(RawMilk.id)).filter(
+        func.date(RawMilk.production_time) == production_date,
+        RawMilk.cow_id == target.cow_id
+    ).scalar()
+
+    # Set session berdasarkan jumlah sesi yang sudah ada + 1
+    target.session = session_count + 1
