@@ -175,6 +175,22 @@ const Sidebar = () => {
                 >
                   <li>
                     <Link
+                      to="/admin/pakan/jenis"
+                      className={isActive("/admin/pakan/jenis") ? "active" : ""}
+                    >
+                      <i className="ri-stack-line"></i> Jenis Pakan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/pakan"
+                      className={isActive("/admin/pakan") ? "active" : ""}
+                    >
+                      <i className="ri-stack-line"></i> Pakan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
                       to="/admin/pakan/harian"
                       className={
                         isActive("/admin/pakan/harian") ? "active" : ""
