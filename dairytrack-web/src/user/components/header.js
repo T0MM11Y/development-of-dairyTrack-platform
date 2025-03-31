@@ -1,11 +1,13 @@
 import React from "react";
-
-// Import images from the src folder
 import logoBlack from "../../assets/client/img/logo/logo_black.png";
 import logoWhite from "../../assets/client/img/logo/logo_white.png";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 function Header() {
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
+
   return (
     <header>
       <div id="sticky-header" className="menu__area transparent-header">
@@ -18,60 +20,46 @@ function Header() {
               <div className="menu__wrap">
                 <nav className="menu__nav">
                   <div className="logo">
-                    <a href="index.html" className="logo__black">
+                    <Link to="/" className="logo__black">
                       <img src={logoBlack} alt="Logo Black" />
-                    </a>
-                    <a href="index.html" className="logo__white">
+                    </Link>
+                    <Link to="/" className="logo__white">
                       <img src={logoWhite} alt="Logo White" />
-                    </a>
+                    </Link>
                   </div>
+
                   <div className="navbar__wrap main__menu d-none d-xl-flex">
                     <ul className="navigation">
-                      <li className="active">
-                        <a href="index.html">Home</a>
+                      <li className={isActive("/") ? "active" : ""}>
+                        <Link to="/">Home</Link>
                       </li>
-                      <li>
-                        <a href="about.html">About</a>
+                      <li className={isActive("/identitas-peternakan") ? "active" : ""}>
+                        <Link to="/identitas-peternakan">Identitas</Link>
                       </li>
-                      <li>
-                        <a href="services-details.html">Services</a>
+                      <li className={isActive("/sejarah") ? "active" : ""}>
+                        <Link to="/sejarah">Sejarah</Link>
                       </li>
-                      <li className="menu-item-has-children">
-                        <a href="#">Portfolio</a>
-                        <ul className="sub-menu">
-                          <li>
-                            <a href="portfolio.html">Portfolio</a>
-                          </li>
-                          <li>
-                            <a href="portfolio-details.html">
-                              Portfolio Details
-                            </a>
-                          </li>
-                        </ul>
+                      <li className={isActive("/fasilitas") ? "active" : ""}>
+                        <Link to="/fasilitas">Fasilitas</Link>
                       </li>
-                      <li className="menu-item-has-children">
-                        <a href="#">Our Blog</a>
-                        <ul className="sub-menu">
-                          <li>
-                            <a href="blog.html">Our News</a>
-                          </li>
-                          <li>
-                            <a href="blog-details.html">News Details</a>
-                          </li>
-                        </ul>
+                      <li className={isActive("/produksi-susu") ? "active" : ""}>
+                        <Link to="/produksi-susu">Produksi Susu</Link>
                       </li>
-                      <li>
-                        <a href="contact.html">Contact Me</a>
+                      <li className={isActive("/produk") ? "active" : ""}>
+                        <Link to="/produk">Produk</Link>
+                      </li>
+                      <li className={isActive("/galeri") ? "active" : ""}>
+                        <Link to="/galeri">Galeri</Link>
                       </li>
                     </ul>
                   </div>
+
                   <div className="header__btn d-none d-md-block">
-                    <Link to="/login" className="btn">
-                      Login
-                    </Link>
+                    <Link to="/login" className="btn">Login</Link>
                   </div>
                 </nav>
               </div>
+
               {/* Mobile Menu */}
               <div className="mobile__menu">
                 <nav className="menu__box">
@@ -79,49 +67,35 @@ function Header() {
                     <i className="fal fa-times"></i>
                   </div>
                   <div className="nav-logo">
-                    <a href="index.html" className="logo__black">
+                    <Link to="/" className="logo__black">
                       <img src={logoBlack} alt="Logo Black" />
-                    </a>
-                    <a href="index.html" className="logo__white">
+                    </Link>
+                    <Link to="/" className="logo__white">
                       <img src={logoWhite} alt="Logo White" />
-                    </a>
+                    </Link>
                   </div>
-                  <div className="menu__outer">
-                    {/* Here Menu Will Come Automatically Via Javascript / Same Menu as in Header */}
-                  </div>
+                  <ul className="navigation clearfix">
+                    <li><Link to="/">Home</Link></li>
+                    <li><Link to="/identitas-peternakan">Identitas</Link></li>
+                    <li><Link to="/sejarah">Sejarah</Link></li>
+                    <li><Link to="/fasilitas">Fasilitas</Link></li>
+                    <li><Link to="/produksi-susu">Produksi Susu</Link></li>
+                    <li><Link to="/produk">Produk</Link></li>
+                    <li><Link to="/galeri">Galeri</Link></li>
+                    <li><Link to="/login">Login</Link></li>
+                  </ul>
                   <div className="social-links">
                     <ul className="clearfix">
-                      <li>
-                        <a href="#">
-                          <span className="fab fa-twitter"></span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <span className="fab fa-facebook-square"></span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <span className="fab fa-pinterest-p"></span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <span className="fab fa-instagram"></span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#">
-                          <span className="fab fa-youtube"></span>
-                        </a>
-                      </li>
+                      <li><button><span className="fab fa-twitter"></span></button></li>
+                      <li><button><span className="fab fa-facebook-square"></span></button></li>
+                      <li><button><span className="fab fa-pinterest-p"></span></button></li>
+                      <li><button><span className="fab fa-instagram"></span></button></li>
+                      <li><button><span className="fab fa-youtube"></span></button></li>
                     </ul>
                   </div>
                 </nav>
               </div>
               <div className="menu__backdrop"></div>
-              {/* End Mobile Menu */}
             </div>
           </div>
         </div>
