@@ -13,12 +13,8 @@ import Footer from "./admin/components/footer";
 // Admin Pages
 import Dashboard from "./admin/pages/dashboard/Dashboard";
 
-import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
-import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
-import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
-import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js"
-import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
-import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
+import PakanHarian from "./admin/pages/pakan/PakanHarian";
+import StokPakan from "./admin/pages/pakan/StokPakan";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
@@ -95,13 +91,12 @@ function App() {
       />
 
       {/* Admin Routes */}
-      <Route path="/admin/pakan/jenis" element={withAdminLayout(JenisPakan)} />
-      <Route path="/admin/pakan/jenis/tambah" element={withAdminLayout(TambahJenisPakan)} />
       <Route path="/admin/dashboard" element={withAdminLayout(Dashboard)} />
-      <Route path="/admin/pakan" element={withAdminLayout(Pakan)} />
-      <Route path="/admin/pakan/tambah" element={withAdminLayout(TambahPakan)} />
+      <Route
+        path="/admin/pakan/harian"
+        element={withAdminLayout(PakanHarian)}
+      />
       <Route path="/admin/pakan/stok" element={withAdminLayout(StokPakan)} />
-      <Route path="/admin/pakan/tambah-stok" element={withAdminLayout(TambahStokPakan)} />
       <Route
         path="/admin/susu/produksi"
         element={withAdminLayout(DataProduksiSusu)}

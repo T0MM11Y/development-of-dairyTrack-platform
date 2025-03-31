@@ -6,17 +6,12 @@ import avatar1 from "../../assets/admin/images/users/toon_9.png"; // Import gamb
 const Sidebar = () => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
-<<<<<<< HEAD
 
   // Data statis untuk nama dan email
   const userData = {
     name: "Gustavo Brazillian",
     email: "gus.tavo@example.com",
   };
-=======
-  // Start with the sidebar EXPANDED by default
-  const [isCollapsed, setIsCollapsed] = useState(false);
->>>>>>> c5bd6d9a (api hasan)
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) =>
@@ -30,7 +25,6 @@ const Sidebar = () => {
   useEffect(() => {
     const content = document.querySelector(".main-content");
     if (content) {
-<<<<<<< HEAD
       content.style.marginLeft = "225px"; // Sesuaikan dengan lebar sidebar
       content.style.width = "calc(100% - 225px)"; // Sesuaikan dengan lebar sidebar
     }
@@ -38,26 +32,6 @@ const Sidebar = () => {
     const sidebar = document.querySelector(".vertical-menu");
     if (sidebar) {
       sidebar.style.width = "225px"; // Lebar sidebar yang baru
-=======
-      // Adjust content margin and width based on sidebar state
-      content.style.marginLeft = isCollapsed ? "90px" : "250px";
-      content.style.width = isCollapsed
-        ? "calc(100% - 90px)"
-        : "calc(100% - 250px)";
-      content.style.transition = "all 0.3s ease-in-out";
-    }
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    // Set the initial state for the sidebar and content
-    const content = document.querySelector(".main-content");
-    const sidebar = document.querySelector(".vertical-menu");
-
-    if (content && sidebar) {
-      content.style.marginLeft = "250px";
-      content.style.width = "calc(100% - 250px)";
-      sidebar.style.width = "250px";
->>>>>>> c5bd6d9a (api hasan)
     }
   }, []);
 
@@ -199,22 +173,6 @@ const Sidebar = () => {
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
                 >
-                  <li>
-                    <Link
-                      to="/admin/pakan/jenis"
-                      className={isActive("/admin/pakan/jenis") ? "active" : ""}
-                    >
-                      <i className="ri-stack-line"></i> Jenis Pakan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/admin/pakan"
-                      className={isActive("/admin/pakan") ? "active" : ""}
-                    >
-                      <i className="ri-stack-line"></i> Pakan
-                    </Link>
-                  </li>
                   <li>
                     <Link
                       to="/admin/pakan/harian"
