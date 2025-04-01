@@ -13,6 +13,7 @@
     "bootstrap": "^5.3.3",
     "classnames": "^2.5.1",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.6.3",
     "i18next": "^24.2.3",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",

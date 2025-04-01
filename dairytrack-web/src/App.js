@@ -83,13 +83,10 @@ const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
       <div id="layout-wrapper">
-        <Header />
-        <Sidebar />
         <div className="main-content">
           <div className="content px-12">
             <Component />
           </div>
-          <Footer />
         </div>
       </div>
     );
@@ -105,285 +102,313 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={withUserLayout(DashboardUser)} />
-      <Route path="/logout" element={<Navigate to="/" replace />} />
-      <Route path="/login" element={<Login />} />
+    <div id="layout-wrapper">
+      <Header />
+      <Sidebar /> {/* Sidebar dipindahkan ke luar Routes */}
+      <div className="main-content">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={withUserLayout(DashboardUser)} />
+          <Route path="/logout" element={<Navigate to="/" replace />} />
+          <Route path="/login" element={<Login />} />
 
-      {/* User Routes */}
-      <Route path="/dashboard" element={withUserLayout(DashboardUser)} />
-      <Route path="/sejarah" element={withUserLayout(SejarahPage)} />
-      <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
-      <Route path="/produksi-susu" element={withUserLayout(ProduksiSusuPage)} />
-      <Route path="/produk" element={withUserLayout(ProdukPage)} />
-      <Route path="/galeri" element={withUserLayout(GaleriPage)} />
-      <Route
-        path="/identitas-peternakan"
-        element={withUserLayout(IdentitasPeternakanPage)}
-      />
-      <Route path="/contact-us" element={withUserLayout(ContactUs)} />
+          {/* User Routes */}
+          <Route path="/dashboard" element={withUserLayout(DashboardUser)} />
+          <Route path="/sejarah" element={withUserLayout(SejarahPage)} />
+          <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
+          <Route
+            path="/produksi-susu"
+            element={withUserLayout(ProduksiSusuPage)}
+          />
+          <Route path="/produk" element={withUserLayout(ProdukPage)} />
+          <Route path="/galeri" element={withUserLayout(GaleriPage)} />
+          <Route
+            path="/identitas-peternakan"
+            element={withUserLayout(IdentitasPeternakanPage)}
+          />
+          <Route path="/contact-us" element={withUserLayout(ContactUs)} />
 
-      {/* Admin Routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <Navigate to="/admin/dashboard" replace />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/dashboard"
-        element={<ProtectedRoute>{withAdminLayout(Dashboard)}</ProtectedRoute>}
-      />
-
-      <Route
-        path="/admin/pakan/jenis"
-        element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
-      />
-      <Route
-        path="/admin/pakan/jenis/tambah"
-        element={
-          <ProtectedRoute>{withAdminLayout(TambahJenisPakan)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/pakan"
-        element={<ProtectedRoute>{withAdminLayout(Pakan)}</ProtectedRoute>}
-      />
-      <Route
-        path="/admin/pakan/tambah"
-        element={
-          <ProtectedRoute>{withAdminLayout(TambahPakan)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/pakan/stok"
-        element={<ProtectedRoute>{withAdminLayout(StokPakan)}</ProtectedRoute>}
-      />
-      <Route
-        path="/admin/pakan/tambah-stok"
-        element={
-          <ProtectedRoute>{withAdminLayout(TambahStokPakan)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/pakan-harian"
-        element={
-          <ProtectedRoute>{withAdminLayout(PakanHarian)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/tambah/pakan-harian"
-        element={
-          <ProtectedRoute>{withAdminLayout(TambahPakanHarian)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/detail-pakan-harian"
-        element={
-          <ProtectedRoute>{withAdminLayout(DetailPakanHarian)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/tambah/detail-pakan-harian"
-        element={
-          <ProtectedRoute>{withAdminLayout(TambahDetailPakan)}</ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/susu/produksi"
-        element={
-          <ProtectedRoute>{withAdminLayout(DataProduksiSusu)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/susu/analisis"
-        element={
-          <ProtectedRoute>{withAdminLayout(AnalisisProduksi)}</ProtectedRoute>
-        }
-      />
-
-      {/* Admin peternakan - Sapi */}
-      <Route
-        path="/admin/peternakan/sapi"
-        element={
-          <ProtectedRoute>{withAdminLayout(CowListPage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/sapi/create"
-        element={
-          <ProtectedRoute>{withAdminLayout(CowCreatePage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/sapi/edit/:id"
-        element={
-          <ProtectedRoute>{withAdminLayout(CowEditPage)}</ProtectedRoute>
-        }
-      />
-
-      {/* Admin peternakan - Farmers */}
-      <Route
-        path="/admin/peternakan/farmer"
-        element={
-          <ProtectedRoute>{withAdminLayout(FarmerListPage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/farmer/create"
-        element={
-          <ProtectedRoute>{withAdminLayout(FarmerCreatePage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/farmer/edit/:id"
-        element={
-          <ProtectedRoute>{withAdminLayout(FarmerEditPage)}</ProtectedRoute>
-        }
-      />
-
-      {/* Admin peternakan - Supervisor */}
-      <Route
-        path="/admin/peternakan/supervisor"
-        element={
-          <ProtectedRoute>{withAdminLayout(SupervisorListPage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/supervisor/create"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(SupervisorCreatePage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/peternakan/supervisor/edit/:id"
-        element={
-          <ProtectedRoute>{withAdminLayout(SupervisorEditPage)}</ProtectedRoute>
-        }
-      />
-
-      {/* Admin Kesehatan - Pemeriksaan */}
-      <Route
-        path="/admin/kesehatan/pemeriksaan"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(HealthCheckListPage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/pemeriksaan/create"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(HealthCheckCreatePage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/pemeriksaan/edit/:id"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(HealthCheckEditPage)}
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Admin Kesehatan - Gejala */}
-      <Route
-        path="/admin/kesehatan/gejala"
-        element={
-          <ProtectedRoute>{withAdminLayout(SymptomListPage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/gejala/create"
-        element={
-          <ProtectedRoute>{withAdminLayout(SymptomCreatePage)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/gejala/edit/:id"
-        element={
-          <ProtectedRoute>{withAdminLayout(SymptomEditPage)}</ProtectedRoute>
-        }
-      />
-
-      {/* Admin Kesehatan - Riwayat Penyakit */}
-      <Route
-        path="/admin/kesehatan/riwayat"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(DiseaseHistoryListPage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/riwayat/create"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(DiseaseHistoryCreatePage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/riwayat/edit/:id"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(DiseaseHistoryEditPage)}
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Admin Kesehatan - Reproduksi */}
-      <Route
-        path="/admin/kesehatan/reproduksi"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(ReproductionListPage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/reproduksi/create"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(ReproductionCreatePage)}
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/kesehatan/reproduksi/edit/:id"
-        element={
-          <ProtectedRoute>
-            {withAdminLayout(ReproductionEditPage)}
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/keuangan/pemasukan"
-        element={<ProtectedRoute>{withAdminLayout(Pemasukan)}</ProtectedRoute>}
-      />
-      <Route
-        path="/admin/keuangan/pengeluaran"
-        element={
-          <ProtectedRoute>{withAdminLayout(Pengeluaran)}</ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/keuangan/laporan"
-        element={
-          <ProtectedRoute>{withAdminLayout(LaporanKeuangan)}</ProtectedRoute>
-        }
-      />
-    </Routes>
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/admin/dashboard" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>{withAdminLayout(Dashboard)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan/jenis"
+            element={
+              <ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan/jenis/tambah"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(TambahJenisPakan)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan"
+            element={<ProtectedRoute>{withAdminLayout(Pakan)}</ProtectedRoute>}
+          />
+          <Route
+            path="/admin/pakan/tambah"
+            element={
+              <ProtectedRoute>{withAdminLayout(TambahPakan)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan/stok"
+            element={
+              <ProtectedRoute>{withAdminLayout(StokPakan)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan/tambah-stok"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(TambahStokPakan)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pakan-harian"
+            element={
+              <ProtectedRoute>{withAdminLayout(PakanHarian)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/tambah/pakan-harian"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(TambahPakanHarian)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/detail-pakan-harian"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(DetailPakanHarian)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/tambah/detail-pakan-harian"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(TambahDetailPakan)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/susu/produksi"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(DataProduksiSusu)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/susu/analisis"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(AnalisisProduksi)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/sapi"
+            element={
+              <ProtectedRoute>{withAdminLayout(CowListPage)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/sapi/create"
+            element={
+              <ProtectedRoute>{withAdminLayout(CowCreatePage)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/sapi/edit/:id"
+            element={
+              <ProtectedRoute>{withAdminLayout(CowEditPage)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/farmer"
+            element={
+              <ProtectedRoute>{withAdminLayout(FarmerListPage)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/farmer/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(FarmerCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/farmer/edit/:id"
+            element={
+              <ProtectedRoute>{withAdminLayout(FarmerEditPage)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/supervisor"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SupervisorListPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/supervisor/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SupervisorCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/peternakan/supervisor/edit/:id"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SupervisorEditPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/pemeriksaan"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(HealthCheckListPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/pemeriksaan/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(HealthCheckCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/pemeriksaan/edit/:id"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(HealthCheckEditPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/gejala"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SymptomListPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/gejala/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SymptomCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/gejala/edit/:id"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(SymptomEditPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/riwayat"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(DiseaseHistoryListPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/riwayat/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(DiseaseHistoryCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/riwayat/edit/:id"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(DiseaseHistoryEditPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/reproduksi"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(ReproductionListPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/reproduksi/create"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(ReproductionCreatePage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/kesehatan/reproduksi/edit/:id"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(ReproductionEditPage)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/keuangan/pemasukan"
+            element={
+              <ProtectedRoute>{withAdminLayout(Pemasukan)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/keuangan/pengeluaran"
+            element={
+              <ProtectedRoute>{withAdminLayout(Pengeluaran)}</ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/keuangan/laporan"
+            element={
+              <ProtectedRoute>
+                {withAdminLayout(LaporanKeuangan)}
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+        <Footer />
+      </div>
+    </div>
   );
 }
 
