@@ -191,9 +191,9 @@ const Sidebar = () => {
                   </li>
                   <li>
                     <Link
-                      to="/admin/pakan/harian"
+                      to="/admin/pakan-harian"
                       className={
-                        isActive("/admin/pakan/harian") ? "active" : ""
+                        isActive("/admin/pakan-harian") ? "active" : ""
                       }
                     >
                       <i className="ri-calendar-line"></i> Pakan Harian
@@ -205,6 +205,14 @@ const Sidebar = () => {
                       className={isActive("/admin/pakan/stok") ? "active" : ""}
                     >
                       <i className="ri-stack-line"></i> Stok Pakan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/detail-pakan-harian"
+                      className={isActive("/admin/detail-pakan-harian") ? "active" : ""}
+                    >
+                      <i className="ri-stack-line"></i> Detail Pakan Harian
                     </Link>
                   </li>
                 </ul>

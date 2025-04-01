@@ -12,7 +12,6 @@
     "axios": "^1.8.4",
     "bootstrap": "^5.3.3",
     "classnames": "^2.5.1",
-    "date-fns": "^4.1.0",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
@@ -23,14 +22,12 @@
     "recharts": "^2.15.1",
     "simplebar": "^6.3.0",
     "simplebar-react": "^3.3.0",
-    "sweetalert2": "^11.17.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "concurrently \"npm run react-start\" \"npm run flask-start\"",
+    "react-start": "react-scripts start",
+    "flask-start": "cd ../dairytrack-api/MilkProduction && flask run"
   },
   "eslintConfig": {
     "extends": [
@@ -44,7 +41,7 @@
       "not dead",
       "not op_mini all"
     ],
-    "development": [  
+    "development": [
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"

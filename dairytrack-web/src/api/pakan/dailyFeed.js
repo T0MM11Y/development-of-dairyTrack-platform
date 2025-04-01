@@ -1,6 +1,6 @@
 import { fetchAPI } from "../apiClient2";
 
-export const getdailyFeeds = () => fetchAPI("dailyFeed/");
+export const getDailyFeeds = () => fetchAPI("dailyFeed/");
 export const getdailyFeedById = (id) => fetchAPI(`dailyFeed/${id}/`);
 export const createdailyFeed = (data) => fetchAPI("dailyFeed/", "POST", data);
 export const updatedailyFeed = (id, data) => fetchAPI(`dailyFeed/${id}/`, "PUT", data);

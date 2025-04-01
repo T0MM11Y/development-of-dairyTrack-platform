@@ -1,7 +1,7 @@
-const { DataTypes } = require("sequelize");
+const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const FeedStock = require("./feedStockModel");
-const DailyFeedNutrients = require("./dailyFeedNutrients"); // Pastikan sudah diimport!
+const DailyFeedNutrients = require("./dailyFeedNutrients");
 
 const DailyFeedDetail = sequelize.define(
   "DailyFeedDetail",
@@ -11,7 +11,7 @@ const DailyFeedDetail = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
-    daily_feed_session_id: {
+    daily_feed_id: { // Menggunakan daily_feed_id sebagai FK ke daily_feed_sessions (atau tabel terkait)
       type: DataTypes.INTEGER,
       allowNull: false,
     },
@@ -20,16 +20,21 @@ const DailyFeedDetail = sequelize.define(
       allowNull: false,
     },
     quantity: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     weather: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       defaultValue: "Unknown",
+    },
+    session: { // ENUM untuk sesi: pagi, siang, sore
+      type: DataTypes.ENUM('pagi', 'siang', 'sore'),
+      allowNull: false,
     },
     created_at: {
       type: DataTypes.DATE,
+      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
     updated_at: {
@@ -43,18 +48,19 @@ const DailyFeedDetail = sequelize.define(
   }
 );
 
-// ✅ Hook afterCreate untuk update DailyFeedNutrients
+DailyFeedDetail.belongsTo(DailyFeedSession, { foreignKey: 'daily_feed_id' });
+DailyFeedDetail.belongsTo(FeedStock, { foreignKey: 'feed_id' });
+
 DailyFeedDetail.addHook("afterCreate", async (detail, options) => {
   try {
-    // Ambil data feed berdasarkan feed_id untuk mendapatkan nilai protein, energy, dan fiber
+    // Ambil data feed dari FeedStock untuk mendapatkan nilai nutrisi
     const feedStock = await FeedStock.findOne({ where: { id: detail.feed_id } });
-
     if (!feedStock) {
       console.warn(`FeedStock tidak ditemukan untuk feed_id: ${detail.feed_id}`);
       return;
     }
 
-    // Hitung total nutrisi berdasarkan quantity * nilai feed stock
+    // Hitung total nutrisi berdasarkan quantity * nilai dari feedStock
     const totalProtein = parseFloat(feedStock.protein) * parseFloat(detail.quantity);
     const totalEnergy = parseFloat(feedStock.energy) * parseFloat(detail.quantity);
     const totalFiber = parseFloat(feedStock.fiber) * parseFloat(detail.quantity);
@@ -63,28 +69,28 @@ DailyFeedDetail.addHook("afterCreate", async (detail, options) => {
     feedStock.stock = parseFloat(feedStock.stock) - parseFloat(detail.quantity);
     await feedStock.save();
 
-    // Cari apakah sudah ada DailyFeedNutrients untuk sesi ini
+    // Cari apakah sudah ada record DailyFeedNutrients untuk daily_feed_session_id yang bersangkutan
     let nutrients = await DailyFeedNutrients.findOne({
-      where: { daily_feed_session_id: detail.daily_feed_session_id },
+      where: { daily_feed_session_id: detail.daily_feed_id },
     });
 
     if (nutrients) {
-      // Jika sudah ada, update nilai totalnya
+      // Update nilai total nutrisi jika record sudah ada
       nutrients.total_protein += totalProtein;
       nutrients.total_energy += totalEnergy;
       nutrients.total_fiber += totalFiber;
       await nutrients.save();
     } else {
-      // Jika belum ada, buat record baru
+      // Buat record baru jika belum ada
       await DailyFeedNutrients.create({
-        daily_feed_session_id: detail.daily_feed_session_id,
+        daily_feed_session_id: detail.daily_feed_id,
         total_protein: totalProtein,
         total_energy: totalEnergy,
         total_fiber: totalFiber,
       });
     }
 
-    console.log(`✅ Nutrisi berhasil diperbarui untuk sesi ${detail.daily_feed_session_id}`);
+    console.log(`✅ Nutrisi berhasil diperbarui untuk sesi ${detail.daily_feed_id}`);
   } catch (error) {
     console.error("❌ Error in afterCreate hook for DailyFeedDetail:", error);
   }
