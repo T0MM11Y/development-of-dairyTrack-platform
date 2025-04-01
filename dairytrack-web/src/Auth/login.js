@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import "../assets/client/css/style.css";
 import iconLogin from "../assets/client/img/logo/logo.png";
 import { login } from "../api/auth/login";
@@ -11,11 +11,18 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Processing");
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to admin if already logged in
+    const user = localStorage.getItem("user");
+    if (user) {
+      navigate("/admin", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (error) {
-      console.log("Error state updated:", error); // Debug error state
       const timer = setTimeout(() => setError(null), 3000);
       return () => clearTimeout(timer);
     }
@@ -24,14 +31,12 @@ const Login = () => {
   useEffect(() => {
     let interval;
     if (isLoading) {
-      console.log("Loading started"); // Debug loading state
       interval = setInterval(() => {
         setLoadingText((prev) =>
           prev === "Processing..." ? "Processing" : prev + "."
         );
       }, 500);
     } else {
-      console.log("Loading stopped"); // Debug loading state
       setLoadingText("Processing");
     }
     return () => clearInterval(interval);
@@ -39,26 +44,24 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Login form submitted with:", { email, password }); // Debug form data
     setIsLoading(true);
 
     try {
       const response = await login({ email, password });
-      console.log("Login response:", response); // Debug API response
 
       if (response.status === 200) {
-        console.log("Login successful, redirecting to /admin"); // Debug successful login
-        navigate("/admin"); // Redirect to /admin
+        navigate("/admin", { replace: true });
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = () => {
+          navigate("/admin", { replace: true });
+        };
       } else {
-        console.log("Login failed with message:", response.message); // Debug failed login
         setError(response.message);
       }
     } catch (error) {
-      console.error("Login error:", error); // Debug unexpected error
       setError("An unexpected error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
-      console.log("Login process finished"); // Debug process completion
     }
   };
 
