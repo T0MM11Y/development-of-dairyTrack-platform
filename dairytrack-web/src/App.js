@@ -74,6 +74,7 @@ import ProduksiSusuPage from "./user/pages/ProduksiSusuPage";
 import ProdukPage from "./user/pages/ProdukPage";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
+import ContactUs from "./user/pages/ContactUs";
 // Admin Layout Wrapper
 const withAdminLayout = (Component) => (
   <div id="layout-wrapper">
@@ -103,6 +104,7 @@ function App() {
       <Route path="/produk" element={withUserLayout(ProdukPage)} />
       <Route path="/galeri" element={withUserLayout(GaleriPage)} />
       <Route path="/identitas-peternakan" element={withUserLayout(IdentitasPeternakanPage)} />
+      <Route path="/contact-us" element={withUserLayout(ContactUs)} />
 
       {/* Admin Default Redirect */}
       <Route
