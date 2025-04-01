@@ -153,6 +153,7 @@ const Content = () => {
           style={{
             marginTop: "1rem",
             fontSize: "1.4rem",
+            marginLeft: "2.5rem",
 
             textAlign: "start",
             fontFamily: "'Dancing Script', cursive",
