@@ -1,6 +1,6 @@
-import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
+import React from "react";
 
 // Public
 import Login from "./Auth/login";
@@ -79,19 +79,24 @@ import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
 import ContactUs from "./user/pages/ContactUs";
 
-// Admin Layout Wrapper
-const withAdminLayout = (Component) => (
-  <div id="layout-wrapper">
-    <Header />
-    <Sidebar />
-    <div className="main-content">
-      <div className="content px-12">
-        <Component />
+const withAdminLayout = (Component) => {
+  const AdminLayout = () => {
+    return (
+      <div id="layout-wrapper">
+        <Header />
+        <Sidebar />
+        <div className="main-content">
+          <div className="content px-12">
+            <Component />
+          </div>
+          <Footer />
+        </div>
       </div>
-      <Footer />
-    </div>
-  </div>
-);
+    );
+  };
+
+  return <AdminLayout />;
+};
 
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("user");
