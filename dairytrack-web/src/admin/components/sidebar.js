@@ -6,12 +6,26 @@ import avatar1 from "../../assets/admin/images/users/toon_9.png"; // Import gamb
 const Sidebar = () => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
+  const [userData, setUserData] = useState(null); // State for user data
 
-  // Data statis untuk nama dan email
-  const userData = {
-    name: "Gustavo Brazillian",
-    email: "gus.tavo@example.com",
-  };
+  useEffect(() => {
+    // Fetch user data from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+
+    const content = document.querySelector(".main-content");
+    if (content) {
+      content.style.marginLeft = "275px"; // Sesuaikan dengan lebar sidebar
+      content.style.width = "calc(100% - 275px)"; // Sesuaikan dengan lebar sidebar
+    }
+
+    const sidebar = document.querySelector(".vertical-menu");
+    if (sidebar) {
+      sidebar.style.width = "275px"; // Lebar sidebar yang baru
+    }
+  }, []);
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) =>
@@ -21,19 +35,6 @@ const Sidebar = () => {
 
   const isMenuOpen = (key) => openMenus.includes(key);
   const isActive = (path) => location.pathname.startsWith(path);
-
-  useEffect(() => {
-    const content = document.querySelector(".main-content");
-    if (content) {
-      content.style.marginLeft = "225px"; // Sesuaikan dengan lebar sidebar
-      content.style.width = "calc(100% - 225px)"; // Sesuaikan dengan lebar sidebar
-    }
-
-    const sidebar = document.querySelector(".vertical-menu");
-    if (sidebar) {
-      sidebar.style.width = "225px"; // Lebar sidebar yang baru
-    }
-  }, []);
 
   return (
     <div
@@ -50,7 +51,7 @@ const Sidebar = () => {
           overflowY: "auto",
         }}
       >
-        {/* Avatar dan Email */}
+        {/* Avatar, Firstname, Lastname, and Email */}
         <div
           style={{
             display: "flex",
@@ -79,9 +80,13 @@ const Sidebar = () => {
             />
           </div>
           <div>
-            <div style={{ fontWeight: "bold" }}>{userData.name}</div>
+            <div style={{ fontWeight: "bold" }}>
+              {userData
+                ? `${userData.first_name} ${userData.last_name}`
+                : "Guest User"}
+            </div>
             <div style={{ fontSize: "12px", color: "#666" }}>
-              {userData.email}
+              {userData ? userData.email : "No Email"}
             </div>
           </div>
         </div>
@@ -117,16 +122,19 @@ const Sidebar = () => {
                   className="sub-menu mm-show"
                   style={{ paddingLeft: "20px" }}
                 >
-                  <li>
-                    <Link
-                      to="/admin/peternakan/farmer"
-                      className={
-                        isActive("/admin/peternakan/farmer") ? "active" : ""
-                      }
-                    >
-                      <i className="ri-line-chart-line"></i> Data Peternak
-                    </Link>
-                  </li>
+                  {/* Hide Data Peternak if role is farmer */}
+                  {userData?.role !== "farmer" && (
+                    <li>
+                      <Link
+                        to="/admin/peternakan/farmer"
+                        className={
+                          isActive("/admin/peternakan/farmer") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-line-chart-line"></i> Data Peternak
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <Link
                       to="/admin/peternakan/sapi"
@@ -137,16 +145,21 @@ const Sidebar = () => {
                       <i className="ri-file-list-3-line"></i> Data Sapi
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      to="/admin/peternakan/supervisor"
-                      className={
-                        isActive("/admin/peternakan/supervisor") ? "active" : ""
-                      }
-                    >
-                      <i className="ri-file-list-3-line"></i> Data Supervisor
-                    </Link>
-                  </li>
+                  {/* Hide Data Supervisor if role is farmer */}
+                  {userData?.role !== "farmer" && (
+                    <li>
+                      <Link
+                        to="/admin/peternakan/supervisor"
+                        className={
+                          isActive("/admin/peternakan/supervisor")
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-file-list-3-line"></i> Data Supervisor
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               )}
             </li>
@@ -210,7 +223,9 @@ const Sidebar = () => {
                   <li>
                     <Link
                       to="/admin/detail-pakan-harian"
-                      className={isActive("/admin/detail-pakan-harian") ? "active" : ""}
+                      className={
+                        isActive("/admin/detail-pakan-harian") ? "active" : ""
+                      }
                     >
                       <i className="ri-stack-line"></i> Detail Pakan Harian
                     </Link>

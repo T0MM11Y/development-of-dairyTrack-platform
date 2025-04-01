@@ -25,9 +25,11 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "concurrently \"npm run react-start\" \"npm run flask-start\"",
+    "start": "concurrently \"npm run react-start\" \"npm run flask-start\" \"npm run node-api\" \"npm run django-start\"",
     "react-start": "react-scripts start",
-    "flask-start": "cd ../dairytrack-api/MilkProduction && flask run"
+    "flask-start": "cd ../dairytrack-api/MilkProduction && flask run --port=5000",
+    "node-api": "cd ../dairytrack-api/FeedConsumption && npm start",
+    "django-start": "cd ../dairytrack-api/HealthCheck && python manage.py runserver 5002"
   },
   "eslintConfig": {
     "extends": [

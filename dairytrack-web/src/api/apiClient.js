@@ -1,4 +1,3 @@
-//pny T0mm11y
 const BASE_URL = "http://127.0.0.1:5000/api";
 
 export const fetchAPI = async (endpoint, method = "GET", data = null) => {
@@ -13,23 +12,42 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(`${BASE_URL}/${endpoint}`, options);
-  const contentType = response.headers.get("content-type");
+  try {
+    const response = await fetch(`${BASE_URL}/${endpoint}`, options);
+    const contentType = response.headers.get("content-type");
 
-  if (!response.ok) {
-    if (contentType && contentType.includes("application/json")) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Something went wrong.");
-    } else {
-      const errorText = await response.text(); // tangani HTML error
-      console.error("Server Error:", errorText);
-      throw new Error("Internal Server Error");
+    if (!response.ok) {
+      if (response.status === 401) {
+        return {
+          status: 401,
+          message: "Unauthorized: Invalid email or password.",
+        };
+      }
+
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        return {
+          status: response.status,
+          message: errorData.detail || "Something went wrong.",
+        };
+      } else {
+        const errorText = await response.text();
+        console.error("Server Error:", errorText);
+        return {
+          status: response.status,
+          message: "Internal Server Error",
+        };
+      }
     }
+
+    if (response.status === 204) return { status: 204, message: "No Content" };
+
+    return await response.json();
+  } catch (error) {
+    console.error("Network or Server Error:", error.message);
+    return {
+      status: 500,
+      message: error.message || "An unexpected error occurred.",
+    };
   }
-
-  // DELETE biasanya status 204, tidak ada body
-  if (response.status === 204) return true;
-
-  // response JSON
-  return await response.json();
 };

@@ -1,19 +1,96 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2"; // Import SweetAlert2
+import { useTranslation } from "react-i18next";
 
 // Import images
+import logoSm from "../../assets/client/img/logo/logo.png";
+import logoDark from "../../assets/client/img/logo/logo.png";
+import logoLight from "../../assets/client/img/logo/logo.png";
+import englishFlag from "../../assets/admin/images/flags/us.jpg";
+import indoFlag from "../../assets/admin/images/flags/indo.png";
 
-import logoSm from "../../assets/admin/images/logo-sm.png";
-import logoDark from "../../assets/admin/images/logo-dark.png";
-import logoLight from "../../assets/admin/images/logo-light.png";
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
+// Language Dropdown Component
+const LanguageDropdown = () => {
+  const { t, i18n } = useTranslation(); // Gunakan hook useTranslation
+  const [currentLanguage, setCurrentLanguage] = useState("English");
+  const [currentFlag, setCurrentFlag] = useState(englishFlag);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleLanguageChange = (language) => {
+    if (language === "English") {
+      setCurrentLanguage("English");
+      setCurrentFlag(englishFlag);
+      i18n.changeLanguage("en"); // Ubah bahasa ke Inggris
+    } else if (language === "Indo") {
+      setCurrentLanguage("Indo");
+      setCurrentFlag(indoFlag);
+      i18n.changeLanguage("id"); // Ubah bahasa ke Indonesia
+    }
+    setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  return (
+    <div className="dropdown ms-auto mt-2">
+      <button
+        type="button"
+        className="btn header-item waves-effect"
+        onClick={toggleDropdown}
+        aria-haspopup="true"
+        aria-expanded={isDropdownOpen}
+      >
+        <img className="" src={currentFlag} alt="Header Language" height="16" />
+        <span className="align-middle ms-1">{currentLanguage}</span>
+        <i className="mdi mdi-chevron-down ms-1"></i>
+      </button>
+      {isDropdownOpen && (
+        <div className="dropdown-menu dropdown-menu-end show">
+          {currentLanguage === "English" && (
+            <a
+              href="#"
+              className="dropdown-item notify-item"
+              onClick={() => handleLanguageChange("Indo")}
+            >
+              <img src={indoFlag} alt="Indo" className="me-1" height="12" />
+              <span className="align-middle">Indo</span>
+            </a>
+          )}
+          {currentLanguage === "Indo" && (
+            <a
+              href="#"
+              className="dropdown-item notify-item"
+              onClick={() => handleLanguageChange("English")}
+            >
+              <img
+                src={englishFlag}
+                alt="English"
+                className="me-1"
+                height="12"
+              />
+              <span className="align-middle">English</span>
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 const Header = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // State for loading
+  const [loadingText, setLoadingText] = useState("Processing"); // State for loading text
+  const [userName, setUserName] = useState("Guest"); // State for user name
+
+  const navigate = useNavigate(); // React Router navigation
 
   // Refs
   const notificationDropdownRef = useRef(null);
@@ -22,29 +99,28 @@ const Header = () => {
   const userButtonRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isNotificationDropdownOpen &&
-        notificationDropdownRef.current &&
-        !notificationDropdownRef.current.contains(event.target) &&
-        !notificationButtonRef.current.contains(event.target)
-      ) {
-        setIsNotificationDropdownOpen(false);
-      }
+    // Fetch user data from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const role = `${user.role || "Unknown"}`;
+      setUserName(role); // Set user name
+    }
+  }, []);
 
-      if (
-        isUserDropdownOpen &&
-        userDropdownRef.current &&
-        !userDropdownRef.current.contains(event.target) &&
-        !userButtonRef.current.contains(event.target)
-      ) {
-        setIsUserDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isNotificationDropdownOpen, isUserDropdownOpen]);
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingText((prev) =>
+          prev === "Processing..." ? "Processing" : prev + "."
+        );
+      }, 500);
+    } else {
+      setLoadingText("Processing");
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -68,59 +144,64 @@ const Header = () => {
     if (isNotificationDropdownOpen) setIsNotificationDropdownOpen(false);
   };
 
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out of your account.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setIsLoading(true); // Start loading
+
+        // Simulate logout process
+        setTimeout(() => {
+          localStorage.removeItem("user"); // Clear user data from localStorage
+          setIsLoading(false); // Stop loading
+          navigate("/logout"); // Redirect to logout page
+        }, 2000); // Simulate a delay for logout process
+      }
+    });
+  };
+
   return (
     <header id="page-topbar" className="header">
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-text">{loadingText}</div>
+        </div>
+      )}
+
       <div className="navbar-header">
-        <div className="d-flex align-items-center w-100">
+        <div className="d-flex align-items-start w-100">
           {/* Logo */}
           <div className="navbar-brand-box">
             <Link to="/" className="logo logo-dark">
               <span className="logo-sm">
-                <img src={logoSm} alt="logo-sm" height="24" />
+                <img src={logoSm} alt="logo-sm" height="20" />
               </span>
               <span className="logo-lg">
-                <img src={logoDark} alt="logo-dark" height="22" />
+                <img src={logoDark} alt="logo-dark" height="90" />
               </span>
             </Link>
             <Link to="/" className="logo logo-light">
               <span className="logo-sm">
-                <img src={logoSm} alt="logo-sm-light" height="24" />
+                <img src={logoSm} alt="logo-sm-light" height="20" />
               </span>
               <span className="logo-lg">
-                <img src={logoLight} alt="logo-light" height="22" />
+                <img src={logoLight} alt="logo-light" height="20" />
               </span>
             </Link>
           </div>
 
-          {/* Search Form */}
-          <form
-            className="app-search me-4"
-            style={{ width: "400px", maxWidth: "600px" }}
-          >
-            <div className="position-relative">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search..."
-                style={{ width: "100%", paddingRight: "40px" }}
-              />
-              <span
-                className="ri-search-line"
-                style={{
-                  position: "absolute",
-                  right: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#999",
-                }}
-              ></span>
-            </div>
-          </form>
-
-          <div className="flex-grow-1"></div>
+          {/* Language Dropdown */}
+          <LanguageDropdown />
 
           {/* Full-screen Toggle */}
-          <div className="dropdown d-none d-lg-inline-block me-4">
+          <div className="dropdown d-none d-lg-inline-block me-4 mt-2">
             <button
               type="button"
               className="btn header-item noti-icon waves-effect"
@@ -135,7 +216,7 @@ const Header = () => {
           </div>
 
           {/* Notifications dropdown */}
-          <div className="dropdown d-inline-block">
+          <div className="dropdown d-inline-block mt-2">
             <button
               type="button"
               className="btn header-item noti-icon waves-effect"
@@ -157,95 +238,12 @@ const Header = () => {
               }}
               aria-labelledby="page-header-notifications-dropdown"
             >
-              <div className="p-3">
-                <div className="row align-items-center">
-                  <div className="col">
-                    <h6 className="m-0">Notifications</h6>
-                  </div>
-                  <div className="col-auto">
-                    <a href="#!" className="small">
-                      View All
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div data-simplebar style={{ maxHeight: "370px" }}>
-                <a href="" className="text-reset notification-item">
-                  <div className="d-flex">
-                    <div className="avatar-xs me-3">
-                      <span className="avatar-title bg-danger rounded-circle font-size-16">
-                        <i className="ri-shopping-cart-line"></i>
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="mb-1">Low feed stock alert</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-1">
-                          Hay stock is running low. Please reorder.
-                        </p>
-                        <p className="mb-0">
-                          <i className="mdi mdi-clock-outline"></i> 3 min ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-                <a href="" className="text-reset notification-item">
-                  <div className="d-flex">
-                    <div className="avatar-xs me-3">
-                      <span className="avatar-title bg-success rounded-circle font-size-16">
-                        <i className="ri-checkbox-circle-line"></i>
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="mb-1">Cow health check completed</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-1">
-                          Monthly health check for all cows completed.
-                        </p>
-                        <p className="mb-0">
-                          <i className="mdi mdi-clock-outline"></i> 1 hours ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-                <a href="" className="text-reset notification-item">
-                  <div className="d-flex">
-                    <div className="avatar-xs me-3">
-                      <span className="avatar-title bg-success rounded-circle font-size-16">
-                        <i className=" ri-arrow-up-circle-line"></i>
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="mb-1">Milk production update</h6>
-                      <div className="font-size-12 text-muted">
-                        <p className="mb-1">
-                          Today's milk production reached 500 liters, a
-                          significant 50% increase compared to yesterday.
-                        </p>
-                        <p className="mb-0">
-                          <i className="mdi mdi-clock-outline"></i> 2 hours ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-              <div className="p-2 border-top d-grid">
-                <a
-                  className="btn btn-sm btn-link font-size-14 text-center"
-                  href="javascript:void(0)"
-                >
-                  <i className="mdi mdi-arrow-right-circle me-1"></i> View
-                  More..
-                </a>
-              </div>
+              {/* Notification content */}
             </div>
           </div>
 
           {/* User Dropdown */}
-          <div className="dropdown d-inline-block user-dropdown me-4">
+          <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
             <button
               ref={userButtonRef}
               type="button"
@@ -257,8 +255,9 @@ const Header = () => {
                 className="rounded-circle header-profile-user"
                 src={avatar1}
                 alt="Header Avatar"
+                style={{ height: "34px", width: "34px" }}
               />
-              <span className="d-none d-xl-inline-block ms-1">Gustavo</span>
+              <span className="d-none d-xl-inline-block ms-1">{userName}</span>
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div
@@ -267,28 +266,18 @@ const Header = () => {
                 isUserDropdownOpen ? "show" : ""
               }`}
             >
-              {/* User dropdown content */}
-            </div>
-            <div
-              className={`dropdown-menu dropdown-menu-end ${
-                isUserDropdownOpen ? "show" : ""
-              }`}
-              style={{
-                position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-45px, 70px)",
-              }}
-            >
               <a className="dropdown-item" href="#">
                 <i className="ri-user-line align-middle me-1"></i> Profile
               </a>
 
               <div className="dropdown-divider"></div>
-              <Link to="/logout" className="dropdown-item">
+              <button
+                className="dropdown-item"
+                onClick={handleLogout} // Call SweetAlert on logout
+              >
                 <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
                 Logout
-              </Link>
+              </button>
             </div>
           </div>
         </div>
