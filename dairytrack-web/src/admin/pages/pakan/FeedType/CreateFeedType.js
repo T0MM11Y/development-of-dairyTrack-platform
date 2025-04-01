@@ -1,95 +1,117 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import { createFeedType } from "../../../../api/pakan/feedType";
+import { getFeeds, getFeedById } from "../../../../api/pakan/feed";
+import { AddFeedStock } from "../../../../api/pakan/feedstock";
 
-const CreateFeedTypePage = () => {
-  const [name, setName] = useState("");
+const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
+  const [searchParams] = useSearchParams();
+  const preFeedId = searchParams.get("feedId");
+  const [feedId, setFeedId] = useState(preFeedId || "");
+  const [additionalStock, setAdditionalStock] = useState("");
+  const [feeds, setFeeds] = useState([]);
+  const [selectedFeedName, setSelectedFeedName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (preFeedId) {
+      const fetchFeed = async () => {
+        try {
+          const response = await getFeedById(preFeedId);
+          if (response.success && response.feed) {
+            setSelectedFeedName(response.feed.name);
+          }
+        } catch (error) {
+          console.error("Error fetching feed:", error.message);
+        }
+      };
+      fetchFeed();
+    } else {
+      const fetchFeeds = async () => {
+        try {
+          const response = await getFeeds();
+          if (response.success && response.feeds) {
+            setFeeds(response.feeds);
+          }
+        } catch (error) {
+          console.error("Error fetching feeds:", error.message);
+        }
+      };
+      fetchFeeds();
+    }
+  }, [preFeedId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Tampilkan konfirmasi sebelum menambah
-    const result = await Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Anda akan menambahkan jenis pakan baru.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, tambahkan!",
-      cancelButtonText: "Batal",
-    });
-
-    // Jika user batal, hentikan proses
-    if (!result.isConfirmed) return;
-
+    if (!feedId) {
+      Swal.fire("Error", "Please select a feed", "error");
+      return;
+    }
+    if (!additionalStock) {
+      Swal.fire("Error", "Please enter additional stock", "error");
+      return;
+    }
     setLoading(true);
     try {
-      const response = await createFeedType({ name });
-      console.log("Response dari createFeedType:", response);
-
-      // Tampilkan alert sukses
-      Swal.fire({
-        title: "Sukses!",
-        text: "Jenis pakan berhasil ditambahkan.",
-        icon: "success",
-        confirmButtonText: "OK",
-      }).then(() => {
-        navigate("/admin/pakan/jenis");
-      });
-
+      const response = await AddFeedStock({ feedId, additionalStock });
+      if (response.success) {
+        Swal.fire({
+          title: "Success",
+          text: "Stock updated successfully",
+          icon: "success",
+          confirmButtonText: "OK",
+        }).then(() => {
+          onStockAdded(); // Panggil callback jika ada
+          navigate("/feed-stock"); // Arahkan ke halaman stok pakan
+        });
+      } else {
+        Swal.fire("Error", "Failed to update stock", "error");
+      }
     } catch (error) {
-      console.error("Error creating feed type:", error.message);
-      Swal.fire({
-        title: "Error!",
-        text: "Terjadi kesalahan saat menambahkan jenis pakan.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
+      Swal.fire("Error", "Failed to update stock: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Create Feed Type</h2>
-      <div className="card">
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            <div className="form-group mb-3">
-              <label htmlFor="feedName" className="form-label">Feed Type Name</label>
-              <input
-                type="text"
-                id="feedName"
-                className="form-control"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? "Saving..." : "Create"}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary ml-2"
-              onClick={() => navigate("/admin/pakan/jenis")}
-            >
-              Cancel
-            </button>
-          </form>
+    <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h4 className="modal-title text-info fw-bold">Tambah Stok Pakan</h4>
+            <button className="btn-close" onClick={() => navigate("/feed-stock")} disabled={loading}></button>
+          </div>
+          <div className="modal-body">
+            <form onSubmit={handleSubmit}>
+              {preFeedId ? (
+                <div className="form-group mb-3">
+                  <label htmlFor="feedName" className="form-label">Feed</label>
+                  <input type="text" id="feedName" className="form-control" value={selectedFeedName} readOnly />
+                </div>
+              ) : (
+                <div className="form-group mb-3">
+                  <label htmlFor="feedId" className="form-label">Feed</label>
+                  <select id="feedId" className="form-control" value={feedId} onChange={(e) => setFeedId(e.target.value)} required>
+                    <option value="">Select Feed</option>
+                    {feeds.map((feed) => (
+                      <option key={feed.id} value={feed.id}>{feed.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="form-group mb-3">
+                <label htmlFor="additionalStock" className="form-label">Additional Stock (kg)</label>
+                <input type="number" step="0.01" id="additionalStock" className="form-control" value={additionalStock} onChange={(e) => setAdditionalStock(e.target.value)} required />
+              </div>
+              <button type="submit" className="btn btn-info w-100" disabled={loading}>{loading ? "Saving..." : "Add Stock"}</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default CreateFeedTypePage;
+export default AddFeedStockPage;
