@@ -32,9 +32,25 @@ const DailyFeedPage = () => {
       console.log("Cows:", cowResponse);
       console.log("Farmers:", farmerResponse);
 
-      setDailyFeeds(feedResponse?.success ? feedResponse.feeds : []);
-      setCows(cowResponse?.success ? cowResponse.cows : []);
-      setFarmers(farmerResponse?.success ? farmerResponse.farmers : []);
+      // Handle different response structures
+      // For daily feeds
+      const feedsData = feedResponse?.success 
+        ? feedResponse.feeds 
+        : (Array.isArray(feedResponse) ? feedResponse : []);
+      
+      // For cows
+      const cowsData = cowResponse?.success 
+        ? cowResponse.cows 
+        : (Array.isArray(cowResponse) ? cowResponse : []);
+      
+      // For farmers
+      const farmersData = farmerResponse?.success 
+        ? farmerResponse.farmers 
+        : (Array.isArray(farmerResponse) ? farmerResponse : []);
+      
+      setDailyFeeds(feedsData);
+      setCows(cowsData);
+      setFarmers(farmersData);
     } catch (error) {
       console.error("Error fetching data:", error);
       Swal.fire("Error!", "Gagal mengambil data.", "error");
@@ -70,6 +86,17 @@ const DailyFeedPage = () => {
     }
   };
 
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    try {
+      const [year, month, day] = dateString.split("-");
+      return `${day}-${month}-${year}`;
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -83,49 +110,61 @@ const DailyFeedPage = () => {
       </div>
 
       {loading ? (
-        <p className="text-center text-gray-500">Loading...</p>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+          <p className="mt-2">Memuat data...</p>
+        </div>
       ) : dailyFeeds.length === 0 ? (
-        <p className="text-gray-500">No daily feed data available.</p>
+        <div className="alert alert-info">No daily feed data available.</div>
       ) : (
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Farmer</th>
-              <th>Cow</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dailyFeeds.map((feed, index) => {
-              const farmer = farmers.find((f) => f.id === feed.farmer_id);
-              const cow = cows.find((c) => c.id === feed.cow_id);
+        <div className="table-responsive">
+          <table className="table table-striped">
+            <thead className="table-info">
+              <tr>
+                <th>#</th>
+                <th>Farmer</th>
+                <th>Cow</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyFeeds.map((feed, index) => {
+                // Find corresponding farmer and cow
+                const farmer = farmers.find(f => f.id === feed.farmer_id || f.id === feed.farmer_id);
+                const cow = cows.find(c => c.id === feed.cow_id || c.id === feed.cow_id);
 
-              const farmerName = farmer
-                ? `${farmer.first_name} ${farmer.last_name}`
-                : "Unknown";
-              const cowName = cow ? cow.name : "Unknown";
+                // Create display names with better fallbacks
+                const farmerName = farmer
+                  ? `${farmer.first_name || ''} ${farmer.last_name || ''}`.trim()
+                  : `Farmer #${feed.farmer_id}`;
+                
+                const cowName = cow
+                  ? (cow.name || `Cow #${feed.cow_id}`)
+                  : `Cow #${feed.cow_id}`;
 
-              return (
-                <tr key={feed.id}>
-                  <td>{index + 1}</td>
-                  <td>{farmerName}</td>
-                  <td>{cowName}</td>
-                  <td>{feed.date}</td>
-                  <td>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(feed.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={feed.id || index}>
+                    <td>{index + 1}</td>
+                    <td>{farmerName}</td>
+                    <td>{cowName}</td>
+                    <td>{formatDate(feed.date)}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDelete(feed.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
