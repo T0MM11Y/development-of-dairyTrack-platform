@@ -41,6 +41,5 @@ const DailyFeedNutrients = sequelize.define(
   }
 );
 
-DailyFeedNutrients.belongsTo(DailyFeedSession, { foreignKey: 'daily_feed_session_id' });
 
 module.exports = DailyFeedNutrients;
