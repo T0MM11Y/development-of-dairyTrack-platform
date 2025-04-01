@@ -252,7 +252,7 @@ const RawMilkTable = ({ rawMilks, openModal, loading }) => {
       const expiration = new Date(expirationTime);
       const diff = expiration - now;
 
-      if (diff <= 0) return "Expired";
+      if (diff <= 0) return null; // Tidak ada sisa waktu jika expired
 
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -260,10 +260,14 @@ const RawMilkTable = ({ rawMilks, openModal, loading }) => {
     };
 
     const interval = setInterval(() => {
-      const updated = rawMilks.map((rawMilk) => ({
-        ...rawMilk,
-        timeLeft: calculateTimeLeft(rawMilk.expiration_time),
-      }));
+      const updated = rawMilks.map((rawMilk) => {
+        const timeLeft = calculateTimeLeft(rawMilk.expiration_time);
+        return {
+          ...rawMilk,
+          timeLeft,
+          status: timeLeft ? "fresh" : "expired", // Perbarui status berdasarkan waktu
+        };
+      });
       setUpdatedRawMilks(updated);
     }, 1000);
 
@@ -324,18 +328,16 @@ const RawMilkTable = ({ rawMilks, openModal, loading }) => {
                       </small>
                     </td>
                     <td>
-                      {rawMilk.status === "fresh" ? (
-                        <span style={{ color: "green", fontWeight: "bold" }}>
+                      {rawMilk.status === "fresh" && rawMilk.timeLeft ? (
+                        <span className="badge bg-success">
                           Fresh
                           <br />
-                          <small style={{ fontSize: "10px", color: "gray" }}>
+                          <small style={{ fontSize: "10px", color: "white" }}>
                             {rawMilk.timeLeft}
                           </small>
                         </span>
                       ) : (
-                        <span style={{ color: "red", fontWeight: "bold" }}>
-                          Expired
-                        </span>
+                        <span className="badge bg-danger">Expired</span>
                       )}
                     </td>
                     <td>

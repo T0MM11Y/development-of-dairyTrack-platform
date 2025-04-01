@@ -36,9 +36,9 @@ function Header() {
                       <li className={isActive("/identitas-peternakan") ? "active" : ""}>
                         <Link to="/identitas-peternakan">Identitas</Link>
                       </li>
-                      <li className={isActive("/sejarah") ? "active" : ""}>
+                      {/* <li className={isActive("/sejarah") ? "active" : ""}>
                         <Link to="/sejarah">Sejarah</Link>
-                      </li>
+                      </li> */}
                       <li className={isActive("/fasilitas") ? "active" : ""}>
                         <Link to="/fasilitas">Fasilitas</Link>
                       </li>
@@ -50,6 +50,9 @@ function Header() {
                       </li>
                       <li className={isActive("/galeri") ? "active" : ""}>
                         <Link to="/galeri">Galeri</Link>
+                      </li>
+                      <li className={isActive("/contact-us") ? "active" : ""}>
+                        <Link to="/contact-us">Contact Us</Link>
                       </li>
                     </ul>
                   </div>
@@ -82,6 +85,7 @@ function Header() {
                     <li><Link to="/produksi-susu">Produksi Susu</Link></li>
                     <li><Link to="/produk">Produk</Link></li>
                     <li><Link to="/galeri">Galeri</Link></li>
+                    <li><Link to="/contact-us">Contact Us</Link></li>
                     <li><Link to="/login">Login</Link></li>
                   </ul>
                   <div className="social-links">

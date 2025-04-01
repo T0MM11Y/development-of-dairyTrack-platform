@@ -1,0 +1,21 @@
+{
+    "customer_name": "Kenan",
+    "email": "khen@gmail.com",
+    "phone_number": "09812938124",
+    "location": "medan",
+    "shipping_cost": 200,
+    "status": "Requested",
+    "payment_method": null,
+    "order_items": [
+{
+                "product_stock": 1,
+                "quantity": 2,
+                "price_per_unit": 10000
+            },
+            {
+                "product_stock": 2,
+                "quantity": 1,
+                "price_per_unit": 5000
+            }
+]
+}
