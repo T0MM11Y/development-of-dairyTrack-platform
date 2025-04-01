@@ -168,7 +168,7 @@ const Content = () => {
             fontSize: "1.3rem",
             marginLeft: "1.5rem",
             textAlign: "start",
-            background: "linear-gradient(to right, #368BD4FF, #29DAE4FF)",
+            background: "linear-gradient(to right, #366DD4FF, #29A9E4FF)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             fontFamily: "'Consolas', cursive",
