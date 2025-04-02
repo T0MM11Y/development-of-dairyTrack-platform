@@ -1,78 +1,91 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
-import { getFeeds, getFeedById } from "../../../../api/pakan/feed";
-import { AddFeedStock } from "../../../../api/pakan/feedstock";
+import { createFeedType } from "../../../../api/pakan/feedType";
+import { useNavigate } from "react-router-dom";
 
-const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
-  const [searchParams] = useSearchParams();
-  const preFeedId = searchParams.get("feedId");
-  const [feedId, setFeedId] = useState(preFeedId || "");
-  const [additionalStock, setAdditionalStock] = useState("");
-  const [feeds, setFeeds] = useState([]);
-  const [selectedFeedName, setSelectedFeedName] = useState("");
+const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (preFeedId) {
-      const fetchFeed = async () => {
-        try {
-          const response = await getFeedById(preFeedId);
-          if (response.success && response.feed) {
-            setSelectedFeedName(response.feed.name);
-          }
-        } catch (error) {
-          console.error("Error fetching feed:", error.message);
-        }
-      };
-      fetchFeed();
-    } else {
-      const fetchFeeds = async () => {
-        try {
-          const response = await getFeeds();
-          if (response.success && response.feeds) {
-            setFeeds(response.feeds);
-          }
-        } catch (error) {
-          console.error("Error fetching feeds:", error.message);
-        }
-      };
-      fetchFeeds();
-    }
-  }, [preFeedId]);
+  const navigate = useNavigate(); // Hook untuk navigasi
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!feedId) {
-      Swal.fire("Error", "Please select a feed", "error");
+
+    // Validasi input, pastikan nama feed type tidak kosong
+    if (!name) {
+      Swal.fire({
+        title: "Error!",
+        text: "Nama jenis pakan harus diisi.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
       return;
     }
-    if (!additionalStock) {
-      Swal.fire("Error", "Please enter additional stock", "error");
-      return;
-    }
-    setLoading(true);
+
+    // Tanyakan konfirmasi dari pengguna sebelum membuat jenis pakan
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Anda akan menambahkan jenis pakan baru.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, tambahkan!",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return; // Jika batal, keluar dari fungsi
+
+    setLoading(true); // Aktifkan loading
     try {
-      const response = await AddFeedStock({ feedId, additionalStock });
-      if (response.success) {
-        Swal.fire({
-          title: "Success",
-          text: "Stock updated successfully",
+      const response = await createFeedType({ name }); // Kirim request untuk membuat feed type baru
+
+      // Log response API untuk memastikan respons yang diterima
+      console.log("API Response:", response);
+
+      // Pastikan respons adalah sukses dan cek apakah ada properti 'success' dalam response
+      if (response && response.success === true) {
+        // Tampilkan konfirmasi sukses terlebih dahulu
+        const successResult = await Swal.fire({
+          title: "Sukses!",
+          text: "Jenis pakan berhasil ditambahkan.",
           icon: "success",
           confirmButtonText: "OK",
-        }).then(() => {
-          onStockAdded(); // Panggil callback jika ada
-          navigate("/feed-stock"); // Arahkan ke halaman stok pakan
         });
+
+        if (successResult.isConfirmed) {
+          console.log("Navigating to feed type data page...");
+          navigate("/admin/pakan/jenis"); // Halaman feed type data
+          onSuccess(); // Callback untuk menyegarkan data atau aksi lain setelah sukses
+          onClose(); // Tutup modal setelah sukses
+        }
       } else {
-        Swal.fire("Error", "Failed to update stock", "error");
+        // Jika API merespons kesalahan atau tidak berhasil
+        const errorMessage = response.message || "Terjadi kesalahan saat menambahkan jenis pakan.";
+        console.error("API Error:", errorMessage); // Debugging error response
+        await Swal.fire({
+          title: "Error!",
+          text: errorMessage,
+          icon: "error",
+          confirmButtonText: "OK",
+        });
       }
     } catch (error) {
-      Swal.fire("Error", "Failed to update stock: " + error.message, "error");
+      console.error("Error creating feed type:", error.message);
+      // Jika gagal, tampilkan konfirmasi error
+      await Swal.fire({
+        title: "Error!",
+        text: "Terjadi kesalahan saat menambahkan jenis pakan.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     } finally {
-      setLoading(false);
+      setLoading(false); // Matikan loading setelah proses selesai
     }
+  };
+
+  const handleCloseModal = () => {
+    navigate("/admin/pakan/jenis"); // Tutup modal dan kembali ke halaman feed type data
   };
 
   return (
@@ -80,32 +93,29 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Stok Pakan</h4>
-            <button className="btn-close" onClick={() => navigate("/feed-stock")} disabled={loading}></button>
+            <h4 className="modal-title text-info fw-bold">Tambah Jenis Pakan</h4>
+            <button
+              className="btn-close"
+              onClick={handleCloseModal} // Panggil handleCloseModal saat tombol X di-klik
+              disabled={loading}
+            ></button>
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
-              {preFeedId ? (
-                <div className="form-group mb-3">
-                  <label htmlFor="feedName" className="form-label">Feed</label>
-                  <input type="text" id="feedName" className="form-control" value={selectedFeedName} readOnly />
-                </div>
-              ) : (
-                <div className="form-group mb-3">
-                  <label htmlFor="feedId" className="form-label">Feed</label>
-                  <select id="feedId" className="form-control" value={feedId} onChange={(e) => setFeedId(e.target.value)} required>
-                    <option value="">Select Feed</option>
-                    {feeds.map((feed) => (
-                      <option key={feed.id} value={feed.id}>{feed.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div className="form-group mb-3">
-                <label htmlFor="additionalStock" className="form-label">Additional Stock (kg)</label>
-                <input type="number" step="0.01" id="additionalStock" className="form-control" value={additionalStock} onChange={(e) => setAdditionalStock(e.target.value)} required />
+                <label htmlFor="feedTypeName" className="form-label">Nama Jenis Pakan</label>
+                <input
+                  type="text"
+                  id="feedTypeName"
+                  className="form-control"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               </div>
-              <button type="submit" className="btn btn-info w-100" disabled={loading}>{loading ? "Saving..." : "Add Stock"}</button>
+              <button type="submit" className="btn btn-info w-100" disabled={loading}>
+                {loading ? "Menyimpan..." : "Tambah"}
+              </button>
             </form>
           </div>
         </div>
@@ -114,4 +124,4 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
   );
 };
 
-export default AddFeedStockPage;
+export default CreateFeedTypeModal;
