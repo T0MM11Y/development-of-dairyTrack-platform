@@ -2,6 +2,7 @@
 .contact-header {
   font-size: 24px;
   margin-bottom: 20px;
+  margin-top: 285px;
   font-weight: bold;
   text-align: center;
 }
@@ -13,6 +14,12 @@
   padding: 20px;
 }
 
+/* Container untuk peta dan form */
+.map-form-container {
+  position: relative; /* Penting untuk positioning form */
+  width: 100%;
+}
+
 .contact-map {
   width: 100%;
   margin-top: 90px;
@@ -20,9 +27,16 @@
 }
 
 .contact-form-container {
-  width: 100%;
+  position: absolute; /* Membuat form menimpa peta */
+  top: 475px; /* Sesuaikan nilai top untuk posisi tabel */
+  left: 50%;
+  transform: translateX(-50%); /* Memastikan form berada di tengah */
+  width: 90%; /* Sesuaikan lebar form */
   max-width: 600px;
-  margin-bottom: 20px;
+  background-color: white; /* Memberi background putih pada form */
+  padding: 20px; /* Menambah padding pada form */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Menambah shadow untuk efek elevasi */
+  border-radius: 8px;
 }
 
 .contact-form {
@@ -35,6 +49,7 @@
   padding: 10px;
   margin-bottom: 10px;
   border: 1px solid #ccc;
+  border-radius: 4px;
   border-radius: 4px;
 }
 
@@ -58,14 +73,14 @@
   justify-content: space-around;
   width: 100%;
   max-width: 800px;
-  margin-top: 30px;
+  margin-top: 30px; /* Menambah margin-top untuk menurunkan informasi kontak */
   margin-bottom: 20px;
 }
 
 .contact-info-container .contact-info-box {
   width: 30%;
   text-align: center;
-  padding: 20px;
+  padding: 40px;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
@@ -79,7 +94,8 @@
   margin-bottom: 10px;
 }
 
+/* Footer */
 .contact-footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 25px; /* Menambah margin-top untuk menurunkan footer */
 }
