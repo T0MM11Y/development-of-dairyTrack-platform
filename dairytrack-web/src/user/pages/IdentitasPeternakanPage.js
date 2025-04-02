@@ -2,6 +2,7 @@ import React from "react";
 import girolando from "../../assets/image/header1.png";
 import gambarGedung from "../../assets/image/gedung2.jpeg";
 import gambarTanaman from "../../assets/image/gedung2.jpeg"; // Import gambar tanaman
+import gambarTambahan from "../../assets/image/gedung2.jpeg"; // Import gambar tambahan
 
 const IdentitasPeternakanPage = () => {
   return (
@@ -70,7 +71,7 @@ const IdentitasPeternakanPage = () => {
                 </span>
               </p>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px" }}> {/* Kotak untuk gambar kedua dan teksnya */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px" }}>
               <p
                 style={{
                   fontStyle: "",
@@ -85,15 +86,6 @@ const IdentitasPeternakanPage = () => {
                   herbal dan hortikultura.
                 </span>
               </p>
-              <p
-                style={{
-                  fontStyle: "",
-                  textAlign: "right",
-                  color: "black",
-                  fontSize: "0.9rem",
-                  marginRight: "20px",
-                }}
-              ></p>
               <img
                 src={gambarTanaman}
                 alt="Tanaman Herbal"
@@ -104,25 +96,39 @@ const IdentitasPeternakanPage = () => {
                 }}
               />
             </div>
+            
+            {/* Kotak Ketiga */}
+            <div style={{ display: "flex", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px", marginTop: "20px" }}>
+              <img
+                src={gambarTambahan}
+                alt="Fasilitas Baru"
+                style={{
+                  width: "350px",
+                  height: "auto",
+                  marginRight: "20px",
+                }}
+              />
+              <p
+                style={{
+                  fontWeight: 900,
+                  fontSize: "1rem",
+                  textAlign: "left",
+                  color: "black",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span>
+                  Fasilitas terbaru untuk penelitian dan pengembangan lebih lanjut.
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div style={{ marginTop: "16px" }}>
-          <h4 style={{ fontWeight: "600" }}>Lokasi:</h4>
-          <p>
-            Jl. Sapi Perah No. 123, Desa Ternak, Kecamatan Subur, Kabupaten
-            Sejahtera
+          <p style={{ textAlign: "center", marginTop: "20px", color: "black" }}>
+            <b>Taman Sains dan Teknologi Herbal dan Hortikultura</b> adalah pusat penelitian dan pengembangan yang fokus
+            pada tanaman herbal dan hortikultura. Program ini direncanakan untuk
+            mendukung SDGs dan membangun pertanian berkelanjutan untuk
+            ketahanan pangan dan ekonomi nasional.
           </p>
-        </div>
-
-        <div style={{ marginTop: "16px" }}>
-          <h4 style={{ fontWeight: "600" }}>Kontak:</h4>
-          <ul style={{ listStyleType: "none", padding: 0 }}>
-            <li>0812-3456-7890</li>
-            <li>✉ email@peternakansejahtera.com</li>
-            <li>www.peternakansejahtera.com</li>
-            <li>Instagram: @peternakansejahtera</li>
-          </ul>
         </div>
       </div>
     </div>
