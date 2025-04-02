@@ -23,7 +23,7 @@ function Header() {
                       <img
                         src={logoBlack}
                         alt="Logo Black"
-                        style={{ height: "100%", width: "auto" }} // Atur ukuran sesuai kebutuhan
+                        style={{ height: "100%", width: "auto" }}
                       />
                     </Link>
                   </div>
