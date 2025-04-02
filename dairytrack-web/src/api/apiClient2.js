@@ -1,4 +1,3 @@
-//pny T0mm11y
 const BASE_URL = "http://127.0.0.1:5003/api";
 
 export const fetchAPI = async (endpoint, method = "GET", data = null) => {

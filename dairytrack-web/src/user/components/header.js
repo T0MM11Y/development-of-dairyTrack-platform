@@ -1,6 +1,5 @@
 import React from "react";
-import logoBlack from "../../assets/client/img/logo/logo_black.png";
-import logoWhite from "../../assets/client/img/logo/logo_white.png";
+import logoBlack from "../../assets/client/img/logo/logo.png";
 import { Link, useLocation } from "react-router-dom";
 
 function Header() {
@@ -19,12 +18,13 @@ function Header() {
               </div>
               <div className="menu__wrap">
                 <nav className="menu__nav">
-                  <div className="logo">
+                  <div className="logo lg">
                     <Link to="/" className="logo__black">
-                      <img src={logoBlack} alt="Logo Black" />
-                    </Link>
-                    <Link to="/" className="logo__white">
-                      <img src={logoWhite} alt="Logo White" />
+                      <img
+                        src={logoBlack}
+                        alt="Logo Black"
+                        style={{ height: "100%", width: "auto" }} // Atur ukuran sesuai kebutuhan
+                      />
                     </Link>
                   </div>
 
@@ -33,16 +33,22 @@ function Header() {
                       <li className={isActive("/") ? "active" : ""}>
                         <Link to="/">Home</Link>
                       </li>
-                      <li className={isActive("/identitas-peternakan") ? "active" : ""}>
+                      <li
+                        className={
+                          isActive("/identitas-peternakan") ? "active" : ""
+                        }
+                      >
                         <Link to="/identitas-peternakan">Identitas</Link>
                       </li>
-                      <li className={isActive("/sejarah") ? "active" : ""}>
+                      {/* <li className={isActive("/sejarah") ? "active" : ""}>
                         <Link to="/sejarah">Sejarah</Link>
-                      </li>
+                      </li> */}
                       <li className={isActive("/fasilitas") ? "active" : ""}>
                         <Link to="/fasilitas">Fasilitas</Link>
                       </li>
-                      <li className={isActive("/produksi-susu") ? "active" : ""}>
+                      <li
+                        className={isActive("/produksi-susu") ? "active" : ""}
+                      >
                         <Link to="/produksi-susu">Produksi Susu</Link>
                       </li>
                       <li className={isActive("/produk") ? "active" : ""}>
@@ -51,11 +57,16 @@ function Header() {
                       <li className={isActive("/galeri") ? "active" : ""}>
                         <Link to="/galeri">Galeri</Link>
                       </li>
+                      <li className={isActive("/contact-us") ? "active" : ""}>
+                        <Link to="/contact-us">Contact Us</Link>
+                      </li>
                     </ul>
                   </div>
 
                   <div className="header__btn d-none d-md-block">
-                    <Link to="/login" className="btn">Login</Link>
+                    <Link to="/login" className="btn">
+                      Login
+                    </Link>
                   </div>
                 </nav>
               </div>
@@ -70,27 +81,63 @@ function Header() {
                     <Link to="/" className="logo__black">
                       <img src={logoBlack} alt="Logo Black" />
                     </Link>
-                    <Link to="/" className="logo__white">
-                      <img src={logoWhite} alt="Logo White" />
-                    </Link>
                   </div>
                   <ul className="navigation clearfix">
-                    <li><Link to="/">Home</Link></li>
-                    <li><Link to="/identitas-peternakan">Identitas</Link></li>
-                    <li><Link to="/sejarah">Sejarah</Link></li>
-                    <li><Link to="/fasilitas">Fasilitas</Link></li>
-                    <li><Link to="/produksi-susu">Produksi Susu</Link></li>
-                    <li><Link to="/produk">Produk</Link></li>
-                    <li><Link to="/galeri">Galeri</Link></li>
-                    <li><Link to="/login">Login</Link></li>
+                    <li>
+                      <Link to="/">Home</Link>
+                    </li>
+                    <li>
+                      <Link to="/identitas-peternakan">Identitas</Link>
+                    </li>
+                    <li>
+                      <Link to="/sejarah">Sejarah</Link>
+                    </li>
+                    <li>
+                      <Link to="/fasilitas">Fasilitas</Link>
+                    </li>
+                    <li>
+                      <Link to="/produksi-susu">Produksi Susu</Link>
+                    </li>
+                    <li>
+                      <Link to="/produk">Produk</Link>
+                    </li>
+                    <li>
+                      <Link to="/galeri">Galeri</Link>
+                    </li>
+                    <li>
+                      <Link to="/contact-us">Contact Us</Link>
+                    </li>
+                    <li>
+                      <Link to="/login">Login</Link>
+                    </li>
                   </ul>
                   <div className="social-links">
                     <ul className="clearfix">
-                      <li><button><span className="fab fa-twitter"></span></button></li>
-                      <li><button><span className="fab fa-facebook-square"></span></button></li>
-                      <li><button><span className="fab fa-pinterest-p"></span></button></li>
-                      <li><button><span className="fab fa-instagram"></span></button></li>
-                      <li><button><span className="fab fa-youtube"></span></button></li>
+                      <li>
+                        <button>
+                          <span className="fab fa-twitter"></span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>
+                          <span className="fab fa-facebook-square"></span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>
+                          <span className="fab fa-pinterest-p"></span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>
+                          <span className="fab fa-instagram"></span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>
+                          <span className="fab fa-youtube"></span>
+                        </button>
+                      </li>
                     </ul>
                   </div>
                 </nav>

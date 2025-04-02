@@ -6,17 +6,23 @@ const SymptomEditPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const res = await getSymptomById(id);
         setForm(res);
       } catch (err) {
         console.error("Error fetching symptom:", err);
+        setError("Gagal mengambil data gejala.");
+      } finally {
+        setLoading(false);
       }
     };
-    fetch();
+    fetchData();
   }, [id]);
 
   const handleChange = (e) => {
@@ -26,53 +32,71 @@ const SymptomEditPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       await updateSymptom(id, form);
       navigate("/admin/kesehatan/gejala");
     } catch (err) {
       console.error("Error updating symptom:", err);
-      alert("Gagal memperbarui data!");
+      setError("Gagal memperbarui data gejala.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (!form) return <div>Loading...</div>;
-
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Edit Data Gejala</h2>
-      <form onSubmit={handleSubmit}>
-        <table className="table-auto w-full max-w-2xl">
-          <tbody>
-            {Object.entries(form).map(([key, value]) => {
-              if (key === "id" || key === "health_check") return null;
-              return (
-                <tr key={key}>
-                  <td className="p-2 font-semibold capitalize">{key.replace(/_/g, " ")}</td>
-                  <td className="p-2">
-                    <input
-                      type="text"
-                      name={key}
-                      value={value || ""}
-                      onChange={handleChange}
-                      className="border px-2 py-1 w-full"
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-            <tr>
-              <td colSpan="2" className="p-2">
+    <div
+      className="modal show d-block"
+      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
+    >
+      <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h4 className="modal-title text-info fw-bold">Edit Data Gejala</h4>
+            <button
+              className="btn-close"
+              onClick={() => navigate("/admin/kesehatan/gejala")}
+              disabled={submitting}
+            ></button>
+          </div>
+          <div className="modal-body">
+            {error && <p className="text-danger text-center">{error}</p>}
+            {loading || !form ? (
+              <p className="text-center">Memuat data gejala...</p>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  {Object.entries(form).map(([key, value]) => {
+                    if (key === "id" || key === "health_check") return null;
+                    return (
+                      <div key={key} className="col-md-6 mb-3">
+                        <label className="form-label fw-semibold">
+                          {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <input
+                          type="text"
+                          name={key}
+                          value={value || ""}
+                          onChange={handleChange}
+                          className="form-control"
+                          disabled={submitting}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  className="btn btn-info w-100 fw-semibold"
+                  disabled={submitting}
                 >
-                  Update
+                  {submitting ? "Memperbarui..." : "Perbarui Data"}
                 </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

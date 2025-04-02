@@ -15,6 +15,11 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+
+    # Set default port to 5002 if no port is provided
+    if len(sys.argv) == 2 and sys.argv[1] == "runserver":
+        sys.argv.append("5002")
+
     execute_from_command_line(sys.argv)
 
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { createSymptom } from "../../../../api/kesehatan/symptom";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,10 @@ const SymptomCreatePage = () => {
     treatment_status: "Not Treated",
   });
 
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     const fetchHealthChecks = async () => {
       try {
@@ -28,6 +32,9 @@ const SymptomCreatePage = () => {
         setHealthChecks(res);
       } catch (err) {
         console.error("Gagal mengambil data pemeriksaan:", err);
+        setError("Gagal mengambil data pemeriksaan.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchHealthChecks();
@@ -35,83 +42,106 @@ const SymptomCreatePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       await createSymptom(form);
-      navigate("/admin/kesehatan/gejala");
+      navigate("/admin/kesehatan/gejala"); // redirect setelah sukses
     } catch (err) {
-      alert("Gagal menyimpan data gejala: " + err.message);
+      console.error("Gagal menyimpan data gejala:", err);
+      setError("Gagal menyimpan data gejala: " + err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Tambah Gejala Sapi</h2>
-      <form onSubmit={handleSubmit}>
-        <table className="table-auto w-full max-w-2xl text-sm">
-          <tbody>
-            <tr>
-              <td className="p-2">Pemeriksaan</td>
-              <td className="p-2">
-                <select
-                  name="health_check"
-                  value={form.health_check}
-                  onChange={handleChange}
-                  className="w-full border px-2 py-1"
-                  required
-                >
-                  <option value="">-- Pilih Pemeriksaan --</option>
-                  {healthChecks.map((hc) => (
-                    <option key={hc.id} value={hc.id}>
-                      {hc.checkup_date} - {hc.rectal_temperature}°C
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-
-            {/* Sisa field tetap seperti sebelumnya */}
-            {[
-              ["eye_condition", "Kondisi Mata"],
-              ["mouth_condition", "Kondisi Mulut"],
-              ["nose_condition", "Kondisi Hidung"],
-              ["anus_condition", "Kondisi Anus"],
-              ["leg_condition", "Kondisi Kaki"],
-              ["skin_condition", "Kondisi Kulit"],
-              ["behavior", "Perilaku"],
-              ["weight_condition", "Berat Badan"],
-              ["body_temperature", "Suhu Tubuh"],
-              ["reproductive_condition", "Kondisi Kelamin"],
-              ["treatment_status", "Status Penanganan"],
-            ].map(([name, label]) => (
-              <tr key={name}>
-                <td className="p-2">{label}</td>
-                <td className="p-2">
-                  <input
-                    name={name}
-                    value={form[name]}
+    <div
+      className="modal show d-block"
+      style={{
+        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+        minHeight: "100vh",
+        paddingTop: "3rem",
+      }}
+    >
+      <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h4 className="modal-title text-info fw-bold">Tambah Data Gejala</h4>
+            <button
+              className="btn-close"
+              onClick={() => navigate("/admin/kesehatan/gejala")}
+              disabled={submitting}
+            ></button>
+          </div>
+          <div className="modal-body">
+            {error && <p className="text-danger text-center">{error}</p>}
+            {loading ? (
+              <p className="text-center">Memuat data pemeriksaan...</p>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Pemeriksaan</label>
+                  <select
+                    name="health_check"
+                    value={form.health_check}
                     onChange={handleChange}
-                    className="w-full border px-2 py-1"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    className="form-select"
+                    required
+                  >
+                    <option value="">-- Pilih Pemeriksaan --</option>
+                    {healthChecks.map((hc) => (
+                      <option key={hc.id} value={hc.id}>
+                        {hc.checkup_date} - {hc.rectal_temperature}°C
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-        <div className="mt-4">
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-          >
-            Simpan
-          </button>
+                <div className="row">
+                  {[
+                    ["eye_condition", "Kondisi Mata"],
+                    ["mouth_condition", "Kondisi Mulut"],
+                    ["nose_condition", "Kondisi Hidung"],
+                    ["anus_condition", "Kondisi Anus"],
+                    ["leg_condition", "Kondisi Kaki"],
+                    ["skin_condition", "Kondisi Kulit"],
+                    ["behavior", "Perilaku"],
+                    ["weight_condition", "Berat Badan"],
+                    ["body_temperature", "Suhu Tubuh"],
+                    ["reproductive_condition", "Kondisi Kelamin"],
+                    ["treatment_status", "Status Penanganan"],
+                  ].map(([key, label]) => (
+                    <div className="col-md-6 mb-3" key={key}>
+                      <label className="form-label fw-bold">{label}</label>
+                      <input
+                        type="text"
+                        name={key}
+                        value={form[key]}
+                        onChange={handleChange}
+                        className="form-control"
+                        placeholder={`Masukkan ${label.toLowerCase()}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-info w-100"
+                  disabled={submitting}
+                >
+                  {submitting ? "Menyimpan..." : "Simpan"}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

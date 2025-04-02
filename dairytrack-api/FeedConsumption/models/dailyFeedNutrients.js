@@ -1,7 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database"); // pastikan path benar
-const FeedStock = require("./feedStockModel");
-const ExistingDailyFeedNutrients = require("./dailyFeedNutrients"); // Ubah nama variabel
+const sequelize = require("../config/database");
 
 const DailyFeedNutrients = sequelize.define(
   "DailyFeedNutrients",
@@ -11,11 +9,11 @@ const DailyFeedNutrients = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    daily_feed_session_id: {
+    daily_feed_session_id: {  
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "daily_feed_sessions", // nama tabel literal
+        model: "daily_feed_sessions", 
         key: "id",
       },
       onDelete: "CASCADE",
@@ -42,5 +40,6 @@ const DailyFeedNutrients = sequelize.define(
     timestamps: false,
   }
 );
+
 
 module.exports = DailyFeedNutrients;

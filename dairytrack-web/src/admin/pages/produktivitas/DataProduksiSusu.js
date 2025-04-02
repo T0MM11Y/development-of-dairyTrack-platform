@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   getRawMilks,
@@ -19,66 +19,56 @@ const Modal = ({
   handleDelete,
   setModalType,
   selectedRawMilk,
-  submitting,
+  isProcessing,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const fetchPreviousVolume = useCallback(
+    async (cowId) => {
+      if (!cowId) return;
+
+      try {
+        const rawMilks = await getRawMilksByCowId(cowId);
+        const lastMilkData = rawMilks?.[0];
+        setFormData((prev) => ({
+          ...prev,
+          previous_volume: lastMilkData?.volume_liters || 0,
+        }));
+      } catch (error) {
+        console.error("Error fetching previous volume:", error.message);
+        setFormData((prev) => ({
+          ...prev,
+          previous_volume: 0,
+        }));
+      }
+    },
+    [setFormData]
+  );
 
   useEffect(() => {
-    if (modalType) {
-      setFormData({
-        cow_id: "",
-        production_time: "",
-        volume_liters: "",
-        previous_volume: 0,
-        status: "fresh",
-      });
-    } else {
-      setFormData({
-        cow_id: "",
-        production_time: "",
-        volume_liters: "",
-        previous_volume: 0,
-        status: "fresh",
-      });
-    }
-  }, [modalType, setFormData]);
-
-  const fetchPreviousVolume = async (cowId) => {
-    if (!cowId) return;
-
-    setIsLoading(true);
-    try {
-      const rawMilks = await getRawMilksByCowId(cowId);
-      const lastMilkData = rawMilks?.[0];
-      setFormData((prev) => ({
-        ...prev,
-        previous_volume: lastMilkData?.volume_liters || 0,
-      }));
-    } catch (error) {
-      console.error("Error fetching previous volume:", error.message);
-      setFormData((prev) => ({
-        ...prev,
-        previous_volume: 0,
-      }));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (formData.cow_id) {
         fetchPreviousVolume(formData.cow_id);
       }
     }, 500);
 
-    return () => clearTimeout(timeout);
-  }, [formData.cow_id]);
+    return () => clearTimeout(timer);
+  }, [formData.cow_id, fetchPreviousVolume]);
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      cow_id: "",
+      production_time: "",
+      volume_liters: "",
+      previous_volume: 0,
+      status: "fresh",
+    });
+  }, [setFormData]);
 
   return (
     <div
       className="modal fade show d-block"
-      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
+      style={{
+        background: isProcessing ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+      }}
       tabIndex="-1"
       role="dialog"
       onClick={() => setModalType(null)}
@@ -98,24 +88,18 @@ const Modal = ({
               className="btn-close"
               onClick={() => {
                 setModalType(null);
-                setFormData({
-                  cow_id: "",
-                  production_time: "",
-                  volume_liters: "",
-                  previous_volume: 0,
-                  status: "fresh",
-                });
+                resetForm();
               }}
-              disabled={submitting || isLoading}
+              disabled={isProcessing}
             ></button>
           </div>
           <div className="modal-body">
-            {submitting || isLoading ? (
+            {isProcessing ? (
               <div className="text-center">
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p>{submitting ? "Processing..." : "Loading data..."}</p>
+                <p>Processing...</p>
               </div>
             ) : modalType === "delete" ? (
               <p>
@@ -133,7 +117,7 @@ const Modal = ({
                     onChange={(e) =>
                       setFormData({ ...formData, cow_id: e.target.value })
                     }
-                    disabled={isLoading}
+                    disabled={isProcessing}
                   >
                     <option value="">Select Cow</option>
                     {cows.map((cow) => (
@@ -155,7 +139,7 @@ const Modal = ({
                         production_time: e.target.value,
                       })
                     }
-                    disabled={isLoading}
+                    disabled={isProcessing}
                   />
                 </div>
                 <div className="mb-3">
@@ -170,7 +154,7 @@ const Modal = ({
                         volume_liters: e.target.value,
                       })
                     }
-                    disabled={isLoading}
+                    disabled={isProcessing}
                   />
                 </div>
                 <div className="mb-3">
@@ -180,7 +164,7 @@ const Modal = ({
                     className="form-control"
                     value={formData.previous_volume || 0}
                     readOnly
-                    disabled={isLoading}
+                    disabled={isProcessing}
                   />
                 </div>
                 <div className="mb-3">
@@ -205,15 +189,9 @@ const Modal = ({
               className="btn btn-secondary"
               onClick={() => {
                 setModalType(null);
-                setFormData({
-                  cow_id: "",
-                  production_time: "",
-                  volume_liters: "",
-                  previous_volume: 0,
-                  status: "fresh",
-                });
+                resetForm();
               }}
-              disabled={submitting || isLoading}
+              disabled={isProcessing}
             >
               Cancel
             </button>
@@ -222,18 +200,18 @@ const Modal = ({
                 type="button"
                 className="btn btn-danger"
                 onClick={handleDelete}
-                disabled={submitting || isLoading}
+                disabled={isProcessing}
               >
-                {submitting ? "Deleting..." : "Delete"}
+                Delete
               </button>
             ) : (
               <button
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={submitting || isLoading}
+                disabled={isProcessing}
               >
-                {submitting ? "Saving..." : "Save"}
+                Save
               </button>
             )}
           </div>
@@ -243,34 +221,37 @@ const Modal = ({
   );
 };
 
-const RawMilkTable = ({ rawMilks, openModal, loading }) => {
-  const [updatedRawMilks, setUpdatedRawMilks] = useState([]);
+const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
+  const [timeLeftData, setTimeLeftData] = useState({});
 
   useEffect(() => {
     const calculateTimeLeft = (expirationTime) => {
       const now = new Date();
       const expiration = new Date(expirationTime);
       const diff = expiration - now;
-
-      if (diff <= 0) return "Expired";
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hours}h ${minutes}m`;
+      return diff <= 0 ? null : diff;
     };
 
     const interval = setInterval(() => {
-      const updated = rawMilks.map((rawMilk) => ({
-        ...rawMilk,
-        timeLeft: calculateTimeLeft(rawMilk.expiration_time),
-      }));
-      setUpdatedRawMilks(updated);
-    }, 1000);
+      const newTimeLeftData = {};
+      rawMilks.forEach((rawMilk) => {
+        const diff = calculateTimeLeft(rawMilk.expiration_time);
+        newTimeLeftData[rawMilk.id] = diff;
+      });
+      setTimeLeftData(newTimeLeftData);
+    }, 60000); // Update setiap 1 menit, bukan setiap detik
 
     return () => clearInterval(interval);
   }, [rawMilks]);
 
-  if (loading) {
+  const formatTimeLeft = (diff) => {
+    if (!diff) return null;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  if (isLoading) {
     return (
       <div className="text-center">
         <div className="spinner-border text-primary" role="status">
@@ -300,60 +281,64 @@ const RawMilkTable = ({ rawMilks, openModal, loading }) => {
                 </tr>
               </thead>
               <tbody>
-                {updatedRawMilks.map((rawMilk, index) => (
-                  <tr key={rawMilk.id}>
-                    <th scope="row">{index + 1}</th>
-                    <td>{rawMilk.cow?.name || "Unknown"}</td>
-                    <td>
-                      {rawMilk.production_time
-                        ? format(new Date(rawMilk.production_time), "PPpp")
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {rawMilk.volume_liters || 0} L
-                      <br />
-                      <small style={{ fontSize: "10px", color: "gray" }}>
-                        ({(rawMilk.volume_liters || 0) * 1000} mL)
-                      </small>
-                    </td>
-                    <td>
-                      {rawMilk.previous_volume || 0} L
-                      <br />
-                      <small style={{ fontSize: "10px", color: "gray" }}>
-                        ({(rawMilk.previous_volume || 0) * 1000} mL)
-                      </small>
-                    </td>
-                    <td>
-                      {rawMilk.status === "fresh" ? (
-                        <span style={{ color: "green", fontWeight: "bold" }}>
-                          Fresh
-                          <br />
-                          <small style={{ fontSize: "10px", color: "gray" }}>
-                            {rawMilk.timeLeft}
-                          </small>
-                        </span>
-                      ) : (
-                        <span style={{ color: "red", fontWeight: "bold" }}>
-                          Expired
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-warning me-2"
-                        onClick={() => openModal("edit", rawMilk.id)}
-                      >
-                        <i className="ri-edit-line"></i>
-                      </button>
-                      <button
-                        onClick={() => openModal("delete", rawMilk.id)}
-                        className="btn btn-danger"
-                      >
-                        <i className="ri-delete-bin-6-line"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rawMilks.map((rawMilk, index) => {
+                  const timeLeft = timeLeftData[rawMilk.id];
+                  const isExpired = !timeLeft || timeLeft <= 0;
+                  const formattedTimeLeft = formatTimeLeft(timeLeft);
+
+                  return (
+                    <tr key={rawMilk.id}>
+                      <th scope="row">{index + 1}</th>
+                      <td>{rawMilk.cow?.name || "Unknown"}</td>
+                      <td>
+                        {rawMilk.production_time
+                          ? format(new Date(rawMilk.production_time), "PPpp")
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {rawMilk.volume_liters || 0} L
+                        <br />
+                        <small style={{ fontSize: "10px", color: "gray" }}>
+                          ({(rawMilk.volume_liters || 0) * 1000} mL)
+                        </small>
+                      </td>
+                      <td>
+                        {rawMilk.previous_volume || 0} L
+                        <br />
+                        <small style={{ fontSize: "10px", color: "gray" }}>
+                          ({(rawMilk.previous_volume || 0) * 1000} mL)
+                        </small>
+                      </td>
+                      <td>
+                        {!isExpired ? (
+                          <span className="badge bg-success">
+                            Fresh
+                            <br />
+                            <small style={{ fontSize: "10px", color: "white" }}>
+                              {formattedTimeLeft}
+                            </small>
+                          </span>
+                        ) : (
+                          <span className="badge bg-danger">Expired</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-warning me-2"
+                          onClick={() => openModal("edit", rawMilk.id)}
+                        >
+                          <i className="ri-edit-line"></i>
+                        </button>
+                        <button
+                          onClick={() => openModal("delete", rawMilk.id)}
+                          className="btn btn-danger"
+                        >
+                          <i className="ri-delete-bin-6-line"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -366,7 +351,7 @@ const RawMilkTable = ({ rawMilks, openModal, loading }) => {
 const DataProduksiSusu = () => {
   const [rawMilks, setRawMilks] = useState([]);
   const [cows, setCows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [modalType, setModalType] = useState(null);
   const [selectedRawMilk, setSelectedRawMilk] = useState(null);
   const [formData, setFormData] = useState({
@@ -375,144 +360,104 @@ const DataProduksiSusu = () => {
     volume_liters: "",
     previous_volume: 0,
     status: "fresh",
-    formDataHidden: "",
   });
-  const [submitting, setSubmitting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-      const data = await getRawMilks();
-      setRawMilks(data);
+      setIsLoading(true);
+      const [milkData, cowData] = await Promise.all([getRawMilks(), getCows()]);
+      setRawMilks(milkData);
+      setCows(cowData);
     } catch (error) {
-      console.error("Failed to fetch raw milk data:", error.message);
+      console.error("Failed to fetch data:", error.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCows = async () => {
-    try {
-      const data = await getCows();
-      setCows(data);
-    } catch (error) {
-      console.error("Failed to fetch cows data:", error.message);
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!selectedRawMilk) return;
 
-    setSubmitting(true);
+    setIsProcessing(true);
     try {
       await deleteRawMilk(selectedRawMilk.id);
-      fetchData();
+      await fetchData();
       setModalType(null);
     } catch (error) {
       console.error("Failed to delete raw milk:", error.message);
       alert("Failed to delete raw milk: " + error.message);
     } finally {
-      setSubmitting(false);
+      setIsProcessing(false);
       setSelectedRawMilk(null);
     }
-  };
+  }, [selectedRawMilk, fetchData]);
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
+  const handleSubmit = useCallback(async () => {
+    setIsProcessing(true);
     try {
-      const updatedFormData = {
-        ...formData,
-      };
-
       if (modalType === "create") {
-        await createRawMilk(updatedFormData);
+        await createRawMilk(formData);
       } else if (modalType === "edit") {
-        await updateRawMilk(selectedRawMilk.id, updatedFormData);
+        await updateRawMilk(selectedRawMilk.id, formData);
       }
-      fetchData();
+      await fetchData();
       setModalType(null);
     } catch (error) {
       console.error("Failed to save raw milk:", error.message);
       alert("Failed to save raw milk: " + error.message);
     } finally {
-      setSubmitting(false);
+      setIsProcessing(false);
       setFormData({
         cow_id: "",
         production_time: "",
         volume_liters: "",
         previous_volume: 0,
         status: "fresh",
-        formDataHidden: "",
       });
     }
-  };
+  }, [modalType, formData, selectedRawMilk, fetchData]);
 
-  const openModal = async (type, rawMilkId = null) => {
-    setModalType(type);
+  const openModal = useCallback(
+    async (type, rawMilkId = null) => {
+      setModalType(type);
 
-    if (type === "delete" && rawMilkId) {
-      const rawMilk = rawMilks.find((milk) => milk.id === rawMilkId);
-      setSelectedRawMilk(rawMilk);
-    } else if (type === "edit" && rawMilkId) {
-      try {
-        const rawMilk = await getRawMilkById(rawMilkId);
+      if (type === "delete" && rawMilkId) {
+        const rawMilk = rawMilks.find((milk) => milk.id === rawMilkId);
         setSelectedRawMilk(rawMilk);
-
+      } else if (type === "edit" && rawMilkId) {
+        try {
+          const rawMilk = await getRawMilkById(rawMilkId);
+          setSelectedRawMilk(rawMilk);
+          setFormData({
+            cow_id: rawMilk.cow_id ?? "",
+            production_time: rawMilk.production_time
+              ? new Date(rawMilk.production_time).toISOString().slice(0, 16)
+              : "",
+            volume_liters: rawMilk.volume_liters ?? "",
+            previous_volume: rawMilk.previous_volume ?? 0,
+            status: rawMilk.status ?? "fresh",
+          });
+        } catch (error) {
+          console.error("Failed to fetch raw milk by ID:", error.message);
+        }
+      } else {
+        setSelectedRawMilk(null);
         setFormData({
-          cow_id: rawMilk.cow_id ?? "",
-          production_time: rawMilk.production_time
-            ? new Date(rawMilk.production_time).toISOString().slice(0, 16)
-            : "",
-          volume_liters: rawMilk.volume_liters ?? "",
-          previous_volume: rawMilk.previous_volume ?? 0,
-          status: rawMilk.status ?? "fresh",
+          cow_id: "",
+          production_time: "",
+          volume_liters: "",
+          previous_volume: 0,
+          status: "fresh",
         });
-      } catch (error) {
-        console.error("Failed to fetch raw milk by ID:", error.message);
       }
-    } else {
-      setSelectedRawMilk(null);
-      setFormData({
-        cow_id: "",
-        production_time: "",
-        volume_liters: "",
-        previous_volume: 0,
-        status: "fresh",
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-    fetchCows();
-    if (modalType === "edit" && selectedRawMilk) {
-      setFormData({
-        cow_id: selectedRawMilk.cow_id || "",
-        production_time: selectedRawMilk.production_time
-          ? new Date(selectedRawMilk.production_time).toISOString().slice(0, 16)
-          : "",
-        volume_liters: selectedRawMilk.volume_liters || "",
-        previous_volume: selectedRawMilk.previous_volume || 0,
-        status: selectedRawMilk.status || "fresh",
-      });
-    } else if (modalType === "create") {
-      setFormData({
-        cow_id: "",
-        production_time: "",
-        volume_liters: "",
-        previous_volume: 0,
-        status: "fresh",
-      });
-    } else {
-      setFormData({
-        cow_id: "",
-        production_time: "",
-        volume_liters: "",
-        previous_volume: 0,
-        status: "fresh",
-      });
-    }
-  }, [modalType, selectedRawMilk]);
+    },
+    [rawMilks]
+  );
 
   return (
     <div className="p-4">
@@ -523,20 +468,11 @@ const DataProduksiSusu = () => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading raw milk data...</p>
-        </div>
-      ) : (
-        <RawMilkTable
-          rawMilks={rawMilks}
-          openModal={openModal}
-          loading={loading}
-        />
-      )}
+      <RawMilkTable
+        rawMilks={rawMilks}
+        openModal={openModal}
+        isLoading={isLoading}
+      />
 
       {modalType && (
         <Modal
@@ -548,7 +484,7 @@ const DataProduksiSusu = () => {
           handleDelete={handleDelete}
           setModalType={setModalType}
           selectedRawMilk={selectedRawMilk}
-          submitting={submitting}
+          isProcessing={isProcessing}
         />
       )}
     </div>

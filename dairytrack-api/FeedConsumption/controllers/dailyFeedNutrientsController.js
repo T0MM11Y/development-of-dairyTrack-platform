@@ -1,5 +1,4 @@
 const DailyFeedNutrients = require("../models/dailyFeedNutrients");
-const DailyFeedSession = require("../models/dailyFeedSessionModel"); // pastikan model ini ada
 
 // GET all daily feed nutrients (dengan info sesi)
 exports.getAllDailyFeedNutrients = async (req, res) => {

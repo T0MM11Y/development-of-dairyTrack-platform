@@ -1,155 +1,144 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../assets/client/css/style.css";
-
-import iconLogin from "../assets/client/img/logo/logo_white.png";
-import loginSecurityImage from "../assets/admin/images/login.jpg";
+import iconLogin from "../assets/client/img/logo/logo.png";
+import { login } from "../api/auth/login";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("Processing");
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  useEffect(() => {
+    // Redirect to admin if already logged in
+    const user = localStorage.getItem("user");
+    if (user) {
+      navigate("/admin", { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingText((prev) =>
+          prev === "Processing..." ? "Processing" : prev + "."
+        );
+      }, 500);
+    } else {
+      setLoadingText("Processing");
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    window.location.href = "/admin";
+    setIsLoading(true);
+
+    try {
+      const response = await login({ email, password });
+
+      if (response.status === 200) {
+        navigate("/admin", { replace: true });
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = () => {
+          navigate("/admin", { replace: true });
+        };
+      } else {
+        setError(response.message);
+      }
+    } catch (error) {
+      setError("An unexpected error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
-      <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-md-6 col-lg-5">
-            <div
-              className="card shadow-lg border-0"
-              style={{ borderRadius: "15px" }}
-            >
-              <div className="row g-0">
-                {/* Left side - Login form */}
-                <div
-                  className="col-md-6 d-flex flex-column justify-content-center p-4"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderRadius: "15px 0 0 15px",
-                  }}
-                >
-                  <div className="text-center mb-2">
-                    <img src={iconLogin} height="40" alt="Logo" />
-                  </div>
+    <div
+      className="d-flex justify-content-center align-items-center vh-100"
+      style={{ backgroundColor: "#f4f4f4" }}
+    >
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-text">{loadingText}</div>
+        </div>
+      )}
 
-                  <div className="mb-1 text-center">
-                    <p className="text-muted small">
-                      Sign in to access your cattle farm admin account
-                    </p>
-                  </div>
+      <div className="w-100 px-4" style={{ maxWidth: "350px" }}>
+        <div className="text-center mb-4">
+          <img src={iconLogin} height="120" alt="Logo" />
+        </div>
 
-                  <form onSubmit={handleLogin}>
-                    <div className="mb-3">
-                      <label
-                        htmlFor="email"
-                        className="form-label fw-medium small"
-                      >
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        className="form-control form-control-sm"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        style={{
-                          borderRadius: "8px",
-                          border: "1px solid #ccc",
-                          padding: "5px",
-                          transition: "0.3s ease-in-out",
-                        }}
-                      />
-                    </div>
+        {error && (
+          <div className="alert alert-danger text-center fs-6">{error}</div>
+        )}
 
-                    <div className="mb-3">
-                      <label
-                        htmlFor="password"
-                        className="form-label fw-medium small"
-                      >
-                        Password
-                      </label>
-                      <div className="input-group input-group-sm">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          className="form-control"
-                          id="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          style={{
-                            borderRadius: "8px",
-                            border: "1px solid #ccc",
-                            padding: "5px",
-                            transition: "0.3s ease-in-out",
-                          }}
-                        />
-                        <span
-                          className="input-group-text"
-                          style={{
-                            cursor: "pointer",
-                            background: "none",
-                            border: "none",
-                          }}
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          <i
-                            className={
-                              showPassword ? "fa fa-eye-slash" : "fa fa-eye"
-                            }
-                            style={{ fontSize: "1rem", color: "#666" }}
-                          ></i>
-                        </span>
-                      </div>
-                    </div>
+        <form onSubmit={handleLogin}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label fw-bold">
+              Email
+            </label>
+            <input
+              type="email"
+              className="form-control form-control-lg"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+              style={{ height: "35px", borderRadius: "10px" }}
+            />
+          </div>
 
-                    <button
-                      type="submit"
-                      className="btn w-100 py-2 mb-2"
-                      style={{
-                        background: "#34C8D3FF",
-                        color: "white",
-                        borderRadius: "8px",
-                        fontWeight: "bold",
-                        transition: "0.3s",
-                      }}
-                      onMouseOver={(e) =>
-                        (e.target.style.background = "#34C8D3FF")
-                      }
-                      onMouseOut={(e) =>
-                        (e.target.style.background = "#34C8D3FF")
-                      }
-                    >
-                      Sign in
-                    </button>
-                  </form>
-                </div>
-
-                {/* Right side - Image */}
-                <div className="col-md-5 d-none d-md-block">
-                  <div className="d-flex justify-content-center align-items-center h-100">
-                    <img
-                      src={loginSecurityImage}
-                      alt="Login Security"
-                      className="img-fluid"
-                      style={{
-                        borderRadius: "0 15px 15px 0",
-                        maxHeight: "80%", // Reduce height to 80% of the container
-                        maxWidth: "80%", // Reduce width to 80% of the container
-                        width: "auto", // Maintain aspect ratio
-                        objectFit: "cover", // Scale the image to cover the container
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label fw-bold">
+              Password
+            </label>
+            <div className="input-group input-group-lg">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                style={{ height: "35px", borderRadius: "10px", width: "80%" }}
+              />
+              <span
+                className="input-group-text border-0 bg-transparent"
+                style={{ cursor: isLoading ? "not-allowed" : "pointer" }}
+                onClick={() => !isLoading && setShowPassword(!showPassword)}
+              >
+                <i
+                  className={showPassword ? "fa fa-eye-slash" : "fa fa-eye"}
+                  style={{ color: "#666" }}
+                ></i>
+              </span>
             </div>
           </div>
-        </div>
+
+          <button
+            type="submit"
+            className="btn btn-info w-100 py-2"
+            disabled={isLoading}
+            style={{ borderRadius: "10px", fontSize: "1.2rem" }}
+          >
+            {isLoading ? "Loading..." : "Sign in"}
+          </button>
+        </form>
       </div>
     </div>
   );
