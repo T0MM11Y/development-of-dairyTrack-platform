@@ -33,26 +33,13 @@ function Header() {
                       <li className={isActive("/") ? "active" : ""}>
                         <Link to="/">Home</Link>
                       </li>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
                       <li
                         className={
                           isActive("/identitas-peternakan") ? "active" : ""
                         }
                       >
-                        <Link to="/identitas-peternakan">Identitas</Link>
-=======
-                      <li className={isActive("/identitas-peternakan") ? "active" : ""}>
                         <Link to="/identitas-peternakan">Profil</Link>
->>>>>>> Stashed changes
-=======
-                      <li className={isActive("/identitas-peternakan") ? "active" : ""}>
-                        <Link to="/identitas-peternakan">Profil</Link>
->>>>>>> Stashed changes
                       </li>
-                      {/* <li className={isActive("/sejarah") ? "active" : ""}>
-                        <Link to="/sejarah">Sejarah</Link>
-                      </li> */}
                       <li className={isActive("/fasilitas") ? "active" : ""}>
                         <Link to="/fasilitas">Fasilitas</Link>
                       </li>
@@ -97,7 +84,7 @@ function Header() {
                       <Link to="/">Home</Link>
                     </li>
                     <li>
-                      <Link to="/identitas-peternakan">Identitas</Link>
+                      <Link to="/identitas-peternakan">Profil</Link>
                     </li>
                     <li>
                       <Link to="/sejarah">Sejarah</Link>
