@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFeed } from "../../../../api/pakan/feed";
 import { getFeedTypes } from "../../../../api/pakan/feedType";
+import { useNavigate } from "react-router-dom"; // Tambahkan hook untuk navigasi
 
 const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   const [feedTypes, setFeedTypes] = useState([]);
@@ -16,6 +17,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); // Inisialisasi hook navigasi
 
   useEffect(() => {
     const fetchFeedTypes = async () => {
@@ -70,7 +72,8 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
 
       if (response.success) {
         if (onFeedAdded) onFeedAdded();
-        onClose();
+        onClose(); // Menutup modal setelah sukses
+        navigate("/admin/pakan/jenis"); // Arahkan pengguna kembali ke halaman feed type data
       } else {
         throw new Error(response.message || "Gagal menyimpan data.");
       }
@@ -82,13 +85,17 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
     }
   };
 
+  const handleCloseModal = () => {
+    navigate("/admin/pakan/jenis"); // Navigasi ke halaman feed type data jika modal ditutup
+  };
+
   return (
     <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Data Pakan</h4>
-            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
+            <button className="btn-close" onClick={handleCloseModal} disabled={submitting}></button> {/* Tombol close */}
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
