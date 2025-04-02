@@ -354,6 +354,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileHover="hover"
                       whileTap="tap"
                     >
+<<<<<<< Updated upstream
                       <Link
                         to="/admin/pakan/stok"
                         className={
@@ -367,6 +368,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       variants={menuItemVariants}
                       whileHover="hover"
                       whileTap="tap"
+=======
+                      <i className="ri-stack-line"></i> Stok Pakan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/sesi-pakan"
+                      className={isActive("/admin/sesi-pakan") ? "active" : ""}
+                    >
+                      <i className="ri-stack-line"></i> Sesi Pakan
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/admin/detail-pakan-harian"
+                      className={isActive("/admin/detail-pakan-harian") ? "active" : ""}
+>>>>>>> Stashed changes
                     >
                       <Link
                         to="/admin/detail-pakan-harian"
