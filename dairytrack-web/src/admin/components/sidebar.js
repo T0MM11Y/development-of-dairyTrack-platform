@@ -4,27 +4,33 @@ import "simplebar-react/dist/simplebar.min.css";
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
   const [userData, setUserData] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Mapping of menu keys to their base paths
+  const menuPaths = {
+    peternakan: "/admin/peternakan",
+    pakan: "/admin/pakan",
+    produktivitas: "/admin/susu",
+    kesehatan: "/admin/kesehatan",
+    keuangan: "/admin/keuangan",
+  };
 
   useEffect(() => {
+    // Load user data from localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUserData(JSON.parse(storedUser));
     }
 
-    const content = document.querySelector(".main-content");
-    if (content) {
-      content.style.marginLeft = isCollapsed ? "80px" : "275px";
-      content.style.width = isCollapsed
-        ? "calc(100% - 80px)"
-        : "calc(100% - 275px)";
-      content.style.transition = "all 0.3s ease-in-out";
-    }
-  }, [isCollapsed]);
+    // Automatically open menus based on current route
+    const activeMenus = Object.keys(menuPaths).filter((key) =>
+      location.pathname.startsWith(menuPaths[key])
+    );
+    setOpenMenus(activeMenus);
+  }, [location.pathname]);
 
   const toggleSubmenu = (key) => {
     setOpenMenus((prev) =>
@@ -32,14 +38,10 @@ const Sidebar = () => {
     );
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   const isMenuOpen = (key) => openMenus.includes(key);
   const isActive = (path) => location.pathname.startsWith(path);
 
-  // Animasi untuk submenu
+  // Animation variants
   const subMenuVariants = {
     open: {
       opacity: 1,
@@ -59,10 +61,8 @@ const Sidebar = () => {
     },
   };
 
-  // Animasi untuk item menu
   const menuItemVariants = {
     hover: {
-      scale: 1.02,
       backgroundColor: "rgba(0, 0, 0, 0.05)",
       transition: { duration: 0.2 },
     },
@@ -185,7 +185,6 @@ const Sidebar = () => {
                   e.preventDefault();
                   toggleSubmenu("peternakan");
                 }}
-                aria-expanded={isMenuOpen("peternakan")}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
@@ -194,7 +193,13 @@ const Sidebar = () => {
                     <span style={{ marginLeft: "10px" }}>Peternakan</span>
                   )}
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("peternakan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
@@ -205,10 +210,8 @@ const Sidebar = () => {
                     animate="open"
                     exit="closed"
                     variants={subMenuVariants}
-                    style={{
-                      paddingLeft: "30px",
-                      overflow: "hidden",
-                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
                   >
                     {userData?.role !== "farmer" && (
                       <motion.li
@@ -278,7 +281,6 @@ const Sidebar = () => {
                   e.preventDefault();
                   toggleSubmenu("pakan");
                 }}
-                aria-expanded={isMenuOpen("pakan")}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
@@ -287,7 +289,13 @@ const Sidebar = () => {
                     <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
                   )}
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("pakan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
@@ -298,10 +306,8 @@ const Sidebar = () => {
                     animate="open"
                     exit="closed"
                     variants={subMenuVariants}
-                    style={{
-                      paddingLeft: "30px",
-                      overflow: "hidden",
-                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
                   >
                     <motion.li
                       variants={menuItemVariants}
@@ -390,7 +396,6 @@ const Sidebar = () => {
                   e.preventDefault();
                   toggleSubmenu("produktivitas");
                 }}
-                aria-expanded={isMenuOpen("produktivitas")}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
@@ -401,7 +406,13 @@ const Sidebar = () => {
                     </span>
                   )}
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("produktivitas") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
@@ -412,10 +423,8 @@ const Sidebar = () => {
                     animate="open"
                     exit="closed"
                     variants={subMenuVariants}
-                    style={{
-                      paddingLeft: "30px",
-                      overflow: "hidden",
-                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
                   >
                     <motion.li
                       variants={menuItemVariants}
@@ -465,7 +474,6 @@ const Sidebar = () => {
                   e.preventDefault();
                   toggleSubmenu("kesehatan");
                 }}
-                aria-expanded={isMenuOpen("kesehatan")}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
@@ -474,7 +482,13 @@ const Sidebar = () => {
                     <span style={{ marginLeft: "10px" }}>Kesehatan Sapi</span>
                   )}
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("kesehatan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
@@ -485,10 +499,8 @@ const Sidebar = () => {
                     animate="open"
                     exit="closed"
                     variants={subMenuVariants}
-                    style={{
-                      paddingLeft: "30px",
-                      overflow: "hidden",
-                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
                   >
                     <motion.li
                       variants={menuItemVariants}
@@ -572,7 +584,6 @@ const Sidebar = () => {
                   e.preventDefault();
                   toggleSubmenu("keuangan");
                 }}
-                aria-expanded={isMenuOpen("keuangan")}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
@@ -581,7 +592,13 @@ const Sidebar = () => {
                     <span style={{ marginLeft: "10px" }}>Keuangan</span>
                   )}
                 </div>
-                {!isCollapsed && <i className="ri-arrow-down-s-line"></i>}
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("keuangan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
@@ -592,10 +609,8 @@ const Sidebar = () => {
                     animate="open"
                     exit="closed"
                     variants={subMenuVariants}
-                    style={{
-                      paddingLeft: "30px",
-                      overflow: "hidden",
-                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
                   >
                     <motion.li
                       variants={menuItemVariants}

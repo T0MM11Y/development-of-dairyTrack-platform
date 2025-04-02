@@ -1,6 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 // Public
 import Login from "./Auth/login";
@@ -14,16 +14,16 @@ import Footer from "./admin/components/footer";
 // Admin Pages
 import Dashboard from "./admin/pages/dashboard/Dashboard";
 
-import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage";
-import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType";
-import Pakan from "./admin/pages/pakan/Feed/FeedListPage";
-import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed";
-import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList";
-import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock";
-import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList";
-import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed";
-import DetailPakanHarian from "./admin/pages/pakan/DailyFeedDetail/DailyFeedDetail";
-import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFeedDetail";
+import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
+import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
+import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
+import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
+import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
+import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
+import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
+import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
+import DetailPakanHarian from "./admin/pages/pakan/DailyFeedDetail/DailyFeedDetail.js";
+import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFeedDetail.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
@@ -32,40 +32,41 @@ import Pemasukan from "./admin/pages/keuangan/Pemasukan";
 import Pengeluaran from "./admin/pages/keuangan/Pengeluaran";
 import LaporanKeuangan from "./admin/pages/keuangan/LaporanKeuangan";
 
-// Kesehatan
-import CowListPage from "./admin/pages/peternakan/cows/CowListPage";
-import CowCreatePage from "./admin/pages/peternakan/cows/CowCreatePage";
-import CowEditPage from "./admin/pages/peternakan/cows/CowEditPage";
+//kesehatan
+import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
+import CowCreatePage from "./admin/pages/peternakan/cows/CowCreatePage.js";
+import CowEditPage from "./admin/pages/peternakan/cows/CowEditPage.js";
 
-import FarmerListPage from "./admin/pages/peternakan/farmers/FarmerListPage";
-import FarmerCreatePage from "./admin/pages/peternakan/farmers/FarmerCreatePage";
-import FarmerEditPage from "./admin/pages/peternakan/farmers/FarmerEditPage";
+import FarmerListPage from "./admin/pages/peternakan/farmers/FarmerListPage.js";
+import FarmerCreatePage from "./admin/pages/peternakan/farmers/FarmerCreatePage.js";
+import FarmerEditPage from "./admin/pages/peternakan/farmers/FarmerEditPage.js";
 
-import SupervisorListPage from "./admin/pages/peternakan/supervisor/SupervisorListPage";
-import SupervisorCreatePage from "./admin/pages/peternakan/supervisor/SupervisorCreatePage";
-import SupervisorEditPage from "./admin/pages/peternakan/supervisor/SupervisorEditPage";
+import SupervisorListPage from "./admin/pages/peternakan/supervisor/SupervisorListPage.js";
+import SupervisorCreatePage from "./admin/pages/peternakan/supervisor/SupervisorCreatePage.js";
+import SupervisorEditPage from "./admin/pages/peternakan/supervisor/SupervisorEditPage.js";
 
 // Symptoms
-import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage";
-import SymptomCreatePage from "./admin/pages/kesehatan/symptoms/SymptomCreatePage";
-import SymptomEditPage from "./admin/pages/kesehatan/symptoms/SymptomEditPage";
+import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage.js";
+import SymptomCreatePage from "./admin/pages/kesehatan/symptoms/SymptomCreatePage.js";
+import SymptomEditPage from "./admin/pages/kesehatan/symptoms/SymptomEditPage.js";
 
-import HealthCheckListPage from "./admin/pages/kesehatan/health-checks/HealthCheckListPage";
-import HealthCheckCreatePage from "./admin/pages/kesehatan/health-checks/HealthCheckCreatePage";
-import HealthCheckEditPage from "./admin/pages/kesehatan/health-checks/HealthCheckEditPage";
+import HealthCheckListPage from "./admin/pages/kesehatan/health-checks/HealthCheckListPage.js";
+import HealthCheckCreatePage from "./admin/pages/kesehatan/health-checks/HealthCheckCreatePage.js";
+import HealthCheckEditPage from "./admin/pages/kesehatan/health-checks/HealthCheckEditPage.js";
 
-import DiseaseHistoryListPage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryListPage";
-import DiseaseHistoryCreatePage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryCreatePage";
-import DiseaseHistoryEditPage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryEditPage";
+import DiseaseHistoryListPage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryListPage.js";
+import DiseaseHistoryCreatePage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryCreatePage.js";
+import DiseaseHistoryEditPage from "./admin/pages/kesehatan/disease-history/DiseaseHistoryEditPage.js";
 
-import ReproductionListPage from "./admin/pages/kesehatan/reproduction/ReproductionListPage";
-import ReproductionCreatePage from "./admin/pages/kesehatan/reproduction/ReproductionCreatePage";
-import ReproductionEditPage from "./admin/pages/kesehatan/reproduction/ReproductionEditPage";
+import ReproductionListPage from "./admin/pages/kesehatan/reproduction/ReproductionListPage.js";
+import ReproductionCreatePage from "./admin/pages/kesehatan/reproduction/ReproductionCreatePage.js";
+import ReproductionEditPage from "./admin/pages/kesehatan/reproduction/ReproductionEditPage.js";
 
 // Import CSS
 import "./assets/admin/css/icons.min.css";
 import "./assets/admin/css/app.css";
 import "./assets/admin/css/bootstrap.min.css";
+
 import "simplebar-react/dist/simplebar.min.css";
 
 // User Pages
@@ -77,64 +78,40 @@ import ProdukPage from "./user/pages/ProdukPage";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
 import ContactUs from "./user/pages/ContactUs";
+const withAdminLayout = (Component) => {
+  const AdminLayout = () => {
+    return (
+      <div id="layout-wrapper" style={{ display: "flex", height: "100vh" }}>
+        <div className="sidebar" style={{ width: "250px", flexShrink: 0 }}>
+          <Sidebar />
+        </div>
+
+        <div
+          className="main-content"
+          style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        >
+          <Header />
+          <div
+            className="content"
+            style={{ flex: 1, overflow: "auto", padding: "20px" }}
+          >
+            <Component />
+          </div>
+          <Footer />
+        </div>
+      </div>
+    );
+  };
+
+  return <AdminLayout />;
+};
 
 const ProtectedRoute = ({ children }) => {
   const user = localStorage.getItem("user");
   return user ? children : <Navigate to="/login" replace />;
 };
 
-const App = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openMenus, setOpenMenus] = useState([]);
-
-  useEffect(() => {
-    const storedCollapsed = localStorage.getItem("isCollapsed");
-    const storedOpenMenus = localStorage.getItem("openMenus");
-
-    if (storedCollapsed !== null) {
-      setIsCollapsed(JSON.parse(storedCollapsed));
-    }
-
-    if (storedOpenMenus !== null) {
-      setOpenMenus(JSON.parse(storedOpenMenus));
-    }
-  }, []);
-
-  const toggleSidebar = () => {
-    const newCollapsedState = !isCollapsed;
-    setIsCollapsed(newCollapsedState);
-    localStorage.setItem("isCollapsed", JSON.stringify(newCollapsedState));
-  };
-
-  const toggleSubmenu = (key) => {
-    const newOpenMenus = openMenus.includes(key)
-      ? openMenus.filter((item) => item !== key)
-      : [...openMenus, key];
-    setOpenMenus(newOpenMenus);
-    localStorage.setItem("openMenus", JSON.stringify(newOpenMenus));
-  };
-
-  const withAdminLayout = (Component) => {
-    const AdminLayout = () => {
-      return (
-        <div id="layout-wrapper">
-          <Header />
-          <Sidebar
-            isCollapsed={isCollapsed}
-            toggleSidebar={toggleSidebar}
-            openMenus={openMenus}
-            toggleSubmenu={toggleSubmenu}
-          />
-          <div className="main-content">
-            <Component />
-          </div>
-          <Footer />
-        </div>
-      );
-    };
-    return AdminLayout;
-  };
-
+function App() {
   return (
     <Routes>
       {/* Public Routes */}
@@ -170,7 +147,6 @@ const App = () => {
         element={<ProtectedRoute>{withAdminLayout(Dashboard)}</ProtectedRoute>}
       />
 
-      {/* Pakan Routes */}
       <Route
         path="/admin/pakan/jenis"
         element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
@@ -226,7 +202,6 @@ const App = () => {
         }
       />
 
-      {/* Produktivitas Susu Routes */}
       <Route
         path="/admin/susu/produksi"
         element={
@@ -240,7 +215,7 @@ const App = () => {
         }
       />
 
-      {/* Peternakan - Sapi Routes */}
+      {/* Admin peternakan - Sapi */}
       <Route
         path="/admin/peternakan/sapi"
         element={
@@ -260,7 +235,7 @@ const App = () => {
         }
       />
 
-      {/* Peternakan - Peternak Routes */}
+      {/* Admin peternakan - Farmers */}
       <Route
         path="/admin/peternakan/farmer"
         element={
@@ -280,7 +255,7 @@ const App = () => {
         }
       />
 
-      {/* Peternakan - Supervisor Routes */}
+      {/* Admin peternakan - Supervisor */}
       <Route
         path="/admin/peternakan/supervisor"
         element={
@@ -302,7 +277,7 @@ const App = () => {
         }
       />
 
-      {/* Kesehatan - Pemeriksaan Routes */}
+      {/* Admin Kesehatan - Pemeriksaan */}
       <Route
         path="/admin/kesehatan/pemeriksaan"
         element={
@@ -328,7 +303,7 @@ const App = () => {
         }
       />
 
-      {/* Kesehatan - Gejala Routes */}
+      {/* Admin Kesehatan - Gejala */}
       <Route
         path="/admin/kesehatan/gejala"
         element={
@@ -348,7 +323,7 @@ const App = () => {
         }
       />
 
-      {/* Kesehatan - Riwayat Penyakit Routes */}
+      {/* Admin Kesehatan - Riwayat Penyakit */}
       <Route
         path="/admin/kesehatan/riwayat"
         element={
@@ -374,7 +349,7 @@ const App = () => {
         }
       />
 
-      {/* Kesehatan - Reproduksi Routes */}
+      {/* Admin Kesehatan - Reproduksi */}
       <Route
         path="/admin/kesehatan/reproduksi"
         element={
@@ -400,7 +375,6 @@ const App = () => {
         }
       />
 
-      {/* Keuangan Routes */}
       <Route
         path="/admin/keuangan/pemasukan"
         element={<ProtectedRoute>{withAdminLayout(Pemasukan)}</ProtectedRoute>}
@@ -419,6 +393,6 @@ const App = () => {
       />
     </Routes>
   );
-};
+}
 
 export default App;

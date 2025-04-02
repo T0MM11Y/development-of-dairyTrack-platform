@@ -444,6 +444,8 @@ body[data-layout=horizontal] .footer {
 .main-content {
   overflow: hidden;
   margin-right: 40px;
+  margin-left: 30px;
+
 }
 .main-content .content {
   padding: 0 15px 10px 15px;
