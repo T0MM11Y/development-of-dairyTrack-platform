@@ -239,7 +239,7 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
         newTimeLeftData[rawMilk.id] = diff;
       });
       setTimeLeftData(newTimeLeftData);
-    }, 60000); // Update setiap 1 menit, bukan setiap detik
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [rawMilks]);
@@ -250,7 +250,6 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
-
   if (isLoading) {
     return (
       <div className="text-center">
@@ -315,7 +314,7 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
                             Fresh
                             <br />
                             <small style={{ fontSize: "10px", color: "white" }}>
-                              {formattedTimeLeft}
+                              {formattedTimeLeft} left
                             </small>
                           </span>
                         ) : (
