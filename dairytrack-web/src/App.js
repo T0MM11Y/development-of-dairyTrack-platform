@@ -202,9 +202,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(TambahDetailPakan)}</ProtectedRoute>
         }
       />
-
-<<<<<<< Updated upstream
-=======
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={withAdminLayout(Dashboard)} />
       
@@ -221,7 +218,6 @@ function App() {
       <Route path="/admin/tambah/detail-pakan-harian" element={withAdminLayout(TambahDetailPakan)}/>
       <Route path="/admin/sesi-pakan" element={withAdminLayout(SesiPakan)}/>
       
->>>>>>> Stashed changes
       <Route
         path="/admin/susu/produksi"
         element={

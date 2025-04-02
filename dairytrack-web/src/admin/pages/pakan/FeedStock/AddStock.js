@@ -81,15 +81,13 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Stok Pakan</h4>
-<<<<<<< Updated upstream
             <button
               className="btn-close"
               onClick={() => navigate("/feed-stock")} // Arahkan kembali ke halaman Feed Stock Data
               disabled={loading}
             ></button>
-=======
             <button className="btn-close" onClick={() => navigate("/admin/pakan/stok")} disabled={loading}></button>
->>>>>>> Stashed changes
+            <button className="btn-close" onClick={() => navigate("/admin/pakan/stok")} disabled={loading}></button>
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
