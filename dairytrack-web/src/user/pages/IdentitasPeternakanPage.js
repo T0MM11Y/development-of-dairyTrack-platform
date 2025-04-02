@@ -1,12 +1,13 @@
 import React from "react";
 import girolando from "../../assets/image/header1.png";
 import gambarGedung from "../../assets/image/gedung2.jpeg";
-import gambarTanaman from "../../assets/image/gedung2.jpeg"; // Import gambar tanaman
-import gambarTambahan from "../../assets/image/gedung2.jpeg"; // Import gambar tambahan
+import gambarTanaman from "../../assets/image/gedung2.jpeg";
+import gambarTambahan from "../../assets/image/gedung2.jpeg";
 
 const IdentitasPeternakanPage = () => {
   return (
     <div style={{ position: "relative" }}>
+      {/* Gambar header dengan margin top yang disesuaikan */}
       <img
         src={girolando}
         alt="Sapi Girolando"
@@ -15,7 +16,7 @@ const IdentitasPeternakanPage = () => {
           height: "auto",
           objectFit: "cover",
           objectPosition: "50% 30%",
-          marginTop: "64px",
+          marginTop: "120px", // Sesuaikan nilai ini sesuai tinggi header
         }}
       />
 
@@ -46,6 +47,7 @@ const IdentitasPeternakanPage = () => {
             ketahanan pangan dan ekonomi nasional.
           </p>
           <div style={{ marginTop: "40px" }}>
+            {/* Kotak pertama */}
             <div style={{ display: "flex", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px" }}>
               <img
                 src={gambarGedung}
@@ -65,12 +67,13 @@ const IdentitasPeternakanPage = () => {
                   fontSize: "0.9rem",
                 }}
               >
-                <span>
+                <span style={{ backgroundColor: "", padding: "5px", borderRadius: "5px", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}>
                   Gedung TSTH2 saat ini. Pusat penelitian dan pengembangan tanaman
                   herbal dan hortikultura.
                 </span>
               </p>
             </div>
+            {/* Kotak kedua */}
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px" }}>
               <p
                 style={{
@@ -81,9 +84,9 @@ const IdentitasPeternakanPage = () => {
                   marginRight: "20px",
                 }}
               >
-                <span>
-                  Gedung TSTH2 saat ini. Pusat penelitian dan pengembangan tanaman
-                  herbal dan hortikultura.
+                <span style={{ backgroundColor: "", padding: "5px", borderRadius: "5px", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}>
+                  Penelitian tanaman herbal dan hortikultura untuk pertanian
+                  berkelanjutan.
                 </span>
               </p>
               <img
@@ -96,8 +99,7 @@ const IdentitasPeternakanPage = () => {
                 }}
               />
             </div>
-            
-            {/* Kotak Ketiga */}
+            {/* Kotak ketiga */}
             <div style={{ display: "flex", boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", padding: "10px", borderRadius: "8px", marginTop: "20px" }}>
               <img
                 src={gambarTambahan}
@@ -117,7 +119,7 @@ const IdentitasPeternakanPage = () => {
                   fontSize: "0.9rem",
                 }}
               >
-                <span>
+                <span style={{ backgroundColor: "", padding: "5px", borderRadius: "5px", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}>
                   Fasilitas terbaru untuk penelitian dan pengembangan lebih lanjut.
                 </span>
               </p>
