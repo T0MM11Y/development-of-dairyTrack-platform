@@ -73,11 +73,15 @@ import "simplebar-react/dist/simplebar.min.css";
 import IdentitasPeternakanPage from "./user/pages/IdentitasPeternakanPage";
 import SejarahPage from "./user/pages/SejarahPage";
 import FasilitasPage from "./user/pages/FasilitasPage";
-import ProduksiSusuPage from "./user/pages/ProduksiSusuPage";
+import BlogPage from "./user/pages/BlogPage";
 import ProdukPage from "./user/pages/ProdukPage";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
 import ContactUs from "./user/pages/ContactUs";
+
+// Artikel Detail Page (komponen baru)
+import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
+
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -123,7 +127,7 @@ function App() {
       <Route path="/dashboard" element={withUserLayout(DashboardUser)} />
       <Route path="/sejarah" element={withUserLayout(SejarahPage)} />
       <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
-      <Route path="/produksi-susu" element={withUserLayout(ProduksiSusuPage)} />
+      <Route path="/blog" element={withUserLayout(BlogPage)} />
       <Route path="/produk" element={withUserLayout(ProdukPage)} />
       <Route path="/galeri" element={withUserLayout(GaleriPage)} />
       <Route
@@ -131,6 +135,8 @@ function App() {
         element={withUserLayout(IdentitasPeternakanPage)}
       />
       <Route path="/contact-us" element={withUserLayout(ContactUs)} />
+      {/* Artikel Detail Route */}
+      <Route path="/blog/:id" element={withUserLayout(ArticleDetail)} /> {/* Menambahkan rute untuk detail artikel */}
 
       {/* Admin Routes */}
       <Route
