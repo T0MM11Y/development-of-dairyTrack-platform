@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
+import { fetchAPI } from "../../api/apiClient";
 
-// Import images
 import logoSm from "../../assets/client/img/logo/logo.png";
 import logoDark from "../../assets/client/img/logo/logo.png";
 import logoLight from "../../assets/client/img/logo/logo.png";
@@ -12,9 +12,8 @@ import indoFlag from "../../assets/admin/images/flags/indo.png";
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
-// Language Dropdown Component
 const LanguageDropdown = () => {
-  const { t, i18n } = useTranslation(); // Gunakan hook useTranslation
+  const { t, i18n } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState("English");
   const [currentFlag, setCurrentFlag] = useState(englishFlag);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -23,11 +22,11 @@ const LanguageDropdown = () => {
     if (language === "English") {
       setCurrentLanguage("English");
       setCurrentFlag(englishFlag);
-      i18n.changeLanguage("en"); // Ubah bahasa ke Inggris
+      i18n.changeLanguage("en");
     } else if (language === "Indo") {
       setCurrentLanguage("Indo");
       setCurrentFlag(indoFlag);
-      i18n.changeLanguage("id"); // Ubah bahasa ke Indonesia
+      i18n.changeLanguage("id");
     }
     setIsDropdownOpen(false);
   };
@@ -86,25 +85,68 @@ const Header = () => {
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // State for loading
-  const [loadingText, setLoadingText] = useState("Processing"); // State for loading text
-  const [userName, setUserName] = useState("Guest"); // State for user name
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("Processing");
+  const [userName, setUserName] = useState("Guest");
 
-  const navigate = useNavigate(); // React Router navigation
+  const navigate = useNavigate();
 
-  // Refs
   const notificationDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
   const notificationButtonRef = useRef(null);
   const userButtonRef = useRef(null);
 
   useEffect(() => {
-    // Fetch user data from localStorage
+    const sessionTimeout = setTimeout(() => {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please log in again.",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "OK",
+      }).then(async () => {
+        setIsLoading(true);
+
+        try {
+          const response = await fetchAPI("auth/logout", "POST", {
+            email: JSON.parse(localStorage.getItem("user"))?.email,
+          });
+
+          if (response.status === 200) {
+            localStorage.removeItem("user");
+
+            setTimeout(() => {
+              navigate("/logout", { replace: true });
+              window.history.pushState(null, null, window.location.href);
+              window.onpopstate = () => {
+                navigate("/logout", { replace: true });
+              };
+              setIsLoading(false);
+            }, 2000);
+          } else {
+            Swal.fire("Error", response.message || "Logout failed.", "error");
+            setIsLoading(false);
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error",
+            "An unexpected error occurred. Please try again later.",
+            "error"
+          );
+          setIsLoading(false);
+        }
+      });
+    }, 30 * 60 * 1000);
+
+    return () => clearTimeout(sessionTimeout);
+  }, [navigate]);
+
+  useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const user = JSON.parse(storedUser);
       const role = `${user.role || "Unknown"}`;
-      setUserName(role); // Set user name
+      setUserName(role);
     }
   }, []);
 
@@ -143,8 +185,7 @@ const Header = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
     if (isNotificationDropdownOpen) setIsNotificationDropdownOpen(false);
   };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Swal.fire({
       title: "Are you sure?",
       text: "You will be logged out of your account.",
@@ -153,20 +194,41 @@ const Header = () => {
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, logout!",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setIsLoading(true); // Start loading
+        setIsLoading(true);
 
-        // Simulate logout process
-        setTimeout(() => {
-          localStorage.removeItem("user"); // Clear user data from localStorage
-          setIsLoading(false); // Stop loading
-          navigate("/logout"); // Redirect to logout page
-        }, 2000); // Simulate a delay for logout process
+        try {
+          const response = await fetchAPI("auth/logout", "POST", {
+            email: JSON.parse(localStorage.getItem("user"))?.email,
+          });
+
+          if (response.status === 200) {
+            localStorage.removeItem("user");
+
+            setTimeout(() => {
+              navigate("/logout", { replace: true });
+              window.history.pushState(null, null, window.location.href);
+              window.onpopstate = () => {
+                navigate("/logout", { replace: true });
+              };
+              setIsLoading(false);
+            }, 2000);
+          } else {
+            Swal.fire("Error", response.message || "Logout failed.", "error");
+            setIsLoading(false);
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error",
+            "An unexpected error occurred. Please try again later.",
+            "error"
+          );
+          setIsLoading(false);
+        }
       }
     });
   };
-
   return (
     <header id="page-topbar" className="header">
       {isLoading && (
@@ -271,10 +333,7 @@ const Header = () => {
               </a>
 
               <div className="dropdown-divider"></div>
-              <button
-                className="dropdown-item"
-                onClick={handleLogout} // Call SweetAlert on logout
-              >
+              <button className="dropdown-item" onClick={handleLogout}>
                 <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
                 Logout
               </button>
