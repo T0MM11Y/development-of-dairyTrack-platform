@@ -28,9 +28,10 @@ import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFe
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
-import Pemasukan from "./admin/pages/keuangan/Pemasukan";
-import Pengeluaran from "./admin/pages/keuangan/Pengeluaran";
-import LaporanKeuangan from "./admin/pages/keuangan/LaporanKeuangan";
+// Sales and financial
+import Sales from "./admin/pages/keuangan/Sales/Sales.js";
+import Finance from "./admin/pages/keuangan/Finance/Finance.js";
+import Product from "./admin/pages/keuangan/Product/Product.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -376,19 +377,19 @@ function App() {
       />
 
       <Route
-        path="/admin/keuangan/pemasukan"
-        element={<ProtectedRoute>{withAdminLayout(Pemasukan)}</ProtectedRoute>}
+        path="/admin/keuangan/finance"
+        element={<ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>}
       />
       <Route
-        path="/admin/keuangan/pengeluaran"
+        path="/admin/keuangan/sales"
         element={
-          <ProtectedRoute>{withAdminLayout(Pengeluaran)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>
         }
       />
       <Route
-        path="/admin/keuangan/laporan"
+        path="/admin/keuangan/product"
         element={
-          <ProtectedRoute>{withAdminLayout(LaporanKeuangan)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(Product)}</ProtectedRoute>
         }
       />
     </Routes>

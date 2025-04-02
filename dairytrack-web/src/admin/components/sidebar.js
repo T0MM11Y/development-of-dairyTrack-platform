@@ -570,7 +570,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               </AnimatePresence>
             </motion.li>
 
-            {/* Keuangan */}
+            {/* KSales and Finance */}
             <motion.li
               className={isMenuOpen("keuangan") ? "mm-active" : ""}
               variants={menuItemVariants}
@@ -589,7 +589,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 <div className="d-flex align-items-center">
                   <i className="ri-money-dollar-circle-line"></i>
                   {!isCollapsed && (
-                    <span style={{ marginLeft: "10px" }}>Keuangan</span>
+                    <span style={{ marginLeft: "10px" }}>
+                      Penjualan dan Keuangan
+                    </span>
                   )}
                 </div>
                 {!isCollapsed && (
@@ -618,12 +620,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/pemasukan"
+                        to="/admin/keuangan/product"
                         className={
-                          isActive("/admin/keuangan/pemasukan") ? "active" : ""
+                          isActive("/admin/keuangan/product") ? "active" : ""
                         }
                       >
-                        <i className="ri-arrow-up-circle-line"></i> Pemasukan
+                        <i className="ri-arrow-up-circle-line"></i> Produk
                       </Link>
                     </motion.li>
                     <motion.li
@@ -632,15 +634,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/pengeluaran"
+                        to="/admin/keuangan/sales"
                         className={
-                          isActive("/admin/keuangan/pengeluaran")
-                            ? "active"
-                            : ""
+                          isActive("/admin/keuangan/sales") ? "active" : ""
                         }
                       >
-                        <i className="ri-arrow-down-circle-line"></i>{" "}
-                        Pengeluaran
+                        <i className="ri-arrow-up-circle-line"></i> Penjualan
                       </Link>
                     </motion.li>
                     <motion.li
@@ -649,12 +648,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/laporan"
+                        to="/admin/keuangan/finance"
                         className={
-                          isActive("/admin/keuangan/laporan") ? "active" : ""
+                          isActive("/admin/keuangan/finance") ? "active" : ""
                         }
                       >
-                        <i className="ri-file-chart-line"></i> Laporan Keuangan
+                        <i className="ri-arrow-down-circle-line"></i> Laporan
+                        Keuangan
                       </Link>
                     </motion.li>
                   </motion.ul>
