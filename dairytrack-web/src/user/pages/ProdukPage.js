@@ -16,38 +16,40 @@ const produkList = [
 const ProdukPage = () => {
   return (
     <div className="container mx-auto py-5">
-      <h2 className="text-2xl font-bold text-center mb-70">Produk Susu Kami</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-      {produkList.map((produk, index) => (
-            <ProdukItem key={index} {...produk} />
-          ))}
-        </div>
-      </div>
-  );
-};
-
-const ProdukItem = ({ nama, image, link, deskripsi }) => {
-  return (
-    <div className="col-xl-11 col-lg-12 p-10">
-      <div className="banner__content border rounded-lg shadow-lg bg-white transition-transform transform hover:scale-105 flex items-center">
-        <div className="produk_inner_thumb w-1/2">
-          <a href={link}>
-            <img src={image} alt={nama} className="w-full h-full object-cover rounded-l-lg" /> 
-          </a>
-        </div>
-        
-        {/* Teks Nama & Deskripsi */}
-        <div className="p-4 w-1/2 flex flex-col justify-center">
-          <h2 className="title text- font-semibold mb-3">
-            <a href={link}>{nama}</a>
-          </h2>
-          <p className="text-gray-600 mb-9">{deskripsi}</p>
-          <a href={link} className="btn text-blue-500 hover:underline">View Details</a>
-        </div>
+      <h2 className="text-2xl font-bold text-center mb-10">Produk Susu Kami</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 mt-10">
+        {produkList.map((produk, index) => (
+          <ProdukItem key={index} {...produk} />
+        ))}
       </div>
     </div>
   );
 };
 
+const ProdukItem = ({ nama, image, link, deskripsi }) => {
+  return (
+    <div className="p-4">
+      <div className="border rounded-lg shadow-lg bg-white transition-transform transform hover:scale-105 flex flex-row items-center">
+        
+        {/* Gambar */}
+        <div className="w-1/3 p-4">
+          <a href={link}>
+            <img src={image} alt={`Gambar ${nama}`} className="w-full h-auto object-cover rounded-l-lg" />
+          </a>
+        </div>
+
+        {/* Teks Nama & Deskripsi */}
+        <div className="w-2/3 p-4">
+          <h2 className="text-lg font-semibold mb-2">
+            <a href={link} className="text-blue-700 hover:underline">{nama}</a>
+          </h2>
+          <p className="text-gray-600 mb-3">{deskripsi}</p>
+          <a href={link} className="text-blue-500 hover:underline">View Details</a>
+        </div>
+
+      </div>
+    </div>
+  );
+};
 
 export default ProdukPage;
