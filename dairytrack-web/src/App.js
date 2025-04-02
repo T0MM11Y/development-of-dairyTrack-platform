@@ -24,6 +24,7 @@ import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
 import DetailPakanHarian from "./admin/pages/pakan/DailyFeedDetail/DailyFeedDetail.js";
 import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFeedDetail.js";
+import SesiPakan from "./admin/pages/pakan/Session/SessionList.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
@@ -202,6 +203,25 @@ function App() {
         }
       />
 
+<<<<<<< Updated upstream
+=======
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard" element={withAdminLayout(Dashboard)} />
+      
+      <Route path="/admin/pakan/jenis" element={withAdminLayout(JenisPakan)} />
+      <Route path="/admin/pakan/jenis/tambah" element={withAdminLayout(TambahJenisPakan)} />
+      <Route path="/admin/dashboard" element={withAdminLayout(Dashboard)} />
+      <Route path="/admin/pakan" element={withAdminLayout(Pakan)} />
+      <Route path="/admin/pakan/tambah" element={withAdminLayout(TambahPakan)} />
+      <Route path="/admin/pakan/stok" element={withAdminLayout(StokPakan)} />
+      <Route path="/admin/pakan/tambah-stok" element={withAdminLayout(TambahStokPakan)} />
+      <Route path="/admin/pakan-harian" element={withAdminLayout(PakanHarian)} />
+      <Route path="/admin/tambah/pakan-harian" element={withAdminLayout(TambahPakanHarian)}/>
+      <Route path="/admin/detail-pakan-harian" element={withAdminLayout(DetailPakanHarian)}/>
+      <Route path="/admin/tambah/detail-pakan-harian" element={withAdminLayout(TambahDetailPakan)}/>
+      <Route path="/admin/sesi-pakan" element={withAdminLayout(SesiPakan)}/>
+      
+>>>>>>> Stashed changes
       <Route
         path="/admin/susu/produksi"
         element={

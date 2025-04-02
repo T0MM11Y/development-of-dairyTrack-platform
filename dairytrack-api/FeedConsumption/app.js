@@ -12,6 +12,9 @@ const Feed = require("./routes/feedRoutes");
 const FeedStock = require("./routes/feedStockRoutes");
 const DailyFeed = require("./routes/dailyFeedRoutes");
 const DailyFeedDetail = require("./routes/dailyFeedDetailRoutes");
+const DailyFeedSession = require("./routes/dailyFeedSessionRoutes");
+const DailyFeedNutrients = require("./routes/dailyFeedNutrientsRoutes");
+const Cows = require("./routes/cowsRoutes");
 
 // Inisialisasi database
 initializeDatabase();
@@ -45,6 +48,9 @@ app.use("/api/feed", Feed);
 app.use("/api/feedStock", FeedStock);
 app.use("/api/dailyFeed", DailyFeed);
 app.use("/api/dailyFeedDetail", DailyFeedDetail);
+app.use("/api/dailyFeedSessions", DailyFeedSession);
+app.use("/api/dailyFeedNutrients", DailyFeedNutrients);
+app.use("/api/cows", Cows);
 
 // Middleware untuk menangani endpoint yang tidak ditemukan
 app.use((req, res) => {

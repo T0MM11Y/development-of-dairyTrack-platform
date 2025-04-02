@@ -63,7 +63,7 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
           confirmButtonText: "OK",
         }).then(() => {
           onStockAdded(); // Panggil callback jika ada
-          navigate("/feed-stock"); // Arahkan ke halaman stok pakan
+          navigate("/feed-stock"); // Arahkan ke halaman Feed Stock Data setelah berhasil menambah stok
         });
       } else {
         Swal.fire("Error", "Failed to update stock", "error");
@@ -81,7 +81,15 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Stok Pakan</h4>
-            <button className="btn-close" onClick={() => navigate("/feed-stock")} disabled={loading}></button>
+<<<<<<< Updated upstream
+            <button
+              className="btn-close"
+              onClick={() => navigate("/feed-stock")} // Arahkan kembali ke halaman Feed Stock Data
+              disabled={loading}
+            ></button>
+=======
+            <button className="btn-close" onClick={() => navigate("/admin/pakan/stok")} disabled={loading}></button>
+>>>>>>> Stashed changes
           </div>
           <div className="modal-body">
             <form onSubmit={handleSubmit}>
@@ -103,9 +111,19 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
               )}
               <div className="form-group mb-3">
                 <label htmlFor="additionalStock" className="form-label">Additional Stock (kg)</label>
-                <input type="number" step="0.01" id="additionalStock" className="form-control" value={additionalStock} onChange={(e) => setAdditionalStock(e.target.value)} required />
+                <input
+                  type="number"
+                  step="0.01"
+                  id="additionalStock"
+                  className="form-control"
+                  value={additionalStock}
+                  onChange={(e) => setAdditionalStock(e.target.value)}
+                  required
+                />
               </div>
-              <button type="submit" className="btn btn-info w-100" disabled={loading}>{loading ? "Saving..." : "Add Stock"}</button>
+              <button type="submit" className="btn btn-info w-100" disabled={loading}>
+                {loading ? "Saving..." : "Add Stock"}
+              </button>
             </form>
           </div>
         </div>
