@@ -53,6 +53,9 @@ const ProdukPage = () => {
         <h2 className="text-2xl font-bold text-center text-gray-800">
           Produk Susu Kami
         </h2>
+        <p className="text-gray-600 mt-3 text-center text-lg italic p-4 rounded-md shadow-sm inline-block">
+          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
+        </p>
       </div>
 
       {/* Grid layout */}

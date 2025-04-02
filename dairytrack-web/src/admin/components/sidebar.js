@@ -369,6 +369,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
+                        to="/admin/sesi-pakan"
+                        className={
+                          isActive("/admin/sesi-pakan") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-stack-line"></i> Sesi Pakan
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
                         to="/admin/detail-pakan-harian"
                         className={
                           isActive("/admin/detail-pakan-harian") ? "active" : ""
@@ -570,7 +584,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               </AnimatePresence>
             </motion.li>
 
-            {/* KSales and Finance */}
+            {/* Keuangan */}
             <motion.li
               className={isMenuOpen("keuangan") ? "mm-active" : ""}
               variants={menuItemVariants}
@@ -589,9 +603,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 <div className="d-flex align-items-center">
                   <i className="ri-money-dollar-circle-line"></i>
                   {!isCollapsed && (
-                    <span style={{ marginLeft: "10px" }}>
-                      Penjualan dan Keuangan
-                    </span>
+                    <span style={{ marginLeft: "10px" }}>Keuangan</span>
                   )}
                 </div>
                 {!isCollapsed && (
@@ -620,12 +632,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/product"
+                        to="/admin/keuangan/pemasukan"
                         className={
-                          isActive("/admin/keuangan/product") ? "active" : ""
+                          isActive("/admin/keuangan/pemasukan") ? "active" : ""
                         }
                       >
-                        <i className="ri-arrow-up-circle-line"></i> Produk
+                        <i className="ri-arrow-up-circle-line"></i> Pemasukan
                       </Link>
                     </motion.li>
                     <motion.li
@@ -634,12 +646,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/sales"
+                        to="/admin/keuangan/pengeluaran"
                         className={
-                          isActive("/admin/keuangan/sales") ? "active" : ""
+                          isActive("/admin/keuangan/pengeluaran")
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-arrow-up-circle-line"></i> Penjualan
+                        <i className="ri-arrow-down-circle-line"></i>{" "}
+                        Pengeluaran
                       </Link>
                     </motion.li>
                     <motion.li
@@ -648,13 +663,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/finance"
+                        to="/admin/keuangan/laporan"
                         className={
-                          isActive("/admin/keuangan/finance") ? "active" : ""
+                          isActive("/admin/keuangan/laporan") ? "active" : ""
                         }
                       >
-                        <i className="ri-arrow-down-circle-line"></i> Laporan
-                        Keuangan
+                        <i className="ri-file-chart-line"></i> Laporan Keuangan
                       </Link>
                     </motion.li>
                   </motion.ul>
