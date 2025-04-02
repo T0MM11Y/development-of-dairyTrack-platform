@@ -14,8 +14,11 @@
     "classnames": "^2.5.1",
     "date-fns": "^4.1.0",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "framer-motion": "^12.6.3",
     "i18next": "^24.2.3",
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     "lucide-react": "^0.483.0",
@@ -31,6 +34,10 @@
     "simplebar": "^6.3.0",
     "simplebar-react": "^3.3.0",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    "slick-carousel": "^1.8.1",
+>>>>>>> Stashed changes
 =======
     "slick-carousel": "^1.8.1",
 >>>>>>> Stashed changes

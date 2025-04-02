@@ -34,12 +34,17 @@ function Header() {
                         <Link to="/">Home</Link>
                       </li>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                       <li
                         className={
                           isActive("/identitas-peternakan") ? "active" : ""
                         }
                       >
                         <Link to="/identitas-peternakan">Identitas</Link>
+=======
+                      <li className={isActive("/identitas-peternakan") ? "active" : ""}>
+                        <Link to="/identitas-peternakan">Profil</Link>
+>>>>>>> Stashed changes
 =======
                       <li className={isActive("/identitas-peternakan") ? "active" : ""}>
                         <Link to="/identitas-peternakan">Profil</Link>
