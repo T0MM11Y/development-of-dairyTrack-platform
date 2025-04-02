@@ -47,9 +47,9 @@ function Header() {
                         <Link to="/fasilitas">Fasilitas</Link>
                       </li>
                       <li
-                        className={isActive("/produksi-susu") ? "active" : ""}
+                        className={isActive("/blog") ? "active" : ""}
                       >
-                        <Link to="/produksi-susu">Produksi Susu</Link>
+                        <Link to="/blog">Blog</Link>
                       </li>
                       <li className={isActive("/produk") ? "active" : ""}>
                         <Link to="/produk">Produk</Link>
@@ -96,7 +96,7 @@ function Header() {
                       <Link to="/fasilitas">Fasilitas</Link>
                     </li>
                     <li>
-                      <Link to="/produksi-susu">Produksi Susu</Link>
+                      <Link to="/blog">Blog</Link>
                     </li>
                     <li>
                       <Link to="/produk">Produk</Link>
