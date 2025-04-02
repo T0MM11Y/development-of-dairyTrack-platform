@@ -6,11 +6,18 @@ import gambarTambahan from "../../assets/image/gedung2.jpeg"; // Import gambar t
 
 const IdentitasPeternakanPage = () => {
   return (
-    <div className="container py-5">
-      <h2 className="text-2xl font-bold mb-4">Identitas Peternakan</h2>
-      <img src="/assets/images/logo.png" alt="Logo Peternakan" className="w-32 mb-2" />
-      <p className="text-lg font-semibold">Peternakan Sapi Sejahtera</p>
-      <p className="italic">"Susu segar dari alam untuk keluarga Indonesia"</p>
+    <div style={{ position: "relative" }}>
+      <img
+        src={girolando}
+        alt="Sapi Girolando"
+        style={{
+          width: "100%",
+          height: "auto",
+          objectFit: "cover",
+          objectPosition: "50% 30%",
+          marginTop: "64px",
+        }}
+      />
 
       <div style={{ padding: "20px", marginTop: "20px" }}>
         <p
