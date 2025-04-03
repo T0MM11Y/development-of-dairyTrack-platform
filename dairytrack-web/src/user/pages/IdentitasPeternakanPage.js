@@ -156,7 +156,7 @@ const IdentitasPeternakanPage = () => {
                   }}
                 >
                   Informasi tambahan tentang Gedung TSTH2. Gedung ini memiliki
-                  fasilitas modern untuk mendukung penelitian.
+                  fasilitas modern untuk mendukung penelitian tentang tanaman herbal
                 </p>
               )}
             </div>
@@ -255,7 +255,7 @@ const IdentitasPeternakanPage = () => {
                 style={{ fontSize: "0.9rem", lineHeight: "1.6", color: "#555" }}
               >
                 Fasilitas terbaru untuk penelitian dan pengembangan lebih
-                lanjut. Kami terus berinovasi untuk memberikan hasil terbaik.
+                lanjut. Kami terus berinovasi untuk memberikan hasil terbaik dan berkualitas
               </p>
               {expandedCard === 3 && (
                 <p

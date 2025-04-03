@@ -53,9 +53,12 @@ INSTALLED_APPS = [
     'stock',
     'sales',
     'finance',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    #install cors
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -84,6 +87,29 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'sales_and_finance.wsgi.application'
+
+# Mengizinkan akses dari frontend React
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # URL frontend React
+]
+
+# Jika ingin mengizinkan semua domain (tidak disarankan untuk production)
+CORS_ALLOW_ALL_ORIGINS = True  # (Opsional, hanya gunakan saat testing)
+
+# Mengizinkan metode yang boleh diakses
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+]
+
+# Mengizinkan header tertentu dalam request
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+]
 
 
 # Database

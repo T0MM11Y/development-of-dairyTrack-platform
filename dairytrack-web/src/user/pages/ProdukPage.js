@@ -10,59 +10,56 @@ const produkList = [
   {
     nama: "Susu Segar Full Cream",
     image: susuSegarFullCream,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Susu segar dengan kualitas terbaik untuk kesehatan Anda.",
+    harga: "Rp 30.000",
   },
   {
     nama: "Susu Pasteurisasi",
-    image: susuPasteurisasi,
-    link: "produk-details.html",
+    image: susuSegarFullCream,
+    link: "productdetails.js",
     deskripsi: "Susu pasteurisasi yang aman dan bergizi untuk keluarga.",
+    harga: "Rp 25.000",
   },
   {
     nama: "Yogurt Rasa Buah",
     image: yogurtRasaBuah,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Yogurt segar dengan berbagai pilihan rasa buah alami.",
+    harga: "Rp 20.000",
   },
   {
     nama: "Keju Mozzarella & Cheddar",
     image: kejuMozzarellaCheddar,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Keju berkualitas tinggi untuk hidangan lezat Anda.",
+    harga: "Rp 40.000",
   },
   {
     nama: "Susu Rendah Lemak",
-    image: susuRendahLemak,
-    link: "produk-details.html",
+    image: susuSegarFullCream,
+    link: "productdetails.js",
     deskripsi: "Pilihan terbaik untuk gaya hidup sehat Anda.",
+    harga: "Rp 35.000",
   },
   {
     nama: "Susu Sapi Organik",
     image: susuSegarFullCream,
-    link: "produk-details.html",
-    deskripsi:
-      "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
+    link: "productdetails.js",
+    deskripsi: "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
+    harga: "Rp 50.000",
   },
 ];
 
 const ProdukPage = () => {
   return (
-    <div className="container mx-auto py-5 px-4" style={{ marginTop: "120px" }}>
-      <div
-        className="p-5 mt-32"
-        style={{ backgroundColor: "#f8f9fa", borderRadius: "8px" }}
-      >
+    <div className="container mx-auto py-5">
+      <div className="bg-gray-100 p-5 mt-40">
         <h2 className="text-2xl font-bold text-center text-gray-800">
           Produk Susu Kami
         </h2>
-        <p
-          className="text-gray-600 mt-3 text-center text-lg italic p-4 rounded-md shadow-sm inline-block"
-          style={{ backgroundColor: "#e9ecef" }}
-        >
-          Produk susu berkualitas tinggi yang diolah dengan standar terbaik
-          untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan
-          keluarga.
+        <p className="text-gray-600 mt-3 text-center text-lg p-4 rounded-md shadow-sm inline-block">
+          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
         </p>
       </div>
 
@@ -76,23 +73,39 @@ const ProdukPage = () => {
   );
 };
 
-const ProdukItem = ({ nama, image, link, deskripsi }) => {
+const ProdukItem = ({ nama, image, link, deskripsi, harga }) => {
   return (
-    <div
-      className="shadow-lg rounded-lg overflow-hidden"
-      style={{ backgroundColor: "#f8f9fa" }}
-    >
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       {/* Gambar */}
       <img src={image} alt={nama} className="w-full h-40 object-cover" />
 
       {/* Detail */}
       <div className="p-4">
-        <h5 className="text-lg font-semibold text-gray-800">{nama}</h5>
+      <h5 className="product-name">
+  {nama}
+</h5>
+        {/* Deskripsi */}
         <p className="text-gray-600 mt-2">{deskripsi}</p>
 
-        {/* Tombol di bawah */}
-        <div className="mt-4 text-right">
-          <a href={link} className="text-blue-500 hover:underline">
+        {/* Harga */}
+        <div className="product-price">
+          {harga}
+        </div>
+
+        {/* Rating dan Jumlah Terjual */}
+        <div className="mt-2 flex items-center text-gray-700 text-sm">
+          <span className="text-yellow-400 text-lg">⭐</span>
+          <span className="ml-1 font-medium">4.9</span>
+          <span className="mx-2">|</span>
+          <span>5 terjual</span>
+        </div>
+
+        {/* Tombol View Details */}
+        <div className="mt-4 text-center">
+          <a
+            href={`/blog/${nama.replace(/\s+/g, '-').toLowerCase()}`}
+            className="view-details-btn"
+          >
             View Details
           </a>
         </div>

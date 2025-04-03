@@ -15,6 +15,7 @@
     border-radius: 8px;
     overflow: hidden;
     width: 100%; /* Memastikan kotak mengambil lebar penuh dari kolom grid */
+    
 }
 
 .img-box img {
@@ -50,13 +51,38 @@
     color: #333;
 }
 
-.options a svg {
-    width: 24px;
-    height: 24px;
-    fill: #333;
-    cursor: pointer;
-}
+.product-name {
+    color: #4caf50;
+    font-size: 1.25rem; 
+    font-weight: 500;
+  }
 
-.options a:hover svg {
-    fill: #007bff;
-}
+.view-details-btn {
+    background-color: #4caf50; 
+    color: white;
+    border: 2px solid #4caf50; 
+    padding: 8px 20px; 
+    border-radius: 3px; 
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+    font-size: 12px; 
+    font-weight: 600; 
+    transition: all 0.3s ease; 
+  }
+  
+  .view-details-btn:hover {
+    background-color: #fcaf17;  
+    color: #f0f0f0; 
+    border-color: #fcaf17; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+    transform: translateY(-2px); 
+  }
+
+  .product-price {
+    color: #4caf50;
+    font-size: 1.125rem; 
+    font-weight: bold;
+    margin-top: 0.5rem; 
+  }
+  
