@@ -1,8 +1,8 @@
 /* Header */
 .contact-header {
   font-size: 24px;
-  margin-bottom: 20px;
-  margin-top: 285px;
+  margin-bottom: 5px;
+  margin-top: 400px;
   font-weight: bold;
   text-align: center;
 }
@@ -14,29 +14,126 @@
   padding: 20px;
 }
 
+/* Breadcrumb Styles */
+.breadcrumb_wrap {
+  background-color: #efeded;
+  padding: 20px 0;
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+  top: 100px;
+  width: 100%;
+  z-index: -1;
+}
+
+.breadcrumb-text-container {
+  text-align: center;
+  margin-top: 90px;
+  margin-bottom: 80px;
+}
+
+.title {
+  font-size: 30px;
+  font-family: 'Playfair Display', serif;
+  margin-top: 80px;
+}
+
+.breadcrumb {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.breadcrumb-item {
+  margin: 0 5px;
+}
+
+.breadcrumb-item a {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.breadcrumb-item.active {
+  color: #888;
+  font-size: 18px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* Ikon Aplikasi */
+.app-icon {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 50%;
+}
+
+.app-icon.Pakan {
+  top: 50px;
+  left: calc(50% + 350px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/PakanSapi.jpg');
+}
+
+.app-icon.Kesehatan {
+  top: 50px;
+  right: calc(50% + 350px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/KesehatanSapi.jpg');
+}
+
+.app-icon.Susu {
+  bottom: 145px;
+  left: calc(23% - 205px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/ProduksiSusu.jpg');
+}
+
+.app-icon.Keuangan {
+  bottom: 145px;
+  right: calc(23% - 205px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/Keuangan.jpg');
+}
+
+.app-icon.Ternak {
+  bottom: 50px;
+  left: calc(50% + 350px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/Ternak.jpg');
+}
+
+.app-icon.Sapi {
+  bottom: 50px;
+  right: calc(50% + 350px); /* Sesuaikan posisi */
+  background-image: url('../../assets/image/Sapi.jpg');
+}
+
 /* Container untuk peta dan form */
 .map-form-container {
-  position: relative; /* Penting untuk positioning form */
+  position: relative;
   width: 100%;
 }
 
 .contact-map {
   width: 100%;
-  margin-top: 90px;
+  margin-top: 80px;
   margin-bottom: 20px;
 }
 
 .contact-form-container {
-  position: absolute; /* Membuat form menimpa peta */
-  top: 475px; /* Sesuaikan nilai top untuk posisi tabel */
+  position: absolute;
+  top: 45px;
   left: 50%;
-  transform: translateX(-50%); /* Memastikan form berada di tengah */
-  width: 90%; /* Sesuaikan lebar form */
-  max-width: 600px;
-  background-color: white; /* Memberi background putih pada form */
-  padding: 20px; /* Menambah padding pada form */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Menambah shadow untuk efek elevasi */
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  margin-top: 425px;
+  height: 420px;
 }
 
 .contact-form {
@@ -46,25 +143,27 @@
 
 .contact-form input,
 .contact-form textarea {
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 12px; /* Sesuaikan padding */
+  margin-bottom: 12px; /* Sesuaikan margin */
   border: 1px solid #ccc;
   border-radius: 4px;
-  border-radius: 4px;
+  font-size: 16px; /* Sesuaikan ukuran font */
 }
 
 .contact-form textarea {
-  height: 150px; /* Menambah tinggi textarea */
-  resize: vertical; /* Opsional: Memungkinkan pengguna mengubah ukuran tinggi */
+  height: 200px; /* Sesuaikan tinggi textarea */
+  resize: vertical;
 }
 
 .contact-form button {
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
+  padding: 12px 20px; /* Sesuaikan padding */
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 16px; /* Sesuaikan ukuran font */
+  margin-top: 1px; /* Tambahkan margin-top */
 }
 
 /* Informasi kontak */
@@ -73,14 +172,14 @@
   justify-content: space-around;
   width: 100%;
   max-width: 800px;
-  margin-top: 30px; /* Menambah margin-top untuk menurunkan informasi kontak */
+  margin-top: 50px;
   margin-bottom: 20px;
 }
 
 .contact-info-container .contact-info-box {
   width: 30%;
   text-align: center;
-  padding: 40px;
+  padding: 25px;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
@@ -97,5 +196,5 @@
 /* Footer */
 .contact-footer {
   text-align: center;
-  margin-top: 25px; /* Menambah margin-top untuk menurunkan footer */
+  margin-top: 35px;
 }
