@@ -15,7 +15,7 @@ const produkList = [
   },
   {
     nama: "Susu Pasteurisasi",
-    image: susuPasteurisasi,
+    image: susuSegarFullCream,
     link: "produk-details.html",
     deskripsi: "Susu pasteurisasi yang aman dan bergizi untuk keluarga.",
   },
@@ -33,7 +33,7 @@ const produkList = [
   },
   {
     nama: "Susu Rendah Lemak",
-    image: susuRendahLemak,
+    image: susuSegarFullCream,
     link: "produk-details.html",
     deskripsi: "Pilihan terbaik untuk gaya hidup sehat Anda.",
   },
