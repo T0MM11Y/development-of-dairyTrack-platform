@@ -141,7 +141,10 @@ const BlogPage = () => {
     <div className="container py-5">
       <div className="row">
         {/* Main Blog Content */}
-        <div className="col-lg-8" style={{ marginTop: "120px" }}>
+        <div
+          className="col-lg-8"
+          style={{ marginTop: "180px", marginBottom: "80px" }}
+        >
           {/* Search and Filter - Mobile Version */}
           <div className="card shadow-sm mb-4 d-lg-none">
             <div
@@ -321,7 +324,7 @@ const BlogPage = () => {
         {/* Sidebar */}
         <div
           className="col-lg-4 d-none d-lg-block"
-          style={{ marginTop: "120px" }}
+          style={{ marginTop: "180px" }}
         >
           {/* Search and Filter */}
           <div className="card shadow-sm mb-4 border-0">
@@ -427,6 +430,7 @@ const BlogPage = () => {
                           borderRadius: "4px",
                           overflow: "hidden",
                           marginRight: "10px",
+
                           flexShrink: 0,
                         }}
                       >

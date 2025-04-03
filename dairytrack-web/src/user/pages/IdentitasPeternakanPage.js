@@ -28,7 +28,7 @@ const IdentitasPeternakanPage = () => {
           height: "auto",
           objectFit: "cover",
           objectPosition: "50% 30%",
-          marginTop: "120px",
+          marginTop: "180px",
         }}
       />
 
