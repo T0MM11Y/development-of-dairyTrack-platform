@@ -28,9 +28,10 @@ import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFe
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
-import Pemasukan from "./admin/pages/keuangan/Pemasukan";
-import Pengeluaran from "./admin/pages/keuangan/Pengeluaran";
-import LaporanKeuangan from "./admin/pages/keuangan/LaporanKeuangan";
+// Sales & Financial
+import Sales from "./admin/pages/keuangan/sales/Sales.js";
+import Finance from "./admin/pages/keuangan/finance/Finance.js";
+import Product from "./admin/pages/keuangan/product/Product.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -81,6 +82,9 @@ import ContactUs from "./user/pages/ContactUs";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
+// import Product from "./admin/pages/keuangan/product/Product.js";
+// import Sales from "./admin/pages/keuangan/sales/sales.js";
+// import Finance from "./admin/pages/keuangan/finance/finance.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -379,20 +383,21 @@ function App() {
         }
       />
 
+      {/* Sales And Financial Routing */}
       <Route
-        path="/admin/keuangan/pemasukan"
-        element={<ProtectedRoute>{withAdminLayout(Pemasukan)}</ProtectedRoute>}
+        path="/admin/keuangan/product"
+        element={<ProtectedRoute>{withAdminLayout(Product)}</ProtectedRoute>}
       />
       <Route
-        path="/admin/keuangan/pengeluaran"
+        path="/admin/keuangan/sales"
         element={
-          <ProtectedRoute>{withAdminLayout(Pengeluaran)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>
         }
       />
       <Route
-        path="/admin/keuangan/laporan"
+        path="/admin/keuangan/finance"
         element={
-          <ProtectedRoute>{withAdminLayout(LaporanKeuangan)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>
         }
       />
     </Routes>

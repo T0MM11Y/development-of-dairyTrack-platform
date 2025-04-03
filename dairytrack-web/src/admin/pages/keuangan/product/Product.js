@@ -1,12 +1,12 @@
 import React from 'react';
 
-const LaporanKeuangan = () => {
+const Product = () => {
   return (
     <div>
-      <h2>Laporan Keuangan</h2>
+      <h2>Product</h2>
       <p>Laporan ringkasan keuangan peternakan dalam bentuk bulanan/tahunan.</p>
     </div>
   );
 };
 
-export default LaporanKeuangan;
+export default Product;
