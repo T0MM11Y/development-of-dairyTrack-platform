@@ -34,7 +34,12 @@ const IdentitasPeternakanPage = () => {
 
       {/* Content Section */}
       <div
-        style={{ padding: "40px 20px", maxWidth: "1200px", margin: "0 auto" }}
+        style={{
+          padding: "40px 20px",
+          maxWidth: "1200px",
+          margin: "0 auto",
+          marginBottom: "120px",
+        }}
       >
         {/* Title */}
         <h1
@@ -156,7 +161,8 @@ const IdentitasPeternakanPage = () => {
                   }}
                 >
                   Informasi tambahan tentang Gedung TSTH2. Gedung ini memiliki
-                  fasilitas modern untuk mendukung penelitian tentang tanaman herbal
+                  fasilitas modern untuk mendukung penelitian tentang tanaman
+                  herbal
                 </p>
               )}
             </div>
@@ -255,7 +261,8 @@ const IdentitasPeternakanPage = () => {
                 style={{ fontSize: "0.9rem", lineHeight: "1.6", color: "#555" }}
               >
                 Fasilitas terbaru untuk penelitian dan pengembangan lebih
-                lanjut. Kami terus berinovasi untuk memberikan hasil terbaik dan berkualitas
+                lanjut. Kami terus berinovasi untuk memberikan hasil terbaik dan
+                berkualitas
               </p>
               {expandedCard === 3 && (
                 <p
