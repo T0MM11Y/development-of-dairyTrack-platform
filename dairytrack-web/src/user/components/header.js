@@ -40,9 +40,7 @@ function Header() {
                       >
                         <Link to="/identitas-peternakan">Profil</Link>
                       </li>
-                      <li className={isActive("/fasilitas") ? "active" : ""}>
-                        <Link to="/fasilitas">Fasilitas</Link>
-                      </li>
+
                       <li className={isActive("/blog") ? "active" : ""}>
                         <Link to="/blog">Blog</Link>
                       </li>

@@ -46,23 +46,15 @@ const produkList = [
     nama: "Susu Sapi Organik",
     image: susuSegarFullCream,
     link: "productdetails.js",
-    deskripsi: "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
+    deskripsi:
+      "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
     harga: "Rp 50.000",
   },
 ];
 
 const ProdukPage = () => {
   return (
-    <div className="container mx-auto py-5">
-      <div className="bg-gray-100 p-5 mt-40">
-        <h2 className="text-2xl font-bold text-center text-gray-800">
-          Produk Susu Kami
-        </h2>
-        <p className="text-gray-600 mt-3 text-center text-lg p-4 rounded-md shadow-sm inline-block">
-          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
-        </p>
-      </div>
-
+    <div className="container mx-auto py-5" style={{ marginTop: "170px" }}>
       {/* Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
         {produkList.map((produk, index) => (
@@ -81,16 +73,12 @@ const ProdukItem = ({ nama, image, link, deskripsi, harga }) => {
 
       {/* Detail */}
       <div className="p-4">
-      <h5 className="product-name">
-  {nama}
-</h5>
+        <h5 className="product-name">{nama}</h5>
         {/* Deskripsi */}
         <p className="text-gray-600 mt-2">{deskripsi}</p>
 
         {/* Harga */}
-        <div className="product-price">
-          {harga}
-        </div>
+        <div className="product-price">{harga}</div>
 
         {/* Rating dan Jumlah Terjual */}
         <div className="mt-2 flex items-center text-gray-700 text-sm">
@@ -103,7 +91,7 @@ const ProdukItem = ({ nama, image, link, deskripsi, harga }) => {
         {/* Tombol View Details */}
         <div className="mt-4 text-center">
           <a
-            href={`/blog/${nama.replace(/\s+/g, '-').toLowerCase()}`}
+            href={`/blog/${nama.replace(/\s+/g, "-").toLowerCase()}`}
             className="view-details-btn"
           >
             View Details
