@@ -8,7 +8,6 @@ class RawMilk(models.Model):
 
     class Meta:
         db_table = "raw_milks"
-        managed = False
 
     objects = models.Manager()
     cow_id = models.IntegerField()

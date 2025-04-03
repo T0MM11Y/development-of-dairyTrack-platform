@@ -1,46 +1,51 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database"); // pastikan path benar
-const FeedStock = require("./feedStockModel");
-const ExistingDailyFeedNutrients = require("./dailyFeedNutrients"); // Ubah nama variabel
+const sequelize = require("../config/database");
 
-const DailyFeedNutrients = sequelize.define(
-  "DailyFeedNutrients",
+const Nutrisi = sequelize.define(
+  "nutrisi",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    daily_feed_session_id: {
+    daily_feed_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "daily_feed_sessions", // nama tabel literal
+        model: "daily_feed_completes", // Mengacu pada tabel daily_feed_completes
         key: "id",
       },
-      onDelete: "CASCADE",
     },
     total_protein: {
       type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
       defaultValue: 0,
     },
     total_energy: {
       type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
       defaultValue: 0,
     },
     total_fiber: {
       type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
       defaultValue: 0,
     },
-    calculated_at: {
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "daily_feed_nutrients",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   }
 );
 
-module.exports = DailyFeedNutrients;
+module.exports = Nutrisi;

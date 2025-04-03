@@ -11,43 +11,26 @@ urlpatterns = [
 
     # POST /orders/ → Membuat order baru.
     
-#         {
-#     "customer_name": "Kenan Tomfie Bukit",
-#     "email": "kenan@example.com",
-#     "phone_number": "08123456789",
-#     "location": "Jakarta",
-#     "shipping_cost": 5000,
-#     "status": "Requested",
-#     "order_items": [
-#         {
-#             "product_type": 1,
-#             "quantity": 2
-#         },
-#         {
-#             "product_type": 2,
-#             "quantity": 1
-#         }
-#     ]
-# }
+    #     {
+    #     "customer_name": "Kenan Tomfie Bukit",
+    #     "email": "kenan@example.com",
+    #     "phone_number": "08123456789",
+    #     "location": "Jakarta",
+    #     "shipping_cost": 5000,
+    #     "order_items": [
+    #         {
+    #             "product_type": 1,
+    #             "quantity": 2,
+    #             "price_per_unit": 10000
+    #         },
+    #         {
+    #             "product_type": 2,
+    #             "quantity": 1,
+    #             "price_per_unit": 5000
+    #         }
+    #     ]
+    # }
 
-
-# {
-#     "customer_name": "Kenan Tomfie Bukit",
-#     "email": "kenan@example.com",
-#     "phone_number": "08123456789",
-#     "location": "Jakarta",
-#     "status": "Requested",
-#     "order_items": [
-#         {
-#             "product_type": 1,
-#             "quantity": 2
-#         },
-#         {
-#             "product_type": 2,
-#             "quantity": 1
-#         }
-#     ]
-# }
 
     # GET /orders/{id}/ → Melihat detail order tertentu.
 

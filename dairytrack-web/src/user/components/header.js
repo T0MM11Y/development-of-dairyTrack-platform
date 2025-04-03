@@ -38,13 +38,18 @@ function Header() {
                           isActive("/identitas-peternakan") ? "active" : ""
                         }
                       >
-                        <Link to="/identitas-peternakan">Profil</Link>
+                        <Link to="/identitas-peternakan">Identitas</Link>
                       </li>
+                      {/* <li className={isActive("/sejarah") ? "active" : ""}>
+                        <Link to="/sejarah">Sejarah</Link>
+                      </li> */}
                       <li className={isActive("/fasilitas") ? "active" : ""}>
                         <Link to="/fasilitas">Fasilitas</Link>
                       </li>
-                      <li className={isActive("/blog") ? "active" : ""}>
-                        <Link to="/blog">Blog</Link>
+                      <li
+                        className={isActive("/produksi-susu") ? "active" : ""}
+                      >
+                        <Link to="/produksi-susu">Produksi Susu</Link>
                       </li>
                       <li className={isActive("/produk") ? "active" : ""}>
                         <Link to="/produk">Produk</Link>
@@ -82,7 +87,7 @@ function Header() {
                       <Link to="/">Home</Link>
                     </li>
                     <li>
-                      <Link to="/identitas-peternakan">Profil</Link>
+                      <Link to="/identitas-peternakan">Identitas</Link>
                     </li>
                     <li>
                       <Link to="/sejarah">Sejarah</Link>
@@ -91,7 +96,7 @@ function Header() {
                       <Link to="/fasilitas">Fasilitas</Link>
                     </li>
                     <li>
-                      <Link to="/blog">Blog</Link>
+                      <Link to="/produksi-susu">Produksi Susu</Link>
                     </li>
                     <li>
                       <Link to="/produk">Produk</Link>

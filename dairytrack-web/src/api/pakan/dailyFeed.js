@@ -1,7 +1,8 @@
 import { fetchAPI } from "../apiClient2";
 
-export const getDailyFeeds = () => fetchAPI("dailyFeed/");
-export const getdailyFeedById = (id) => fetchAPI(`dailyFeed/${id}/`);
-export const createdailyFeed = (data) => fetchAPI("dailyFeed/", "POST", data);
-export const updatedailyFeed = (id, data) => fetchAPI(`dailyFeed/${id}/`, "PUT", data);
-export const deletedailyFeed = (id) => fetchAPI(`dailyFeed/${id}/`, "DELETE");
+export const getAllDailyFeeds = () => fetchAPI("dailyFeedComplete/");
+export const getDailyFeedById = (id) => fetchAPI(`dailyFeedComplete/${id}/`);
+export const createDailyFeed = (data) => fetchAPI("dailyFeedComplete/", "POST", data);
+export const updateDailyFeed = (id, data) => fetchAPI(`dailyFeedComplete/${id}/`, "PUT", data);
+export const deleteDailyFeed = (id) => fetchAPI(`dailyFeedComplete/${id}/`, "DELETE");
+export const getNutrition = (id) => fetchAPI(`dailyFeedComplete/nutrisi/${id}/`, "DELETE");
