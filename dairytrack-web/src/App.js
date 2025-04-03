@@ -30,8 +30,12 @@ import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
+
 import Finance from "./admin/pages/keuangan/finance/Finance.js";
-import Product from "./admin/pages/keuangan/product/Product.js";
+
+import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
+import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
+import ProductEditPage from "./admin/pages/keuangan/product/ProductEditPage.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -386,7 +390,15 @@ function App() {
       {/* Sales And Financial Routing */}
       <Route
         path="/admin/keuangan/product"
-        element={<ProtectedRoute>{withAdminLayout(Product)}</ProtectedRoute>}
+        element={<ProtectedRoute>{withAdminLayout(ProductListPage)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/product/create"
+        element={<ProtectedRoute>{withAdminLayout(ProductCreatePage)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/product/edit/:id"
+        element={<ProtectedRoute>{withAdminLayout(ProductEditPage)}</ProtectedRoute>}
       />
       <Route
         path="/admin/keuangan/sales"
