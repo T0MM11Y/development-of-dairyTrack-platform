@@ -32,7 +32,7 @@ import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
 import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
 
-import Finance from "./admin/pages/keuangan/finance/Finance.js";
+import Finance from "./admin/pages/keuangan/Finance/Finance.js";
 
 import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
 import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
