@@ -1,6 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
-
+import { useParams, Link } from "react-router-dom";
 import Merawat from "../../assets/image/merawat.jpg";
 import Teknologi from "../../assets/image/teknologi.jpg";
 import Makanan from "../../assets/image/makanan.jpg";
@@ -8,44 +7,49 @@ import Kesehatan from "../../assets/image/kesehatan.jpg";
 import Stress from "../../assets/image/stress.jpg";
 import Lingkungan from "../../assets/image/lingkungan.jpg";
 
-// Data artikel blog
-const blogPosts = [
-  {
-    fullContent: (
-      <>
-       {/* Menambahkan margin top agar judul artikel turun ke bawah */}
-       <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Cara Merawat Sapi untuk Produksi Susu Berkualitas</h1>
-        </div>
-        <img 
-          src={Merawat} 
-          alt="Merawat Sapi" 
-          className="w-full h-64 object-cover rounded-lg mb-10" 
-        />
-        <p>Artikel lengkap tentang cara merawat sapi untuk produksi susu berkualitas akan dibahas di sini. Tips, trik, dan panduan langkah demi langkah bisa ditemukan di sini. Cara Merawat Sapi untuk Produksi Susu Berkualitas.</p>
-        <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
-          <li style={{ marginBottom: '10px' }}><strong>Pemberian Pakan Seimbang:</strong> Pemberian pakan yang seimbang sangat penting untuk mendukung kesehatan dan produktivitas sapi perah. Pakan yang kaya akan energi, protein, vitamin, dan mineral seperti rumput segar, silase, dan konsentrat harus diberikan secara tepat. Pakan yang baik membantu sapi menjaga kondisi tubuhnya, memperbaiki kualitas susu, dan mendukung proses reproduksi. Selain itu, pemberian pakan harus disesuaikan dengan kebutuhan setiap sapi berdasarkan usia, fase reproduksi, dan status kesehatannya.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Akses Air Bersih:</strong> Air adalah komponen vital yang sering diabaikan dalam pemeliharaan sapi perah. Kekurangan air dapat mempengaruhi kesehatan sapi dan kualitas susu yang dihasilkan. Sapi perah membutuhkan akses air bersih dan segar sepanjang waktu, karena air yang cukup tidak hanya membantu proses pencernaan, tetapi juga mempengaruhi produksi susu. Pastikan wadah air selalu terisi dan tidak tercemar untuk menghindari infeksi atau penyak</li>
-          <li style={{ marginBottom: '10px' }}><strong>Perawatan Kesehatan:</strong> Untuk menjaga kesehatan sapi, vaksinasi rutin dan pemeriksaan kesehatan harus dilakukan secara berkala. Pemeriksaan ini meliputi deteksi penyakit, pengendalian parasit, dan perawatan kaki dan gigi sapi. Sapi yang sehat akan lebih produktif dalam menghasilkan susu dan memiliki daya tahan tubuh yang lebih baik terhadap penyakit. Selain itu, perawatan kesehatan yang baik akan meningkatkan kualitas susu dan mengurangi tingkat infeksi yang dapat merugikan produksi susu.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Lingkungan Nyaman:</strong> Sapi perah yang hidup dalam lingkungan yang bersih dan nyaman lebih cenderung menghasilkan susu dalam jumlah yang optimal. Kandang harus selalu dalam keadaan bersih, kering, dan memiliki ventilasi yang baik. Hindari suhu ekstrem yang dapat menyebabkan stres pada sapi, karena stres dapat menurunkan produksi susu secara signifikan. Pastikan juga ruang untuk bergerak cukup luas, karena sapi yang aktif dan nyaman lebih produktif.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Perawatan Udder:</strong> Cegah mastitis dengan menjaga kebersihan udder dan memeriksa kesehatan kelenjar susu secara rutin. Udder adalah bagian tubuh sapi yang sangat penting dalam produksi susu. Kebersihan udder harus dijaga untuk mencegah infeksi seperti mastitis, yang dapat menurunkan kualitas dan kuantitas susu. Periksa kesehatan kelenjar susu secara rutin, pastikan tidak ada luka atau infeksi, dan lakukan pembersihan udder sebelum memerah susu untuk menghindari kontaminasi. Perawatan udder yang baik juga melibatkan teknik pemerasan yang tepat untuk mencegah cedera.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Pemerasan Rutin:</strong> Perah susu pada waktu yang konsisten setiap hari menggunakan teknik yang tepat untuk menghindari stres pada sapi. Pemerasan susu yang rutin dan tepat waktu sangat penting dalam memastikan sapi tetap nyaman dan sehat. Pemerasan susu sebaiknya dilakukan pada waktu yang konsisten setiap hari untuk menghindari penumpukan susu yang dapat menyebabkan mastitis. Teknik pemerasan yang benar juga penting untuk mencegah stres pada sapi, yang bisa berdampak buruk pada kualitas susu. Gunakan alat pemerah susu yang higienis dan periksa kondisi sapi setelah diperah untuk memastikan tidak ada cedera.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Manajemen Reproduksi:</strong> Pilih bibit berkualitas dan berikan masa kering yang cukup untuk sapi sebelum melahirkan agar produksi susu tetap optimal. Pilih bibit sapi perah yang berkualitas tinggi untuk mendapatkan hasil produksi susu yang optimal. Selain itu, penting untuk memberikan masa kering yang cukup bagi sapi sebelum proses kelahiran untuk mempersiapkan tubuh sapi dalam fase menyusui. Pemilihan bibit yang baik dan pengaturan waktu reproduksi yang tepat akan memastikan sapi menghasilkan susu dengan kualitas yang baik setelah melahirkan.</li>
-          <li style={{ marginBottom: '10px' }}><strong>Monitoring:</strong> Catat jumlah susu yang diperah setiap hari untuk memantau kesehatan dan kinerja sapi. Melakukan pencatatan dan pemantauan jumlah susu yang diperah setiap hari sangat penting dalam manajemen peternakan sapi perah. Pemantauan ini membantu mengetahui tren produksi susu dan mendeteksi jika ada penurunan yang tidak wajar, yang bisa menjadi indikasi adanya masalah kesehatan pada sapi atau faktor lain yang mempengaruhi produksi susu. Dengan mencatat data secara rutin, peternak dapat membuat keputusan yang lebih baik terkait perawatan dan perbaikan dalam sistem peternakan.</li>
-        </ul>
-      </>
-    ),
-  },
-  {
-      fullContent: (
+const DetailBlog = () => {
+  const { id } = useParams(); // Mengambil parameter id dari URL
+  const blogPosts = [
+    {
+      topic: "Perawatan Sapi",
+      content: (
         <>
-        <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Pemanfaatan Teknologi dalam Peternakan Sapi</h1>
-        </div>
+      <p style={{ textAlign: "left", marginTop: "0px" }}>1 April 2025</p>
+       <h2 style={{ textAlign: "center", marginBottom: "2px" }}>
+  Cara Merawat Sapi untuk Produksi Susu Berkualitas
+</h2>
+          <img 
+            src={Merawat} 
+            alt="Merawat Sapi" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }}
+          />
+          
+          <p>
+            Merawat sapi dengan baik adalah kunci untuk menghasilkan susu berkualitas tinggi. Dalam artikel ini, kami akan membahas berbagai cara merawat sapi agar tetap sehat dan produktif.
+          </p>
+          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '10px' }}><strong>Pemberian Pakan Seimbang:</strong> Pemberian pakan yang seimbang sangat penting untuk mendukung kesehatan dan produktivitas sapi perah.  </li>
+            <li style={{ marginBottom: '10px' }}><strong>Akses Air Bersih:</strong> Air adalah komponen vital yang sering diabaikan dalam pemeliharaan sapi perah. Kekurangan air dapat mempengaruhi kesehatan sapi dan kualitas susu yang dihasilkan.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Perawatan Kesehatan:</strong> Untuk menjaga kesehatan sapi, vaksinasi rutin dan pemeriksaan kesehatan harus dilakukan secara berkala. Pemeriksaan ini meliputi deteksi penyakit, pengendalian parasit, dan perawatan kaki dan gigi sapi.  </li>
+            <li style={{ marginBottom: '10px' }}><strong>Lingkungan Nyaman:</strong> Sapi perah yang hidup dalam lingkungan yang bersih dan nyaman lebih cenderung menghasilkan susu dalam jumlah yang optimal. Kandang harus selalu dalam keadaan bersih, kering, dan memiliki ventilasi yang baik. </li>
+            <li style={{ marginBottom: '10px' }}><strong>Perawatan Udder:</strong> Cegah mastitis dengan menjaga kebersihan udder dan memeriksa kesehatan kelenjar susu secara rutin. Udder adalah bagian tubuh sapi yang sangat penting dalam produksi susu. Kebersihan udder harus dijaga untuk mencegah infeksi seperti mastitis, yang dapat menurunkan kualitas dan kuantitas susu.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Pemerasan Rutin:</strong> Perah susu pada waktu yang konsisten setiap hari menggunakan teknik yang tepat untuk menghindari stres pada sapi. Pemerasan susu yang rutin dan tepat waktu sangat penting dalam memastikan sapi tetap nyaman dan sehat. </li>
+            <li style={{ marginBottom: '10px' }}><strong>Manajemen Reproduksi:</strong> Pilih bibit berkualitas dan berikan masa kering yang cukup untuk sapi sebelum melahirkan agar produksi susu tetap optimal. Pilih bibit sapi perah yang berkualitas tinggi untuk mendapatkan hasil produksi susu yang optimal.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Monitoring:</strong> Catat jumlah susu yang diperah setiap hari untuk memantau kesehatan dan kinerja sapi. Melakukan pencatatan dan pemantauan jumlah susu yang diperah setiap hari sangat penting dalam manajemen peternakan sapi perah. </li>
+          </ul>
+        </>
+      )
+    },
+    {
+      topic: "Teknologi Peternakan",
+      content: (
+        <>
+         <p style={{ textAlign: "left", marginTop: "0px" }}>25 Maret 2025</p>
+        <h2 style={{ textAlign: "center" }}>Pemanfaatan Teknologi dalam Peternakan Sapi</h2>
           <img 
             src={Teknologi} 
-            alt="Pemanfaatan Teknologi" 
-            className="w-full h-64 object-cover rounded-lg mb-10" 
+            alt="Teknologi Peternakan" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
           />
           <p>Pemanfaatan teknologi dalam peternakan sapi semakin penting untuk meningkatkan efisiensi, produktivitas, dan kualitas produk yang dihasilkan, terutama dalam bidang peternakan sapi perah. Teknologi dapat membantu peternak untuk memonitor kesehatan sapi, mengelola pakan dengan lebih baik, serta meningkatkan proses pemeliharaan sapi. Beberapa teknologi yang sering digunakan dalam peternakan sapi antara lain:</p>
           <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
@@ -58,17 +62,17 @@ const blogPosts = [
           </ul>
         </>
       ),
-  },
-  {
-      fullContent: (
+    },
+    {
+      topic: "Pakan Ternak",
+      content: (
         <>
-        <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Makanan Terbaik untuk Sapi Perah</h1>
-        </div>
+        <p style={{ textAlign: "left", marginTop: "0px" }}>18 Maret 2025</p>
+         <h2 style={{ textAlign: "center" }}>Makanan Terbaik untuk Sapi Perah</h2>
           <img 
             src={Makanan} 
-            alt="Makanan Sapi" 
-            className="w-full h-64 object-cover rounded-lg mb-10" 
+            alt="Pakan Ternak" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
           />
           <p>Memilih pakan yang tepat sangat penting untuk sapi perah karena kualitas pakan langsung mempengaruhi produksi susu dan kesehatan sapi. Pakan yang baik akan mendukung sapi untuk tetap sehat, produktif, dan menghasilkan susu berkualitas tinggi. Berikut adalah beberapa jenis pakan yang terbaik untuk sapi perah:</p>
           <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
@@ -79,21 +83,21 @@ const blogPosts = [
             <li style={{ marginBottom: '10px' }}><strong>Pakan Berbasis Protein Tinggi:</strong>Sapi perah membutuhkan lebih banyak protein untuk mendukung produksi susu yang optimal. Pakan berbasis protein tinggi, seperti kedelai, bungkil kelapa, dan bungkil kacang tanah, sangat berguna untuk memenuhi kebutuhan protein sapi. Protein membantu dalam perbaikan dan pembentukan otot, serta mendukung proses produksi susu yang sehat.</li>
             <li style={{ marginBottom: '10px' }}><strong>Mineral dan Vitamin:</strong> Selain karbohidrat dan protein, sapi perah juga membutuhkan mineral dan vitamin untuk mendukung metabolisme tubuh dan meningkatkan daya tahan tubuh. Mineral seperti kalsium, fosfor, dan magnesium sangat penting untuk pembentukan tulang dan kesehatan sapi. Vitamin A, D, dan E juga sangat dibutuhkan untuk kesehatan kulit, mata, serta untuk meningkatkan produksi susu.</li>
             <li style={{ marginBottom: '10px' }}><strong>Akses Air Bersih :</strong> Sapi perah membutuhkan akses air bersih dan segar dalam jumlah yang cukup. Air sangat penting untuk proses pencernaan dan penyerapan nutrisi, serta mendukung produksi susu. Kekurangan air dapat mengurangi kualitas dan kuantitas susu, bahkan menyebabkan dehidrasi dan gangguan metabolisme pada sapi. Pastikan sapi memiliki akses air yang cukup setiap saat.</li>
-          
           </ul>
         </>
       ),
-  },
-  {
-      fullContent: (
+    },
+    {
+  
+      topic: "Manajemen Kesehatan",
+      content: (
         <>
-        <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Manajemen Kesehatan Sapi di Peternakan</h1>
-        </div>
+         <p style={{ textAlign: "left", marginTop: "0px" }}>01 April 2025</p>
+         <h2 style={{ textAlign: "center" }}>Manajemen Kesehatan Sapi di Peternakan</h2>
           <img 
             src={Kesehatan} 
             alt="Manajemen Kesehatan" 
-            className="w-full h-64 object-cover rounded-lg mb-10" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
           />
           <p>Manajemen kesehatan sapi adalah salah satu faktor terpenting dalam keberhasilan peternakan sapi, terutama dalam produksi susu dan daging. Sapi yang sehat akan lebih produktif dan menghasilkan susu serta daging yang berkualitas tinggi. Oleh karena itu, penting untuk memiliki sistem manajemen kesehatan yang baik di peternakan sapi. Berikut adalah beberapa aspek penting dalam manajemen kesehatan sapi di peternakan:</p>
           <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
@@ -108,89 +112,172 @@ const blogPosts = [
           </ul>
         </>
       ),
-  },
-  {
-      fullContent: (
+    },
+    {
+      topic: "Produksi Susu",
+      content: (
         <>
-        <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Pengaruh Stres pada Produksi Susu Sapi Perah</h1>
-        </div>
+        <p style={{ textAlign: "left", marginTop: "0px" }}>10 Maret 2025</p>
+         <h2 style={{ textAlign: "center" }}>Strategi Peningkatan Produksi Susu Sapi</h2>
           <img 
-            src={Stress} 
-            alt="Sapi Stress" 
-            className="w-full h-64 object-cover rounded-lg mb-10" 
+            src={Merawat} 
+            alt="Produksi Susu" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
           />
-          <p>Stres pada sapi perah dapat memiliki dampak signifikan terhadap produksi susu, kualitas susu, serta kesehatan sapi itu sendiri. Sapi yang mengalami stres akan mengalami penurunan performa yang berdampak langsung pada hasil produksi susu. Oleh karena itu, penting bagi peternak untuk memahami pengaruh stres terhadap sapi perah dan bagaimana cara mengurangi faktor-faktor yang dapat menyebabkan stres pada sapi. Berikut adalah penjelasan lebih rinci tentang pengaruh stres pada produksi susu sapi perah:</p>
+          <p>Artikel ini membahas strategi yang dapat diterapkan untuk meningkatkan produksi susu sapi secara efisien dan berkelanjutan, yaitu:</p>
           <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
-            <li style={{ marginBottom: '10px' }}><strong>Penurunan Produksi Susu :</strong> Stres dapat mengganggu sistem hormonal sapi, yang pada gilirannya mempengaruhi produksi susu. Ketika sapi mengalami stres, tubuhnya menghasilkan hormon stres, seperti kortisol, yang dapat mengurangi jumlah susu yang dihasilkan. Stres yang berkepanjangan, baik akibat faktor lingkungan, kesehatan, atau manajemen yang buruk, dapat menyebabkan penurunan produksi susu secara signifikan. Penurunan produksi ini bisa berlangsung selama beberapa hari atau minggu setelah sapi mengalami stres.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Kualitas Susu Menurun :</strong> Selain mengurangi jumlah produksi susu, stres juga dapat memengaruhi kualitas susu. Sapi yang mengalami stres cenderung menghasilkan susu dengan kualitas yang lebih rendah, misalnya kandungan lemak dan protein susu yang lebih rendah. Selain itu, stres dapat menyebabkan peningkatan kadar laktosa dalam susu, yang berpotensi mengurangi nilai komersialnya. Dalam beberapa kasus, stres juga dapat menyebabkan susu menjadi lebih rentan terhadap kontaminasi bakteri, yang dapat mengurangi kualitas higienis susu.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Gangguan Kesehatan pada Sapi :</strong> Stres yang berkepanjangan pada sapi dapat menyebabkan gangguan kesehatan lainnya, seperti penurunan daya tahan tubuh, masalah pencernaan, dan peningkatan kerentanannya terhadap penyakit. Sapi yang stres lebih rentan terhadap infeksi, seperti mastitis (infeksi pada kelenjar susu), yang tentunya akan berdampak pada produksi susu dan kesehatannya secara keseluruhan. Stres juga dapat memengaruhi siklus reproduksi sapi, yang dapat mengurangi kemampuan sapi untuk hamil atau melahirkan, serta menurunkan efisiensi produksi susu.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Stres Akibat Lingkungan :</strong> Salah satu penyebab stres pada sapi perah adalah faktor lingkungan yang buruk. Suhu yang terlalu tinggi atau rendah, kelembapan yang tinggi, serta kurangnya ventilasi yang baik dapat menyebabkan sapi merasa tidak nyaman. Sapi yang dipelihara di lingkungan yang tidak kondusif ini akan mengalami stres termal (stres akibat suhu ekstrem), yang berdampak langsung pada produksi susu. Untuk itu, penting bagi peternak untuk memastikan kandang sapi memiliki ventilasi yang baik dan suhu yang terjaga agar sapi tetap merasa nyaman.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Stres Akibat Pemeliharaan dan Perawatan yang Buruk :</strong> Cara penanganan sapi yang salah, seperti pemerasan susu yang kasar atau tidak teratur, juga dapat menyebabkan stres pada sapi. Sapi yang diperah secara tidak teratur atau menggunakan alat yang tidak higienis dapat mengalami ketidaknyamanan atau rasa sakit, yang akhirnya berujung pada penurunan produksi susu. Selain itu, kurangnya interaksi sosial dengan sapi lain atau pemisahan anak sapi dari induknya pada usia yang terlalu dini juga dapat menyebabkan stres.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Stres Psikologis dan Sosial :</strong> Sapi adalah hewan sosial yang membutuhkan interaksi dengan sapi lain untuk merasa aman dan nyaman. Pemisahan yang tiba-tiba atau pengasingan dari kelompok dapat menyebabkan stres psikologis, yang pada akhirnya dapat menurunkan produksi susu. Menjaga sapi dalam kelompok yang stabil dan memberikan cukup ruang untuk bergerak adalah langkah penting untuk mengurangi stres sosial.</li>
-            <li style={{ marginBottom: '10px' }}><strong> Pengaruh Stres terhadap Kehamilan dan Reproduksi :</strong> Stres yang dialami sapi dapat memengaruhi kemampuan reproduksinya. Sapi yang stres mungkin mengalami gangguan ovulasi atau bahkan keguguran. Gangguan ini akan berdampak pada periode laktasi berikutnya, karena sapi yang tidak hamil atau tidak dapat melahirkan akan mengalami penurunan produksi susu. Oleh karena itu, mengelola stres dengan baik juga berpengaruh pada keberhasilan manajemen reproduksi sapi.</li>
-          </ul>
-          <p>Untuk mengurangi stres pada sapi perah dan meminimalkan dampaknya terhadap produksi susu, peternak bisa melakukan beberapa langkah sebagai berikut:</p>
-          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
-            <li style={{ marginBottom: '10px' }}><strong>Penyediaan Lingkungan yang Nyaman :</strong> Pastikan kandang memiliki ventilasi yang baik, suhu yang terjaga, dan kebersihan yang terawat.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Perawatan Rutin dan Konsisten :</strong> Pemerasan susu yang teratur dan teknik yang benar akan membantu mengurangi rasa sakit atau ketidaknyamanan pada sapi.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Pengelolaan Pakan yang Tepat :</strong> Pastikan sapi mendapatkan pakan yang bergizi dan cukup, serta selalu memiliki akses ke air bersih.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Mengurangi Pemisahan Sosial :</strong> Sapi lebih nyaman jika hidup dalam kelompok yang stabil. Hindari pemisahan yang tidak perlu antara sapi.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Stimulasi Sosial :</strong> Memberikan perhatian ekstra pada sapi yang terlihat stres atau cemas, serta menyediakan ruang gerak yang cukup.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Monitor Kesehatan Secara Berkala :</strong> Pemeriksaan kesehatan yang rutin dapat mencegah masalah kesehatan yang lebih besar yang berpotensi menyebabkan stres.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Peningkatan Kualitas Pakan :</strong> Pemberian pakan bernutrisi tinggi seperti hijauan segar, silase, dan konsentrat, serta suplemen mineral dan vitamin sangat penting untuk menunjang kesehatan dan produksi susu</li>
+            <li style={{ marginBottom: '10px' }}><strong>Manajemen Kesehatan Sapi :</strong> Kesehatan sapi harus diperhatikan dengan vaksinasi rutin, menjaga kebersihan kandang, serta penanganan cepat terhadap sapi yang sakit agar produksi susu tetap optimal.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Genetika dan Pemuliaan :</strong> Penggunaan inseminasi buatan dengan bibit unggul dapat menghasilkan keturunan dengan produksi susu lebih tinggi dan kualitas genetik yang lebih baik.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Manajemen Pemerahan yang Efektif :</strong> Proses pemerahan harus dilakukan secara teratur dengan teknik yang benar serta kebersihan peralatan yang terjaga untuk menghindari risiko infeksi ambing dan mempertahankan produksi susu.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Lingkungan dan Kesejahteraan Sapi :</strong> Lingkungan kandang yang nyaman dengan ventilasi baik, akses air bersih yang cukup, serta minimisasi stres dapat meningkatkan kesejahteraan sapi dan produktivitas susu.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Monitoring dan Analisis Produksi :</strong> Penerapan sistem pemantauan produksi susu harian dan pencatatan data yang baik dapat membantu dalam menganalisis pola produksi serta menemukan solusi jika terjadi penurunan hasil susu.</li>
           </ul>
         </>
       ),
-  },
-  {
-      fullContent: (
+    },
+    {
+      topic: "Teknologi Peternakan",
+      content: (
         <>
-         <div className="mt-12">
-          <h1 className="text-3xl font-bold text-center">Sapi Perah dan Pengaruh Lingkungan terhadap Produksi Susu</h1>
-        </div>
+        <p style={{ textAlign: "left", marginTop: "0px" }}>5 Maret 2025</p>
+         <h2 style={{ textAlign: "center" }}>Teknologi IoT untuk Monitoring Peternakan</h2>
           <img 
-            src={Lingkungan} 
-            alt="Pengaruh Lingkungan" 
-            className="w-full h-64 object-cover rounded-lg mb-10" 
+            src={Teknologi} 
+            alt="Teknologi Peternakan" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
           />
-          <p>Lingkungan tempat sapi perah hidup memiliki pengaruh yang sangat besar terhadap kesehatan dan produktivitasnya, termasuk dalam hal produksi susu. Faktor-faktor lingkungan yang tidak mendukung atau tidak optimal dapat menyebabkan stres pada sapi, yang pada gilirannya akan menurunkan jumlah dan kualitas susu yang dihasilkan. Oleh karena itu, memahami hubungan antara lingkungan dan produksi susu sangat penting untuk peternakan sapi perah yang sukses.</p>
+          <p>Penggunaan teknologi IoT dalam peternakan dapat membantu peternak memantau kondisi sapi secara real-time.Internet of Things (IoT) memberikan solusi inovatif dalam monitoring peternakan dengan menghubungkan perangkat sensor dan sistem otomatisasi untuk meningkatkan efisiensi dan produktivitas, diantaranya:</p>
           <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
-            <li style={{ marginBottom: '10px' }}><strong>Suhu dan Stres Termal :</strong> Suhu yang terlalu tinggi atau rendah dapat menyebabkan stres termal pada sapi perah. Sapi yang terpapar suhu ekstrem, baik itu panas yang berlebihan maupun cuaca dingin yang ekstrem, akan mengalami ketidaknyamanan yang mengarah pada penurunan produksi susu.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Kelembapan :</strong> Kelembapan tinggi dapat memperburuk efek stres panas. Kelembapan yang tinggi mengurangi kemampuan tubuh sapi untuk mendinginkan diri melalui penguapan keringat. Akibatnya, sapi lebih rentan terhadap stres panas, yang berdampak negatif pada kesehatan dan produktivitasnya. Kelembapan tinggi juga dapat menyebabkan masalah pernapasan dan meningkatkan risiko infeksi. Sebaliknya, kelembapan yang terlalu rendah, terutama dalam kandang tertutup, bisa menyebabkan dehidrasi pada sapi. Dehidrasi dapat menurunkan produksi susu dan menyebabkan masalah kesehatan lainnya.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Ventilasi dan Kualitas Udara :</strong> Ventilasi yang buruk dapat menyebabkan penurunan kualitas udara di dalam kandang, yang berujung pada penurunan kesehatan sapi. Sapi yang terpapar udara yang kotor atau lembap akan lebih rentan terhadap penyakit pernapasan dan infeksi. Selain itu, sirkulasi udara yang buruk dapat menyebabkan penumpukan gas berbahaya seperti amonia, yang dapat merusak saluran pernapasan sapi dan menurunkan kualitas susu. Menjaga ventilasi yang baik dengan memastikan sirkulasi udara yang lancar dan menyediakan udara segar adalah langkah penting untuk mencegah stres dan menjaga produktivitas susu sapi.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Kebersihan Kandang :</strong> Kandang yang kotor dapat menyebabkan infeksi dan penyakit pada sapi. Lingkungan yang kotor tidak hanya memperburuk kualitas udara, tetapi juga meningkatkan risiko penyakit kulit dan mastitis pada sapi. Mastitis adalah infeksi pada kelenjar susu yang dapat menurunkan kualitas dan kuantitas susu secara drastis. Pembersihan kandang yang rutin dan menjaga kebersihan tempat tidur sapi sangat penting untuk mencegah kontaminasi dan memastikan sapi merasa nyaman.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Kondisi Tanah dan Lahan :</strong> Jika sapi perah dibiarkan merumput di padang rumput, kualitas rumput dan kondisi lahan akan mempengaruhi kesehatan dan produksi susu sapi. Padang rumput yang kering atau tercemar dapat mengurangi asupan pakan berkualitas tinggi bagi sapi, yang dapat menurunkan produksi susu. Selain itu, rumput yang terkontaminasi oleh pestisida atau bahan kimia berbahaya dapat menyebabkan masalah kesehatan bagi sapi. Menjaga kualitas padang rumput dan memastikan tanah tidak tercemar adalah langkah penting dalam mengoptimalkan produksi susu dari sapi perah.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Stabilitas Lingkungan Sosial :</strong> Sapi adalah hewan sosial yang cenderung lebih bahagia dan produktif jika hidup dalam kelompok yang stabil. Gangguan sosial, seperti pemisahan mendadak antara induk dan anak sapi atau perubahan mendalam dalam struktur kelompok, dapat menyebabkan stres sosial. Stres sosial dapat berdampak pada produksi susu dan kesehatan mental sapi. Sapi yang terisolasi atau stres sosial cenderung menghasilkan lebih sedikit susu dibandingkan dengan sapi yang hidup dalam kelompok yang stabil.</li>
-            <li style={{ marginBottom: '10px' }}><strong> Faktor Lain: Kebisingan dan Gangguan :</strong> Faktor lingkungan lain yang sering diabaikan adalah kebisingan. Suara keras atau berisik di sekitar kandang sapi, seperti suara mesin atau kendaraan, dapat menyebabkan stres. Kebisingan yang terus-menerus dapat mengganggu kenyamanan sapi, mengurangi kualitas tidur, dan meningkatkan tingkat stres mereka, yang pada akhirnya berdampak negatif pada produksi susu.</li>
-          </ul>
-          <p>Cara Mengoptimalkan Lingkungan untuk Produksi Susu yang Optimal</p>
-          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
-            <li style={{ marginBottom: '10px' }}><strong>Suhu yang Terjaga :</strong> Gunakan sistem pendingin untuk mengurangi panas berlebih di musim panas, atau sediakan alat pemanas di musim dingin untuk menjaga suhu kandang tetap stabil.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Ventilasi yang Baik :</strong> Pastikan kandang memiliki ventilasi yang cukup untuk sirkulasi udara yang baik. Sistem ventilasi harus dirancang untuk mengalirkan udara segar dan mengurangi kelembapan berlebih.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Kebersihan Rutin :</strong> Lakukan pembersihan kandang secara berkala untuk menjaga kebersihan dan mencegah infeksi pada sapi.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Pemberian Pakan Berkualitas :</strong> Pastikan sapi mendapatkan pakan yang bergizi dan cukup, baik berupa rumput segar, silase, maupun konsentrat yang sesuai dengan kebutuhannya.</li>
-            <li style={{ marginBottom: '10px' }}><strong>Lingkungan Sosial yang Stabil :</strong> Jaga sapi dalam kelompok yang stabil dan hindari pemisahan mendadak untuk mengurangi stres sosial.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Sensor lingkungan :</strong> Digunakan untuk memantau suhu, kelembaban, dan kualitas udara di kandang guna memastikan kondisi yang ideal bagi ternak.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Sensor kesehatan :</strong> Dapat mendeteksi detak jantung, suhu tubuh, tingkat aktivitas, dan perilaku makan, sehingga peternak dapat segera mengambil tindakan jika ada tanda-tanda penyakit.</li>
+            <li style={{ marginBottom: '10px' }}><strong>RFID dan GPS tracking :</strong> Memungkinkan identifikasi individu dan pemantauan lokasi ternak secara real-time untuk mencegah kehilangan dan mengelola pergerakan hewan dengan lebih efektif. </li>
+            <li style={{ marginBottom: '10px' }}><strong>Sistem pemberian pakan otomatis :</strong> Dapat menyesuaikan jumlah dan waktu pemberian pakan sesuai dengan kebutuhan ternak, meningkatkan efisiensi pakan dan kesehatan hewan. </li>
+            <li style={{ marginBottom: '10px' }}><strong>Platform berbasis Cloud :</strong> Memungkinkan peternak untuk mengakses data dan analisis melalui aplikasi mobile atau dashboard, sehingga keputusan dapat diambil secara cepat dan akurat. </li>
           </ul>
         </>
       ),
-  },
-];
+    },
+    {
+      topic: "Pakan Ternak",
+      content: (
+        <>
+         <p style={{ textAlign: "left", marginTop: "0px" }}>28 Februari 2025</p>
+         <h2 style={{ textAlign: "center" }}>Pakan Fermentasi untuk Sapi: Manfaat dan Cara Membuatnya</h2>
+          <img 
+            src={Makanan} 
+            alt="Pakan Ternak" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
+          />
+          <p>Pakan fermentasi dapat meningkatkan pencernaan sapi dan kualitas susu.Proses fermentasi juga menghasilkan probiotik alami yang baik untuk kesehatan pencernaan sapi, mengurangi risiko penyakit pencernaan, serta meningkatkan daya tahan tubuh. Selain itu, pakan fermentasi lebih tahan lama dibandingkan hijauan segar, sehingga dapat menjadi cadangan pakan saat musim kemarau.</p>
+          <p>Cara Membuat Pakan Fermentasi</p>
+          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '10px' }}><strong>Persiapan Bahan :</strong> Siapkan hijauan berkualitas seperti rumput gajah, jerami padi, atau daun jagung, lalu tambahkan dedak, ampas tahu, atau bungkil kelapa sebagai sumber energi, serta gunakan starter fermentasi seperti EM4 atau ragi tape untuk mempercepat proses fermentasi.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Proses Pembuatan :</strong> Cincang hijauan kecil-kecil, campurkan dengan dedak dan bahan tambahan, larutkan EM4 atau ragi dalam air, semprotkan merata pada campuran, masukkan ke dalam drum atau plastik kedap udara, padatkan, tutup rapat, dan diamkan selama 7-14 hari hingga fermentasi selesai.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Pemberian ke Sapi :</strong> Buka wadah fermentasi, biarkan terkena udara beberapa menit, dan berikan pakan fermentasi sesuai dengan kebutuhan sapi. </li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      topic: "Manajemen Kesehatan",
+      content: (
+        <>
+          <p style={{ textAlign: "left", marginTop: "0px" }}>20 Februari 2025</p>
+         <h2 style={{ textAlign: "center" }}>Pentingnya Vaksinasi untuk Sapi di Peternakan</h2>
+          <img 
+            src={Kesehatan} 
+            alt="Manajemen Kesehatan" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
+          />
+          <p>Vaksinasi adalah langkah penting dalam menjaga kesehatan sapi.</p>
+          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '10px' }}><strong>Mencegah Penyakit Infeksius :</strong> Vaksinasi membantu mencegah penyakit infeksius yang dapat menyerang sapi, seperti brucellosis, anthrax, dan mastitis. Penyakit ini dapat menyebabkan penurunan kesehatan sapi secara signifikan, mengganggu produksi susu atau daging, bahkan menyebabkan kematian pada ternak.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Meningkatkan Daya Tahan Tubuh Sapi :</strong> Dengan vaksinasi, sistem kekebalan tubuh sapi menjadi lebih kuat dan mampu melawan infeksi secara lebih efektif. Ini mengurangi risiko sapi terinfeksi penyakit yang bisa menurunkan kualitas produksi.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Menjaga Keberlanjutan Produksi :</strong> Vaksinasi dapat memperpanjang umur produktif sapi dengan mencegah penyakit yang dapat menurunkan kinerja ternak. Sapi yang sehat akan menghasilkan susu dan daging secara konsisten, meningkatkan efisiensi dan keuntungan peternakan. </li>
+            <li style={{ marginBottom: '10px' }}><strong>Meningkatkan Keamanan dan Kualitas Produk :</strong> Dengan sapi yang sehat, kualitas susu dan daging yang dihasilkan juga lebih baik, karena sapi yang terhindar dari penyakit menghasilkan produk yang lebih higienis dan bernutrisi tinggi.</li>
+          </ul>
+        </>
+      ),
 
-const BlogDetail = () => {
-  const { id } = useParams(); // Mendapatkan ID artikel dari URL
-  const post = blogPosts[id]; // Mengambil artikel berdasarkan ID
+    },
+    {
+      topic: "Teknologi Peternakan",
+      content: (
+        <>
+         <p style={{ textAlign: "left", marginTop: "0px" }}>15 Februari 2025</p>
+         <h2 style={{ textAlign: "center" }}>Mengelola Limbah Peternakan dengan Teknologi Modern</h2>
+          <img 
+            src={Teknologi} 
+            alt="Teknologi Peternakan" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
+          />
+          <p>Limbah peternakan dapat dikelola dengan teknologi modern untuk mengurangi dampak lingkungan. Artikel ini membahas solusi inovatif.</p>
+          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '10px' }}><strong>Biogas :</strong> Limbah kotoran sapi dapat diolah menjadi biogas untuk menghasilkan energi terbarukan yang dapat digunakan di peternakan, seperti untuk pemanasan atau pembangkit listrik kecil.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Pupuk Organik :</strong> Limbah peternakan dapat dikomposkan untuk menghasilkan pupuk organik berkualitas yang mendukung pertanian atau dijual sebagai produk tambahan.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Bioremediasi Limbah Cair :</strong> Teknologi bioremediasi menggunakan mikroorganisme untuk mengolah limbah cair, mengurangi pencemaran, dan memungkinkan penggunaan kembali air limbah.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Sensor Limbah :</strong> Sensor untuk memantau kualitas limbah secara real-time membantu peternak mengelola limbah dengan efisien dan ramah lingkungan.</li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      topic: "Perawatan Sapi",
+      content: (
+        <>
+        <p style={{ textAlign: "left", marginTop: "0px" }}>10 Februari 2025</p>
+         <h2 style={{ textAlign: "center" }}>Tips Memilih Bibit Sapi Berkualitas untuk Peternakan</h2>
+          <img 
+            src={Merawat} 
+            alt="Teknologi Peternakan" 
+            style={{ width: "70%", borderRadius: "0px", marginBottom: "30px", display: "block", margin: "0 auto" }} 
+          />
+          <p>Memilih bibit sapi yang berkualitas adalah langkah awal untuk peternakan yang sukses. Artikel ini memberikan tips praktis untuk memilih bibit terbaik.</p>
+          <ul style={{ paddingLeft: '20px', textAlign: 'justify', lineHeight: '1.6' }}>
+            <li style={{ marginBottom: '10px' }}><strong>Perhatikan Kesehatan Fisik :</strong> Pilih sapi yang terlihat sehat, dengan bulu mengkilap, mata cerah, serta tubuh yang tidak cacat atau terluka. Pastikan sapi bebas dari tanda-tanda penyakit, seperti batuk, diare, atau kelelahan berlebihan.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Periksa Umur dan Bobot :</strong> Pilih bibit sapi yang sesuai dengan tujuan peternakan, baik untuk produksi susu atau daging. Sapi yang terlalu muda atau terlalu tua dapat mengurangi produktivitas. Pastikan sapi memiliki bobot tubuh yang ideal sesuai umur dan jenisnya.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Cek Riwayat Keturunan :</strong> Pilih sapi dengan riwayat keturunan yang baik. Sapi dengan induk yang produktif, baik dalam produksi susu atau daging, biasanya mewariskan kualitas yang sama pada keturunannya.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Lihat Struktur Tubuh :</strong> Pilih sapi dengan struktur tubuh yang proporsional, terutama bagian kaki, punggung, dan kaki depan. Sapi yang memiliki tubuh kuat dan seimbang akan lebih produktif dan tahan terhadap stres.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Cek Status Vaksinasi dan Kesehatan :</strong> Pastikan bibit sapi telah menerima vaksinasi yang lengkap dan rutin, serta pemeriksaan kesehatan dari dokter hewan untuk memastikan sapi bebas dari penyakit menular atau genetik.</li>
+            <li style={{ marginBottom: '10px' }}><strong>Pertimbangkan Lingkungan dan Pakan :</strong> Pilih bibit sapi yang sudah terbiasa dengan lingkungan dan pakan yang akan diberikan di peternakan Anda. Sapi yang adaptif terhadap kondisi peternakan akan lebih cepat berkembang dan sehat.</li>
+          </ul>
+        </>
+      ),
+    },
+  ];
 
-  if (!post) {
-    return <p>Artikel tidak ditemukan.</p>;
-  }
+  // Mengambil post berdasarkan id
+  const post = blogPosts[id];
+
+console.log('ID:', id);
+console.log('Post:', post);
+
+if (!post) {
+  return <h2>Artikel tidak ditemukan</h2>;
+}
 
   return (
     <div className="container py-5">
-      <h2 className="text-2xl font-bold mb-4">{post.title}</h2>
-      <p className="text-sm text-gray-500 mb-2">{post.date}</p>
-      <p className="text-base">{post.fullContent}</p>
+      <div className="row">
+        <div className="col-lg-8 offset-lg-2">
+          <h1 className="mb-4" style={{ marginTop: "150px" }}>{post.title}</h1>
+          <p className="text-muted">{post.date}</p>
+          <img
+            src={post.image}
+            alt={post.title}
+            className="img-fluid mb-4"
+            style={{ borderRadius: "8px" }}
+          />
+          <p>{post.content}</p>
+          <Link to="/blog" className="btn btn-success mt-4" style={{ marginBottom: "50px" }}>
+            Kembali ke Blog
+          </Link>
+        </div>
+      </div>
     </div>
   );
+  
 };
 
-export default BlogDetail;
+export default DetailBlog;
