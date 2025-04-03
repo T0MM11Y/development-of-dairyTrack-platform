@@ -355,20 +355,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/item-pakan-harian"
-                        className={
-                          isActive("/admin/item-pakan-harian") ? "active" : ""
-                        }
-                      >
-                        <i className="ri-stack-line"></i> Item Pakan 
-                      </Link>
-                    </motion.li>
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
                         to="/admin/pakan/stok"
                         className={
                           isActive("/admin/pakan/stok") ? "active" : ""
@@ -383,12 +369,26 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/nutrisi"
+                        to="/admin/sesi-pakan"
                         className={
-                          isActive("/admin/nutrisi") ? "active" : ""
+                          isActive("/admin/sesi-pakan") ? "active" : ""
                         }
                       >
-                        <i className="ri-stack-line"></i> Nutrisi
+                        <i className="ri-stack-line"></i> Sesi Pakan
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/detail-pakan-harian"
+                        className={
+                          isActive("/admin/detail-pakan-harian") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-stack-line"></i> Detail Pakan Harian
                       </Link>
                     </motion.li>
                   </motion.ul>
