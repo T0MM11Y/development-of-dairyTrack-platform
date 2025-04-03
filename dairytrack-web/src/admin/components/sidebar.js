@@ -369,6 +369,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
+                        to="/admin/sesi-pakan"
+                        className={
+                          isActive("/admin/sesi-pakan") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-stack-line"></i> Sesi Pakan
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
                         to="/admin/detail-pakan-harian"
                         className={
                           isActive("/admin/detail-pakan-harian") ? "active" : ""
