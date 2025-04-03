@@ -2,7 +2,6 @@ import React from "react";
 import "../assets/client/css/bootstrap.min.css";
 import "../assets/client/css/default.css";
 import "../assets/client/css/style.css";
-
 import "../assets/client/css/responsive.css";
 import "../assets/client/css/fontawesome-all.min.css";
 import "../assets/client/css/magnific-popup.css";
@@ -14,9 +13,15 @@ import Footer from "./components/footer";
 
 const withUserLayout = (Component) => {
   return (
-    <div className="user-app">
+    <div
+      className="user-app"
+      style={{ width: "100%", margin: "0", padding: "0" }}
+    >
       <Header />
-      <div className="user-body">
+      <div
+        className="user-body"
+        style={{ width: "100%", margin: "0", padding: "0" }}
+      >
         <Component />
       </div>
       <Footer />
