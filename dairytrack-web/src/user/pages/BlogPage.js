@@ -77,39 +77,57 @@ const BlogPage = () => {
   };
 
   return (
-    <div className="container py-5 mt-15">
-  <header className="text-center mb-12"> {/* Menambahkan margin bottom yang lebih besar */}
-    <h1 className="text-4xl font-bold text-green-600 mb-4">Blog Terbaru</h1> {/* Menambahkan margin bottom pada judul */}
-  </header>
+    <div className="container py-5">
+      {/* Header */}
+      <header className="text-center mb-5" style={{ paddingTop: "100px" }}>
+        <p className="text-muted">
+          Temukan artikel terbaru tentang peternakan sapi dan teknologi
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-        {blogPosts.slice(currentPage * postsPerPage, (currentPage + 1) * postsPerPage).map((post, index) => (
-          <div key={index} className="border rounded-lg overflow-hidden shadow-lg p-4">
-            <img 
-              src={post.image} 
-              alt={post.title} 
-              className="w-full h-64 object-cover rounded-lg mb-4" 
-              style={{ objectFit: 'cover', height: '350px' }} 
-            />
-            <h3 className="text-xl font-bold text-green-700">{post.title}</h3>
-            <p className="text-sm text-gray-500 mb-2">{post.date}</p>
-            <p className="text-gray-700 mb-4">{post.content}</p>
-            <Link to={`/blog/${index}`} className="text-blue-600 font-semibold hover:underline">Baca Selengkapnya</Link>
-          </div>
-        ))}
+      {/* Blog Cards */}
+      <div className="row g-4 mb-5">
+        {blogPosts
+          .slice(currentPage * postsPerPage, (currentPage + 1) * postsPerPage)
+          .map((post, index) => (
+            <div key={index} className="col-md-6 col-lg-4">
+              <div className="card h-100 shadow-sm">
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="card-img-top"
+                  style={{ height: "200px", objectFit: "cover" }}
+                />
+                <div className="card-body d-flex flex-column">
+                  <h5 className="card-title text-success">{post.title}</h5>
+                  <p className="card-text text-muted">{post.date}</p>
+                  <p className="card-text mb-4">{post.content}</p>
+                  <Link
+                    to={`/blog/${index}`}
+                    className="btn btn-success mt-auto align-self-start"
+                  >
+                    Baca Selengkapnya
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
       </div>
 
-      <div className="flex justify-center mt-10 space-x-4">
-        <button 
-          onClick={handlePrevPage} 
-          disabled={currentPage === 0} 
-          className="px-4 py-2 bg-green-500 text-black rounded-lg disabled:opacity-50">
+      {/* Pagination */}
+      <div className="d-flex justify-content-center">
+        <button
+          onClick={handlePrevPage}
+          disabled={currentPage === 0}
+          className="btn btn-outline-secondary me-2"
+        >
           Sebelumnya
         </button>
-        <button 
-          onClick={handleNextPage} 
-          disabled={currentPage === totalPages - 1} 
-          className="px-4 py-2 bg-green-500 text-black rounded-lg disabled:opacity-50">
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages - 1}
+          className="btn btn-success"
+        >
           Artikel Berikutnya
         </button>
       </div>
