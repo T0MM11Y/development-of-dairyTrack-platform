@@ -15,6 +15,7 @@ import Footer from "./components/footer";
 const withUserLayout = (Component) => {
   return (
     <div className="user-app">
+      {" "}
       <Header />
       <div className="user-body">
         <Component />
