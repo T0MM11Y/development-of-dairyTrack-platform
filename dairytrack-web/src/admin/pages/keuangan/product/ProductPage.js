@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { deleteProductStock, getProductStocks } from "../../../../api/keuangan/product";
+import {
+  deleteProductStock,
+  getProductStocks,
+} from "../../../../api/keuangan/product";
+import { getProductTypes } from "../../../../api/keuangan/productType";
 import { Link } from "react-router-dom";
 
 const ProductStockListPage = () => {
   const [data, setData] = useState([]);
+  const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -12,15 +17,25 @@ const ProductStockListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await getProductStocks();
-      setData(res);
+      const [productsRes, productTypesRes] = await Promise.all([
+        getProductStocks(),
+        getProductTypes(),
+      ]);
+
+      setData(productsRes);
+      setProductTypes(productTypesRes);
       setError("");
     } catch (err) {
-      console.error("Gagal mengambil data produk:", err.message);
-      setError("Gagal mengambil data produk. Pastikan server API aktif.");
+      console.error("Gagal mengambil data:", err.message);
+      setError("Gagal mengambil data. Pastikan server API aktif.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const getProductTypeName = (productTypeId) => {
+    const productType = productTypes.find((type) => type.id === productTypeId);
+    return productType ? productType.product_name : "Unknown";
   };
 
   const handleDelete = async () => {
@@ -76,7 +91,7 @@ const ProductStockListPage = () => {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Initial Qty</th>
+                      <th>Product Type</th>
                       <th>Remaining Qty</th>
                       <th>Production Date</th>
                       <th>Expiry Date</th>
@@ -89,12 +104,20 @@ const ProductStockListPage = () => {
                     {data.map((item, index) => (
                       <tr key={item.id}>
                         <th scope="row">{index + 1}</th>
-                        <td>{item.initial_quantity}</td>
+                        <td>{getProductTypeName(item.product_type)}</td>
                         <td>{item.quantity}</td>
-                        <td>{new Date(item.production_at).toLocaleDateString()}</td>
+                        <td>
+                          {new Date(item.production_at).toLocaleDateString()}
+                        </td>
                         <td>{new Date(item.expiry_at).toLocaleDateString()}</td>
                         <td>
-                          <span className={`badge ${item.status === "available" ? "bg-success" : "bg-danger"}`}>
+                          <span
+                            className={`badge ${
+                              item.status === "available"
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
                             {item.status}
                           </span>
                         </td>
