@@ -224,3 +224,51 @@ exports.searchDailyFeeds = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+// ** GET NUTRITIONAL INFO BY ID **
+exports.getNutritionalInfoById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log(`Fetching nutritional info for ID: ${id}`);
+    
+    const feed = await DailyFeedComplete.findOne({
+      where: { id },
+      attributes: ['id', 'cow_id', 'date', 'total_protein', 'total_energy', 'total_fiber']
+    });
+
+    if (!feed) {
+      console.warn(`⚠️ Nutritional info not found for ID: ${id}`);
+      return res.status(404).json({ success: false, message: "Nutritional info not found" });
+    }
+
+    console.log(`✅ Found nutritional info for ID: ${id}`, feed);
+
+    return res.status(200).json({ success: true, data: feed });
+  } catch (error) {
+    console.error("❌ Error fetching nutritional info by ID:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// ** GET ALL NUTRITIONAL INFO **
+exports.getAllNutritionalInfo = async (req, res) => {
+  try {
+    const feeds = await DailyFeedComplete.findAll({
+      attributes: ['id', 'cow_id', 'date', 'total_protein', 'total_energy', 'total_fiber'],
+      order: [['date', 'DESC']],
+    });
+
+    console.log("DEBUG: Feeds fetched:", feeds);
+
+    if (!feeds || feeds.length === 0) {
+      console.warn("⚠️ No nutritional data found!");
+      return res.status(404).json({ success: false, message: "No nutritional data found" });
+    }
+
+    return res.status(200).json({ success: true, count: feeds.length, data: feeds });
+  } catch (error) {
+    console.error("❌ Error fetching all nutritional info:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
