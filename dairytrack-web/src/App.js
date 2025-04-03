@@ -30,12 +30,14 @@ import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
+import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
 
 import Finance from "./admin/pages/keuangan/finance/Finance.js";
 
 import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
 import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
 import ProductEditPage from "./admin/pages/keuangan/product/ProductEditPage.js";
+import ProductHistoryPage from "./admin/pages/keuangan/product/ProductHistoryPage.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -129,7 +131,6 @@ function App() {
       <Route path="/" element={withUserLayout(DashboardUser)} />
       <Route path="/logout" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Login />} />
-
       {/* User Routes */}
       <Route path="/dashboard" element={withUserLayout(DashboardUser)} />
       <Route path="/sejarah" element={withUserLayout(SejarahPage)} />
@@ -143,7 +144,8 @@ function App() {
       />
       <Route path="/contact-us" element={withUserLayout(ContactUs)} />
       {/* Artikel Detail Route */}
-      <Route path="/blog/:id" element={withUserLayout(ArticleDetail)} /> {/* Menambahkan rute untuk detail artikel */}
+      <Route path="/blog/:id" element={withUserLayout(ArticleDetail)} />{" "}
+      {/* Menambahkan rute untuk detail artikel */}
       {/* Admin Routes */}
       <Route
         path="/admin"
@@ -153,12 +155,10 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/admin/dashboard"
         element={<ProtectedRoute>{withAdminLayout(Dashboard)}</ProtectedRoute>}
       />
-
       <Route
         path="/admin/pakan/jenis"
         element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
@@ -213,7 +213,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(TambahDetailPakan)}</ProtectedRoute>
         }
       />
-
       <Route
         path="/admin/susu/produksi"
         element={
@@ -226,7 +225,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(AnalisisProduksi)}</ProtectedRoute>
         }
       />
-
       {/* Admin peternakan - Sapi */}
       <Route
         path="/admin/peternakan/sapi"
@@ -246,7 +244,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(CowEditPage)}</ProtectedRoute>
         }
       />
-
       {/* Admin peternakan - Farmers */}
       <Route
         path="/admin/peternakan/farmer"
@@ -266,7 +263,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(FarmerEditPage)}</ProtectedRoute>
         }
       />
-
       {/* Admin peternakan - Supervisor */}
       <Route
         path="/admin/peternakan/supervisor"
@@ -288,7 +284,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(SupervisorEditPage)}</ProtectedRoute>
         }
       />
-
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route
         path="/admin/kesehatan/pemeriksaan"
@@ -314,7 +309,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       {/* Admin Kesehatan - Gejala */}
       <Route
         path="/admin/kesehatan/gejala"
@@ -334,7 +328,6 @@ function App() {
           <ProtectedRoute>{withAdminLayout(SymptomEditPage)}</ProtectedRoute>
         }
       />
-
       {/* Admin Kesehatan - Riwayat Penyakit */}
       <Route
         path="/admin/kesehatan/riwayat"
@@ -360,7 +353,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       {/* Admin Kesehatan - Reproduksi */}
       <Route
         path="/admin/kesehatan/reproduksi"
@@ -386,31 +378,42 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       {/* Sales And Financial Routing */}
       <Route
         path="/admin/keuangan/product"
-        element={<ProtectedRoute>{withAdminLayout(ProductListPage)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductListPage)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/product-history"
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductHistoryPage)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/keuangan/product/create"
-        element={<ProtectedRoute>{withAdminLayout(ProductCreatePage)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductCreatePage)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/keuangan/product/edit/:id"
-        element={<ProtectedRoute>{withAdminLayout(ProductEditPage)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductEditPage)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/keuangan/sales"
-        element={
-          <ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>
-        }
+        element={<ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/sales/edit/:id"
+        element={<ProtectedRoute>{withAdminLayout(SalesEditPage)}</ProtectedRoute>}
       />
       <Route
         path="/admin/keuangan/finance"
-        element={
-          <ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>
-        }
+        element={<ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>}
       />
     </Routes>
   );

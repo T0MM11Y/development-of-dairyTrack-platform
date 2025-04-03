@@ -648,6 +648,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
+                        to="/admin/keuangan/product-history"
+                        className={
+                          isActive("/admin/keuangan/product-history") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-history-line"></i> History Product
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
                         to="/admin/keuangan/sales"
                         className={
                           isActive("/admin/keuangan/sales") ? "active" : ""

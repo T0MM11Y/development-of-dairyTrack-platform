@@ -1,6 +1,7 @@
 import { fetchAPI } from "../apiClient1";
 
 export const getProductStocks = () => fetchAPI("product-stock");
+export const getProductStockHistorys = () => fetchAPI("product-history");
 export const getProductStockById = (id) => fetchAPI(`product-stock/${id}`);
 export const createProductStock = (data) =>
   fetchAPI("product-stock", "POST", data);
