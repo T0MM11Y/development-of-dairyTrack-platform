@@ -49,8 +49,8 @@ const produkList = [
 const ProdukPage = () => {
   return (
     <div className="container mx-auto py-5">
-      <div className="bg-gray-100 p-5 mt-32">
-        <h2 className="text-2xl font-bold text-center text-gray-800">
+      <div className="bg-gray-100 p-5 mt-40">
+      <h2 className="text-2xl font-bold text-center text-gray-800">
           Produk Susu Kami
         </h2>
         <p className="text-gray-600 mt-3 text-center text-lg p-4 rounded-md shadow-sm inline-block">
