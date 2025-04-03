@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { createProductStock} from "../../../../api/keuangan/product";
-import {getProductTypes} from "../../../../api/keuangan/productType";
+import { createProductStock } from "../../../../api/keuangan/product";
+import { getProductTypes } from "../../../../api/keuangan/productType";
 import { useNavigate } from "react-router-dom";
 
 const ProductStockCreatePage = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+  const [productTypes, setProductTypes] = useState([]);
   const [form, setForm] = useState({
-    product: "",
-    quantity: "",
-    warehouse_location: "",
-    supplier: "",
-    received_date: "",
-    expiry_date: "",
+    initial_quantity: "",
+    production_at: "",
+    expiry_at: "",
+    total_milk_used: "",
+    product_type: "",
   });
 
   const [error, setError] = useState("");
@@ -20,10 +19,10 @@ const ProductStockCreatePage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductTypes = async () => {
       try {
-        const res = await getProductTypes();
-        setProducts(res);
+        const res = await getProductTypes(); // Ambil data Product Name dari API
+        setProductTypes(res);
       } catch (err) {
         console.error("Gagal mengambil data produk:", err);
         setError("Gagal mengambil data produk.");
@@ -31,7 +30,7 @@ const ProductStockCreatePage = () => {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchProductTypes();
   }, []);
 
   const handleChange = (e) => {
@@ -42,11 +41,32 @@ const ProductStockCreatePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+
+    const formData = {
+      initial_quantity: Number(form.initial_quantity),
+      production_at: new Date(form.production_at).toISOString(),
+      expiry_at: new Date(form.expiry_at).toISOString(),
+      total_milk_used: parseFloat(form.total_milk_used).toFixed(2),
+      status: "available",
+      product_type: Number(form.product_type), // Pastikan ini ID yang dikirim
+    };
+
+    console.log("Data yang dikirim:", JSON.stringify(formData, null, 2));
+
+    if (!formData.product_type) {
+      setError("Tipe produk tidak valid.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await createProductStock(form);
-      navigate("/admin/product-stock");
+      await createProductStock(formData);
+      navigate("/admin/keuangan/product");
     } catch (err) {
       console.error("Gagal menyimpan data stok produk:", err);
+      if (err.response) {
+        console.error("Response data:", err.response.data);
+      }
       setError("Gagal menyimpan data stok produk: " + err.message);
     } finally {
       setSubmitting(false);
@@ -65,10 +85,12 @@ const ProductStockCreatePage = () => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Stok Produk</h4>
+            <h4 className="modal-title text-info fw-bold">
+              Tambah Stok Produk
+            </h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/product-stock")}
+              onClick={() => navigate("/admin/keuangan/product")}
               disabled={submitting}
             ></button>
           </div>
@@ -78,40 +100,84 @@ const ProductStockCreatePage = () => {
               <p className="text-center">Memuat data produk...</p>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* Product Type */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Produk</label>
+                  <label className="form-label fw-bold">Tipe Produk</label>
                   <select
-                    name="product"
-                    value={form.product}
+                    name="product_type"
+                    value={form.product_type}
                     onChange={handleChange}
                     className="form-select"
                     required
                   >
-                    <option value="">-- Pilih Produk --</option>
-                    {products.map((product) => (
+                    <option value="">-- Pilih Tipe Produk --</option>
+                    {productTypes.map((product) => (
                       <option key={product.id} value={product.id}>
-                        {product.name} - {product.sku}
+                        {product.product_name} {/* Menampilkan nama produk */}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="row">
-                  {["quantity", "warehouse_location", "supplier", "received_date", "expiry_date"].map((key) => (
-                    <div className="col-md-6 mb-3" key={key}>
-                      <label className="form-label fw-bold">{key.replace("_", " ").toUpperCase()}</label>
-                      <input
-                        type={key.includes("date") ? "date" : "text"}
-                        name={key}
-                        value={form[key]}
-                        onChange={handleChange}
-                        className="form-control"
-                        placeholder={`Masukkan ${key.replace("_", " ")}`}
-                      />
-                    </div>
-                  ))}
+                {/* Initial Quantity */}
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Jumlah Awal</label>
+                  <input
+                    type="number"
+                    name="initial_quantity"
+                    value={form.initial_quantity}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="Masukkan jumlah awal"
+                    required
+                  />
                 </div>
 
+                {/* Production Date */}
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Tanggal Produksi</label>
+                  <input
+                    type="date"
+                    name="production_at"
+                    value={form.production_at}
+                    onChange={handleChange}
+                    className="form-control"
+                    required
+                  />
+                </div>
+
+                {/* Expiry Date */}
+                <div className="mb-3">
+                  <label className="form-label fw-bold">
+                    Tanggal Kedaluwarsa
+                  </label>
+                  <input
+                    type="date"
+                    name="expiry_at"
+                    value={form.expiry_at}
+                    onChange={handleChange}
+                    className="form-control"
+                    required
+                  />
+                </div>
+
+                {/* Total Milk Used */}
+                <div className="mb-3">
+                  <label className="form-label fw-bold">
+                    Total Susu yang Digunakan
+                  </label>
+                  <input
+                    type="number"
+                    name="total_milk_used"
+                    value={form.total_milk_used}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="Masukkan jumlah susu yang digunakan"
+                    required
+                  />
+                </div>
+
+                {/* Submit Button */}
                 <button
                   type="submit"
                   className="btn btn-info w-100"

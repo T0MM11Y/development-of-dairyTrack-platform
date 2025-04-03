@@ -7,6 +7,7 @@ import {
   updateRawMilk,
   getRawMilkById,
   getRawMilksByCowId,
+  checkRawMilkExpired,
 } from "../../../api/produktivitas/rawMilk";
 import { getCows } from "../../../api/peternakan/cow";
 
@@ -221,35 +222,43 @@ const Modal = ({
   );
 };
 
+const formatTimeRemaining = (timeRemaining) => {
+  if (!timeRemaining) return "Expired";
+
+  const [hours, minutes, seconds] = timeRemaining.split(":").map(Number);
+
+  let formattedTime = "";
+  if (hours > 0) formattedTime += `${hours} jam `;
+  if (minutes > 0) formattedTime += `${minutes} menit `;
+  if (seconds > 0 && hours === 0) formattedTime += `${seconds} detik`;
+
+  return formattedTime.trim() + " lagi";
+};
 const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
-  const [timeLeftData, setTimeLeftData] = useState({});
+  const [expirationStatus, setExpirationStatus] = useState({});
 
   useEffect(() => {
-    const calculateTimeLeft = (expirationTime) => {
-      const now = new Date();
-      const expiration = new Date(expirationTime);
-      const diff = expiration - now;
-      return diff <= 0 ? null : diff;
+    const fetchExpirationStatus = async () => {
+      const statusData = {};
+      for (const rawMilk of rawMilks) {
+        try {
+          const result = await checkRawMilkExpired(rawMilk.id);
+          statusData[rawMilk.id] = {
+            isExpired: result.is_expired,
+            timeRemaining: result.time_remaining,
+          };
+        } catch (error) {
+          console.error(
+            `Failed to fetch expiration status for ID ${rawMilk.id}:`,
+            error.message
+          );
+        }
+      }
+      setExpirationStatus(statusData);
     };
 
-    const interval = setInterval(() => {
-      const newTimeLeftData = {};
-      rawMilks.forEach((rawMilk) => {
-        const diff = calculateTimeLeft(rawMilk.expiration_time);
-        newTimeLeftData[rawMilk.id] = diff;
-      });
-      setTimeLeftData(newTimeLeftData);
-    }, 60000); // Update setiap 1 menit, bukan setiap detik
-
-    return () => clearInterval(interval);
+    fetchExpirationStatus();
   }, [rawMilks]);
-
-  const formatTimeLeft = (diff) => {
-    if (!diff) return null;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-  };
 
   if (isLoading) {
     return (
@@ -282,14 +291,16 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
               </thead>
               <tbody>
                 {rawMilks.map((rawMilk, index) => {
-                  const timeLeft = timeLeftData[rawMilk.id];
-                  const isExpired = !timeLeft || timeLeft <= 0;
-                  const formattedTimeLeft = formatTimeLeft(timeLeft);
+                  const status = expirationStatus[rawMilk.id];
+                  const isExpired = status?.isExpired;
+                  const timeRemaining = status?.timeRemaining;
+                  const name = rawMilk.cow?.name || "Unknown";
+                  console.log(rawMilk);
 
                   return (
                     <tr key={rawMilk.id}>
                       <th scope="row">{index + 1}</th>
-                      <td>{rawMilk.cow?.name || "Unknown"}</td>
+                      <td>{name || "Unknown"}</td>
                       <td>
                         {rawMilk.production_time
                           ? format(new Date(rawMilk.production_time), "PPpp")
@@ -310,16 +321,18 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
                         </small>
                       </td>
                       <td>
-                        {!isExpired ? (
+                        {isExpired ? (
+                          <span className="badge bg-danger">Expired</span>
+                        ) : (
                           <span className="badge bg-success">
                             Fresh
                             <br />
-                            <small style={{ fontSize: "10px", color: "white" }}>
-                              {formattedTimeLeft}
+                            <small style={{ fontSize: "10px" }}>
+                              {timeRemaining
+                                ? formatTimeRemaining(timeRemaining)
+                                : "Menghitung..."}
                             </small>
                           </span>
-                        ) : (
-                          <span className="badge bg-danger">Expired</span>
                         )}
                       </td>
                       <td>

@@ -10,54 +10,54 @@ const produkList = [
   {
     nama: "Susu Segar Full Cream",
     image: susuSegarFullCream,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Susu segar dengan kualitas terbaik untuk kesehatan Anda.",
+    harga: "Rp 30.000",
   },
   {
     nama: "Susu Pasteurisasi",
-    image: susuPasteurisasi,
-    link: "produk-details.html",
+    image: susuSegarFullCream,
+    link: "productdetails.js",
     deskripsi: "Susu pasteurisasi yang aman dan bergizi untuk keluarga.",
+    harga: "Rp 25.000",
   },
   {
     nama: "Yogurt Rasa Buah",
     image: yogurtRasaBuah,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Yogurt segar dengan berbagai pilihan rasa buah alami.",
+    harga: "Rp 20.000",
   },
   {
     nama: "Keju Mozzarella & Cheddar",
     image: kejuMozzarellaCheddar,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi: "Keju berkualitas tinggi untuk hidangan lezat Anda.",
+    harga: "Rp 40.000",
   },
   {
     nama: "Susu Rendah Lemak",
-    image: susuRendahLemak,
-    link: "produk-details.html",
+    image: susuSegarFullCream,
+    link: "productdetails.js",
     deskripsi: "Pilihan terbaik untuk gaya hidup sehat Anda.",
+    harga: "Rp 35.000",
   },
   {
     nama: "Susu Sapi Organik",
     image: susuSegarFullCream,
-    link: "produk-details.html",
+    link: "productdetails.js",
     deskripsi:
       "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
+    harga: "Rp 50.000",
   },
 ];
 
 const ProdukPage = () => {
   return (
-    <div className="container mx-auto py-5">
-      <div className="bg-gray-100 p-5 mt-40">
-      <h2 className="text-2xl font-bold text-center text-gray-800">
-          Produk Susu Kami
-        </h2>
-        <p className="text-gray-600 mt-3 text-center text-lg p-4 rounded-md shadow-sm inline-block">
-          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
-        </p>
-      </div>
-
+    <div
+      className="container mx-auto py-5"
+      style={{ marginTop: "170px", marginBottom: "100px" }}
+    >
       {/* Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
         {produkList.map((produk, index) => (
@@ -67,7 +67,8 @@ const ProdukPage = () => {
     </div>
   );
 };
-const ProdukItem = ({ nama, image, link, deskripsi }) => {
+
+const ProdukItem = ({ nama, image, link, deskripsi, harga }) => {
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       {/* Gambar */}
@@ -75,16 +76,27 @@ const ProdukItem = ({ nama, image, link, deskripsi }) => {
 
       {/* Detail */}
       <div className="p-4">
-        <h5 className="text-lg font-semibold">{nama}</h5>
+        <h5 className="product-name">{nama}</h5>
+        {/* Deskripsi */}
         <p className="text-gray-600 mt-2">{deskripsi}</p>
 
-        {/*rating */}
-        <div className="mt-4 flex justify-between items-center">
-          {/* ⭐⭐⭐⭐⭐ Rating */}
-          <div className="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</div>
+        {/* Harga */}
+        <div className="product-price">{harga}</div>
 
-          {/* Tombol View Details */}
-          <a href={link} className="text-blue-500 hover:underline">
+        {/* Rating dan Jumlah Terjual */}
+        <div className="mt-2 flex items-center text-gray-700 text-sm">
+          <span className="text-yellow-400 text-lg">⭐</span>
+          <span className="ml-1 font-medium">4.9</span>
+          <span className="mx-2">|</span>
+          <span>5 terjual</span>
+        </div>
+
+        {/* Tombol View Details */}
+        <div className="mt-4 text-center">
+          <a
+            href={`/blog/${nama.replace(/\s+/g, "-").toLowerCase()}`}
+            className="view-details-btn"
+          >
             View Details
           </a>
         </div>
@@ -92,6 +104,5 @@ const ProdukItem = ({ nama, image, link, deskripsi }) => {
     </div>
   );
 };
-
 
 export default ProdukPage;

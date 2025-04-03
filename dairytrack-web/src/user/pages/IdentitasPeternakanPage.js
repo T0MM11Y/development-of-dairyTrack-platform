@@ -156,7 +156,7 @@ const IdentitasPeternakanPage = () => {
                   }}
                 >
                   Informasi tambahan tentang Gedung TSTH2. Gedung ini memiliki
-                  fasilitas modern untuk mendukung penelitian.
+                  fasilitas modern untuk mendukung penelitian tentang tanaman herbal
                 </p>
               )}
             </div>
