@@ -24,14 +24,5 @@ class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        # # Jika status masih Requested dan shipping_cost berubah, ubah ke Processed
-        # if 'shipping_cost' in request.data and instance.status == 'Requested':
-        #     if instance.shipping_cost > 0:
-        #         instance.status = 'Processed'
-
-        # # Validasi sebelum menyelesaikan pesanan
-        # if request.data.get('status') == 'Completed' and not instance.payment_method:
-        #     return Response({"error": "Metode pembayaran harus diisi sebelum menyelesaikan pesanan."}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)

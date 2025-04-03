@@ -28,7 +28,8 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
         const errorData = await response.json();
         return {
           status: response.status,
-          message: errorData.detail || "Something went wrong.",
+          message:
+            errorData.detail || "Something went wrong please try again later.",
         };
       } else {
         const errorText = await response.text();
