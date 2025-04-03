@@ -45,7 +45,7 @@ const ProductStockListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Product Stock</h2>
+        <h2 className="text-xl font-bold text-gray-800 m-1">Product Stock</h2>
         <Link to="/admin/keuangan/product/create" className="btn btn-info">
           + Product Stock
         </Link>
