@@ -8,108 +8,113 @@ import Kesehatan from "../../assets/image/kesehatan.jpg";
 import Stress from "../../assets/image/stress.jpg";
 import Lingkungan from "../../assets/image/lingkungan.jpg";
 
-const blogPosts = [
-  {
-    title: "Cara Merawat Sapi untuk Produksi Susu Berkualitas",
-    date: "1 April 2025",
-    topic: "Perawatan Sapi",
-    content:
-      "Merawat sapi dengan baik adalah kunci untuk menghasilkan susu berkualitas tinggi. Dalam artikel ini, kami akan membahas berbagai cara merawat sapi agar tetap sehat dan produktif.",
-    image: Merawat,
-    link: "#",
-  },
-  {
-    title: "Pemanfaatan Teknologi dalam Peternakan Sapi",
-    date: "25 Maret 2025",
-    topic: "Teknologi Peternakan",
-    content:
-      "Teknologi memainkan peran penting dalam meningkatkan efisiensi peternakan sapi. Artikel ini akan menjelaskan beberapa inovasi terkini dalam bidang peternakan sapi.",
-    image: Teknologi,
-    link: "#",
-  },
-  {
-    title: "Makanan Terbaik untuk Sapi Perah",
-    date: "18 Maret 2025",
-    topic: "Pakan Ternak",
-    content:
-      "Memilih pakan yang tepat sangat penting untuk sapi perah. Dalam artikel ini, kami akan membahas berbagai jenis pakan yang dapat meningkatkan kualitas susu sapi.",
-    image: Makanan,
-    link: "#",
-  },
-  {
-    title: "Manajemen Kesehatan Sapi di Peternakan",
-    date: "01 April 2025",
-    topic: "Manajemen Kesehatan",
-    content:
-      "Menjaga kesehatan sapi adalah faktor kunci dalam keberhasilan peternakan. Artikel ini membahas cara terbaik dalam menangani kesehatan sapi secara optimal.",
-    image: Kesehatan,
-    link: "#",
-  },
-  {
-    title: "Strategi Peningkatan Produksi Susu Sapi",
-    date: "10 Maret 2025",
-    topic: "Produksi Susu",
-    content:
-      "Artikel ini membahas strategi yang dapat diterapkan untuk meningkatkan produksi susu sapi secara efisien dan berkelanjutan.",
-    image: Merawat,
-    link: "#",
-  },
-  {
-    title: "Teknologi IoT untuk Monitoring Peternakan",
-    date: "5 Maret 2025",
-    topic: "Teknologi Peternakan",
-    content:
-      "Penggunaan teknologi IoT dalam peternakan dapat membantu peternak memantau kondisi sapi secara real-time. Artikel ini menjelaskan manfaatnya.",
-    image: Teknologi,
-    link: "#",
-  },
-  {
-    title: "Pakan Fermentasi untuk Sapi: Manfaat dan Cara Membuatnya",
-    date: "28 Februari 2025",
-    topic: "Pakan Ternak",
-    content:
-      "Pakan fermentasi dapat meningkatkan pencernaan sapi dan kualitas susu. Artikel ini membahas manfaat dan cara membuatnya.",
-    image: Makanan,
-    link: "#",
-  },
-  {
-    title: "Pentingnya Vaksinasi untuk Sapi di Peternakan",
-    date: "20 Februari 2025",
-    topic: "Manajemen Kesehatan",
-    content:
-      "Vaksinasi adalah langkah penting dalam menjaga kesehatan sapi. Artikel ini menjelaskan jenis vaksin yang diperlukan dan jadwalnya.",
-    image: Kesehatan,
-    link: "#",
-  },
-  {
-    title: "Mengelola Limbah Peternakan dengan Teknologi Modern",
-    date: "15 Februari 2025",
-    topic: "Teknologi Peternakan",
-    content:
-      "Limbah peternakan dapat dikelola dengan teknologi modern untuk mengurangi dampak lingkungan. Artikel ini membahas solusi inovatif.",
-    image: Teknologi,
-    link: "#",
-  },
-  {
-    title: "Tips Memilih Bibit Sapi Berkualitas untuk Peternakan",
-    date: "10 Februari 2025",
-    topic: "Perawatan Sapi",
-    content:
-      "Memilih bibit sapi yang berkualitas adalah langkah awal untuk peternakan yang sukses. Artikel ini memberikan tips praktis untuk memilih bibit terbaik.",
-    image: Merawat,
-    link: "#",
-  },
-];
 const BlogPage = () => {
-  const [currentPage, setCurrentPage] = useState(0);
+  const blogPosts = [
+    {
+      title: "Cara Merawat Sapi untuk Produksi Susu Berkualitas",
+      date: "1 April 2025",
+      topic: "Perawatan Sapi",
+      content:
+        "Merawat sapi dengan baik adalah kunci untuk menghasilkan susu berkualitas tinggi. Dalam artikel ini, kami akan membahas berbagai cara merawat sapi agar tetap sehat dan produktif.",
+      image: Merawat,
+      link: "#",
+    },
+    {
+      title: "Pemanfaatan Teknologi dalam Peternakan Sapi",
+      date: "25 Maret 2025",
+      topic: "Teknologi Peternakan",
+      content:
+        "Teknologi memainkan peran penting dalam meningkatkan efisiensi peternakan sapi. Artikel ini akan menjelaskan beberapa inovasi terkini dalam bidang peternakan sapi.",
+      image: Teknologi,
+      link: "#",
+    },
+    {
+      title: "Makanan Terbaik untuk Sapi Perah",
+      date: "18 Maret 2025",
+      topic: "Pakan Ternak",
+      content:
+        "Memilih pakan yang tepat sangat penting untuk sapi perah. Dalam artikel ini, kami akan membahas berbagai jenis pakan yang dapat meningkatkan kualitas susu sapi.",
+      image: Makanan,
+      link: "#",
+    },
+    {
+      title: "Manajemen Kesehatan Sapi di Peternakan",
+      date: "01 April 2025",
+      topic: "Manajemen Kesehatan",
+      content:
+        "Menjaga kesehatan sapi adalah faktor kunci dalam keberhasilan peternakan. Artikel ini membahas cara terbaik dalam menangani kesehatan sapi secara optimal.",
+      image: Kesehatan,
+      link: "#",
+    },
+    {
+      title: "Strategi Peningkatan Produksi Susu Sapi",
+      date: "10 Maret 2025",
+      topic: "Produksi Susu",
+      content:
+        "Artikel ini membahas strategi yang dapat diterapkan untuk meningkatkan produksi susu sapi secara efisien dan berkelanjutan.",
+      image: Merawat,
+      link: "#",
+    },
+    {
+      title: "Teknologi IoT untuk Monitoring Peternakan",
+      date: "5 Maret 2025",
+      topic: "Teknologi Peternakan",
+      content:
+        "Penggunaan teknologi IoT dalam peternakan dapat membantu peternak memantau kondisi sapi secara real-time. Artikel ini menjelaskan manfaatnya.",
+      image: Teknologi,
+      link: "#",
+    },
+    {
+      title: "Pakan Fermentasi untuk Sapi: Manfaat dan Cara Membuatnya",
+      date: "28 Februari 2025",
+      topic: "Pakan Ternak",
+      content:
+        "Pakan fermentasi dapat meningkatkan pencernaan sapi dan kualitas susu. Artikel ini membahas manfaat dan cara membuatnya.",
+      image: Makanan,
+      link: "#",
+    },
+    {
+      title: "Pentingnya Vaksinasi untuk Sapi di Peternakan",
+      date: "20 Februari 2025",
+      topic: "Manajemen Kesehatan",
+      content:
+        "Vaksinasi adalah langkah penting dalam menjaga kesehatan sapi. Artikel ini menjelaskan jenis vaksin yang diperlukan dan jadwalnya.",
+      image: Kesehatan,
+      link: "#",
+    },
+    {
+      title: "Mengelola Limbah Peternakan dengan Teknologi Modern",
+      date: "15 Februari 2025",
+      topic: "Teknologi Peternakan",
+      content:
+        "Limbah peternakan dapat dikelola dengan teknologi modern untuk mengurangi dampak lingkungan. Artikel ini membahas solusi inovatif.",
+      image: Teknologi,
+      link: "#",
+    },
+    {
+      title: "Tips Memilih Bibit Sapi Berkualitas untuk Peternakan",
+      date: "10 Februari 2025",
+      topic: "Perawatan Sapi",
+      content:
+        "Memilih bibit sapi yang berkualitas adalah langkah awal untuk peternakan yang sukses. Artikel ini memberikan tips praktis untuk memilih bibit terbaik.",
+      image: Merawat,
+      link: "#",
+    },
+  ];
+
+  // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("Semua");
+  const [currentPage, setCurrentPage] = useState(0);
   const postsPerPage = 4;
 
-  // Get all unique topics from blogPosts
-  const allTopics = ["Semua", ...new Set(blogPosts.map((post) => post.topic))];
+  // Get all unique topics
+  const allTopics = [
+    "Semua",
+    ...Array.from(new Set(blogPosts.map((post) => post.topic))),
+  ];
 
-  // Filter and Search with debounce
+  // Filter posts based on search term and selected topic
   const filteredPosts = blogPosts.filter((post) => {
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,34 +124,24 @@ const BlogPage = () => {
     return matchesSearch && matchesTopic;
   });
 
+  // Pagination
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-
   const handleNextPage = () => {
     if (currentPage < totalPages - 1) {
       setCurrentPage(currentPage + 1);
     }
   };
-
   const handlePrevPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
     }
   };
 
-  // Reset to first page when search or filter changes
-  React.useEffect(() => {
-    setCurrentPage(0);
-  }, [searchTerm, selectedTopic]);
-
   return (
-    <div
-      className="container py-5"
-      style={{ maxWidth: "1200px", marginTop: "170px" }}
-    >
-      {/* Main Content with Sidebar */}
+    <div className="container py-5">
       <div className="row">
         {/* Main Blog Content */}
-        <div className="col-lg-8">
+        <div className="col-lg-8" style={{ marginTop: "120px" }}>
           {/* Search and Filter - Mobile Version */}
           <div className="card shadow-sm mb-4 d-lg-none">
             <div
@@ -324,12 +319,15 @@ const BlogPage = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="col-lg-4 d-none d-lg-block">
+        <div
+          className="col-lg-4 d-none d-lg-block"
+          style={{ marginTop: "120px" }}
+        >
           {/* Search and Filter */}
           <div className="card shadow-sm mb-4 border-0">
             <div
               className="card-header"
-              style={{ backgroundColor: "#4caf50", color: "white" }}
+              style={{ backgroundColor: "#f8f9fa", color: "#212529" }}
             >
               <h5 className="mb-0">Cari & Filter</h5>
             </div>
@@ -389,16 +387,17 @@ const BlogPage = () => {
               </div>
             </div>
           </div>
+
           {/* Blog Terbaru */}
           <div className="card shadow-sm mb-4 border-0">
             <div
               className="card-header"
-              style={{ backgroundColor: "#4caf50", color: "white" }}
+              style={{ backgroundColor: "#f8f9fa", color: "#212529" }}
             >
               <h5 className="mb-0">Blog Terbaru</h5>
             </div>
             <ul className="list-group list-group-flush">
-              {blogPosts.slice(0, 5).map((post, index) => (
+              {blogPosts.slice(0, 4).map((post, index) => (
                 <li
                   key={index}
                   className="list-group-item"
@@ -457,7 +456,7 @@ const BlogPage = () => {
           <div className="card shadow-sm border-0">
             <div
               className="card-header"
-              style={{ backgroundColor: "#4caf50", color: "white" }}
+              style={{ backgroundColor: "#f8f9fa", color: "#212529" }}
             >
               <h5 className="mb-0">Topik Peternakan</h5>
             </div>

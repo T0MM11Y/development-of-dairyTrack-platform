@@ -48,13 +48,21 @@ const produkList = [
 
 const ProdukPage = () => {
   return (
-    <div className="container mx-auto py-5">
-      <div className="bg-gray-100 p-5 mt-32">
+    <div className="container mx-auto py-5 px-4" style={{ marginTop: "120px" }}>
+      <div
+        className="p-5 mt-32"
+        style={{ backgroundColor: "#f8f9fa", borderRadius: "8px" }}
+      >
         <h2 className="text-2xl font-bold text-center text-gray-800">
           Produk Susu Kami
         </h2>
-        <p className="text-gray-600 mt-3 text-center text-lg italic p-4 rounded-md shadow-sm inline-block">
-          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
+        <p
+          className="text-gray-600 mt-3 text-center text-lg italic p-4 rounded-md shadow-sm inline-block"
+          style={{ backgroundColor: "#e9ecef" }}
+        >
+          Produk susu berkualitas tinggi yang diolah dengan standar terbaik
+          untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan
+          keluarga.
         </p>
       </div>
 
@@ -70,13 +78,16 @@ const ProdukPage = () => {
 
 const ProdukItem = ({ nama, image, link, deskripsi }) => {
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div
+      className="shadow-lg rounded-lg overflow-hidden"
+      style={{ backgroundColor: "#f8f9fa" }}
+    >
       {/* Gambar */}
       <img src={image} alt={nama} className="w-full h-40 object-cover" />
 
       {/* Detail */}
       <div className="p-4">
-        <h5 className="text-lg font-semibold">{nama}</h5>
+        <h5 className="text-lg font-semibold text-gray-800">{nama}</h5>
         <p className="text-gray-600 mt-2">{deskripsi}</p>
 
         {/* Tombol di bawah */}
