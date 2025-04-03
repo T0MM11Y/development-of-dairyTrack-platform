@@ -4065,11 +4065,6 @@ dequal@^2.0.3:
   resolved "https://registry.npmjs.org/dequal/-/dequal-2.0.3.tgz"
   integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
 
-desandro-matches-selector@^2.0.0:
-  version "2.0.2"
-  resolved "https://registry.npmjs.org/desandro-matches-selector/-/desandro-matches-selector-2.0.2.tgz"
-  integrity sha512-+1q0nXhdzg1IpIJdMKalUwvvskeKnYyEe3shPRwedNcWtnhEKT3ZxvFjzywHDeGcKViIxTCAoOYQWP1qD7VNyg==
-
 destroy@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/destroy/-/destroy-1.2.0.tgz"
@@ -4800,11 +4795,6 @@ etag@~1.8.1:
   resolved "https://registry.npmjs.org/etag/-/etag-1.8.1.tgz"
   integrity sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==
 
-ev-emitter@^1.0.0:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/ev-emitter/-/ev-emitter-1.1.1.tgz"
-  integrity sha512-ipiDYhdQSCZ4hSbX4rMW+XzNKMD1prg/sTvoVmSLkuQ1MVlwjJQQA+sW8tMYR3BLUr9KjodFV4pvzunvRhd33Q==
-
 eventemitter3@^4.0.0, eventemitter3@^4.0.1:
   version "4.0.7"
   resolved "https://registry.npmjs.org/eventemitter3/-/eventemitter3-4.0.7.tgz"
@@ -5041,13 +5031,6 @@ find-up@^5.0.0:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
 
-fizzy-ui-utils@^2.0.0:
-  version "2.0.7"
-  resolved "https://registry.npmjs.org/fizzy-ui-utils/-/fizzy-ui-utils-2.0.7.tgz"
-  integrity sha512-CZXDVXQ1If3/r8s0T+v+qVeMshhfcuq0rqIFgJnrtd+Bu8GmDmqMjntjUePypVtjHXKJ6V4sw9zeyox34n9aCg==
-  dependencies:
-    desandro-matches-selector "^2.0.0"
-
 flat-cache@^3.0.4:
   version "3.2.0"
   resolved "https://registry.npmjs.org/flat-cache/-/flat-cache-3.2.0.tgz"
@@ -5265,11 +5248,6 @@ get-proto@^1.0.0, get-proto@^1.0.1:
   dependencies:
     dunder-proto "^1.0.1"
     es-object-atoms "^1.0.0"
-
-get-size@^2.0.2:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/get-size/-/get-size-2.0.3.tgz"
-  integrity sha512-lXNzT/h/dTjTxRbm9BXb+SGxxzkm97h/PCIKtlN/CBCxxmkkIVV21udumMS93MuVTDX583gqc94v3RjuHmI+2Q==
 
 get-stream@^6.0.0, get-stream@^6.0.1:
   version "6.0.1"
@@ -6948,14 +6926,6 @@ makeerror@1.0.12:
   dependencies:
     tmpl "1.0.5"
 
-masonry-layout@^4.2.2:
-  version "4.2.2"
-  resolved "https://registry.npmjs.org/masonry-layout/-/masonry-layout-4.2.2.tgz"
-  integrity sha512-iGtAlrpHNyxaR19CvKC3npnEcAwszXoyJiI8ARV2ePi7fmYhIud25MHK8Zx4P0LCC4d3TNO9+rFa1KoK1OEOaA==
-  dependencies:
-    get-size "^2.0.2"
-    outlayer "^2.1.0"
-
 math-intrinsics@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz"
@@ -7424,15 +7394,6 @@ ora@^6.1.2:
     stdin-discarder "^0.1.0"
     strip-ansi "^7.0.1"
     wcwidth "^1.0.1"
-
-outlayer@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.npmjs.org/outlayer/-/outlayer-2.1.1.tgz"
-  integrity sha512-+GplXsCQ3VrbGujAeHEzP9SXsBmJxzn/YdDSQZL0xqBmAWBmortu2Y9Gwdp9J0bgDQ8/YNIPMoBM13nTwZfAhw==
-  dependencies:
-    ev-emitter "^1.0.0"
-    fizzy-ui-utils "^2.0.0"
-    get-size "^2.0.2"
 
 own-keys@^1.0.1:
   version "1.0.1"
