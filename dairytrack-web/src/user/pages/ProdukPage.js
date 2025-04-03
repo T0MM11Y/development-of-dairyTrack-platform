@@ -54,7 +54,10 @@ const produkList = [
 
 const ProdukPage = () => {
   return (
-    <div className="container mx-auto py-5" style={{ marginTop: "170px" }}>
+    <div
+      className="container mx-auto py-5"
+      style={{ marginTop: "170px", marginBottom: "100px" }}
+    >
       {/* Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
         {produkList.map((produk, index) => (
