@@ -45,33 +45,19 @@ class Order(models.Model):
             self.order_no = f"ORD{uuid.uuid4().hex[:6].upper()}"  # ID unik No Orderan
 
         if self.pk is not None:
-            # Ambil data order sebelumnya
-            previous_order = Order.objects.get(pk=self.pk)
-            previous_status = previous_order.status
-            previous_shipping_cost = previous_order.shipping_cost
-            
-            # Jika shipping cost diubah dan status masih Requested
-            if previous_shipping_cost != self.shipping_cost and self.status == 'Requested':
-                self.status = 'Processed'  # Ubah status menjadi Processed
-                
+            previous_status = Order.objects.get(pk=self.pk).status
         else:
             previous_status = None  # Order baru
 
-        # Pastikan metode pembayaran harus dipilih sebelum menyelesaikan order
-        if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
+        # ✅ Pastikan metode pembayaran harus dipilih sebelum menyelesaikan order
+        if previous_status != "Completed" and self.status == "Completed":
             if not self.payment_method:
                 raise ValidationError("Metode pembayaran harus dipilih sebelum menyelesaikan order.")
 
-        # Save terlebih dahulu
         super().save(*args, **kwargs)
-        
-        # Update total_price setiap kali save dipanggil
-        # Ini akan menjamin total_price selalu terupdate
-        if self.pk is not None:
-            self.update_total_price()
-        
-        # Proses completion hanya jika status berubah menjadi "Completed"
-        if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
+
+        # ✅ Proses completion hanya jika status berubah menjadi "Completed"
+        if previous_status != "Completed" and self.status == "Completed":
             self.process_completion()
 
     def update_total_price(self):
@@ -81,22 +67,19 @@ class Order(models.Model):
         super().save(update_fields=['total_price'])
 
     def process_completion(self):
-        """ Buat satu transaksi penjualan dan perbarui stok saat pesanan selesai """
+        """ Buat transaksi penjualan dan perbarui stok saat pesanan selesai """
         with transaction.atomic():
-            # Update stok untuk setiap item
-            total_quantity = 0
             for item in self.order_items.all(): # pylint: disable=no-member
                 # Gunakan method sell_product dari ProductStock
                 ProductStock.sell_product(item.product_type, item.quantity)
-                total_quantity += item.quantity
-            
-            # Buat satu transaksi penjualan untuk seluruh order
-            SalesTransaction.objects.create(
-                order=self,
-                quantity=total_quantity,
-                total_price=self.total_price,
-                payment_method=self.payment_method
-            )
+
+                # Buat transaksi penjualan
+                SalesTransaction.objects.create(
+                    order=self,
+                    quantity=item.quantity,
+                    total_price=item.total_price,
+                    payment_method=self.payment_method
+                )
 
     def __str__(self):
         return f"Order {self.order_no} - {self.customer_name}"

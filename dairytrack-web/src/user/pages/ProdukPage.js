@@ -49,13 +49,10 @@ const produkList = [
 const ProdukPage = () => {
   return (
     <div className="container mx-auto py-5">
-      <div className="bg-gray-100 p-5 mt-40">
-      <h2 className="text-2xl font-bold text-center text-gray-800">
+      <div className="bg-gray-100 p-5 mt-32">
+        <h2 className="text-2xl font-bold text-center text-gray-800">
           Produk Susu Kami
         </h2>
-        <p className="text-gray-600 mt-3 text-center text-lg p-4 rounded-md shadow-sm inline-block">
-          Produk susu berkualitas tinggi yang diolah dengan standar terbaik untuk memastikan kesegaran, rasa, dan manfaat gizi bagi Anda dan keluarga.
-        </p>
       </div>
 
       {/* Grid layout */}
@@ -67,6 +64,7 @@ const ProdukPage = () => {
     </div>
   );
 };
+
 const ProdukItem = ({ nama, image, link, deskripsi }) => {
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -78,12 +76,8 @@ const ProdukItem = ({ nama, image, link, deskripsi }) => {
         <h5 className="text-lg font-semibold">{nama}</h5>
         <p className="text-gray-600 mt-2">{deskripsi}</p>
 
-        {/*rating */}
-        <div className="mt-4 flex justify-between items-center">
-          {/* ⭐⭐⭐⭐⭐ Rating */}
-          <div className="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</div>
-
-          {/* Tombol View Details */}
+        {/* Tombol di bawah */}
+        <div className="mt-4 text-right">
           <a href={link} className="text-blue-500 hover:underline">
             View Details
           </a>
@@ -92,6 +86,5 @@ const ProdukItem = ({ nama, image, link, deskripsi }) => {
     </div>
   );
 };
-
 
 export default ProdukPage;
