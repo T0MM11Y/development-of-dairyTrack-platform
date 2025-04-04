@@ -39,6 +39,10 @@ import ProductCreatePage from "./admin/pages/keuangan/Product/ProductCreatePage.
 import ProductEditPage from "./admin/pages/keuangan/Product/ProductEditPage.js";
 import ProductHistoryPage from "./admin/pages/keuangan/Product/ProductHistoryPage.js";
 
+import ProductTypePage from "./admin/pages/keuangan/Product/ProductTypePage.js";
+import ProductTypeCreatePage from "./admin/pages/keuangan/Product/ProductTypeCreatePage.js";
+import ProductTypeEditPage from "./admin/pages/keuangan/Product/ProductTypeEditPage.js";
+
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
 import CowCreatePage from "./admin/pages/peternakan/cows/CowCreatePage.js";
@@ -398,6 +402,28 @@ function App() {
         path="/admin/keuangan/product/edit/:id"
         element={
           <ProtectedRoute>{withAdminLayout(ProductEditPage)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/type-product"
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductTypePage)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/type-product/create"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(ProductTypeCreatePage)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/type-product/edit/:id"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(ProductTypeEditPage)}
+          </ProtectedRoute>
         }
       />
       <Route

@@ -639,7 +639,22 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                           isActive("/admin/keuangan/product") ? "active" : ""
                         }
                       >
-                        <i className="ri-ink-bottle-line"></i> Produk
+                        <i className="ri-drinks-2-line"></i> Produk
+                        {/* <i className="ri-ink-bottle-line"></i> Produk */}
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/type-product"
+                        className={
+                          isActive("/admin/keuangan/type-product") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-ink-bottle-line"></i> Tipe Produk
                       </Link>
                     </motion.li>
                     <motion.li

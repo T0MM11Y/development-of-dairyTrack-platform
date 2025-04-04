@@ -133,11 +133,11 @@ const ProductStockCreatePage = () => {
                   />
                 </div>
 
-                {/* Production Date */}
+                {/* Production Date - Changed to datetime-local */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Tanggal Produksi</label>
+                  <label className="form-label fw-bold">Tanggal & Waktu Produksi</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     name="production_at"
                     value={form.production_at}
                     onChange={handleChange}
@@ -146,13 +146,13 @@ const ProductStockCreatePage = () => {
                   />
                 </div>
 
-                {/* Expiry Date */}
+                {/* Expiry Date - Changed to datetime-local */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">
-                    Tanggal Kedaluwarsa
+                    Tanggal & Waktu Kedaluwarsa
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     name="expiry_at"
                     value={form.expiry_at}
                     onChange={handleChange}
@@ -164,7 +164,7 @@ const ProductStockCreatePage = () => {
                 {/* Total Milk Used */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">
-                    Total Susu yang Digunakan
+                    Total Susu yang Digunakan (L)
                   </label>
                   <input
                     type="number"
@@ -173,6 +173,7 @@ const ProductStockCreatePage = () => {
                     onChange={handleChange}
                     className="form-control"
                     placeholder="Masukkan jumlah susu yang digunakan"
+                    step="0.01"
                     required
                   />
                 </div>

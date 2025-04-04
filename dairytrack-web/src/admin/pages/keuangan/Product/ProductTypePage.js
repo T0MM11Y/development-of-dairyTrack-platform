@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  deleteProductStock,
-  getProductStocks,
-} from "../../../../api/keuangan/product";
-import { getProductTypes } from "../../../../api/keuangan/productType";
+import { getProductTypes, deleteProductType } from "../../../../api/keuangan/productType";
 import { Link } from "react-router-dom";
 
-const ProductStockListPage = () => {
+const ProductTypePage = () => {
   const [data, setData] = useState([]);
-  const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -17,42 +12,8 @@ const ProductStockListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [productsRes, productTypesRes] = await Promise.all([
-        getProductStocks(),
-        getProductTypes(),
-      ]);
-
-      // Process data to add time remaining info
-      const processedData = productsRes.map(item => {
-        const now = new Date();
-        const expiryDate = new Date(item.expiry_at);
-        const timeRemaining = expiryDate - now;
-        
-        return {
-          ...item,
-          timeRemaining: timeRemaining > 0 ? timeRemaining : 0,
-        };
-      });
-
-      // Sort by time remaining (ascending - products expiring soon first)
-      const sortedData = processedData.sort((a, b) => {
-        // If both are available, sort by time remaining
-        if (a.status === "available" && b.status === "available") {
-          return a.timeRemaining - b.timeRemaining;
-        }
-        // If only one is available, put available items first
-        else if (a.status === "available") {
-          return -1;
-        }
-        else if (b.status === "available") {
-          return 1;
-        }
-        // If neither is available, maintain original order
-        return 0;
-      });
-
-      setData(sortedData);
-      setProductTypes(productTypesRes);
+      const productTypesRes = await getProductTypes();
+      setData(productTypesRes);
       setError("");
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
@@ -62,63 +23,16 @@ const ProductStockListPage = () => {
     }
   };
 
-  const getProductTypeName = (productTypeId) => {
-    const productType = productTypes.find((type) => type.id === productTypeId);
-    return productType ? productType.product_name : "Unknown";
-  };
-
-  const formatTimeRemaining = (timeRemaining) => {
-    if (timeRemaining <= 0) {
-      return "Expired";
-    }
-
-    // Convert milliseconds to days, hours, minutes
-    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) {
-      return `${days} hari ${hours} jam`;
-    } else if (hours > 0) {
-      return `${hours} jam ${minutes} menit`;
-    } else if (minutes > 0) {
-      return `${minutes} menit`;
-    } else {
-      return "< 1 menit"; // Fix for NaN menit when minutes is 0
-    }
-  };
-
-  const formatDateTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('id-ID', { 
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  };
-
-  const getStatusBadgeClass = (status, timeRemaining) => {
-    if (status !== "available") {
-      return "bg-danger";
-    }
-    
-    // If time remaining is less than 24 hours (86400000 ms)
-    if (timeRemaining < 86400000) {
-      return "bg-warning"; // Yellow for urgent
-    }
-    
-    return "bg-success"; // Green for normal available
-  };
-
   const handleDelete = async () => {
     if (!deleteId) return;
 
     setSubmitting(true);
     try {
-      await deleteProductStock(deleteId);
+      // Assume you have a deleteProductType function similar to deleteProductStock
+        await deleteProductType(deleteId);
+    //   alert(
+    //     "Delete functionality needs tso be implemented with the appropriate API"
+    //   );
       fetchData();
       setDeleteId(null);
     } catch (err) {
@@ -128,22 +42,16 @@ const ProductStockListPage = () => {
     }
   };
 
-  // Update data every minute to refresh time remaining
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      fetchData();
-    }, 60000); // Update every minute
-    
-    return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 m-1">Product Stock</h2>
-        <Link to="/admin/keuangan/product/create" className="btn btn-info">
-          + Product Stock
+        <h2 className="text-xl font-bold text-gray-800 m-1">Product Types</h2>
+        <Link to="/admin/keuangan/type-product/create" className="btn btn-info">
+          + Product Type
         </Link>
       </div>
 
@@ -158,26 +66,25 @@ const ProductStockListPage = () => {
           <div className="spinner-border text-primary" role="status">
             <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-2">Loading product stock data...</p>
+          <p className="mt-2">Loading product type data...</p>
         </div>
       ) : data.length === 0 ? (
-        <p className="text-gray-500">No product stock data available.</p>
+        <p className="text-gray-500">No product type data available.</p>
       ) : (
         <div className="col-lg-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">Product Stock Data</h4>
+              <h4 className="card-title">Product Type Data</h4>
               <div className="table-responsive">
                 <table className="table table-striped mb-0">
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Product Type</th>
-                      <th>Remaining Qty</th>
-                      <th>Production Date</th>
-                      <th>Expiry Date</th>
-                      <th>Status</th>
-                      <th>Total Milk Used</th>
+                      <th>Image</th>
+                      <th>Product Name</th>
+                      <th>Description</th>
+                      <th>Price</th>
+                      <th>Unit</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -185,23 +92,31 @@ const ProductStockListPage = () => {
                     {data.map((item, index) => (
                       <tr key={item.id}>
                         <th scope="row">{index + 1}</th>
-                        <td>{getProductTypeName(item.product_type)}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatDateTime(item.production_at)}</td>
-                        <td>{formatDateTime(item.expiry_at)}</td>
                         <td>
-                          <span
-                            className={`badge ${getStatusBadgeClass(item.status, item.timeRemaining)}`}
-                          >
-                            {item.status === "available" 
-                              ? `${item.status} (${formatTimeRemaining(item.timeRemaining)})` 
-                              : item.status}
-                          </span>
+                          <img
+                            src={item.image || "/placeholder-image.jpg"}
+                            alt={item.product_name}
+                            className="rounded"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                          />
                         </td>
-                        <td>{item.total_milk_used} L</td>
+                        <td>{item.product_name}</td>
+                        <td>
+                          {item.product_description.length > 50
+                            ? `${item.product_description.substring(0, 50)}...`
+                            : item.product_description}
+                        </td>
+                        <td>
+                          Rp {parseFloat(item.price).toLocaleString("id-ID")}
+                        </td>
+                        <td>{item.unit}</td>
                         <td>
                           <Link
-                            to={`/admin/keuangan/product/edit/${item.id}`}
+                            to={`/admin/keuangan/type-product/edit/${item.id}`}
                             className="btn btn-warning me-2"
                           >
                             <i className="ri-edit-line"></i>
@@ -246,7 +161,7 @@ const ProductStockListPage = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Are you sure you want to delete this product stock?
+                  Are you sure you want to delete this product type?
                   <br />
                   This action cannot be undone.
                 </p>
@@ -288,4 +203,4 @@ const ProductStockListPage = () => {
   );
 };
 
-export default ProductStockListPage;
+export default ProductTypePage;
