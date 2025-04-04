@@ -386,7 +386,7 @@ function App() {
         }
       />
       <Route
-        path="/admin/keuangan/product-history"
+        path="/admin/keuangan/history-product"
         element={
           <ProtectedRoute>{withAdminLayout(ProductHistoryPage)}</ProtectedRoute>
         }

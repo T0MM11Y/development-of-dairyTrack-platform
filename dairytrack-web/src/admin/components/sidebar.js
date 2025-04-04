@@ -639,7 +639,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                           isActive("/admin/keuangan/product") ? "active" : ""
                         }
                       >
-                        <i className="ri-ink-bottle-line"></i> Product
+                        <i className="ri-ink-bottle-line"></i> Produk
                       </Link>
                     </motion.li>
                     <motion.li
@@ -648,12 +648,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/keuangan/product-history"
+                        to="/admin/keuangan/history-product"
                         className={
-                          isActive("/admin/keuangan/product-history") ? "active" : ""
+                          isActive("/admin/keuangan/history-product")
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-history-line"></i> History Product
+                        <i className="ri-history-line"></i> Riwayat Produk
                       </Link>
                     </motion.li>
                     <motion.li

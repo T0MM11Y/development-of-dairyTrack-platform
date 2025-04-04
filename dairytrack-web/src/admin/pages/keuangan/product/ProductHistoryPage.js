@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   getProductStocks,
-  getProductStockHistorys
+  getProductStockHistorys,
 } from "../../../../api/keuangan/product";
 import { getProductTypes } from "../../../../api/keuangan/productType";
 
@@ -18,7 +18,7 @@ const ProductHistoryPage = () => {
       const [historyRes, productsRes, productTypesRes] = await Promise.all([
         getProductStockHistorys(), // Using the existing API function
         getProductStocks(),
-        getProductTypes()
+        getProductTypes(),
       ]);
 
       setHistoryData(historyRes);
@@ -34,13 +34,17 @@ const ProductHistoryPage = () => {
   };
 
   const getProductTypeInfo = (productStockId) => {
-    const productStock = productStocks.find(stock => stock.id === productStockId);
+    const productStock = productStocks.find(
+      (stock) => stock.id === productStockId
+    );
     if (!productStock) return { name: "Unknown", quantity: "N/A" };
-    
-    const productType = productTypes.find(type => type.id === productStock.product_type);
+
+    const productType = productTypes.find(
+      (type) => type.id === productStock.product_type
+    );
     return {
       name: productType ? productType.product_name : "Unknown",
-      quantity: productStock.quantity
+      quantity: productStock.quantity,
     };
   };
 
@@ -50,7 +54,7 @@ const ProductHistoryPage = () => {
       produced: "Diproduksi",
       expired: "Kadaluarsa",
       damaged: "Rusak",
-      returned: "Dikembalikan"
+      returned: "Dikembalikan",
     };
     return labels[changeType] || changeType;
   };
@@ -61,7 +65,7 @@ const ProductHistoryPage = () => {
       produced: "bg-info",
       expired: "bg-danger",
       damaged: "bg-warning",
-      returned: "bg-secondary"
+      returned: "bg-secondary",
     };
     return classes[changeType] || "bg-primary";
   };
@@ -102,34 +106,51 @@ const ProductHistoryPage = () => {
                   <thead>
                     <tr>
                       <th>#</th>
-                      {/* <th>Date & Time</th> */}
+                      <th>Date & Time</th>
                       <th>Product Type</th>
-                      <th>Current Stock</th>
                       <th>Change Type</th>
-                      <th>Quantity Change</th>
+                      <th>Quantity</th>
                       <th>Total Price</th>
                     </tr>
                   </thead>
                   <tbody>
                     {historyData.map((item, index) => {
-                      const productInfo = getProductTypeInfo(item.product_stock);
+                      const productInfo = getProductTypeInfo(
+                        item.product_stock
+                      );
                       return (
                         <tr key={item.id}>
                           <th scope="row">{index + 1}</th>
-                          {/* <td>{new Date(item.created_at).toLocaleString()}</td> */}
-                          <td>{productInfo.name}</td>
-                          <td>{productInfo.quantity}</td>
                           <td>
-                            <span className={`badge ${getChangeTypeClass(item.change_type)}`}>
+                            {new Date(item.change_date).toLocaleString("id-ID")}
+                          </td>
+                          <td>{productInfo.name}</td>
+                          <td>
+                            <span
+                              className={`badge ${getChangeTypeClass(
+                                item.change_type
+                              )}`}
+                            >
                               {getChangeTypeLabel(item.change_type)}
                             </span>
                           </td>
-                          <td className={item.quantity_change > 0 ? "text-success" : "text-danger"}>
-                            {item.quantity_change > 0 ? "+" : ""}{item.quantity_change}
+                          <td
+                            className={
+                              item.change_type === "sold" ||
+                              item.change_type === "expired"
+                                ? item.change_type === "sold"
+                                  ? "text-success"
+                                  : "text-danger"
+                                : ""
+                            }
+                          >
+                            {Math.abs(item.quantity_change)}
                           </td>
                           <td>
-                            {parseFloat(item.total_price) > 0 
-                              ? `Rp ${parseFloat(item.total_price).toLocaleString("id-ID")}`
+                            {parseFloat(item.total_price) > 0
+                              ? `Rp ${parseFloat(
+                                  item.total_price
+                                ).toLocaleString("id-ID")}`
                               : "-"}
                           </td>
                         </tr>
