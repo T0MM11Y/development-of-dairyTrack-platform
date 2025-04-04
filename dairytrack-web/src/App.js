@@ -29,15 +29,15 @@ import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
 
 // Sales & Financial
-import Sales from "./admin/pages/keuangan/sales/Sales.js";
-import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
+import Sales from "./admin/pages/keuangan/Sales/Sales.js";
+import SalesEditPage from "./admin/pages/keuangan/Sales/SalesEditPage.js";
 
-import Finance from "./admin/pages/keuangan/finance/Finance.js";
+import Finance from "./admin/pages/keuangan/Finance/Finance.js";
 
-import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
-import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
-import ProductEditPage from "./admin/pages/keuangan/product/ProductEditPage.js";
-import ProductHistoryPage from "./admin/pages/keuangan/product/ProductHistoryPage.js";
+import ProductListPage from "./admin/pages/keuangan/Product/ProductPage.js";
+import ProductCreatePage from "./admin/pages/keuangan/Product/ProductCreatePage.js";
+import ProductEditPage from "./admin/pages/keuangan/Product/ProductEditPage.js";
+import ProductHistoryPage from "./admin/pages/keuangan/Product/ProductHistoryPage.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -88,9 +88,6 @@ import ContactUs from "./user/pages/ContactUs";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
-// import Product from "./admin/pages/keuangan/product/Product.js";
-// import Sales from "./admin/pages/keuangan/sales/sales.js";
-// import Finance from "./admin/pages/keuangan/finance/finance.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
