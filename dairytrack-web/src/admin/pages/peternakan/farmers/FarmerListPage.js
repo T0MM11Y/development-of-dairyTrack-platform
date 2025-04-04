@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { getFarmers, deleteFarmer } from "../../../../api/peternakan/farmer";
 import FarmerCreatePage from "./FarmerCreatePage";
 import FarmerEditPage from "./FarmerEditPage";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const FarmerListPage = () => {
   const [farmers, setFarmers] = useState([]);
@@ -40,6 +43,84 @@ const FarmerListPage = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(farmers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Farmers");
+
+    // AutoFit column width
+    const columnWidths = Object.keys(farmers[0] || {}).map((key) => ({
+      wch: Math.max(10, key.length + 2),
+    }));
+    worksheet["!cols"] = columnWidths;
+
+    XLSX.writeFile(workbook, "FarmersData.xlsx");
+  };
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const marginLeft = 14;
+    const startY = 25;
+    let currentY = startY;
+
+    // Judul dokumen
+    doc.setFontSize(16);
+    doc.text("Farmers Data", marginLeft, currentY);
+    currentY += 10; // Tambah jarak setelah judul
+
+    // Header tabel
+    const tableColumn = [
+      "#",
+      "Full Name",
+      "Birth Date",
+      "Contact",
+      "Gender",
+      "Join Date",
+    ];
+
+    // Lebar kolom
+    const columnWidths = [10, 60, 25, 30, 20, 30];
+
+    // Render header tabel
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    let currentX = marginLeft;
+    tableColumn.forEach((col, index) => {
+      doc.text(col, currentX, currentY);
+      currentX += columnWidths[index];
+    });
+    currentY += 6; // Tambah jarak setelah header
+
+    // Render data tabel
+    doc.setFont("helvetica", "normal");
+
+    farmers.forEach((farmer, rowIndex) => {
+      if (currentY > 270) {
+        doc.addPage(); // Tambah halaman baru jika sudah penuh
+        currentY = startY;
+      }
+
+      currentX = marginLeft;
+      const rowData = [
+        rowIndex + 1,
+        `${farmer.first_name} ${farmer.last_name}`, // Gabungkan first_name dan last_name
+        farmer.birth_date,
+        farmer.contact,
+        farmer.gender,
+        farmer.join_date,
+      ];
+
+      rowData.forEach((cell, cellIndex) => {
+        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]); // Membungkus teks panjang
+        doc.text(text, currentX, currentY);
+        currentX += columnWidths[cellIndex];
+      });
+
+      currentY += 6; // Pindah ke baris berikutnya
+    });
+
+    // Simpan file PDF
+    doc.save("FarmersData.pdf");
+  };
   useEffect(() => {
     fetchData();
   }, []);
@@ -65,9 +146,30 @@ const FarmerListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Farmer Data</h2>
-        <button onClick={() => setModalType("create")} className="btn btn-info">
-          + Add Farmer
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setModalType("create")}
+            className="btn btn-info"
+            style={{ marginRight: "50px" }}
+          >
+            + Add Farmer
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="btn btn-success"
+            title="Export to Excel"
+            style={{ marginRight: "10px" }}
+          >
+            <i className="ri-file-excel-2-line"></i> Export to Excel
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="btn btn-secondary"
+            title="Export to PDF"
+          >
+            <i className="ri-file-pdf-line"></i> Export to PDF
+          </button>
+        </div>
       </div>
 
       {loading ? (

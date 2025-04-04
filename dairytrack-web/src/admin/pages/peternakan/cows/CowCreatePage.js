@@ -47,6 +47,14 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // Reset error message
+
+    // Validasi form
+    if (!validateForm()) {
+      setError("Semua field wajib diisi!");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const cowData = { ...form, farmer_id: Number(form.farmer) };
@@ -64,6 +72,21 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
     }
   };
 
+  const validateForm = () => {
+    const requiredFields = [
+      "name",
+      "birth_date",
+      "weight_kg",
+      "entry_date",
+      "farmer",
+    ];
+    for (const field of requiredFields) {
+      if (!form[field] || form[field].toString().trim() === "") {
+        return false;
+      }
+    }
+    return true;
+  };
   return (
     <div
       className="modal show d-block"

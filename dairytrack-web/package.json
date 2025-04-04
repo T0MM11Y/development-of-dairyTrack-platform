@@ -14,6 +14,8 @@
     "classnames": "^2.5.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.6.3",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
@@ -21,18 +23,18 @@
     "react-i18next": "^15.4.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.4.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "recharts": "^2.15.1",
     "remixicon": "^4.6.0",
     "simplebar": "^6.3.0",
     "simplebar-react": "^3.3.0",
-    "sweetalert2": "^11.17.2",
-    "web-vitals": "^2.1.4"
+    "sweetalert2": "^11.6.13",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "concurrently \"npm run react-start\" \"npm run flask-start\" \"npm run node-api\" \"npm run django-start\" \"npm run django-start2\"",
+    "start": "concurrently \"npm run react-start\" \"npm run node-api\" \"npm run django-start\" \"npm run django-start2\"",
     "react-start": "react-scripts start",
-    "flask-start": "cd ../dairytrack-api/MilkProduction && flask run --port=5000",
     "node-api": "cd ../dairytrack-api/FeedConsumption && npm start",
     "django-start": "cd ../dairytrack-api/HealthCheck && python manage.py runserver 5002",
     "django-start2": "cd ../dairytrack-api/Selling && python manage.py runserver 5001"

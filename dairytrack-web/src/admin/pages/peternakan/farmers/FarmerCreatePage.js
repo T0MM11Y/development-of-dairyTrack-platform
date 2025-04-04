@@ -27,8 +27,24 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
     setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
 
+  const validateForm = () => {
+    for (const key in form) {
+      if (form[key] === "" || form[key] === null || form[key] === undefined) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // Reset error message
+
+    if (!validateForm()) {
+      setError("Semua field wajib diisi!");
+      return;
+    }
+
     setSubmitting(true);
     try {
       console.log("Submitting farmer data:", form);

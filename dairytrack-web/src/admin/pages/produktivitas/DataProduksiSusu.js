@@ -413,6 +413,13 @@ const DataProduksiSusu = () => {
   const handleSubmit = useCallback(async () => {
     setIsProcessing(true);
     try {
+      // Validasi form
+      if (!validateForm()) {
+        alert("Semua field wajib diisi!");
+        setIsProcessing(false);
+        return;
+      }
+
       if (modalType === "create") {
         await createRawMilk(formData);
       } else if (modalType === "edit") {
@@ -434,6 +441,16 @@ const DataProduksiSusu = () => {
       });
     }
   }, [modalType, formData, selectedRawMilk, fetchData]);
+
+  const validateForm = () => {
+    const requiredFields = ["cow_id", "production_time", "volume_liters"];
+    for (const field of requiredFields) {
+      if (!formData[field] || formData[field].toString().trim() === "") {
+        return false;
+      }
+    }
+    return true;
+  };
 
   const openModal = useCallback(
     async (type, rawMilkId = null) => {

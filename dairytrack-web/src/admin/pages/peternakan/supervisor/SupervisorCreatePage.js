@@ -20,6 +20,14 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // Reset error message
+
+    // Validasi form
+    if (!validateForm()) {
+      setError("Semua field wajib diisi!");
+      return;
+    }
+
     setSubmitting(true);
     try {
       console.log("Submitting supervisor data:", form);
@@ -35,6 +43,22 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const validateForm = () => {
+    const requiredFields = [
+      "email",
+      "first_name",
+      "last_name",
+      "contact",
+      "password",
+    ];
+    for (const field of requiredFields) {
+      if (!form[field] || form[field].toString().trim() === "") {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
