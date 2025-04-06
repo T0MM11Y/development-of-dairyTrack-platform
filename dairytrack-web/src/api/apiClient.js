@@ -1,15 +1,22 @@
 const BASE_URL = "http://127.0.0.1:5000/api";
 
-export const fetchAPI = async (endpoint, method = "GET", data = null) => {
+export const fetchAPI = async (
+  endpoint,
+  method = "GET",
+  data = null,
+  isFormData = false
+) => {
   const options = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: isFormData
+      ? {} // Jangan tambahkan header Content-Type jika menggunakan FormData
+      : {
+          "Content-Type": "application/json",
+        },
   };
 
   if (data) {
-    options.body = JSON.stringify(data);
+    options.body = isFormData ? data : JSON.stringify(data); // Gunakan FormData atau JSON
   }
 
   try {

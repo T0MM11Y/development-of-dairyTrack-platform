@@ -94,6 +94,8 @@ import ContactUs from "./user/pages/ContactUs";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
+import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
+import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -286,6 +288,15 @@ function App() {
         element={
           <ProtectedRoute>{withAdminLayout(SupervisorEditPage)}</ProtectedRoute>
         }
+      />
+      {/* Admin Article */}
+      <Route
+        path="/admin/blog/all"
+        element={<ProtectedRoute>{withAdminLayout(blogAll)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/blog/create"
+        element={<ProtectedRoute>{withAdminLayout(blogCreate)}</ProtectedRoute>}
       />
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route
