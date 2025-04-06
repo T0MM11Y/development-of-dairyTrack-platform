@@ -33,6 +33,8 @@ import Sales from "./admin/pages/keuangan/sales/Sales.js";
 import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
 
 import Finance from "./admin/pages/keuangan/finance/Finance.js";
+import AddIncomePage from "./admin/pages/keuangan/finance/AddIncomePage.js";
+import AddExpensePage from "./admin/pages/keuangan/finance/AddExpensePage.js";
 
 import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
 import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
@@ -439,6 +441,14 @@ function App() {
       <Route
         path="/admin/keuangan/finance"
         element={<ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/finance/addIncome"
+        element={<ProtectedRoute>{withAdminLayout(AddIncomePage)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/finance/addExpense"
+        element={<ProtectedRoute>{withAdminLayout(AddExpensePage)}</ProtectedRoute>}
       />
     </Routes>
   );

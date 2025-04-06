@@ -8,7 +8,12 @@ class Expense(models.Model):
         db_table = "expense"
     
     EXPENSE_TYPES = [
+        ('material_purchase', 'Material Purchase'),
+        ('feed_purchase', 'Feed Purchase'),
+        ('medicine_purchase', 'Medicine Purchase'),
+        ('employee_salary', 'Employee Salary'),
         ('operational', 'Operational'),
+        ('equipment_purchase', 'Equipment Purchase'),
         ('marketing', 'Marketing'),
         ('other', 'Other'),
     ]
@@ -35,6 +40,7 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.expense_type} - {self.amount}"
+
 
 
 class Income(models.Model):
