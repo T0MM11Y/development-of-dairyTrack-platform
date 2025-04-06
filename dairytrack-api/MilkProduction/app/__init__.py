@@ -4,6 +4,7 @@ pymysql.install_as_MySQLdb()
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -19,8 +20,9 @@ db = SQLAlchemy(app)
 # Configure CORS
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE"])
 
-from app.models import Farmer, Cow, RawMilk, Supervisor, Admin,daily_milk_total
-from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp
+from app.models import Farmer, Cow, RawMilk, Supervisor, Admin,daily_milk_total,blog
+from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp, blogs_bp
+
 
 app.register_blueprint(farmers_bp, url_prefix='/api')
 app.register_blueprint(cows_bp, url_prefix='/api')
@@ -28,3 +30,5 @@ app.register_blueprint(raw_milks_bp, url_prefix='/api')
 app.register_blueprint(supervisors_bp, url_prefix='/api')   
 app.register_blueprint(admins_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+app.register_blueprint(blogs_bp, url_prefix='/api')
