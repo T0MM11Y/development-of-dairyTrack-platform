@@ -15,6 +15,8 @@ class DiseaseHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = DiseaseHistory
         fields = '__all__'
+        read_only_fields = ['id','created_at', 'updated_at']
+
 
 class ReproductionSerializer(serializers.ModelSerializer):
     class Meta:

@@ -92,12 +92,12 @@ class Symptom(models.Model):
         
 class DiseaseHistory(models.Model):
     cow = models.ForeignKey("Cow", on_delete=models.CASCADE)  # Relasi ke tabel cows
-    disease_date = models.DateField()
     disease_name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)  # Bisa kosong jika tidak ada deskripsi
     symptom = models.ForeignKey("Symptom", on_delete=models.SET_NULL, null=True, blank=True)
     health_check = models.ForeignKey("HealthCheck", on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.disease_name} - {self.cow.name}"
