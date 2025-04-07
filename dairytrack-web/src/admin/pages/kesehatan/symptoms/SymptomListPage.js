@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { deleteSymptom, getSymptoms } from "../../../../api/kesehatan/symptom";
-import { Link } from "react-router-dom";
+import {
+  deleteSymptom,
+  getSymptoms,
+} from "../../../../api/kesehatan/symptom";
+import SymptomCreatePage from "./SymptomCreatePage";
+import SymptomEditPage from "./SymptomEditPage";
 
 const SymptomListPage = () => {
   const [data, setData] = useState([]);
@@ -8,6 +12,8 @@ const SymptomListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [modalType, setModalType] = useState(null); // "create" | "edit" | null
+  const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -25,7 +31,6 @@ const SymptomListPage = () => {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-
     setSubmitting(true);
     try {
       await deleteSymptom(deleteId);
@@ -46,9 +51,12 @@ const SymptomListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Symptom Data</h2>
-        <Link to="/admin/kesehatan/gejala/create" className="btn btn-info">
+        <button
+          className="btn btn-info"
+          onClick={() => setModalType("create")}
+        >
           + Add Symptom
-        </Link>
+        </button>
       </div>
 
       {error && (
@@ -104,12 +112,15 @@ const SymptomListPage = () => {
                         <td>{item.reproductive_condition}</td>
                         <td>{item.treatment_status}</td>
                         <td>
-                          <Link
-                            to={`/admin/kesehatan/gejala/edit/${item.id}`}
+                          <button
                             className="btn btn-warning me-2"
+                            onClick={() => {
+                              setEditId(item.id);
+                              setModalType("edit");
+                            }}
                           >
                             <i className="ri-edit-line"></i>
-                          </Link>
+                          </button>
                           <button
                             onClick={() => setDeleteId(item.id)}
                             className="btn btn-danger"
@@ -127,7 +138,34 @@ const SymptomListPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Modal Tambah */}
+      {modalType === "create" && (
+        <SymptomCreatePage
+          onClose={() => setModalType(null)}
+          onSaved={() => {
+            fetchData();
+            setModalType(null);
+          }}
+        />
+      )}
+
+      {/* Modal Edit */}
+      {modalType === "edit" && editId && (
+        <SymptomEditPage
+          symptomId={editId}
+          onClose={() => {
+            setEditId(null);
+            setModalType(null);
+          }}
+          onSaved={() => {
+            fetchData();
+            setEditId(null);
+            setModalType(null);
+          }}
+        />
+      )}
+
+      {/* Modal Hapus */}
       {deleteId && (
         <div
           className="modal fade show d-block"

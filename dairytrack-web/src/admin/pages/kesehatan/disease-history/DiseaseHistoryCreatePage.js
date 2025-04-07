@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { createDiseaseHistory } from "../../../../api/kesehatan/diseaseHistory";
 import { getCows } from "../../../../api/peternakan/cow";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getSymptoms } from "../../../../api/kesehatan/symptom";
 
-const DiseaseHistoryCreatePage = () => {
-  const navigate = useNavigate();
+const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     cow: "",
     health_check: "",
@@ -53,14 +51,13 @@ const DiseaseHistoryCreatePage = () => {
         return healthCheck && healthCheck.cow === cowId;
       });
 
-      setForm((prev) => ({
-        ...prev,
+      setForm({
         cow: value,
         health_check: "",
         symptom: "",
         disease_name: "",
         description: "",
-      }));
+      });
 
       setFilteredSymptoms(relatedSymptoms);
       setRectalTemp(null);
@@ -89,14 +86,8 @@ const DiseaseHistoryCreatePage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await createDiseaseHistory({
-        cow: form.cow,
-        disease_name: form.disease_name,
-        description: form.description,
-        symptom: form.symptom,
-        health_check: form.health_check,
-      });
-      navigate("/admin/kesehatan/riwayat");
+      await createDiseaseHistory(form);
+      if (onSaved) onSaved(); // callback ke halaman list
     } catch (err) {
       setError("Gagal menyimpan data riwayat penyakit.");
       console.error(err);
@@ -107,22 +98,18 @@ const DiseaseHistoryCreatePage = () => {
 
   return (
     <div
-      className="modal show d-block"
+      className="modal fade show d-block"
       style={{
         background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
         minHeight: "100vh",
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Riwayat Penyakit</h4>
-            <button
-              className="btn-close"
-              onClick={() => navigate("/admin/kesehatan/riwayat")}
-              disabled={submitting}
-            ></button>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -178,24 +165,20 @@ const DiseaseHistoryCreatePage = () => {
                   </>
                 )}
 
-                {/* Suhu Rektal setelah pilih gejala */}
+                {/* Suhu Rektal */}
                 {form.symptom && (
                   <div className="mb-3">
                     <label className="form-label fw-bold">Suhu Rektal</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={
-                        rectalTemp !== null
-                          ? `${rectalTemp} °C`
-                          : "Tidak tersedia"
-                      }
+                      value={rectalTemp ? `${rectalTemp} °C` : "Tidak tersedia"}
                       readOnly
                     />
                   </div>
                 )}
 
-                {/* Nama Penyakit & Deskripsi */}
+                {/* Nama Penyakit dan Deskripsi */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Nama Penyakit</label>
@@ -211,14 +194,14 @@ const DiseaseHistoryCreatePage = () => {
                   </div>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-3">
                   <label className="form-label fw-bold">Deskripsi</label>
                   <textarea
                     name="description"
                     value={form.description}
                     onChange={handleChange}
-                    rows="3"
                     className="form-control"
+                    rows="3"
                     required
                     disabled={!form.symptom}
                   />
@@ -226,7 +209,7 @@ const DiseaseHistoryCreatePage = () => {
 
                 <button
                   type="submit"
-                  className="btn btn-info w-100 fw-semibold"
+                  className="btn btn-info w-100"
                   disabled={submitting || !form.symptom}
                 >
                   {submitting ? "Menyimpan..." : "Simpan"}

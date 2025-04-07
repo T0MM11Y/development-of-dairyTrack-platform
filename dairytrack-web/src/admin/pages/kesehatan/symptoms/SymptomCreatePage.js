@@ -2,10 +2,8 @@ import { useState, useEffect } from "react";
 import { createSymptom } from "../../../../api/kesehatan/symptom";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
-import { useNavigate } from "react-router-dom";
 
-const SymptomCreatePage = () => {
-  const navigate = useNavigate();
+const SymptomCreatePage = ({ onClose, onSaved }) => {
   const [healthChecks, setHealthChecks] = useState([]);
   const [cows, setCows] = useState([]);
   const [form, setForm] = useState({
@@ -113,7 +111,7 @@ const SymptomCreatePage = () => {
     setSubmitting(true);
     try {
       await createSymptom(form);
-      navigate("/admin/kesehatan/gejala");
+      if (onSaved) onSaved();
     } catch (err) {
       console.error("Gagal menyimpan data gejala:", err);
       setError("Gagal menyimpan data gejala: " + err.message);
@@ -124,20 +122,20 @@ const SymptomCreatePage = () => {
 
   return (
     <div
-      className="modal show d-block"
+      className="modal fade show d-block"
       style={{
         background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
         minHeight: "100vh",
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Data Gejala</h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/kesehatan/gejala")}
+              onClick={onClose}
               disabled={submitting}
             ></button>
           </div>
@@ -169,7 +167,7 @@ const SymptomCreatePage = () => {
                   </select>
                 </div>
 
-                {/* Gejala yang pakai select */}
+                {/* Gejala */}
                 <div className="row">
                   {Object.entries(selectOptions).map(([key, options]) => (
                     <div className="col-md-6 mb-3" key={key}>
@@ -193,7 +191,7 @@ const SymptomCreatePage = () => {
                   ))}
                 </div>
 
-                {/* Field suhu tubuh dan status penanganan */}
+                {/* Penanganan */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Status Penanganan</label>
