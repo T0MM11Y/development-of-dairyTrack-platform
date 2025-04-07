@@ -55,10 +55,11 @@ const DiseaseHistoryListPage = () => {
     return cow ? cow.name : "Tidak diketahui";
   };
 
-  const getCheckDate = (id) => {
+  const getCheckTemperature = (id) => {
     const check = checks.find((c) => c.id === id);
-    return check ? check.checkup_date : "-";
+    return check ? `${check.rectal_temperature} °C` : "-";
   };
+  
 
   const getSymptomSummary = (id) => {
     const symptom = symptoms.find((s) => s.id === id);
@@ -112,7 +113,7 @@ const DiseaseHistoryListPage = () => {
                     <th>Nama Penyakit</th>
                     <th>Keterangan</th>
                     <th>Sapi</th>
-                    <th>Pemeriksaan</th>
+                    <th>Suhu Rektal</th>
                     <th>Gejala</th>
                     <th>Aksi</th>
                   </tr>
@@ -121,11 +122,11 @@ const DiseaseHistoryListPage = () => {
                   {data.map((item, idx) => (
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
-                      <td>{item.disease_date}</td>
+                      <td>{item.created_at}</td>
                       <td>{item.disease_name}</td>
                       <td>{item.description}</td>
                       <td>{getCowName(item.cow)}</td>
-                      <td>{getCheckDate(item.health_check)}</td>
+                      <td>{getCheckTemperature(item.health_check)}</td>
                       <td>{getSymptomSummary(item.symptom)}</td>
                       <td>
                         <Link

@@ -262,6 +262,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         </Link>
                       </motion.li>
                     )}
+                    {/* Blog Section */}
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/blog/all"
+                        className={isActive("/admin/blog/all") ? "active" : ""}
+                      >
+                        <i className="ri-article-line"></i> Blog Articles
+                      </Link>
+                    </motion.li>
                   </motion.ul>
                 )}
               </AnimatePresence>
@@ -650,7 +663,24 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                           isActive("/admin/keuangan/product") ? "active" : ""
                         }
                       >
-                        <i className="ri-ink-bottle-line"></i> Produk
+                        <i className="ri-drinks-2-line"></i> Produk
+                        {/* <i className="ri-ink-bottle-line"></i> Produk */}
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/type-product"
+                        className={
+                          isActive("/admin/keuangan/type-product")
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-ink-bottle-line"></i> Tipe Produk
                       </Link>
                     </motion.li>
                     <motion.li

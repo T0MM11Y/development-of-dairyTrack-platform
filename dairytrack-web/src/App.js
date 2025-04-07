@@ -41,11 +41,17 @@ import Sales from "./admin/pages/keuangan/sales/Sales.js";
 import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
 
 import Finance from "./admin/pages/keuangan/finance/Finance.js";
+import AddIncomePage from "./admin/pages/keuangan/finance/AddIncomePage.js";
+import AddExpensePage from "./admin/pages/keuangan/finance/AddExpensePage.js";
 
 import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
 import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
 import ProductEditPage from "./admin/pages/keuangan/product/ProductEditPage.js";
 import ProductHistoryPage from "./admin/pages/keuangan/product/ProductHistoryPage.js";
+
+import ProductTypePage from "./admin/pages/keuangan/product/ProductTypePage.js";
+import ProductTypeCreatePage from "./admin/pages/keuangan/product/ProductTypeCreatePage.js";
+import ProductTypeEditPage from "./admin/pages/keuangan/product/ProductTypeEditPage.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -96,9 +102,8 @@ import ContactUs from "./user/pages/ContactUs";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
-// import Product from "./admin/pages/keuangan/product/Product.js";
-// import Sales from "./admin/pages/keuangan/sales/sales.js";
-// import Finance from "./admin/pages/keuangan/finance/finance.js";
+import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
+import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -308,6 +313,15 @@ function App() {
           <ProtectedRoute>{withAdminLayout(SupervisorEditPage)}</ProtectedRoute>
         }
       />
+      {/* Admin Article */}
+      <Route
+        path="/admin/blog/all"
+        element={<ProtectedRoute>{withAdminLayout(blogAll)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/blog/create"
+        element={<ProtectedRoute>{withAdminLayout(blogCreate)}</ProtectedRoute>}
+      />
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route
         path="/admin/kesehatan/pemeriksaan"
@@ -428,6 +442,28 @@ function App() {
         }
       />
       <Route
+        path="/admin/keuangan/type-product"
+        element={
+          <ProtectedRoute>{withAdminLayout(ProductTypePage)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/type-product/create"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(ProductTypeCreatePage)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/keuangan/type-product/edit/:id"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(ProductTypeEditPage)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/keuangan/sales"
         element={<ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>}
       />
@@ -440,6 +476,14 @@ function App() {
       <Route
         path="/admin/keuangan/finance"
         element={<ProtectedRoute>{withAdminLayout(Finance)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/finance/addIncome"
+        element={<ProtectedRoute>{withAdminLayout(AddIncomePage)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/finance/addExpense"
+        element={<ProtectedRoute>{withAdminLayout(AddExpensePage)}</ProtectedRoute>}
       />
     </Routes>
   );

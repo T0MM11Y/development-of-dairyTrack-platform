@@ -11,7 +11,6 @@ const DiseaseHistoryCreatePage = () => {
     cow: "",
     health_check: "",
     symptom: "",
-    disease_date: "",
     disease_name: "",
     description: "",
   });
@@ -20,6 +19,7 @@ const DiseaseHistoryCreatePage = () => {
   const [healthChecks, setHealthChecks] = useState([]);
   const [symptoms, setSymptoms] = useState([]);
   const [filteredSymptoms, setFilteredSymptoms] = useState([]);
+  const [rectalTemp, setRectalTemp] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -45,24 +45,44 @@ const DiseaseHistoryCreatePage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
 
     if (name === "cow") {
       const cowId = parseInt(value);
-      const relatedHealthCheck = healthChecks.find((h) => h.cow === cowId);
-      const healthCheckId = relatedHealthCheck ? relatedHealthCheck.id : "";
-
-      const filteredSymps = symptoms.filter((s) => s.health_check === healthCheckId);
+      const relatedSymptoms = symptoms.filter((s) => {
+        const healthCheck = healthChecks.find((h) => h.id === s.health_check);
+        return healthCheck && healthCheck.cow === cowId;
+      });
 
       setForm((prev) => ({
         ...prev,
         cow: value,
-        health_check: healthCheckId || "",
+        health_check: "",
         symptom: "",
+        disease_name: "",
+        description: "",
       }));
 
-      setFilteredSymptoms(filteredSymps);
+      setFilteredSymptoms(relatedSymptoms);
+      setRectalTemp(null);
+      return;
     }
+
+    if (name === "symptom") {
+      const selectedSymptom = symptoms.find((s) => s.id === parseInt(value));
+      const relatedCheckId = selectedSymptom?.health_check || "";
+      const relatedCheck = healthChecks.find((h) => h.id === relatedCheckId);
+
+      setForm((prev) => ({
+        ...prev,
+        symptom: value,
+        health_check: relatedCheckId,
+      }));
+
+      setRectalTemp(relatedCheck ? relatedCheck.rectal_temperature : null);
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -71,7 +91,6 @@ const DiseaseHistoryCreatePage = () => {
     try {
       await createDiseaseHistory({
         cow: form.cow,
-        disease_date: form.disease_date,
         disease_name: form.disease_name,
         description: form.description,
         symptom: form.symptom,
@@ -111,6 +130,7 @@ const DiseaseHistoryCreatePage = () => {
               <p className="text-center">Memuat data...</p>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* Pilih Sapi */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">Pilih Sapi</label>
                   <select
@@ -129,44 +149,54 @@ const DiseaseHistoryCreatePage = () => {
                   </select>
                 </div>
 
-                {form.health_check ? (
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Pilih Gejala</label>
-                    <select
-                      name="symptom"
-                      value={form.symptom}
-                      onChange={handleChange}
-                      className="form-select"
-                      required
-                    >
-                      <option value="">-- Pilih Gejala --</option>
-                      {filteredSymptoms.map((symp) => (
-                        <option key={symp.id} value={symp.id}>
-                          {symp.eye_condition} / {symp.behavior}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  form.cow && (
-                    <p className="text-danger mb-3">
-                      Sapi ini belum memiliki pemeriksaan kesehatan.
-                    </p>
-                  )
+                {/* Pilih Gejala */}
+                {form.cow && (
+                  <>
+                    {filteredSymptoms.length > 0 ? (
+                      <div className="mb-3">
+                        <label className="form-label fw-bold">Pilih Gejala</label>
+                        <select
+                          name="symptom"
+                          value={form.symptom}
+                          onChange={handleChange}
+                          className="form-select"
+                          required
+                        >
+                          <option value="">-- Pilih Gejala --</option>
+                          {filteredSymptoms.map((symp) => (
+                            <option key={symp.id} value={symp.id}>
+                              {symp.eye_condition} / {symp.behavior}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="alert alert-warning">
+                        Belum ada data gejala untuk sapi ini.
+                      </div>
+                    )}
+                  </>
                 )}
 
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Penyakit</label>
+                {/* Suhu Rektal setelah pilih gejala */}
+                {form.symptom && (
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Suhu Rektal</label>
                     <input
-                      type="date"
-                      name="disease_date"
-                      value={form.disease_date}
-                      onChange={handleChange}
+                      type="text"
                       className="form-control"
-                      required
+                      value={
+                        rectalTemp !== null
+                          ? `${rectalTemp} °C`
+                          : "Tidak tersedia"
+                      }
+                      readOnly
                     />
                   </div>
+                )}
+
+                {/* Nama Penyakit & Deskripsi */}
+                <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Nama Penyakit</label>
                     <input
@@ -176,6 +206,7 @@ const DiseaseHistoryCreatePage = () => {
                       onChange={handleChange}
                       className="form-control"
                       required
+                      disabled={!form.symptom}
                     />
                   </div>
                 </div>
@@ -188,13 +219,15 @@ const DiseaseHistoryCreatePage = () => {
                     onChange={handleChange}
                     rows="3"
                     className="form-control"
+                    required
+                    disabled={!form.symptom}
                   />
                 </div>
 
                 <button
                   type="submit"
                   className="btn btn-info w-100 fw-semibold"
-                  disabled={submitting}
+                  disabled={submitting || !form.symptom}
                 >
                   {submitting ? "Menyimpan..." : "Simpan"}
                 </button>

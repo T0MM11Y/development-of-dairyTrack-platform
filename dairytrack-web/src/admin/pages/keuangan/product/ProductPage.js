@@ -22,7 +22,36 @@ const ProductStockListPage = () => {
         getProductTypes(),
       ]);
 
-      setData(productsRes);
+      // Process data to add time remaining info
+      const processedData = productsRes.map(item => {
+        const now = new Date();
+        const expiryDate = new Date(item.expiry_at);
+        const timeRemaining = expiryDate - now;
+        
+        return {
+          ...item,
+          timeRemaining: timeRemaining > 0 ? timeRemaining : 0,
+        };
+      });
+
+      // Sort by time remaining (ascending - products expiring soon first)
+      const sortedData = processedData.sort((a, b) => {
+        // If both are available, sort by time remaining
+        if (a.status === "available" && b.status === "available") {
+          return a.timeRemaining - b.timeRemaining;
+        }
+        // If only one is available, put available items first
+        else if (a.status === "available") {
+          return -1;
+        }
+        else if (b.status === "available") {
+          return 1;
+        }
+        // If neither is available, maintain original order
+        return 0;
+      });
+
+      setData(sortedData);
       setProductTypes(productTypesRes);
       setError("");
     } catch (err) {
@@ -36,6 +65,52 @@ const ProductStockListPage = () => {
   const getProductTypeName = (productTypeId) => {
     const productType = productTypes.find((type) => type.id === productTypeId);
     return productType ? productType.product_name : "Unknown";
+  };
+
+  const formatTimeRemaining = (timeRemaining) => {
+    if (timeRemaining <= 0) {
+      return "Expired";
+    }
+
+    // Convert milliseconds to days, hours, minutes
+    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) {
+      return `${days} hari ${hours} jam`;
+    } else if (hours > 0) {
+      return `${hours} jam ${minutes} menit`;
+    } else if (minutes > 0) {
+      return `${minutes} menit`;
+    } else {
+      return "< 1 menit"; // Fix for NaN menit when minutes is 0
+    }
+  };
+
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('id-ID', { 
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const getStatusBadgeClass = (status, timeRemaining) => {
+    if (status !== "available") {
+      return "bg-danger";
+    }
+    
+    // If time remaining is less than 24 hours (86400000 ms)
+    if (timeRemaining < 86400000) {
+      return "bg-warning"; // Yellow for urgent
+    }
+    
+    return "bg-success"; // Green for normal available
   };
 
   const handleDelete = async () => {
@@ -53,8 +128,14 @@ const ProductStockListPage = () => {
     }
   };
 
+  // Update data every minute to refresh time remaining
   useEffect(() => {
     fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -106,19 +187,15 @@ const ProductStockListPage = () => {
                         <th scope="row">{index + 1}</th>
                         <td>{getProductTypeName(item.product_type)}</td>
                         <td>{item.quantity}</td>
-                        <td>
-                          {new Date(item.production_at).toLocaleDateString()}
-                        </td>
-                        <td>{new Date(item.expiry_at).toLocaleDateString()}</td>
+                        <td>{formatDateTime(item.production_at)}</td>
+                        <td>{formatDateTime(item.expiry_at)}</td>
                         <td>
                           <span
-                            className={`badge ${
-                              item.status === "available"
-                                ? "bg-success"
-                                : "bg-danger"
-                            }`}
+                            className={`badge ${getStatusBadgeClass(item.status, item.timeRemaining)}`}
                           >
-                            {item.status}
+                            {item.status === "available" 
+                              ? `${item.status} (${formatTimeRemaining(item.timeRemaining)})` 
+                              : item.status}
                           </span>
                         </td>
                         <td>{item.total_milk_used} L</td>
