@@ -16,14 +16,22 @@ import Dashboard from "./admin/pages/dashboard/Dashboard";
 
 import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
+
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
+import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
+
 import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
 import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
+
 import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
-import DetailPakanHarian from "./admin/pages/pakan/DailyFeedDetail/DailyFeedDetail.js";
-import TambahDetailPakan from "./admin/pages/pakan/DailyFeedDetail/CreateDailyFeedDetail.js";
+import DetailPakanHarian from "./admin/pages/pakan/DailyFeed/DetailDailyFeed.js";
+
+import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js";
+import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
+
+import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
 import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
@@ -174,6 +182,10 @@ function App() {
         element={<ProtectedRoute>{withAdminLayout(Pakan)}</ProtectedRoute>}
       />
       <Route
+        path="/admin/detail-pakan/:id"
+        element={<ProtectedRoute>{withAdminLayout(DetailPakan)}</ProtectedRoute>}
+      />
+      <Route
         path="/admin/pakan/tambah"
         element={
           <ProtectedRoute>{withAdminLayout(TambahPakan)}</ProtectedRoute>
@@ -196,21 +208,33 @@ function App() {
         }
       />
       <Route
+        path="/admin/detail-pakan-harian/:id"
+        element={
+          <ProtectedRoute>{withAdminLayout(DetailPakanHarian)}</ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/tambah/pakan-harian"
         element={
           <ProtectedRoute>{withAdminLayout(TambahPakanHarian)}</ProtectedRoute>
         }
       />
       <Route
-        path="/admin/detail-pakan-harian"
+        path="/admin/item-pakan-harian"
         element={
-          <ProtectedRoute>{withAdminLayout(DetailPakanHarian)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(ItemPakanHarian)}</ProtectedRoute>
         }
       />
       <Route
-        path="/admin/tambah/detail-pakan-harian"
+        path="/admin/tambah/item-pakan-harian"
         element={
-          <ProtectedRoute>{withAdminLayout(TambahDetailPakan)}</ProtectedRoute>
+          <ProtectedRoute>{withAdminLayout(TambahItemPakan)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/nutrisi-pakan-harian"
+        element={
+          <ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>
         }
       />
       <Route

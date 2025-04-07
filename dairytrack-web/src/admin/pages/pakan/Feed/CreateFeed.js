@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFeed } from "../../../../api/pakan/feed";
 import { getFeedTypes } from "../../../../api/pakan/feedType";
-import { useNavigate } from "react-router-dom"; // Tambahkan hook untuk navigasi
+import Swal from "sweetalert2";
 
 const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   const [feedTypes, setFeedTypes] = useState([]);
@@ -17,7 +17,6 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Inisialisasi hook navigasi
 
   useEffect(() => {
     const fetchFeedTypes = async () => {
@@ -26,10 +25,9 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
         if (response.success && response.feedTypes) {
           setFeedTypes(response.feedTypes);
         } else {
-          throw new Error("Data jenis pakan tidak tersedia.");
+          throw new Error("Jenis pakan tidak tersedia.");
         }
       } catch (err) {
-        console.error("Gagal mengambil data jenis pakan:", err);
         setError("Gagal mengambil data jenis pakan.");
       } finally {
         setLoading(false);
@@ -40,114 +38,184 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prevForm) => ({ ...prevForm, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError(""); // Reset error sebelum submit
-
-    // Validasi sebelum dikirim
-    if (!form.typeId || !form.name || !form.protein || !form.energy || !form.fiber || !form.minStock || !form.price) {
-      setError("Semua kolom wajib diisi!");
-      setSubmitting(false);
+    setError("");
+  
+    // Validasi form kosong
+    if (
+      !form.typeId || !form.name || !form.protein ||
+      !form.energy || !form.fiber || !form.minStock || !form.price
+    ) {
+      setError("Semua kolom wajib diisi.");
       return;
     }
-
+  
+    const confirm = await Swal.fire({
+      title: 'Yakin ingin menambah pakan?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, tambah',
+      cancelButtonText: 'Batal',
+    });
+  
+    if (!confirm.isConfirmed) return;
+  
+    setSubmitting(true);
+  
+    const feedData = {
+      typeId: Number(form.typeId),
+      name: form.name,
+      protein: parseFloat(form.protein),
+      energy: parseFloat(form.energy),
+      fiber: parseFloat(form.fiber),
+      min_stock: parseInt(form.minStock, 10),
+      price: parseFloat(form.price),
+    };
+  
     try {
-      const feedData = {
-        type_id: Number(form.typeId),
-        name: form.name,
-        protein: parseFloat(form.protein),
-        energy: parseFloat(form.energy),
-        fiber: parseFloat(form.fiber),
-        minStock: parseInt(form.minStock, 10),
-        price: parseFloat(form.price),
-      };
-
-      console.log("Mengirim data pakan:", feedData);
-
       const response = await createFeed(feedData);
-
+    
       if (response.success) {
-        if (onFeedAdded) onFeedAdded();
-        onClose(); // Menutup modal setelah sukses
-        navigate("/admin/pakan/jenis"); // Arahkan pengguna kembali ke halaman feed type data
+        // Fix: menggunakan success icon, bukan error icon
+        await Swal.fire({
+          title: 'Berhasil!',
+          text: 'Pakan berhasil ditambahkan.',
+          icon: 'success', 
+          confirmButtonText: 'OK'
+        });
+    
+        // Reset form
+        setForm({
+          typeId: "",
+          name: "",
+          protein: "",
+          energy: "",
+          fiber: "",
+          minStock: "",
+          price: "",
+        });
+    
+        // Jalankan callback
+        onFeedAdded();
       } else {
-        throw new Error(response.message || "Gagal menyimpan data.");
+        throw new Error(response.message || "Gagal menambahkan pakan.");
       }
     } catch (err) {
-      console.error("Gagal membuat data pakan:", err);
-      setError(err.message || "Terjadi kesalahan, coba lagi.");
+      console.error("Error:", err);
+      await Swal.fire({
+        title: 'Error!',
+        text: err.message || "Terjadi kesalahan saat menyimpan data.",
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     } finally {
       setSubmitting(false);
     }
   };
-
-  const handleCloseModal = () => {
-    navigate("/admin/pakan/jenis"); // Navigasi ke halaman feed type data jika modal ditutup
-  };
-
+  
   return (
     <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Data Pakan</h4>
-            <button className="btn-close" onClick={handleCloseModal} disabled={submitting}></button> {/* Tombol close */}
+            <h5 className="modal-title">Tambah Pakan</h5>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
-            {error && <p className="text-danger text-center">{error}</p>}
+            {error && <p className="text-danger">{error}</p>}
             {loading ? (
-              <p className="text-center">Memuat data jenis pakan...</p>
+              <p>Memuat data jenis pakan...</p>
             ) : (
               <form onSubmit={handleSubmit}>
-                <div className="mb-3">
+                <div className="mb-2">
                   <label className="form-label fw-bold">Jenis Pakan</label>
-                  <select name="typeId" value={form.typeId} onChange={handleChange} className="form-select" required>
-                    <option value="">Pilih Jenis Pakan</option>
-                    {feedTypes.map((feedType) => (
-                      <option key={feedType.id} value={feedType.id}>
-                        {feedType.name}
+                  <select
+                    name="typeId"
+                    value={form.typeId}
+                    onChange={handleChange}
+                    className="form-select"
+                  >
+                    <option value="">Pilih Jenis</option>
+                    {feedTypes.map((ft) => (
+                      <option key={ft.id} value={ft.id}>
+                        {ft.name}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Nama Pakan</label>
-                  <input type="text" name="name" value={form.name} onChange={handleChange} required className="form-control" placeholder="Masukkan nama pakan" />
+                <div className="mb-2">
+                  <label className="form-label fw-bold">Nama</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="Nama pakan"
+                  />
                 </div>
-
-                <div className="mb-3">
+                <div className="mb-2">
                   <label className="form-label fw-bold">Protein (%)</label>
-                  <input type="number" name="protein" value={form.protein} onChange={handleChange} required className="form-control" placeholder="Masukkan kandungan protein" min="0" />
+                  <input
+                    type="number"
+                    name="protein"
+                    value={form.protein}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Energi (Kcal)</label>
-                  <input type="number" name="energy" value={form.energy} onChange={handleChange} required className="form-control" placeholder="Masukkan kandungan energi" min="0" />
+                <div className="mb-2">
+                  <label className="form-label fw-bold">Energi (kcal/kg)</label>
+                  <input
+                    type="number"
+                    name="energy"
+                    value={form.energy}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
                 </div>
-
-                <div className="mb-3">
+                <div className="mb-2">
                   <label className="form-label fw-bold">Serat (%)</label>
-                  <input type="number" name="fiber" value={form.fiber} onChange={handleChange} required className="form-control" placeholder="Masukkan kandungan serat" min="0" />
+                  <input
+                    type="number"
+                    name="fiber"
+                    value={form.fiber}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Stock Minimum</label>
-                  <input type="number" name="minStock" value={form.minStock} onChange={handleChange} required className="form-control" placeholder="Masukkan stock minimum" min="0" />
+                <div className="mb-2">
+                  <label className="form-label fw-bold">Stok Minimum</label>
+                  <input
+                    type="number"
+                    name="minStock"
+                    value={form.minStock}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Harga (Rp)</label>
-                  <input type="number" name="price" value={form.price} onChange={handleChange} required className="form-control" placeholder="Masukkan harga pakan" min="0" />
+                <div className="mb-2">
+                  <label className="form-label fw-bold">Harga</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
                 </div>
-
-                <button type="submit" className="btn btn-info w-100" disabled={submitting}>
-                  {submitting ? "Menyimpan..." : "Simpan"}
-                </button>
+                <div className="modal-footer">
+                  <button type="submit" className="btn btn-success" disabled={submitting}>
+                    {submitting ? "Menyimpan..." : "Simpan"}
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={onClose}>
+                    Batal
+                  </button>
+                </div>
               </form>
             )}
           </div>

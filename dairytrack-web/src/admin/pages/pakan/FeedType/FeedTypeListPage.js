@@ -2,18 +2,18 @@ import { useEffect, useState } from "react";
 import { getFeedTypes, deleteFeedType } from "../../../../api/pakan/feedType";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import CreateFeedTypeModal from "./CreateFeedType"; // pastikan path-nya sesuai
 
 const FeedTypeListPage = () => {
   const [feedTypes, setFeedTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const response = await getFeedTypes();
-      
-      // Check if the response has the 'feedTypes' key
       if (response.success && response.feedTypes) {
         setFeedTypes(response.feedTypes);
       } else {
@@ -39,98 +39,98 @@ const FeedTypeListPage = () => {
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
-  
+
     if (result.isConfirmed) {
       try {
         const response = await deleteFeedType(id);
         console.log("Response dari deleteFeedType:", response);
-  
-        // Jika respons sukses atau tidak ada error, anggap berhasil
+
         Swal.fire("Terhapus!", "Jenis pakan berhasil dihapus.", "success");
-        
-        // Tunggu sedikit sebelum refresh data agar perubahan terlihat
-        setTimeout(fetchData, 500);
-  
+        setFeedTypes(feedTypes.filter((item) => item.id !== id));
       } catch (error) {
         console.error("Gagal menghapus jenis pakan:", error.message);
         Swal.fire("Error!", "Terjadi kesalahan saat menghapus.", "error");
       }
     }
   };
-  
+
+  const handleAddFeedType = (newFeedType) => {
+    setFeedTypes((prev) => [...prev, newFeedType]);
+    setShowModal(false);
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Feed Type Data</h2>
+    <div className="p-4 position-relative">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="text-xl fw-bold text-dark">Data Jenis Pakan</h2>
         <button
-          onClick={() => navigate("/admin/pakan/jenis/tambah")}
+          onClick={() => setShowModal(true)}
           className="btn btn-info waves-effect waves-light"
         >
-          + Add Feed Type
+          + Tambah Jenis Pakan
         </button>
       </div>
 
       {loading ? (
         <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading feed type data...</p>
+          <div className="spinner-border text-primary" role="status" />
+          <p className="mt-2">Memuat data jenis pakan...</p>
         </div>
       ) : feedTypes.length === 0 ? (
-        <p className="text-gray-500">No feed type data available.</p>
+        <p className="text-muted">Belum ada data jenis pakan.</p>
       ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Feed Type Data</h4>
-              <p className="card-title-desc">
-                This table provides a list of feed types registered on the farm.
-              </p>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Actions</th>
+        <div className="card">
+          <div className="card-body">
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover text-center">
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Nama</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feedTypes.map((feed, index) => (
+                    <tr key={feed.id}>
+                      <td>{index + 1}</td>
+                      <td>{feed.name}</td>
+                      <td>
+                        <button
+                          className="btn btn-info btn-sm me-2"
+                          onClick={() =>
+                            navigate(`/admin/peternakan/pakan/detail/${feed.id}`)
+                          }
+                          aria-label={`Lihat detail ${feed.name}`}
+                        >
+                          <i className="ri-eye-line"></i>
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(feed.id)}
+                          aria-label={`Hapus jenis ${feed.name}`}
+                        >
+                          <i className="ri-delete-bin-6-line"></i>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {feedTypes.map((feed, index) => (
-                      <tr key={feed.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>{feed.name}</td>
-                        <td>
-                          <button
-                            className="btn btn-info waves-effect waves-light mr-2"
-                            onClick={() => navigate(`/admin/peternakan/pakan/detail/${feed.id}`)}
-                            aria-label={`View details of ${feed.name}`}
-                          >
-                            <i className="ri-eye-line"></i>
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(feed.id)}
-                            className="btn btn-danger waves-effect waves-light"
-                            aria-label={`Delete feed type ${feed.name}`}
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
+      )}
+
+      {showModal && (
+        <CreateFeedTypeModal
+          onClose={() => setShowModal(false)}
+          onSuccess={handleAddFeedType}
+        />
       )}
     </div>
   );

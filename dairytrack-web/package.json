@@ -12,7 +12,7 @@
     "axios": "^1.8.4",
     "bootstrap": "^5.3.3",
     "classnames": "^2.5.1",
-    "date-fns": "^4.1.0",
+    "date-fns": "^2.16.1",
     "framer-motion": "^12.6.3",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",
@@ -30,10 +30,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "concurrently \"npm run react-start\" \"npm run flask-start\" \"npm run node-api\" \"npm run django-start\" \"npm run django-start2\"",
+    "start": "concurrently \"npm run react-start\" \"npm run flask-start\" \"npm run django-start\" \"npm run django-start2\"",
     "react-start": "react-scripts start",
     "flask-start": "cd ../dairytrack-api/MilkProduction && flask run --port=5000",
-    "node-api": "cd ../dairytrack-api/FeedConsumption && npm start",
     "django-start": "cd ../dairytrack-api/HealthCheck && python manage.py runserver 5002",
     "django-start2": "cd ../dairytrack-api/Selling && python manage.py runserver 5001"
   },

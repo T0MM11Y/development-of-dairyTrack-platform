@@ -1,59 +1,68 @@
+// DailyFeedListPage.jsx
 import { useEffect, useState } from "react";
-import {
-  getDailyFeeds,
-  deletedailyFeed,
-} from "../../../../api/pakan/dailyFeed";
-import { getCows } from "../../../../api/peternakan/cow";
-import { getFarmers } from "../../../../api/peternakan/farmer";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { getAllDailyFeeds, deleteDailyFeed } from "../../../../api/pakan/dailyFeed";
+import { getFarmers } from "../../../../api/peternakan/farmer";
+import { getCows } from "../../../../api/peternakan/cow";
+import CreateDailyFeedPage from "./CreateDailyFeed";
+import DailyFeedDetailEdit from "./DetailDailyFeed";
 
-const DailyFeedPage = () => {
-  const [dailyFeeds, setDailyFeeds] = useState([]);
-  const [farmers, setFarmers] = useState([]);
-  const [cows, setCows] = useState([]);
+const DailyFeedListPage = () => {
+  const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedFeedId, setSelectedFeedId] = useState(null);
+  const [farmerNames, setFarmerNames] = useState({});
+  const [cowNames, setCowNames] = useState({});
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedResponse, cowResponse, farmerResponse] = await Promise.all([
-        getDailyFeeds(),
-        getCows(),
-        getFarmers(),
+      
+      // Fetch feeds, farmers, and cows data in parallel
+      const [feedsResponse, farmersData, cowsData] = await Promise.all([
+        getAllDailyFeeds(),
+        getFarmers().catch(err => {
+          console.error("Failed to fetch farmers:", err);
+          return [];
+        }),
+        getCows().catch(err => {
+          console.error("Failed to fetch cows:", err);
+          return [];
+        })
       ]);
-
-      console.log("Daily Feeds:", feedResponse);
-      console.log("Cows:", cowResponse);
-      console.log("Farmers:", farmerResponse);
-
-      // Handle different response structures
-      // For daily feeds
-      const feedsData = feedResponse?.success 
-        ? feedResponse.feeds 
-        : (Array.isArray(feedResponse) ? feedResponse : []);
       
-      // For cows
-      const cowsData = cowResponse?.success 
-        ? cowResponse.cows 
-        : (Array.isArray(cowResponse) ? cowResponse : []);
+      // Process feeds
+      if (feedsResponse.success && feedsResponse.data) {
+        setFeeds(feedsResponse.data);
+      } else {
+        console.error("Unexpected response format", feedsResponse);
+        setFeeds([]);
+      }
       
-      // For farmers
-      const farmersData = farmerResponse?.success 
-        ? farmerResponse.farmers 
-        : (Array.isArray(farmerResponse) ? farmerResponse : []);
+      // Create lookup maps for farmer and cow names
+      const farmerMap = {};
+      farmersData.forEach(farmer => {
+        farmerMap[farmer.id] = `${farmer.first_name} ${farmer.last_name}`;
+      });
+      setFarmerNames(farmerMap);
       
-      setDailyFeeds(feedsData);
-      setCows(cowsData);
-      setFarmers(farmersData);
+      const cowMap = {};
+      cowsData.forEach(cow => {
+        cowMap[cow.id] = cow.name;
+      });
+      setCowNames(cowMap);
+      
     } catch (error) {
-      console.error("Error fetching data:", error);
-      Swal.fire("Error!", "Gagal mengambil data.", "error");
+      console.error("Failed to fetch data:", error.message);
+      setFeeds([]);
+      
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to load data.",
+        icon: "error"
+      });
     } finally {
       setLoading(false);
     }
@@ -62,112 +71,176 @@ const DailyFeedPage = () => {
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Apakah Anda yakin?",
-      text: "Data pemberian pakan akan dihapus.",
+      text: "Pakan akan dihapus secara permanen.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
-    if (!result.isConfirmed) return;
-
-    try {
-      const deleteResponse = await deletedailyFeed(id);
-      if (deleteResponse?.success) {
-        Swal.fire("Terhapus!", "Data berhasil dihapus.", "success");
+    if (result.isConfirmed) {
+      try {
+        await deleteDailyFeed(id);
+        Swal.fire({
+          title: "Berhasil!",
+          text: "Data pakan berhasil dihapus.",
+          icon: "success",
+          timer: 2000,
+          timerProgressBar: true
+        });
         fetchData();
-      } else {
-        Swal.fire("Gagal!", "Tidak dapat menghapus data.", "error");
+      } catch (error) {
+        console.error("Failed to delete feed:", error.message);
+        Swal.fire({
+          title: "Error!",
+          text: "Terjadi kesalahan saat menghapus data.",
+          icon: "error"
+        });
       }
-    } catch (error) {
-      Swal.fire("Error!", "Gagal menghapus data.", "error");
     }
   };
 
-  // Helper function to format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    try {
-      const [year, month, day] = dateString.split("-");
-      return `${day}-${month}-${year}`;
-    } catch (e) {
-      return dateString;
-    }
+  const handleAddClick = () => {
+    setShowCreateModal(true);
   };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const handleViewDetails = (id) => {
+    setSelectedFeedId(id);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedFeedId(null);
+  };
+  
+  const handleDailyFeedAdded = () => {
+    fetchData();
+  };
+  
+  const handleDailyFeedUpdated = () => {
+    fetchData();
+  };
+
+  // Format date to be more readable
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
+  };
+
+  // Capitalize first letter of session
+  const formatSession = (session) => {
+    return session.charAt(0).toUpperCase() + session.slice(1);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Daily Feed Data</h2>
+      {showCreateModal && (
+        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%", overflow: "auto" }}>
+          <CreateDailyFeedPage 
+            onDailyFeedAdded={handleDailyFeedAdded} 
+            onClose={handleCloseCreateModal} 
+          />
+        </div>
+      )}
+      
+      {showDetailModal && selectedFeedId && (
+        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%", overflow: "auto" }}>
+          <DailyFeedDetailEdit 
+            feedId={selectedFeedId}
+            onDailyFeedUpdated={handleDailyFeedUpdated}
+            onClose={handleCloseDetailModal} 
+          />
+        </div>
+      )}
+
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Data Pakan Harian</h2>
         <button
-          onClick={() => navigate("/admin/tambah/pakan-harian")}
-          className="btn btn-success"
+          onClick={handleAddClick}
+          className="btn btn-info waves-effect waves-light"
         >
-          + Add Daily Feed
+          + Tambah Pakan
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center">
+        <div className="text-center py-4">
           <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
+            <span className="visually-hidden">Loading...</span>
           </div>
           <p className="mt-2">Memuat data...</p>
         </div>
-      ) : dailyFeeds.length === 0 ? (
-        <div className="alert alert-info">No daily feed data available.</div>
+      ) : feeds.length === 0 ? (
+        <div className="alert alert-info text-center">
+          Belum ada data pakan tersedia.
+        </div>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-striped">
-            <thead className="table-info">
-              <tr>
-                <th>#</th>
-                <th>Farmer</th>
-                <th>Cow</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dailyFeeds.map((feed, index) => {
-                // Find corresponding farmer and cow
-                const farmer = farmers.find(f => f.id === feed.farmer_id || f.id === feed.farmer_id);
-                const cow = cows.find(c => c.id === feed.cow_id || c.id === feed.cow_id);
-
-                // Create display names with better fallbacks
-                const farmerName = farmer
-                  ? `${farmer.first_name || ''} ${farmer.last_name || ''}`.trim()
-                  : `Farmer #${feed.farmer_id}`;
-                
-                const cowName = cow
-                  ? (cow.name || `Cow #${feed.cow_id}`)
-                  : `Cow #${feed.cow_id}`;
-
-                return (
-                  <tr key={feed.id || index}>
-                    <td>{index + 1}</td>
-                    <td>{farmerName}</td>
-                    <td>{cowName}</td>
-                    <td>{formatDate(feed.date)}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(feed.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="col-lg-12">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title mb-4">Daftar Pakan Harian</h4>
+              <div className="table-responsive">
+                <table className="table table-hover table-striped mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="text-center" style={{width: "50px"}}>#</th>
+                      <th>Nama Petani</th>
+                      <th>Nama Sapi</th>
+                      <th style={{width: "120px"}}>Tanggal</th>
+                      <th style={{width: "100px"}}>Sesi</th>
+                      <th style={{width: "120px"}}>Cuaca</th>
+                      <th className="text-center" style={{width: "130px"}}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feeds.map((feed, index) => (
+                      <tr key={feed.id}>
+                        <td className="text-center">{index + 1}</td>
+                        <td>{farmerNames[feed.farmer_id] || `Petani #${feed.farmer_id}`}</td>
+                        <td>{cowNames[feed.cow_id] || `Sapi #${feed.cow_id}`}</td>
+                        <td>{formatDate(feed.date)}</td>
+                        <td>{formatSession(feed.session)}</td>
+                        <td>{feed.weather ? formatSession(feed.weather) : "Tidak ada data"}</td>
+                        <td>
+                          <div className="d-flex justify-content-center gap-2">
+                            <button
+                              className="btn btn-sm btn-info"
+                              onClick={() => handleViewDetails(feed.id)}
+                              title="Detail/Edit"
+                            >
+                              <i className="ri-edit-line"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(feed.id)}
+                              className="btn btn-sm btn-danger"
+                              title="Hapus"
+                            >
+                              <i className="ri-delete-bin-6-line"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default DailyFeedPage;
+export default DailyFeedListPage;
