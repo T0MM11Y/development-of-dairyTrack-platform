@@ -66,6 +66,7 @@ import SupervisorListPage from "./admin/pages/peternakan/supervisor/SupervisorLi
 import SupervisorCreatePage from "./admin/pages/peternakan/supervisor/SupervisorCreatePage.js";
 import SupervisorEditPage from "./admin/pages/peternakan/supervisor/SupervisorEditPage.js";
 
+
 // Symptoms
 import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage.js";
 import SymptomCreatePage from "./admin/pages/kesehatan/symptoms/SymptomCreatePage.js";
@@ -82,6 +83,8 @@ import DiseaseHistoryEditPage from "./admin/pages/kesehatan/disease-history/Dise
 import ReproductionListPage from "./admin/pages/kesehatan/reproduction/ReproductionListPage.js";
 import ReproductionCreatePage from "./admin/pages/kesehatan/reproduction/ReproductionCreatePage.js";
 import ReproductionEditPage from "./admin/pages/kesehatan/reproduction/ReproductionEditPage.js";
+import DashboardKesehatanPage from "./admin/pages/kesehatan/DashboardKesehatanPage";
+
 
 // Import CSS
 import "./assets/admin/css/icons.min.css";
@@ -416,6 +419,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+<Route
+  path="/admin/kesehatan/dashboard"
+  element={
+    <ProtectedRoute>
+      {withAdminLayout(DashboardKesehatanPage)}
+    </ProtectedRoute>
+  }
+/>
+
       {/* Sales And Financial Routing */}
       <Route
         path="/admin/keuangan/product"

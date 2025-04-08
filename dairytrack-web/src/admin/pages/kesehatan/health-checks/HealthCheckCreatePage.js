@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { createHealthCheck } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
-import { useNavigate } from "react-router-dom";
 
-const HealthCheckCreatePage = () => {
-  const navigate = useNavigate();
+const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   const [cows, setCows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -12,12 +10,10 @@ const HealthCheckCreatePage = () => {
 
   const [form, setForm] = useState({
     cow: "",
-    checkup_date: "",
     rectal_temperature: "",
     heart_rate: "",
     respiration_rate: "",
     rumination: "",
-    treatment_status: "Not Treated",
   });
 
   useEffect(() => {
@@ -44,8 +40,8 @@ const HealthCheckCreatePage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await createHealthCheck(form);
-      navigate("/admin/kesehatan/pemeriksaan");
+      await createHealthCheck(form); // tanpa kirim checkup_date & treatment_status
+      if (onSaved) onSaved();
     } catch (err) {
       setError("Gagal menyimpan data pemeriksaan.");
       console.error(err);
@@ -63,20 +59,19 @@ const HealthCheckCreatePage = () => {
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Pemeriksaan</h4>
-            <button
-              className="btn-close"
-              onClick={() => navigate("/admin/kesehatan/pemeriksaan")}
-              disabled={submitting}
-            ></button>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             {loading ? (
-              <p className="text-center">Memuat data sapi...</p>
+              <div className="text-center py-5">
+                <div className="spinner-border text-info" role="status" />
+                <p className="mt-2">Memuat data sapi...</p>
+              </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
@@ -99,17 +94,6 @@ const HealthCheckCreatePage = () => {
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Pemeriksaan</label>
-                    <input
-                      type="datetime-local"
-                      name="checkup_date"
-                      value={form.checkup_date}
-                      onChange={handleChange}
-                      className="form-control"
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Suhu Rektal (°C)</label>
                     <input
                       type="number"
@@ -121,9 +105,6 @@ const HealthCheckCreatePage = () => {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Denyut Jantung</label>
                     <input
@@ -135,6 +116,9 @@ const HealthCheckCreatePage = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Frekuensi Napas</label>
                     <input
@@ -146,32 +130,18 @@ const HealthCheckCreatePage = () => {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Ruminasi</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    name="rumination"
-                    value={form.rumination}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="form-label fw-bold">Status Pengobatan</label>
-                  <select
-                    name="treatment_status"
-                    value={form.treatment_status}
-                    onChange={handleChange}
-                    className="form-select"
-                  >
-                    <option value="Not Treated">Belum Diobati</option>
-                    <option value="Treated">Sudah Diobati</option>
-                  </select>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Ruminasi</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="rumination"
+                      value={form.rumination}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <button
