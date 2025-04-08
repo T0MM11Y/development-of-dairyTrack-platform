@@ -3,14 +3,20 @@ import {
   deleteSymptom,
   getSymptoms,
 } from "../../../../api/kesehatan/symptom";
+import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
+import { getCows } from "../../../../api/peternakan/cow";
 import SymptomCreatePage from "./SymptomCreatePage";
 import SymptomEditPage from "./SymptomEditPage";
+import SymptomViewPage from "./SymptomViewPage";
 
 const SymptomListPage = () => {
   const [data, setData] = useState([]);
+  const [healthChecks, setHealthChecks] = useState([]);
+  const [cows, setCows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  const [viewId, setViewId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [modalType, setModalType] = useState(null); // "create" | "edit" | null
   const [editId, setEditId] = useState(null);
@@ -18,8 +24,14 @@ const SymptomListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await getSymptoms();
-      setData(res);
+      const [symptoms, hcs, cowsData] = await Promise.all([
+        getSymptoms(),
+        getHealthChecks(),
+        getCows(),
+      ]);
+      setData(symptoms);
+      setHealthChecks(hcs);
+      setCows(cowsData);
       setError("");
     } catch (err) {
       console.error("Gagal mengambil data gejala:", err.message);
@@ -27,6 +39,12 @@ const SymptomListPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getCowName = (hcId) => {
+    const hc = healthChecks.find((h) => h.id === hcId);
+    const cow = cows.find((c) => c.id === hc?.cow);
+    return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
   };
 
   const handleDelete = async () => {
@@ -50,89 +68,68 @@ const SymptomListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Symptom Data</h2>
-        <button
-          className="btn btn-info"
-          onClick={() => setModalType("create")}
-        >
-          + Add Symptom
+        <h2 className="text-xl font-bold text-gray-800">Data Gejala</h2>
+        <button className="btn btn-info" onClick={() => setModalType("create")}>
+          + Tambah Gejala
         </button>
       </div>
 
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {loading ? (
         <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading symptom data...</p>
+          <div className="spinner-border text-primary" role="status" />
+          <p className="mt-2">Memuat data gejala...</p>
         </div>
       ) : data.length === 0 ? (
-        <p className="text-gray-500">No symptom data available.</p>
+        <p className="text-muted">Belum ada data gejala.</p>
       ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Symptom Data</h4>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Eye</th>
-                      <th>Mouth</th>
-                      <th>Nose</th>
-                      <th>Anus</th>
-                      <th>Leg</th>
-                      <th>Skin</th>
-                      <th>Behavior</th>
-                      <th>Weight</th>
-                      <th>Reproductive</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+        <div className="card">
+          <div className="card-body">
+            <h4 className="card-title">Tabel Gejala</h4>
+            <div className="table-responsive">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nama Sapi</th>
+                    <th>Status Penanganan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((item, index) => (
+                    <tr key={item.id}>
+                      <td>{index + 1}</td>
+                      <td>{getCowName(item.health_check)}</td>
+                      <td>{item.treatment_status}</td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-sm me-2"
+                          onClick={() => setViewId(item.id)}
+                        >
+                          <i className="ri-eye-line" /> 
+                        </button>
+                        <button
+                          className="btn btn-warning btn-sm me-2"
+                          onClick={() => {
+                            setEditId(item.id);
+                            setModalType("edit");
+                          }}
+                        >
+                          <i className="ri-edit-line" /> 
+                        </button>
+                        <button
+                          onClick={() => setDeleteId(item.id)}
+                          className="btn btn-danger btn-sm"
+                        >
+                          <i className="ri-delete-bin-6-line" />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {data.map((item, index) => (
-                      <tr key={item.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>{item.eye_condition}</td>
-                        <td>{item.mouth_condition}</td>
-                        <td>{item.nose_condition}</td>
-                        <td>{item.anus_condition}</td>
-                        <td>{item.leg_condition}</td>
-                        <td>{item.skin_condition}</td>
-                        <td>{item.behavior}</td>
-                        <td>{item.weight_condition}</td>
-                        <td>{item.reproductive_condition}</td>
-                        <td>{item.treatment_status}</td>
-                        <td>
-                          <button
-                            className="btn btn-warning me-2"
-                            onClick={() => {
-                              setEditId(item.id);
-                              setModalType("edit");
-                            }}
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(item.id)}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -165,61 +162,47 @@ const SymptomListPage = () => {
         />
       )}
 
+      {/* Modal View */}
+      {viewId && (
+        <SymptomViewPage
+          symptomId={viewId}
+          onClose={() => setViewId(null)}
+        />
+      )}
+
       {/* Modal Hapus */}
       {deleteId && (
         <div
           className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-          tabIndex="-1"
-          role="dialog"
+          style={{ background: "rgba(0,0,0,0.5)" }}
         >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title text-danger">Delete Confirmation</h5>
+                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
                 <button
-                  type="button"
                   className="btn-close"
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
                 ></button>
               </div>
               <div className="modal-body">
-                <p>
-                  Are you sure you want to delete this symptom data?
-                  <br />
-                  This action cannot be undone.
-                </p>
+                <p>Yakin ingin menghapus data gejala ini? Tindakan ini tidak bisa dibatalkan.</p>
               </div>
               <div className="modal-footer">
                 <button
-                  type="button"
                   className="btn btn-secondary"
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
-                  type="button"
                   className="btn btn-danger"
                   onClick={handleDelete}
                   disabled={submitting}
                 >
-                  {submitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
+                  {submitting ? "Menghapus..." : "Hapus"}
                 </button>
               </div>
             </div>

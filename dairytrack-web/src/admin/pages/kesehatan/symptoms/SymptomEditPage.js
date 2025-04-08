@@ -1,27 +1,34 @@
 import { useEffect, useState } from "react";
 import { getSymptomById, updateSymptom } from "../../../../api/kesehatan/symptom";
+import { getHealthCheckById } from "../../../../api/kesehatan/healthCheck";
 
 const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [canEditTreatmentStatus, setCanEditTreatmentStatus] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getSymptomById(symptomId);
-        setForm(res);
+        const symptom = await getSymptomById(symptomId);
+        setForm(symptom);
+
+        // Cek status treatment dari HealthCheck
+        if (symptom.health_check) {
+          const healthCheck = await getHealthCheckById(symptom.health_check);
+          setCanEditTreatmentStatus(healthCheck?.treatment_status === "Treated");
+        }
       } catch (err) {
-        console.error("Error fetching symptom:", err);
+        console.error("Error fetching data:", err);
         setError("Gagal mengambil data gejala.");
       } finally {
         setLoading(false);
       }
     };
-    if (symptomId) {
-      fetchData();
-    }
+
+    if (symptomId) fetchData();
   }, [symptomId]);
 
   const handleChange = (e) => {
@@ -52,11 +59,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Edit Data Gejala</h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -67,6 +70,30 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
                 <div className="row">
                   {Object.entries(form).map(([key, value]) => {
                     if (key === "id" || key === "health_check") return null;
+
+                    if (key === "treatment_status") {
+                      return (
+                        <div key={key} className="col-md-6 mb-3">
+                          <label className="form-label fw-semibold">Status Pengobatan</label>
+                          <select
+                            name={key}
+                            value={value}
+                            onChange={handleChange}
+                            className="form-select"
+                            disabled={!canEditTreatmentStatus || submitting}
+                          >
+                            <option value="Not Treated">Belum Ditangani</option>
+                            <option value="Treated">Sudah Ditangani</option>
+                          </select>
+                          {!canEditTreatmentStatus && (
+                            <div className="text-danger small mt-1">
+                              Hanya bisa diubah jika pemeriksaan sudah diperiksa.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={key} className="col-md-6 mb-3">
                         <label className="form-label fw-semibold">
@@ -76,9 +103,9 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
                           type="text"
                           name={key}
                           value={value || ""}
-                          onChange={handleChange}
-                          className="form-control"
-                          disabled={submitting}
+                          readOnly
+                          disabled
+                          className="form-control bg-light"
                         />
                       </div>
                     );
@@ -87,7 +114,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
                 <button
                   type="submit"
                   className="btn btn-info w-100 fw-semibold"
-                  disabled={submitting}
+                  disabled={submitting || !canEditTreatmentStatus}
                 >
                   {submitting ? "Memperbarui..." : "Perbarui Data"}
                 </button>

@@ -498,115 +498,131 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               </AnimatePresence>
             </motion.li>
 
-            {/* Kesehatan Sapi */}
-            <motion.li
-              className={isMenuOpen("kesehatan") ? "mm-active" : ""}
-              variants={menuItemVariants}
-              whileHover="hover"
-              whileTap="tap"
-            >
-              <Link
-                to="#"
-                className="waves-effect d-flex justify-content-between align-items-center"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleSubmenu("kesehatan");
-                }}
-                style={{ padding: "10px 15px" }}
-              >
-                <div className="d-flex align-items-center">
-                  <i className="ri-hospital-line"></i>
-                  {!isCollapsed && (
-                    <span style={{ marginLeft: "10px" }}>Kesehatan Sapi</span>
-                  )}
-                </div>
-                {!isCollapsed && (
-                  <i
-                    className={`ri-arrow-down-s-line ${
-                      isMenuOpen("kesehatan") ? "rotate-180" : ""
-                    }`}
-                  ></i>
-                )}
-              </Link>
+           {/* Kesehatan Sapi */}
+<motion.li
+  className={isMenuOpen("kesehatan") ? "mm-active" : ""}
+  variants={menuItemVariants}
+  whileHover="hover"
+  whileTap="tap"
+>
+  <Link
+    to="#"
+    className="waves-effect d-flex justify-content-between align-items-center"
+    onClick={(e) => {
+      e.preventDefault();
+      toggleSubmenu("kesehatan");
+    }}
+    style={{ padding: "10px 15px" }}
+  >
+    <div className="d-flex align-items-center">
+      <i className="ri-hospital-line"></i>
+      {!isCollapsed && (
+        <span style={{ marginLeft: "10px" }}>Kesehatan Sapi</span>
+      )}
+    </div>
+    {!isCollapsed && (
+      <i
+        className={`ri-arrow-down-s-line ${
+          isMenuOpen("kesehatan") ? "rotate-180" : ""
+        }`}
+      ></i>
+    )}
+  </Link>
 
-              <AnimatePresence>
-                {isMenuOpen("kesehatan") && !isCollapsed && (
-                  <motion.ul
-                    className="sub-menu"
-                    initial="closed"
-                    animate="open"
-                    exit="closed"
-                    variants={subMenuVariants}
-                    transition={{ duration: 0.2 }}
-                    style={{ paddingLeft: "30px" }}
-                  >
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
-                        to="/admin/kesehatan/gejala"
-                        className={
-                          isActive("/admin/kesehatan/gejala") ? "active" : ""
-                        }
-                      >
-                        <i className="ri-health-book-line"></i> Gejala Penyakit
-                        Sapi
-                      </Link>
-                    </motion.li>
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
-                        to="/admin/kesehatan/riwayat"
-                        className={
-                          isActive("/admin/kesehatan/riwayat") ? "active" : ""
-                        }
-                      >
-                        <i className="ri-history-line"></i> Riwayat Penyakit
-                        Sapi
-                      </Link>
-                    </motion.li>
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
-                        to="/admin/kesehatan/reproduksi"
-                        className={
-                          isActive("/admin/kesehatan/reproduksi")
-                            ? "active"
-                            : ""
-                        }
-                      >
-                        <i className="ri-parent-line"></i> Reproduksi Sapi
-                      </Link>
-                    </motion.li>
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
-                        to="/admin/kesehatan/pemeriksaan"
-                        className={
-                          isActive("/admin/kesehatan/pemeriksaan")
-                            ? "active"
-                            : ""
-                        }
-                      >
-                        <i className="ri-stethoscope-line"></i> Pemeriksaan
-                        Penyakit
-                      </Link>
-                    </motion.li>
-                  </motion.ul>
-                )}
-              </AnimatePresence>
-            </motion.li>
+  <AnimatePresence>
+    {isMenuOpen("kesehatan") && !isCollapsed && (
+      <motion.ul
+        className="sub-menu"
+        initial="closed"
+        animate="open"
+        exit="closed"
+        variants={subMenuVariants}
+        transition={{ duration: 0.2 }}
+        style={{ paddingLeft: "30px" }}
+      >
+        {/* Dashboard */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/dashboard"
+            className={
+              isActive("/admin/kesehatan/dashboard") ? "active" : ""
+            }
+          >
+            <i className="ri-bar-chart-2-line"></i> Dashboard Kesehatan
+          </Link>
+        </motion.li>
+
+        {/* Gejala */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/gejala"
+            className={
+              isActive("/admin/kesehatan/gejala") ? "active" : ""
+            }
+          >
+            <i className="ri-health-book-line"></i> Gejala Penyakit Sapi
+          </Link>
+        </motion.li>
+
+        {/* Riwayat */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/riwayat"
+            className={
+              isActive("/admin/kesehatan/riwayat") ? "active" : ""
+            }
+          >
+            <i className="ri-history-line"></i> Riwayat Penyakit Sapi
+          </Link>
+        </motion.li>
+
+        {/* Reproduksi */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/reproduksi"
+            className={
+              isActive("/admin/kesehatan/reproduksi") ? "active" : ""
+            }
+          >
+            <i className="ri-parent-line"></i> Reproduksi Sapi
+          </Link>
+        </motion.li>
+
+        {/* Pemeriksaan */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/pemeriksaan"
+            className={
+              isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""
+            }
+          >
+            <i className="ri-stethoscope-line"></i> Pemeriksaan Penyakit
+          </Link>
+        </motion.li>
+      </motion.ul>
+    )}
+  </AnimatePresence>
+</motion.li>
 
             {/* Keuangan */}
             <motion.li

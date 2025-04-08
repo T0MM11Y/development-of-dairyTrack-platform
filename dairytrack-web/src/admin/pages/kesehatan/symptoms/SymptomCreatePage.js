@@ -17,7 +17,7 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
     behavior: "Normal",
     weight_condition: "Normal",
     reproductive_condition: "Normal",
-    treatment_status: "Not Treated",
+    treatment_status: "Not Treated", // default, tidak ditampilkan
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -189,22 +189,6 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
                       </select>
                     </div>
                   ))}
-                </div>
-
-                {/* Penanganan */}
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Status Penanganan</label>
-                    <select
-                      name="treatment_status"
-                      value={form.treatment_status}
-                      onChange={handleChange}
-                      className="form-select"
-                    >
-                      <option value="Not Treated">Belum Ditangani</option>
-                      <option value="Treated">Sudah Ditangani</option>
-                    </select>
-                  </div>
                 </div>
 
                 <button

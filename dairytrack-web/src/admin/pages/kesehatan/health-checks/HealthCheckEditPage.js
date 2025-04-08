@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { getHealthCheckById, updateHealthCheck } from "../../../../api/kesehatan/healthCheck";
+import { getCows } from "../../../../api/peternakan/cow";
 
 const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
   const [form, setForm] = useState(null);
+  const [cowName, setCowName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -10,8 +12,14 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getHealthCheckById(healthCheckId);
+        const [res, cowList] = await Promise.all([
+          getHealthCheckById(healthCheckId),
+          getCows(),
+        ]);
         setForm(res);
+
+        const cow = cowList.find((c) => c.id === res.cow);
+        setCowName(cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan");
       } catch (err) {
         setError("Gagal memuat data pemeriksaan.");
         console.error(err);
@@ -32,7 +40,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
     setSubmitting(true);
     try {
       await updateHealthCheck(healthCheckId, form);
-      if (onSaved) onSaved(); // panggil callback jika tersedia
+      if (onSaved) onSaved();
     } catch (err) {
       setError("Gagal memperbarui data.");
       console.error(err);
@@ -66,30 +74,53 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row">
+                  {/* Nama Sapi */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Sapi</label>
+                    <input type="text" className="form-control" value={cowName} disabled readOnly />
+                  </div>
+
+                  {/* Field Lain */}
                   {Object.entries(form).map(([key, value]) => {
-                    if (key === "id" || key === "cow") return null;
+                    if (["id", "cow", "checkup_date"].includes(key)) return null;
+
+                    if (key === "treatment_status") {
+                      return (
+                        <div className="col-md-6 mb-3" key={key}>
+                          <label className="form-label fw-bold">Status Pengobatan</label>
+                          <select
+                            name={key}
+                            value={value}
+                            onChange={handleChange}
+                            className="form-select"
+                            disabled={submitting}
+                          >
+                            <option value="Not Treated">Belum Diperiksa</option>
+                            <option value="Treated">Sudah Diperiksa</option>
+                          </select>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div className="col-md-6 mb-3" key={key}>
                         <label className="form-label fw-bold">
                           {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                         </label>
                         <input
-                          type={key.includes("date") ? "datetime-local" : "text"}
+                          type="text"
                           name={key}
                           value={value}
-                          onChange={handleChange}
                           className="form-control"
-                          disabled={submitting}
+                          disabled
+                          readOnly
                         />
                       </div>
                     );
                   })}
                 </div>
-                <button
-                  type="submit"
-                  className="btn btn-info w-100"
-                  disabled={submitting}
-                >
+
+                <button type="submit" className="btn btn-info w-100" disabled={submitting}>
                   {submitting ? "Memperbarui..." : "Perbarui Data"}
                 </button>
               </form>
