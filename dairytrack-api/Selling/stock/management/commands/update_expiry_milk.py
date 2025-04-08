@@ -20,4 +20,4 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f'Berhasil mengupdate {count} susu mentah menjadi expired') # pylint: disable=no-member
         )
-# python manage.py update_expiry_milk update_expiry_milk
+# python manage.py update_expiry_milk

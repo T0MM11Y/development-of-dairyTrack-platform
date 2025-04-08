@@ -64,10 +64,15 @@ const ProductStockCreatePage = () => {
       navigate("/admin/keuangan/product");
     } catch (err) {
       console.error("Gagal menyimpan data stok produk:", err);
-      if (err.response) {
-        console.error("Response data:", err.response.data);
+      if (err.response && err.response.data && err.response.data.error) {
+        const errorMessage = err.response.data.error;
+
+        // Jika errorMessage adalah string seperti "['pesan error']", bisa dibersihkan
+        const cleanMessage = errorMessage.replace(/^\['|'\]$/g, ""); // Hapus [' dan ']
+        setError("Gagal menyimpan data stok produk: " + cleanMessage);
+      } else {
+        setError("Gagal menyimpan data stok produk: " + err.message);
       }
-      setError("Gagal menyimpan data stok produk: " + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +140,9 @@ const ProductStockCreatePage = () => {
 
                 {/* Production Date - Changed to datetime-local */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Tanggal & Waktu Produksi</label>
+                  <label className="form-label fw-bold">
+                    Tanggal & Waktu Produksi
+                  </label>
                   <input
                     type="datetime-local"
                     name="production_at"
