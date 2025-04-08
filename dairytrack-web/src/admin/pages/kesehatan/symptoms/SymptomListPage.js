@@ -8,6 +8,10 @@ import { getCows } from "../../../../api/peternakan/cow";
 import SymptomCreatePage from "./SymptomCreatePage";
 import SymptomEditPage from "./SymptomEditPage";
 import SymptomViewPage from "./SymptomViewPage";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const SymptomListPage = () => {
   const [data, setData] = useState([]);
@@ -61,6 +65,147 @@ const SymptomListPage = () => {
     }
   };
 
+  const prepareExportData = () => {
+    return data.map((s) => {
+      const hc = healthChecks.find((h) => h.id === s.health_check) || {};
+      const cowName = getCowName(s.health_check);
+      return {
+        "Nama Sapi": cowName,
+        "Suhu Rektal": hc.rectal_temperature || "-",
+        "Denyut Jantung": hc.heart_rate || "-",
+        "Laju Pernapasan": hc.respiration_rate || "-",
+        "Ruminasi": hc.rumination || "-",
+        "Kondisi Mata": s.eye_condition,
+        "Kondisi Mulut": s.mouth_condition,
+        "Kondisi Hidung": s.nose_condition,
+        "Kondisi Anus": s.anus_condition,
+        "Kondisi Kaki": s.leg_condition,
+        "Kondisi Kulit": s.skin_condition,
+        "Perilaku": s.behavior,
+        "Berat Badan": s.weight_condition,
+        "Kondisi Kelamin": s.reproductive_condition,
+      };
+    });
+  };
+  const exportToExcel = () => {
+    const exportData = prepareExportData();
+    if (!exportData.length) return;
+  
+    const headers = Object.keys(exportData[0]);
+  
+    // Baris 1: judul (cell A1), Baris 2: header, Baris 3+: data
+    const dataWithTitle = [
+      ["Laporan Gejala Sapi"], // Judul
+      headers,                 // Header Kolom
+      ...exportData.map((row) => headers.map((key) => row[key])),
+    ];
+  
+    const worksheet = XLSX.utils.aoa_to_sheet(dataWithTitle);
+  
+    // Merge cell A1 sampai kolom terakhir
+    worksheet["!merges"] = [
+      {
+        s: { r: 0, c: 0 },
+        e: { r: 0, c: headers.length - 1 },
+      },
+    ];
+  
+    // ✅ Tambahkan style rata tengah dan bold untuk judul (teks-nya)
+    worksheet["A1"].s = {
+      alignment: {
+        horizontal: "center",
+        vertical: "center",
+      },
+      font: {
+        bold: true,
+        sz: 14,
+      },
+    };
+  
+    // ✅ Tambahkan style bold dan center untuk header kolom
+    headers.forEach((_, colIdx) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 1, c: colIdx });
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].s = {
+          font: { bold: true },
+          alignment: { horizontal: "center" },
+        };
+      }
+    });
+  
+    // ✅ Set kolom auto width
+    const colWidths = headers.map((key) => {
+      const maxLen = Math.max(
+        key.length,
+        ...exportData.map((item) => (item[key] ? item[key].toString().length : 0))
+      );
+      return { wch: maxLen + 4 };
+    });
+    worksheet["!cols"] = colWidths;
+  
+    // Buat workbook & simpan
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan_Gejala_Sapi");
+  
+    XLSX.writeFile(workbook, "Laporan_Gejala_Sapi.xlsx");
+  };
+  
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "A4",
+    });
+  
+    const exportData = prepareExportData();
+    if (!exportData.length) return;
+  
+    const headers = Object.keys(exportData[0]);
+    const body = exportData.map((row) => headers.map((h) => row[h]));
+  
+    // Judul
+    doc.setFontSize(14);
+    doc.setTextColor(40);
+    doc.text("Laporan Data Gejala Sapi", doc.internal.pageSize.getWidth() / 2, 20, {
+      align: "center",
+    });
+  
+    // Tabel
+    autoTable(doc, {
+      head: [headers],
+      body,
+      startY: 40,
+      theme: "grid", // ✅ Tambah garis grid
+      styles: {
+        fontSize: 8,
+        cellPadding: 4,
+        overflow: "linebreak",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [60, 60, 60], // ✅ Abu gelap
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      bodyStyles: {
+        textColor: 20,
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245], // ✅ Row warna selang-seling
+      },
+      columnStyles: {
+        default: { cellWidth: "wrap" },
+      },
+      margin: { top: 30, bottom: 30, left: 20, right: 20 },
+      pageBreak: "auto",
+    });
+  
+    doc.save("Laporan_Data_Gejala.pdf");
+  };
+  
+  
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -69,11 +214,32 @@ const SymptomListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Gejala</h2>
-        <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + Tambah Gejala
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setModalType("create")}
+            className="btn btn-info"
+            style={{ marginRight: "50px" }}
+          >
+            + Tambah Gejala
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="btn btn-success"
+            title="Export to Excel"
+            style={{ marginRight: "10px" }}
+          >
+            <i className="ri-file-excel-2-line"></i> Export to Excel
+          </button>
+          <button
+            onClick={exportToPDF}
+            className="btn btn-secondary"
+            title="Export to PDF"
+          >
+            <i className="ri-file-pdf-line"></i> Export to PDF
+          </button>
+        </div>
       </div>
-
+  
       {error && <div className="alert alert-danger">{error}</div>}
 
       {loading ? (
