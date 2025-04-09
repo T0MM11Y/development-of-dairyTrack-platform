@@ -3,9 +3,12 @@ import {
   getBlogs,
   deleteBlog,
   getBlogPhoto,
+  getBlogById,
+  updateBlog,
 } from "../../../../api/peternakan/blog";
 import { Link } from "react-router-dom";
-import CreateBlogModal from "./createBlog"; // Perbaiki import modal
+import CreateBlogModal from "./createBlog"; // Modal untuk membuat blog
+import EditBlogModal from "./editBlog"; // Modal untuk mengedit blog
 
 const BlogAll = () => {
   const [data, setData] = useState([]);
@@ -13,7 +16,9 @@ const BlogAll = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false); // State untuk modal
+  const [showCreateModal, setShowCreateModal] = useState(false); // State untuk modal create
+  const [showEditModal, setShowEditModal] = useState(false); // State untuk modal edit
+  const [editBlogId, setEditBlogId] = useState(null); // ID blog yang akan diedit
 
   const fetchData = async () => {
     try {
@@ -57,6 +62,11 @@ const BlogAll = () => {
     }
   };
 
+  const handleEdit = (id) => {
+    setEditBlogId(id); // Set ID blog yang akan diedit
+    setShowEditModal(true); // Tampilkan modal edit
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -67,7 +77,7 @@ const BlogAll = () => {
         <h2 className="text-xl font-bold text-gray-800 m-1">Blog Articles</h2>
         <button
           className="btn btn-info"
-          onClick={() => setShowCreateModal(true)} // Tampilkan modal
+          onClick={() => setShowCreateModal(true)} // Tampilkan modal create
         >
           + Create Blog
         </button>
@@ -129,12 +139,12 @@ const BlogAll = () => {
                         </td>
                         <td>{item.topic}</td>
                         <td>
-                          <Link
-                            to={`/admin/blog/edit/${item.id}`}
+                          <button
+                            onClick={() => handleEdit(item.id)} // Tampilkan modal edit
                             className="btn btn-warning me-2"
                           >
                             <i className="ri-edit-line"></i>
-                          </Link>
+                          </button>
                           <button
                             onClick={() => setDeleteId(item.id)}
                             className="btn btn-danger"
@@ -217,8 +227,17 @@ const BlogAll = () => {
       {/* Create Blog Modal */}
       {showCreateModal && (
         <CreateBlogModal
-          onClose={() => setShowCreateModal(false)} // Tutup modal
+          onClose={() => setShowCreateModal(false)} // Tutup modal create
           onSuccess={fetchData} // Refresh data setelah blog berhasil dibuat
+        />
+      )}
+
+      {/* Edit Blog Modal */}
+      {showEditModal && editBlogId && (
+        <EditBlogModal
+          blogId={editBlogId} // Kirim ID blog yang akan diedit
+          onClose={() => setShowEditModal(false)} // Tutup modal edit
+          onSuccess={fetchData} // Refresh data setelah blog berhasil diedit
         />
       )}
     </div>

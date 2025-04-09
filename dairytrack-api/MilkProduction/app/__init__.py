@@ -21,7 +21,7 @@ db = SQLAlchemy(app)
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE"])
 
 from app.models import Farmer, Cow, RawMilk, Supervisor, Admin,daily_milk_total,blog
-from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp, blogs_bp
+from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp, blogs_bp, daily_milk_totals_bp
 
 
 app.register_blueprint(farmers_bp, url_prefix='/api')
@@ -30,5 +30,6 @@ app.register_blueprint(raw_milks_bp, url_prefix='/api')
 app.register_blueprint(supervisors_bp, url_prefix='/api')   
 app.register_blueprint(admins_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(daily_milk_totals_bp, url_prefix='/api')
 
 app.register_blueprint(blogs_bp, url_prefix='/api')

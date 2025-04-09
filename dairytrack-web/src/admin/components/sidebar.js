@@ -409,9 +409,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               </AnimatePresence>
             </motion.li>
 
-            {/* Produktivitas Susu */}
+            {/* Milk Production */}
             <motion.li
-              className={isMenuOpen("produktivitas") ? "mm-active" : ""}
+              className={isMenuOpen("milkProduction") ? "mm-active" : ""}
               variants={menuItemVariants}
               whileHover="hover"
               whileTap="tap"
@@ -421,29 +421,27 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 className="waves-effect d-flex justify-content-between align-items-center"
                 onClick={(e) => {
                   e.preventDefault();
-                  toggleSubmenu("produktivitas");
+                  toggleSubmenu("milkProduction");
                 }}
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
                   <i className="ri-bar-chart-box-line"></i>
                   {!isCollapsed && (
-                    <span style={{ marginLeft: "10px" }}>
-                      Produktivitas Susu
-                    </span>
+                    <span style={{ marginLeft: "10px" }}>Milk Production</span>
                   )}
                 </div>
                 {!isCollapsed && (
                   <i
                     className={`ri-arrow-down-s-line ${
-                      isMenuOpen("produktivitas") ? "rotate-180" : ""
+                      isMenuOpen("milkProduction") ? "rotate-180" : ""
                     }`}
                   ></i>
                 )}
               </Link>
 
               <AnimatePresence>
-                {isMenuOpen("produktivitas") && !isCollapsed && (
+                {isMenuOpen("milkProduction") && !isCollapsed && (
                   <motion.ul
                     className="sub-menu"
                     initial="closed"
@@ -459,13 +457,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/susu/produksi"
+                        to="/admin/milk-production/analysis"
                         className={
-                          isActive("/admin/susu/produksi") ? "active" : ""
+                          isActive("/admin/milk-production/analysis")
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-database-2-line"></i> Data Produksi
-                        Susu
+                        <i className="ri-line-chart-line"></i> Milk Production
+                        Analysis
                       </Link>
                     </motion.li>
                     <motion.li
@@ -474,12 +474,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/susu/analisis"
+                        to="/admin/susu/produksi"
                         className={
-                          isActive("/admin/susu/analisis") ? "active" : ""
+                          isActive("/admin/milk-production/logs")
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-line-chart-line"></i> Analisis Produksi
+                        <i className="ri-file-list-line"></i> Milk Production
+                        Logs
                       </Link>
                     </motion.li>
                   </motion.ul>
