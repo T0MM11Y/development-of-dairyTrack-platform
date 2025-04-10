@@ -34,6 +34,7 @@ import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedIt
 import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
+import MilkProductionPhase from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionPhaseAnalysis.js";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
@@ -65,7 +66,6 @@ import SupervisorListPage from "./admin/pages/peternakan/supervisor/SupervisorLi
 import SupervisorCreatePage from "./admin/pages/peternakan/supervisor/SupervisorCreatePage.js";
 import SupervisorEditPage from "./admin/pages/peternakan/supervisor/SupervisorEditPage.js";
 
-
 // Symptoms
 import SymptomListPage from "./admin/pages/kesehatan/symptoms/SymptomListPage.js";
 import SymptomCreatePage from "./admin/pages/kesehatan/symptoms/SymptomCreatePage.js";
@@ -83,7 +83,6 @@ import ReproductionListPage from "./admin/pages/kesehatan/reproduction/Reproduct
 import ReproductionCreatePage from "./admin/pages/kesehatan/reproduction/ReproductionCreatePage.js";
 import ReproductionEditPage from "./admin/pages/kesehatan/reproduction/ReproductionEditPage.js";
 import DashboardKesehatanPage from "./admin/pages/kesehatan/DashboardKesehatanPage";
-
 
 // Import CSS
 import "./assets/admin/css/icons.min.css";
@@ -106,7 +105,7 @@ import ContactUs from "./user/pages/ContactUs";
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
 import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
 import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
-import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/AnalysisProduction.js";
+import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionTrendAnalysis.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -191,7 +190,9 @@ function App() {
       />
       <Route
         path="/admin/detail-pakan/:id"
-        element={<ProtectedRoute>{withAdminLayout(DetailPakan)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(DetailPakan)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/pakan/tambah"
@@ -241,9 +242,7 @@ function App() {
       />
       <Route
         path="/admin/nutrisi-pakan-harian"
-        element={
-          <ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>
-        }
+        element={<ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>}
       />
       <Route
         path="/admin/susu/produksi"
@@ -256,6 +255,14 @@ function App() {
         element={
           <ProtectedRoute>
             {withAdminLayout(MilkProductionAnalysis)}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/susu/milk-production/phase"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(MilkProductionPhase)}
           </ProtectedRoute>
         }
       />
@@ -421,15 +428,14 @@ function App() {
           </ProtectedRoute>
         }
       />
-<Route
-  path="/admin/kesehatan/dashboard"
-  element={
-    <ProtectedRoute>
-      {withAdminLayout(DashboardKesehatanPage)}
-    </ProtectedRoute>
-  }
-/>
-
+      <Route
+        path="/admin/kesehatan/dashboard"
+        element={
+          <ProtectedRoute>
+            {withAdminLayout(DashboardKesehatanPage)}
+          </ProtectedRoute>
+        }
+      />
       {/* Sales And Financial Routing */}
       <Route
         path="/admin/keuangan/product"
@@ -493,11 +499,15 @@ function App() {
       />
       <Route
         path="/admin/keuangan/finance/addIncome"
-        element={<ProtectedRoute>{withAdminLayout(AddIncomePage)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(AddIncomePage)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/keuangan/finance/addExpense"
-        element={<ProtectedRoute>{withAdminLayout(AddExpensePage)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(AddExpensePage)}</ProtectedRoute>
+        }
       />
     </Routes>
   );

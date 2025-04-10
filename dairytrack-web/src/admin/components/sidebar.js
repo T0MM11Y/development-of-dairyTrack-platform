@@ -160,7 +160,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         {
           path: "/admin/milk-production/analysis",
           icon: "ri-line-chart-line",
-          label: "Analisis Produksi Susu",
+          label: "Trend Produksi Susu",
+        },
+        {
+          path: "/admin/susu/milk-production/phase",
+          icon: "ri-file-list-3-line",
+          label: "Analisis by Laktasi",
         },
         {
           path: "/admin/susu/produksi",
