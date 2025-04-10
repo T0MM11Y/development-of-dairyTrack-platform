@@ -7,6 +7,10 @@ import {
   getRawMilkById,
   getRawMilksByCowId,
 } from "../../../../api/produktivitas/rawMilk";
+import * as XLSX from "xlsx";
+
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { getCowById, updateCow } from "../../../../api/peternakan/cow";
 import { getCows } from "../../../../api/peternakan/cow";
 import DatePicker from "react-datepicker";
@@ -22,6 +26,8 @@ const DataProduksiSusu = () => {
   const [selectedRawMilk, setSelectedRawMilk] = useState(null);
   const [selectedCow, setSelectedCow] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(""); // State baru untuk sesi
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
@@ -51,6 +57,86 @@ const DataProduksiSusu = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(rawMilks);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "MilkProduction");
+
+    // AutoFit column width
+    const columnWidths = Object.keys(rawMilks[0] || {}).map((key) => ({
+      wch: Math.max(10, key.length + 2),
+    }));
+    worksheet["!cols"] = columnWidths;
+
+    XLSX.writeFile(workbook, "MilkProductionData.xlsx");
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const marginLeft = 14;
+    const startY = 25;
+    let currentY = startY;
+
+    // Judul dokumen
+    doc.setFontSize(16);
+    doc.text("Milk Production Data", marginLeft, currentY);
+    currentY += 10; // Tambah jarak setelah judul
+
+    // Header tabel
+    const tableColumn = [
+      "#",
+      "Cow Name",
+      "Production Time",
+      "Volume (Liters)",
+      "Previous Volume",
+      "Status",
+    ];
+
+    // Lebar kolom
+    const columnWidths = [10, 50, 40, 30, 30, 30];
+
+    // Render header tabel
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    let currentX = marginLeft;
+    tableColumn.forEach((col, index) => {
+      doc.text(col, currentX, currentY);
+      currentX += columnWidths[index];
+    });
+    currentY += 6; // Tambah jarak setelah header
+
+    // Render data tabel
+    doc.setFont("helvetica", "normal");
+
+    rawMilks.forEach((milk, rowIndex) => {
+      if (currentY > 270) {
+        doc.addPage(); // Tambah halaman baru jika sudah penuh
+        currentY = startY;
+      }
+
+      currentX = marginLeft;
+      const rowData = [
+        rowIndex + 1,
+        milk.cow?.name || "Unknown",
+        milk.production_time,
+        milk.volume_liters,
+        milk.previous_volume,
+        milk.status,
+      ];
+
+      rowData.forEach((cell, cellIndex) => {
+        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]); // Membungkus teks panjang
+        doc.text(text, currentX, currentY);
+        currentX += columnWidths[cellIndex];
+      });
+
+      currentY += 6; // Pindah ke baris berikutnya
+    });
+
+    // Simpan file PDF
+    doc.save("MilkProductionData.pdf");
+  };
 
   const handleDelete = useCallback(async () => {
     if (!selectedRawMilk) return;
@@ -181,25 +267,18 @@ const DataProduksiSusu = () => {
   return (
     <div className="container py-4">
       {/* Header Section */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-primary">
-          <i className="bi bi-droplet-half"></i> Raw Milk Production
+      <div className="d-flex flex-column mb-4">
+        <h2 className="text-primary mb-3">
+          <i className="bi bi-droplet-half"></i> Milk Production Logs
         </h2>
-        <button
-          onClick={() => openModal("create")}
-          className="btn btn-info d-flex align-items-center gap-1"
-          disabled={isLoading}
-        >
-          <i className="bi bi-plus-circle"></i> Add Record
-        </button>
       </div>
 
       {/* Filter Section */}
       <div className="card p-3 mb-4 bg-light">
-        <div className="row g-3 align-items-center">
+        <div className="row g-3 align-items-center justify-content-between">
           {/* Filter Cow Dropdown */}
-          <div className="col-md-1 d-flex flex-column">
-            <label className="form-label">by Cow</label>
+          <div className="col-md-2 d-flex flex-column">
+            <label className="form-label">Filter by Cow</label>
             <select
               className="form-select"
               value={selectedCow}
@@ -213,52 +292,82 @@ const DataProduksiSusu = () => {
               ))}
             </select>
           </div>
-
-          {/* Calendar */}
+          {/* Filter Session Dropdown */}
           <div className="col-md-1 d-flex flex-column">
-            <label className="form-label">by Date</label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              placeholderText="📅 Date"
-              className="form-control"
-              calendarClassName="custom-calendar"
-              dayClassName={(date) =>
-                date.getDay() === 0 || date.getDay() === 6
-                  ? "weekend-day"
-                  : undefined
-              }
-            />
+            <label className="form-label">by Session</label>
+            <select
+              className="form-select"
+              value={selectedSession}
+              onChange={(e) => setSelectedSession(e.target.value)}
+            >
+              <option value="">All Sessions</option>
+              <option value="1">Session 1</option>
+              <option value="2">Session 2</option>
+            </select>
+          </div>
+          {/* Calendar with Icon */}
+          <div className="col-md-2 d-flex flex-column">
+            <label className="form-label">Filter by Date</label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-calendar-event"></i>
+              </span>
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date) => setSelectedDate(date)}
+                placeholderText="Select Date"
+                className="form-control"
+                calendarClassName="custom-calendar"
+                dayClassName={(date) =>
+                  date.getDay() === 0 || date.getDay() === 6
+                    ? "weekend-day"
+                    : undefined
+                }
+                todayButton="Today" // Tambahkan tombol "Today"
+                isClearable // Aktifkan tombol "Clear"
+              />
+            </div>
           </div>
 
-          {/* Search Field */}
+          {/* Search Field with Icon */}
           <div className="col-md-3 d-flex flex-column">
             <label className="form-label">Search</label>
-            <input
-              type="text"
-              placeholder=" 🔍 Search..."
-              className="form-control"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Clear All Filters Button */}
-          <div
-            className="col-md-1 d-flex flex-column align-items-end"
-            style={{ marginTop: "auto" }}
-          >
-            <label className="form-label d-none">&nbsp;</label>
+          {/* Action Buttons */}
+          <div className="col-md-4 d-flex gap-2 justify-content-end">
             <button
-              className="btn btn-danger waves-effect waves-light w-70"
-              onClick={() => {
-                setSelectedCow("");
-                setSelectedDate(null);
-                setSearchQuery("");
-              }}
+              onClick={() => openModal("create")}
+              className="btn btn-info d-flex align-items-center gap-1"
+              disabled={isLoading}
             >
-              <i class="ri-close-line align-middle me-2"></i>
-              Clear
+              <i className="bi bi-plus-circle"></i> Add Record
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="btn btn-success"
+              title="Export to Excel"
+            >
+              <i className="ri-file-excel-2-line"></i> Export to Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="btn btn-secondary"
+              title="Export to PDF"
+            >
+              <i className="ri-file-pdf-line"></i> Export to PDF
             </button>
           </div>
         </div>
@@ -278,6 +387,10 @@ const DataProduksiSusu = () => {
               !selectedDate ||
               new Date(milk.production_time).toDateString() ===
                 selectedDate.toDateString();
+            const sessionMatch =
+              !selectedSession ||
+              milk.session === parseInt(selectedSession, 10);
+
             const searchMatch =
               milk.cow?.name?.toLowerCase().includes(searchLower) ||
               milk.production_time?.toLowerCase().includes(searchLower) ||
@@ -291,7 +404,7 @@ const DataProduksiSusu = () => {
                 .includes(searchLower) ||
               milk.status?.toLowerCase().includes(searchLower);
 
-            return cowNameMatch && dateMatch && searchMatch;
+            return cowNameMatch && dateMatch && searchMatch && sessionMatch;
           })}
           openModal={openModal}
           isLoading={isLoading}

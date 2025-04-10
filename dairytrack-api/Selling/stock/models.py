@@ -101,18 +101,42 @@ class ProductStock(models.Model):
 
                 entry.save()
 
-    def save(self, *args, **kwargs):
-        """ Periksa apakah produk sudah expired saat disimpan """
-        if self.expiry_at < timezone.now():
-            self.status = "expired"
-            # self.quantity = 0  # Set stok menjadi 0 jika expired
-            StockHistory.objects.create(
-                product_stock=self,
-                change_type="expired",
-                quantity_change=self.quantity
-            )
+    # def save(self, *args, **kwargs):
+    #     """ Periksa apakah produk sudah expired saat disimpan """
+    #     if self.expiry_at < timezone.now():
+    #         self.status = "expired"
+    #         # raise ValidationError("Tanggal kedaluwarsa tidak boleh lebih kecil dari waktu sekarang.")
+    #         # self.quantity = 0  # Set stok menjadi 0 jika expired
+    #         # StockHistory.objects.create(
+    #         #     product_stock=self,
+    #         #     change_type="expired",
+    #         #     quantity_change=self.quantity
+    #         # )
 
-        super().save(*args, **kwargs)
+    #     super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        previous = None
+
+        if not is_new:
+            try:
+                previous = ProductStock.objects.get(pk=self.pk)
+            except ProductStock.DoesNotExist: # pylint: disable=no-member
+                pass
+
+        super().save(*args, **kwargs)  # Simpan dulu untuk dapat ID jika belum ada
+
+        if previous and previous.status != "contamination" and self.status == "contamination":
+            # Hanya jika berubah menjadi contamination
+            if self.quantity > 0:
+                StockHistory.objects.create(
+                    product_stock=self,
+                    change_type="contamination",
+                    quantity_change=self.quantity
+                )
+                self.quantity = 0
+                super().save(update_fields=["quantity"])  # Update hanya quantity
+
 
     @classmethod
     def check_expired_products(cls):
@@ -187,7 +211,7 @@ class StockHistory(models.Model):
 
     objects = models.Manager()
     product_stock = models.ForeignKey(ProductStock, on_delete=models.CASCADE)
-    change_type = models.CharField(max_length=20, choices=[("sold", "Sold"), ("expired", "Expired")])  # 'Added' atau 'Removed'
+    change_type = models.CharField(max_length=20, choices=[("sold", "Sold"), ("expired", "Expired"), ("contamination", "Contamination")])  # 'Added' atau 'Removed'
     quantity_change = models.IntegerField()
     change_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0.0)

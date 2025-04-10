@@ -282,7 +282,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             {/* Pakan Sapi */}
             <motion.li
-              className={isMenuOpen("pakan") ? "mm-active" : ""}
+              className={openMenus.includes("pakan") ? "mm-active" : ""}
               variants={menuItemVariants}
               whileHover="hover"
               whileTap="tap"
@@ -297,22 +297,18 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 style={{ padding: "10px 15px" }}
               >
                 <div className="d-flex align-items-center">
-                  <i className="ri-restaurant-line"></i>
-                  {!isCollapsed && (
-                    <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
-                  )}
+                  <i className="ri-seedling-line"></i>
+                  <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
                 </div>
-                {!isCollapsed && (
-                  <i
-                    className={`ri-arrow-down-s-line ${
-                      isMenuOpen("pakan") ? "rotate-180" : ""
-                    }`}
-                  ></i>
-                )}
+                <i
+                  className={`ri-arrow-down-s-line ${
+                    openMenus.includes("pakan") ? "rotate-180" : ""
+                  }`}
+                ></i>
               </Link>
 
               <AnimatePresence>
-                {isMenuOpen("pakan") && !isCollapsed && (
+                {openMenus.includes("pakan") && (
                   <motion.ul
                     className="sub-menu"
                     initial="closed"
@@ -330,12 +326,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       <Link
                         to="/admin/pakan/jenis"
                         className={
-                          isActive("/admin/pakan/jenis") ? "active" : ""
+                          location.pathname === "/admin/pakan/jenis"
+                            ? "active"
+                            : ""
                         }
                       >
                         <i className="ri-stack-line"></i> Jenis Pakan
                       </Link>
                     </motion.li>
+
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -343,11 +342,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     >
                       <Link
                         to="/admin/pakan"
-                        className={isActive("/admin/pakan") ? "active" : ""}
+                        className={
+                          location.pathname === "/admin/pakan" ? "active" : ""
+                        }
                       >
-                        <i className="ri-stack-line"></i> Pakan
+                        <i className="ri-leaf-line"></i> Pakan
                       </Link>
                     </motion.li>
+
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -356,12 +358,32 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       <Link
                         to="/admin/pakan-harian"
                         className={
-                          isActive("/admin/pakan-harian") ? "active" : ""
+                          location.pathname === "/admin/pakan-harian"
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-calendar-line"></i> Pakan Harian
+                        <i className="ri-calendar-check-line"></i> Pakan Harian
                       </Link>
                     </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/item-pakan-harian"
+                        className={
+                          location.pathname === "/admin/item-pakan-harian"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-file-list-line"></i> Item Pakan
+                      </Link>
+                    </motion.li>
+
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -370,38 +392,29 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       <Link
                         to="/admin/pakan/stok"
                         className={
-                          isActive("/admin/pakan/stok") ? "active" : ""
+                          location.pathname === "/admin/pakan/stok"
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-stack-line"></i> Stok Pakan
+                        <i className="ri-box-3-line"></i> Stok Pakan
                       </Link>
                     </motion.li>
+
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/sesi-pakan"
+                        to="/admin/nutrisi-pakan-harian"
                         className={
-                          isActive("/admin/sesi-pakan") ? "active" : ""
+                          location.pathname === "/admin/nutrisi-pakan-harian"
+                            ? "active"
+                            : ""
                         }
                       >
-                        <i className="ri-stack-line"></i> Sesi Pakan
-                      </Link>
-                    </motion.li>
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
-                        to="/admin/detail-pakan-harian"
-                        className={
-                          isActive("/admin/detail-pakan-harian") ? "active" : ""
-                        }
-                      >
-                        <i className="ri-stack-line"></i> Detail Pakan Harian
+                        <i className="ri-restaurant-2-line"></i> Nutrisi
                       </Link>
                     </motion.li>
                   </motion.ul>
@@ -532,6 +545,24 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     transition={{ duration: 0.2 }}
                     style={{ paddingLeft: "30px" }}
                   >
+                    {/* Dashboard */}
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/kesehatan/dashboard"
+                        className={
+                          isActive("/admin/kesehatan/dashboard") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-bar-chart-2-line"></i> Dashboard
+                        Kesehatan
+                      </Link>
+                    </motion.li>
+
+                    {/* Gejala */}
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -547,6 +578,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         Sapi
                       </Link>
                     </motion.li>
+
+                    {/* Riwayat */}
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -562,6 +595,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         Sapi
                       </Link>
                     </motion.li>
+
+                    {/* Reproduksi */}
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"
@@ -578,6 +613,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         <i className="ri-parent-line"></i> Reproduksi Sapi
                       </Link>
                     </motion.li>
+
+                    {/* Pemeriksaan */}
                     <motion.li
                       variants={menuItemVariants}
                       whileHover="hover"

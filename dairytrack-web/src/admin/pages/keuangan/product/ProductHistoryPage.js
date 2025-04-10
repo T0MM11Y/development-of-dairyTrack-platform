@@ -37,7 +37,7 @@ const ProductHistoryPage = () => {
     const productStock = productStocks.find(
       (stock) => stock.id === productStockId
     );
-    if (!productStock) return { name: "Unknown", quantity: "N/A" };
+    if (!productStock) return { name: "Unknown", quantity: "N/A", unit: "" };
 
     const productType = productTypes.find(
       (type) => type.id === productStock.product_type
@@ -45,6 +45,7 @@ const ProductHistoryPage = () => {
     return {
       name: productType ? productType.product_name : "Unknown",
       quantity: productStock.quantity,
+      unit: productType ? productType.unit : "",
     };
   };
 
@@ -144,7 +145,7 @@ const ProductHistoryPage = () => {
                                 : ""
                             }
                           >
-                            {Math.abs(item.quantity_change)}
+                            {Math.abs(item.quantity_change)} {productInfo.unit}
                           </td>
                           <td>
                             {parseFloat(item.total_price) > 0

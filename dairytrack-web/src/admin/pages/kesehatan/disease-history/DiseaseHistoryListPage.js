@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getCows } from "../../../../api/peternakan/cow";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getSymptoms } from "../../../../api/kesehatan/symptom";
@@ -7,6 +6,8 @@ import {
   getDiseaseHistories,
   deleteDiseaseHistory,
 } from "../../../../api/kesehatan/diseaseHistory";
+import DiseaseHistoryCreatePage from "./DiseaseHistoryCreatePage";
+import DiseaseHistoryEditPage from "./DiseaseHistoryEditPage";
 
 const DiseaseHistoryListPage = () => {
   const [data, setData] = useState([]);
@@ -16,6 +17,8 @@ const DiseaseHistoryListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'create' | 'edit'
+  const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -59,7 +62,6 @@ const DiseaseHistoryListPage = () => {
     const check = checks.find((c) => c.id === id);
     return check ? `${check.rectal_temperature} °C` : "-";
   };
-  
 
   const getSymptomSummary = (id) => {
     const symptom = symptoms.find((s) => s.id === id);
@@ -91,9 +93,9 @@ const DiseaseHistoryListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Riwayat Penyakit</h2>
-        <Link to="/admin/kesehatan/riwayat/create" className="btn btn-info">
+        <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
-        </Link>
+        </button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -129,12 +131,15 @@ const DiseaseHistoryListPage = () => {
                       <td>{getCheckTemperature(item.health_check)}</td>
                       <td>{getSymptomSummary(item.symptom)}</td>
                       <td>
-                        <Link
-                          to={`/admin/kesehatan/riwayat/edit/${item.id}`}
+                        <button
                           className="btn btn-warning btn-sm me-2"
+                          onClick={() => {
+                            setEditId(item.id);
+                            setModalType("edit");
+                          }}
                         >
                           <i className="ri-edit-line"></i>
-                        </Link>
+                        </button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setDeleteId(item.id)}
@@ -149,6 +154,33 @@ const DiseaseHistoryListPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Tambah */}
+      {modalType === "create" && (
+        <DiseaseHistoryCreatePage
+          onClose={() => setModalType(null)}
+          onSaved={() => {
+            fetchData();
+            setModalType(null);
+          }}
+        />
+      )}
+
+      {/* Modal Edit */}
+      {modalType === "edit" && editId && (
+        <DiseaseHistoryEditPage
+          historyId={editId}
+          onClose={() => {
+            setEditId(null);
+            setModalType(null);
+          }}
+          onSaved={() => {
+            fetchData();
+            setEditId(null);
+            setModalType(null);
+          }}
+        />
       )}
 
       {/* Modal Konfirmasi Hapus */}

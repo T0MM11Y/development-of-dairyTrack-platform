@@ -8,7 +8,7 @@ import "chart.js/auto";
 
 const MilkProductionAnalysis = () => {
   const [cows, setCows] = useState([]);
-  const [selectedCow, setSelectedCow] = useState("");
+  const [selectedCow, setSelectedCow] = useState("all");
   const [milkData, setMilkData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,27 +21,39 @@ const MilkProductionAnalysis = () => {
     }
   }, []);
 
-  const fetchMilkData = useCallback(async (cowId) => {
-    if (!cowId) return;
-    setIsLoading(true);
-    try {
-      const data = await getDailyMilkTotalsByCowId(cowId);
-      setMilkData(data);
-    } catch (error) {
-      console.error("Failed to fetch milk data:", error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const fetchMilkData = useCallback(
+    async (cowId) => {
+      setIsLoading(true);
+      try {
+        if (cowId === "all") {
+          // Fetch data for all cows
+          const allData = await Promise.all(
+            cows.map((cow) => getDailyMilkTotalsByCowId(cow.id))
+          );
+          const mergedData = allData
+            .flat()
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          setMilkData(mergedData);
+        } else {
+          // Fetch data for a specific cow
+          const data = await getDailyMilkTotalsByCowId(cowId);
+          setMilkData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch milk data:", error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cows]
+  );
 
   useEffect(() => {
     fetchCows();
   }, [fetchCows]);
 
   useEffect(() => {
-    if (selectedCow) {
-      fetchMilkData(selectedCow);
-    }
+    fetchMilkData(selectedCow);
   }, [selectedCow, fetchMilkData]);
 
   const chartData = {
@@ -181,7 +193,7 @@ const MilkProductionAnalysis = () => {
           value={selectedCow}
           onChange={(e) => setSelectedCow(e.target.value)}
         >
-          <option value="">Select a Cow</option>
+          <option value="all">All Cows</option>
           {cows.map((cow) => (
             <option key={cow.id} value={cow.id}>
               {cow.name}

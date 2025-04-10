@@ -2,22 +2,21 @@ import { useEffect, useState } from "react";
 import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import CreateFeedPage from "./CreateFeed";
 
 const FeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const response = await getFeeds();
-      console.log("API Response:", response); // Debugging
-  
       if (response.success && response.feeds) {
         setFeeds(response.feeds);
       } else {
-        console.error("Unexpected response format", response);
         setFeeds([]);
       }
     } catch (error) {
@@ -27,7 +26,7 @@ const FeedListPage = () => {
       setLoading(false);
     }
   };
-  
+
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Apakah Anda yakin?",
@@ -43,22 +42,16 @@ const FeedListPage = () => {
 
     try {
       await deleteFeed(id);
-      Swal.fire({
-        title: "Terhapus!",
-        text: "Pakan berhasil dihapus.",
-        icon: "success",
-        confirmButtonText: "OK",
-      });
+      Swal.fire("Terhapus!", "Pakan berhasil dihapus.", "success");
       fetchData();
     } catch (error) {
-      console.error("Gagal menghapus pakan:", error.message);
-      Swal.fire({
-        title: "Error!",
-        text: "Gagal menghapus pakan: " + error.message,
-        icon: "error",
-        confirmButtonText: "OK",
-      });
+      Swal.fire("Gagal", error.message || "Terjadi kesalahan.", "error");
     }
+  };
+
+  const handleAddFeed = () => {
+    setShowModal(false);
+    fetchData(); // Refresh data setelah tambah
   };
 
   useEffect(() => {
@@ -70,81 +63,74 @@ const FeedListPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Feed Data</h2>
         <button
-          onClick={() => navigate("/admin/pakan/tambah")}
+          onClick={() => setShowModal(true)}
           className="btn btn-info waves-effect waves-light"
         >
-          + Add Feed
+          + Tambah Pakan
         </button>
       </div>
 
       {loading ? (
         <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
+          <div className="spinner-border text-primary" role="status" />
           <p className="mt-2">Loading feed data...</p>
         </div>
       ) : feeds.length === 0 ? (
-        <p className="text-gray-500">No feed data available.</p>
+        <p className="text-gray-500">Tidak ada data pakan tersedia.</p>
       ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Feed Data</h4>
-              <p className="card-title-desc">
-                This table provides a list of feeds registered on the farm.
-              </p>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Protein (%)</th>
-                      <th>Energy (kcal/kg)</th>
-                      <th>Fiber (%)</th>
-                      <th>Min Stock</th>
-                      <th>Price</th>
-                      <th>Actions</th>
+        <div className="card">
+          <div className="card-body">
+            <div className="table-responsive">
+              <table className="table table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nama</th>
+                    <th>Jenis</th>
+                    <th>Protein (%)</th>
+                    <th>Energi (kcal/kg)</th>
+                    <th>Serat (%)</th>
+                    <th>Stok Minimum</th>
+                    <th>Harga</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feeds.map((feed, index) => (
+                    <tr key={feed.id}>
+                      <td>{index + 1}</td>
+                      <td>{feed.name}</td>
+                      <td>{feed.feedType?.name || "N/A"}</td>
+                      <td>{feed.protein}</td>
+                      <td>{feed.energy}</td>
+                      <td>{feed.fiber}</td>
+                      <td>{feed.min_stock}</td>
+                      <td>{feed.price}</td>
+                      <td>
+                        <button
+                          onClick={() =>
+                            navigate(`/admin/detail-pakan/${feed.id}`)
+                          }
+                          className="btn btn-info btn-sm me-2"
+                        >
+                          <i className="ri-eye-line"></i>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(feed.id)}
+                          className="btn btn-danger btn-sm"
+                        >
+                          <i className="ri-delete-bin-6-line"></i>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {feeds.map((feed, index) => (
-                      <tr key={feed.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>{feed.name}</td>
-                        <td>{feed.feedType?.name || "N/A"}</td>
-                        <td>{feed.protein}</td>
-                        <td>{feed.energy}</td>
-                        <td>{feed.fiber}</td>
-                        <td>{feed.min_stock}</td>
-                        <td>{feed.price}</td>
-                        <td>
-                          <button
-                            className="btn btn-info waves-effect waves-light mr-2"
-                            onClick={() => navigate(`/admin/peternakan/pakan/detail/${feed.id}`)}
-                            aria-label={`View details of ${feed.name}`}
-                          >
-                            <i className="ri-eye-line"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(feed.id)}
-                            className="btn btn-danger waves-effect waves-light"
-                            aria-label={`Delete feed ${feed.name}`}
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       )}
+      {showModal && <CreateFeedPage onFeedAdded={handleAddFeed} onClose={() => setShowModal(false)} />}
     </div>
   );
 };

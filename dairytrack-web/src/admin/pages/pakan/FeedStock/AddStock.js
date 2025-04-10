@@ -63,7 +63,7 @@ const AddFeedStockPage = ({ onStockAdded = () => {} }) => {
           confirmButtonText: "OK",
         }).then(() => {
           onStockAdded(); // Panggil callback jika ada
-          navigate("/feed-stock"); // Arahkan ke halaman Feed Stock Data setelah berhasil menambah stok
+          navigate("/admin/pakan/stok"); // Arahkan ke halaman Feed Stock Data setelah berhasil menambah stok
         });
       } else {
         Swal.fire("Error", "Failed to update stock", "error");

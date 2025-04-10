@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
-import { deleteReproduction, getReproductions } from "../../../../api/kesehatan/reproduction";
+import {
+  deleteReproduction,
+  getReproductions,
+} from "../../../../api/kesehatan/reproduction";
 import { getCows } from "../../../../api/peternakan/cow";
-import { Link } from "react-router-dom";
+import ReproductionCreatePage from "./ReproductionCreatePage";
+import ReproductionEditPage from "./ReproductionEditPage";
 
 const ReproductionListPage = () => {
   const [data, setData] = useState([]);
@@ -9,6 +13,8 @@ const ReproductionListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'create' | 'edit'
+  const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -50,9 +56,9 @@ const ReproductionListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Reproduksi Sapi</h2>
-        <Link to="/admin/kesehatan/reproduksi/create" className="btn btn-info">
+        <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
-        </Link>
+        </button>
       </div>
 
       {error && (
@@ -88,12 +94,15 @@ const ReproductionListPage = () => {
                       <td>{item.service_period} hari</td>
                       <td>{item.conception_rate} %</td>
                       <td>
-                        <Link
-                          to={`/admin/kesehatan/reproduksi/edit/${item.id}`}
+                        <button
                           className="btn btn-warning btn-sm me-2"
+                          onClick={() => {
+                            setEditId(item.id);
+                            setModalType("edit");
+                          }}
                         >
                           <i className="ri-edit-line"></i>
-                        </Link>
+                        </button>
                         <button
                           onClick={() => setDeleteId(item.id)}
                           className="btn btn-danger btn-sm"
@@ -108,6 +117,33 @@ const ReproductionListPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Tambah */}
+      {modalType === "create" && (
+        <ReproductionCreatePage
+          onClose={() => setModalType(null)}
+          onSaved={() => {
+            fetchData();
+            setModalType(null);
+          }}
+        />
+      )}
+
+      {/* Modal Edit */}
+      {modalType === "edit" && editId && (
+        <ReproductionEditPage
+          reproductionId={editId}
+          onClose={() => {
+            setEditId(null);
+            setModalType(null);
+          }}
+          onSaved={() => {
+            fetchData();
+            setEditId(null);
+            setModalType(null);
+          }}
+        />
       )}
 
       {/* Modal Konfirmasi Hapus */}

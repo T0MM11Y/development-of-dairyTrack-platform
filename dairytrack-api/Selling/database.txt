@@ -119,3 +119,5 @@ CREATE TABLE `order_item` (
 ========================= untuk menjalankan crownjob ===============================
 
 python manage.py update_expiry_milk
+
+python manage.py check_expired_stock

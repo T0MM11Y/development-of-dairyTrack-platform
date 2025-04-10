@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale"; // Import locale Indonesia
 import { checkRawMilkExpired } from "../../../../api/produktivitas/rawMilk";
+import { getCowById } from "../../../../api/peternakan/cow";
 
 const formatTimeRemaining = (timeRemaining) => {
   if (!timeRemaining) return "Expired";
@@ -15,6 +16,7 @@ const formatTimeRemaining = (timeRemaining) => {
 
 const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
   const [expirationStatus, setExpirationStatus] = useState({});
+  const [cowData, setCowData] = useState({}); // State to store cow data
 
   useEffect(() => {
     const fetchExpirationStatus = async () => {
@@ -36,8 +38,27 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
       setExpirationStatus(statusData);
     };
 
+    const fetchCowData = async () => {
+      const cowDataMap = {};
+      for (const rawMilk of rawMilks) {
+        if (rawMilk.cow?.id) {
+          try {
+            const cow = await getCowById(rawMilk.cow.id);
+            cowDataMap[rawMilk.cow.id] = cow;
+          } catch (error) {
+            console.error(
+              `Failed to fetch cow data for ID ${rawMilk.cow.id}:`,
+              error.message
+            );
+          }
+        }
+      }
+      setCowData(cowDataMap);
+    };
+
     if (rawMilks.length > 0) {
       fetchExpirationStatus();
+      fetchCowData();
     }
   }, [rawMilks]);
 
@@ -59,12 +80,10 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
       </div>
     );
   }
-
   return (
     <div className="col-lg-12">
       <div className="card shadow-sm">
         <div className="card-body">
-          <h4 className="card-title text-primary">Raw Milk Data</h4>
           <div className="table-responsive">
             <table className="table table-striped table-hover mb-0">
               <thead className="table">
@@ -73,21 +92,33 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
                   <th>Cow Name</th>
                   <th>Production Time</th>
                   <th>Volume (Liters)</th>
-                  <th>Previous Volume</th>
-                  <th>Status</th>
+                  <th>Lactation Phase</th>
+                  <th>Lactation Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rawMilks.map((rawMilk, index) => {
-                  const status = expirationStatus[rawMilk.id];
-                  const isExpired = status?.isExpired;
-                  const timeRemaining = status?.timeRemaining;
                   const name = rawMilk.cow?.name || "Unknown";
+                  const cow = cowData[rawMilk.cow?.id] || {};
+                  const lactationPhase = cow.lactation_phase || "N/A";
+                  const lactationStatus = cow.lactation_status;
 
                   return (
                     <tr key={rawMilk.id}>
-                      <th scope="row">{index + 1}</th>
+                      <th scope="row">
+                        <div>
+                          {index + 1}
+                          {rawMilk.session && (
+                            <span
+                              className="badge bg-primary ms-2"
+                              style={{ fontSize: "0.65rem" }}
+                            >
+                              Sesi {rawMilk.session}
+                            </span>
+                          )}
+                        </div>
+                      </th>
                       <td>{name}</td>
                       <td>
                         {rawMilk.production_time
@@ -108,39 +139,12 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
                           ({(rawMilk.volume_liters || 0) * 1000} mL)
                         </small>
                       </td>
+                      <td>{lactationPhase}</td>
                       <td>
-                        {rawMilk.previous_volume || 0} L
-                        <br />
-                        <small
-                          className="text-muted"
-                          style={{ fontSize: "10px" }}
-                        >
-                          ({(rawMilk.previous_volume || 0) * 1000} mL)
-                        </small>
-                      </td>
-                      <td>
-                        {isExpired ? (
-                          <span
-                            className="badge bg-danger"
-                            data-bs-toggle="tooltip"
-                            title="This milk has expired"
-                          >
-                            <i className="ri-alert-line"></i> Expired
-                          </span>
+                        {lactationStatus ? (
+                          <span className="badge bg-success">Active</span>
                         ) : (
-                          <span
-                            className="badge bg-success"
-                            data-bs-toggle="tooltip"
-                            title="This milk is fresh"
-                          >
-                            <i className="ri-leaf-line"></i> Fresh
-                            <br />
-                            <small style={{ fontSize: "10px" }}>
-                              {timeRemaining
-                                ? formatTimeRemaining(timeRemaining)
-                                : "Menghitung..."}
-                            </small>
-                          </span>
+                          <span className="badge bg-secondary">Inactive</span>
                         )}
                       </td>
                       <td>
