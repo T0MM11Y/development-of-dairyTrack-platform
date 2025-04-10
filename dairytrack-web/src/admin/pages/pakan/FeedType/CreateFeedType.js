@@ -37,7 +37,7 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
       const response = await createFeedType({ name });
       console.log("API Response:", response);
 
-      if (response?.success) {
+      if (response?.success === true) {
         Swal.fire({
           title: "Sukses!",
           text: "Jenis pakan berhasil ditambahkan.",
@@ -45,14 +45,29 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
           confirmButtonText: "OK",
         });
 
-        onSuccess(response.data); // Kirim data baru ke parent
+        onSuccess(response.data);
         setName("");
       } else {
-        throw new Error(response.message || "Gagal menambahkan jenis pakan.");
+        // If success is false, throw the error with the backend message
+        throw new Error(response.message || "Terjadi kesalahan saat menambahkan jenis pakan.");
       }
     } catch (error) {
-      console.error("Create Error:", error.message);
-      Swal.fire("Error!", error.message, "error");
+      console.error("Create Error:", error);
+
+      // Use the error message directly, whether from the thrown error or a network issue
+      const errorMessage = error.message || "Terjadi kesalahan yang tidak diketahui.";
+
+      console.log("Detailed error info:", {
+        message: error.message,
+        response: error, // Log the full error object for debugging
+      });
+
+      Swal.fire({
+        title: "Error!",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
@@ -66,7 +81,9 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
       <div className="modal-dialog">
         <div className="modal-content shadow-lg">
           <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">Tambah Jenis Pakan</h5>
+            <h5 className="modal-title fw-bold text-info">
+              Tambah Jenis Pakan
+            </h5>
             <button
               className="btn-close"
               onClick={onClose}

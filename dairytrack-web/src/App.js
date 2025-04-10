@@ -16,6 +16,7 @@ import Dashboard from "./admin/pages/dashboard/Dashboard";
 
 import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
+import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js";
 
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
@@ -23,6 +24,7 @@ import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
 
 import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
 import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
+import DetailStok from "./admin/pages/pakan/FeedStock/EditStock.js";
 
 import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
@@ -30,6 +32,7 @@ import DetailPakanHarian from "./admin/pages/pakan/DailyFeed/DetailDailyFeed.js"
 
 import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js";
 import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
+import DetailItemPakan from "./admin/pages/pakan/DailyFeedItem/FeedItemDetail.js";
 
 import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
@@ -177,6 +180,10 @@ function App() {
         element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
       />
       <Route
+        path="/admin/detail/jenis-pakan/:id"
+        element={<ProtectedRoute>{withAdminLayout(DetailJenisPakan)}</ProtectedRoute>}
+      />
+      <Route
         path="/admin/pakan/jenis/tambah"
         element={
           <ProtectedRoute>{withAdminLayout(TambahJenisPakan)}</ProtectedRoute>
@@ -199,6 +206,10 @@ function App() {
       <Route
         path="/admin/pakan/stok"
         element={<ProtectedRoute>{withAdminLayout(StokPakan)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/pakan/detail/:id"
+        element={<ProtectedRoute>{withAdminLayout(DetailStok)}</ProtectedRoute>}
       />
       <Route
         path="/admin/pakan/tambah-stok"
@@ -234,6 +245,12 @@ function App() {
         path="/admin/tambah/item-pakan-harian"
         element={
           <ProtectedRoute>{withAdminLayout(TambahItemPakan)}</ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/detail/item-pakan-harian/:id"
+        element={
+          <ProtectedRoute>{withAdminLayout(DetailItemPakan)}</ProtectedRoute>
         }
       />
       <Route

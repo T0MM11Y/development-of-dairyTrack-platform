@@ -18,6 +18,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     keuangan: "/admin/keuangan",
   };
 
+  // Additional paths related to "Pakan Sapi"
+  const pakanRelatedPaths = [
+    "/admin/item-pakan-harian",
+    "/admin/nutrisi-pakan-harian",
+    "/admin/pakan-harian",
+  ];
+
   useEffect(() => {
     // Load user data from localStorage
     const storedUser = localStorage.getItem("user");
@@ -29,6 +36,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     const activeMenus = Object.keys(menuPaths).filter((key) =>
       location.pathname.startsWith(menuPaths[key])
     );
+
+    // Tambahkan pengecekan untuk rute terkait "Pakan Sapi"
+    const isPakanRelated = pakanRelatedPaths.some((path) =>
+      location.pathname.startsWith(path)
+    );
+    if (isPakanRelated && !activeMenus.includes("pakan")) {
+      activeMenus.push("pakan");
+    }
+
     setOpenMenus(activeMenus);
   }, [location.pathname]);
 
@@ -72,6 +88,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   return (
+    // ... (Sisa kode tetap sama, hanya bagian useEffect yang diubah) ...
     <motion.div
       className="vertical-menu"
       initial={{ width: 275 }}
@@ -121,7 +138,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <div
               style={{
                 width: "40px",
-                height: "40px",
+                height: isCollapsed ? "40px" : "40px", // atau sesuaikan nilai jika ingin berbeda
                 borderRadius: "50%",
                 overflow: "hidden",
                 marginRight: "10px",
@@ -298,17 +315,21 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               >
                 <div className="d-flex align-items-center">
                   <i className="ri-seedling-line"></i>
-                  <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
+                  )}
                 </div>
-                <i
-                  className={`ri-arrow-down-s-line ${
-                    openMenus.includes("pakan") ? "rotate-180" : ""
-                  }`}
-                ></i>
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      openMenus.includes("pakan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
               </Link>
 
               <AnimatePresence>
-                {openMenus.includes("pakan") && (
+                {openMenus.includes("pakan") && !isCollapsed && (
                   <motion.ul
                     className="sub-menu"
                     initial="closed"
@@ -356,6 +377,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
+                        to="/admin/pakan/stok"
+                        className={
+                          location.pathname === "/admin/pakan/stok"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-box-3-line"></i> Stok Pakan
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
                         to="/admin/pakan-harian"
                         className={
                           location.pathname === "/admin/pakan-harian"
@@ -390,26 +428,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       whileTap="tap"
                     >
                       <Link
-                        to="/admin/pakan/stok"
-                        className={
-                          location.pathname === "/admin/pakan/stok"
-                            ? "active"
-                            : ""
-                        }
-                      >
-                        <i className="ri-box-3-line"></i> Stok Pakan
-                      </Link>
-                    </motion.li>
-
-                    <motion.li
-                      variants={menuItemVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link
                         to="/admin/nutrisi-pakan-harian"
                         className={
-                          location.pathname === "/admin/nutrisi-pakan-harian" ? "active" : ""
+                          location.pathname === "/admin/nutrisi-pakan-harian"
+                            ? "active"
+                            : ""
                         }
                       >
                         <i className="ri-restaurant-2-line"></i> Nutrisi

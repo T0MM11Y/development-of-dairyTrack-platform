@@ -2,18 +2,7 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { getAllDailyFeeds } from "../../../../api/pakan/dailyFeed";
 import { getCows } from "../../../../api/peternakan/cow";
-
-// Import Recharts for line graph visualization
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from "recharts";
+import ReactApexChart from "react-apexcharts";
 
 const FeedNutritionSummaryPage = () => {
   const [nutritionData, setNutritionData] = useState([]);
@@ -80,6 +69,11 @@ const FeedNutritionSummaryPage = () => {
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 
+  // Format currency for consistency
+  const formatValue = (value, unit = "") => {
+    return `${parseFloat(value).toFixed(2)} ${unit}`;
+  };
+
   // Filter data based on selected cow and date range
   const filteredData = nutritionData.filter(item => {
     const dateMatch = new Date(item.date) >= new Date(dateRange.startDate) && 
@@ -97,18 +91,27 @@ const FeedNutritionSummaryPage = () => {
       // Sort data by date
       const sortedData = [...filteredData].sort((a, b) => new Date(a.date) - new Date(b.date));
       
-      // Create chart data with formatted dates and session info
-      const formattedChartData = sortedData.map(item => ({
-        date: formatChartDate(item.date),
-        fullDate: item.date,
-        session: item.session,
-        dateSession: `${formatChartDate(item.date)} (${item.session.charAt(0).toUpperCase() + item.session.slice(1)})`,
-        protein: parseFloat(item.total_protein) || 0,
-        energy: parseFloat(item.total_energy) / 1000 || 0, // Convert to thousands for better visualization
-        fiber: parseFloat(item.total_fiber) || 0
-      }));
+      // Group data by date and session
+      const groupedData = {};
       
-      setChartData(formattedChartData);
+      sortedData.forEach(item => {
+        const date = formatChartDate(item.date);
+        const session = item.session.charAt(0).toUpperCase() + item.session.slice(1);
+        const key = `${date} (${session})`;
+        
+        if (!groupedData[key]) {
+          groupedData[key] = {
+            date: date,
+            fullDate: item.date,
+            session: session,
+            protein: parseFloat(item.total_protein) || 0,
+            energy: parseFloat(item.total_energy) / 1000 || 0, // Convert to thousands for better visualization
+            fiber: parseFloat(item.total_fiber) || 0
+          };
+        }
+      });
+      
+      setChartData(Object.values(groupedData));
     } else {
       setChartData([]);
     }
@@ -132,10 +135,115 @@ const FeedNutritionSummaryPage = () => {
     }
   };
 
+  // Create ApexCharts options similar to finance chart
+  const areaChartOptions = {
+    series: [
+      {
+        name: "Protein (g)",
+        data: chartData.map(item => item.protein)
+      },
+      {
+        name: "Energi (ribu kcal)",
+        data: chartData.map(item => item.energy)
+      },
+      {
+        name: "Serat (g)",
+        data: chartData.map(item => item.fiber)
+      }
+    ],
+    chart: {
+      height: 350,
+      type: "area",
+      toolbar: {
+        show: false
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2
+    },
+    colors: ["#8884d8", "#82ca9d", "#ffc658"],
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.3,
+        stops: [0, 90, 100]
+      }
+    },
+    xaxis: {
+      categories: chartData.map(item => `${item.date} (${item.session})`),
+      labels: {
+        rotate: -45,
+        style: {
+          fontSize: '12px'
+        }
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: function(val, { seriesIndex }) {
+          const units = ["g", "kcal", "g"];
+          if (seriesIndex === 1) {
+            return `${(val * 1000).toFixed(2)} kcal`;
+          }
+          return `${val.toFixed(2)} ${units[seriesIndex]}`;
+        }
+      }
+    },
+    legend: {
+      position: 'top'
+    }
+  };
+
+  // Create pie chart for nutrition distribution
+  const pieChartOptions = {
+    series: chartData.length > 0 ? [
+      chartData.reduce((sum, item) => sum + item.protein, 0) / chartData.length,
+      chartData.reduce((sum, item) => sum + item.energy * 1000, 0) / chartData.length,
+      chartData.reduce((sum, item) => sum + item.fiber, 0) / chartData.length
+    ] : [0, 0, 0],
+    chart: {
+      type: "donut",
+      height: 300
+    },
+    labels: ["Protein", "Energi", "Serat"],
+    colors: ["#8884d8", "#82ca9d", "#ffc658"],
+    legend: {
+      position: "bottom"
+    },
+    responsive: [
+      {
+        breakpoint: 480,
+        options: {
+          chart: {
+            width: 200
+          },
+          legend: {
+            position: "bottom"
+          }
+        }
+      }
+    ],
+    dataLabels: {
+      enabled: true,
+      formatter: function(val) {
+        return val.toFixed(1) + "%";
+      }
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Ringkasan Nutrisi Pakan</h2>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Ringkasan Nutrisi Pakan</h2>
+          <p className="text-muted">Analisis nutrisi pakan harian sapi</p>
+        </div>
         <button
           onClick={fetchData}
           className="btn btn-secondary waves-effect waves-light"
@@ -206,92 +314,64 @@ const FeedNutritionSummaryPage = () => {
         </div>
       ) : (
         <>
-          {/* Nutrition Chart */}
-          <div className="card mb-4">
-            <div className="card-body">
-              <h4 className="card-title mb-4">
-                Grafik Nilai Nutrisi
-                {selectedCow && <span className="text-primary ms-2">({cowNames[selectedCow] || `Sapi #${selectedCow}`})</span>}
-              </h4>
-              
-              {!selectedCow ? (
-                <div className="alert alert-info text-center p-4">
-                  <i className="ri-information-line fs-3 mb-3"></i>
-                  <h5>Silakan Pilih Sapi</h5>
-                  <p>Untuk melihat grafik nutrisi, harap pilih sapi terlebih dahulu.</p>
+          {/* Nutrition Chart Row */}
+          <div className="row mb-4">
+            {/* Area Chart */}
+            <div className="col-xl-8">
+              <div className="card">
+                <div className="card-body">
+                  <h5 className="card-title mb-4">
+                    Grafik Nilai Nutrisi
+                    {selectedCow && <span className="text-primary ms-2">({cowNames[selectedCow] || `Sapi #${selectedCow}`})</span>}
+                  </h5>
+                  
+                  {!selectedCow ? (
+                    <div className="alert alert-info text-center p-4">
+                      <i className="ri-information-line fs-3 mb-3"></i>
+                      <h5>Silakan Pilih Sapi</h5>
+                      <p>Untuk melihat grafik nutrisi, harap pilih sapi terlebih dahulu.</p>
+                    </div>
+                  ) : chartData.length === 0 ? (
+                    <div className="alert alert-warning text-center">
+                      <i className="ri-error-warning-line me-2"></i>
+                      Tidak ada data nutrisi tersedia untuk sapi dan rentang tanggal yang dipilih.
+                    </div>
+                  ) : (
+                    <div id="nutrition-chart">
+                      <ReactApexChart
+                        options={areaChartOptions}
+                        series={areaChartOptions.series}
+                        type="area"
+                        height={350}
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : chartData.length === 0 ? (
-                <div className="alert alert-warning text-center">
-                  <i className="ri-error-warning-line me-2"></i>
-                  Tidak ada data nutrisi tersedia untuk sapi dan rentang tanggal yang dipilih.
+              </div>
+            </div>
+
+            {/* Nutrition Distribution Chart */}
+            <div className="col-xl-4">
+              <div className="card">
+                <div className="card-body">
+                  <h5 className="card-title mb-4">Distribusi Nutrisi</h5>
+                  {!selectedCow || chartData.length === 0 ? (
+                    <div className="alert alert-info text-center p-3">
+                      <i className="ri-information-line me-2"></i>
+                      Data nutrisi tidak tersedia
+                    </div>
+                  ) : (
+                    <div id="nutrition-distribution-chart">
+                      <ReactApexChart
+                        options={pieChartOptions}
+                        series={pieChartOptions.series}
+                        type="donut"
+                        height={250}
+                      />
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div style={{ height: "400px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={chartData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis 
-                        dataKey="dateSession" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={80} 
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'Protein/Serat (g)', angle: -90, position: 'insideLeft' }} />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: 'Energi (ribu kcal)', angle: 90, position: 'insideRight' }} />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          switch (name) {
-                            case 'protein':
-                              return [`${value.toFixed(2)} g`, 'Protein'];
-                            case 'energy':
-                              return [`${(value * 1000).toFixed(2)} kcal`, 'Energi'];
-                            case 'fiber':
-                              return [`${value.toFixed(2)} g`, 'Serat'];
-                            default:
-                              return [value, name];
-                          }
-                        }}
-                        labelFormatter={(label) => `Tanggal: ${label}`}
-                      />
-                      <Legend verticalAlign="top" height={36} />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="protein" 
-                        name="Protein" 
-                        stroke="#8884d8" 
-                        strokeWidth={2}
-                        dot={{ stroke: '#8884d8', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="energy" 
-                        name="Energi" 
-                        stroke="#82ca9d" 
-                        strokeWidth={2}
-                        dot={{ stroke: '#82ca9d', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="fiber" 
-                        name="Serat" 
-                        stroke="#ffc658" 
-                        strokeWidth={2}
-                        dot={{ stroke: '#ffc658', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -311,7 +391,9 @@ const FeedNutritionSummaryPage = () => {
                         </div>
                       </div>
                       <div className="col-auto">
-                        <i className="ri-leaf-line fa-2x text-gray-300"></i>
+                        <div className="avatar-sm rounded-circle bg-primary bg-soft p-4 ms-3">
+                          <span className="avatar-title rounded-circle h4 mb-0">🍖</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -331,7 +413,9 @@ const FeedNutritionSummaryPage = () => {
                         </div>
                       </div>
                       <div className="col-auto">
-                        <i className="ri-flashlight-line fa-2x text-gray-300"></i>
+                        <div className="avatar-sm rounded-circle bg-success bg-soft p-4 ms-3">
+                          <span className="avatar-title rounded-circle h4 mb-0">⚡</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -351,7 +435,9 @@ const FeedNutritionSummaryPage = () => {
                         </div>
                       </div>
                       <div className="col-auto">
-                        <i className="ri-plant-line fa-2x text-gray-300"></i>
+                        <div className="avatar-sm rounded-circle bg-warning bg-soft p-4 ms-3">
+                          <span className="avatar-title rounded-circle h4 mb-0">🌿</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -371,7 +457,9 @@ const FeedNutritionSummaryPage = () => {
                         </div>
                       </div>
                       <div className="col-auto">
-                        <i className="ri-calendar-check-line fa-2x text-gray-300"></i>
+                        <div className="avatar-sm rounded-circle bg-info bg-soft p-4 ms-3">
+                          <span className="avatar-title rounded-circle h4 mb-0">🐄</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -384,17 +472,22 @@ const FeedNutritionSummaryPage = () => {
           {selectedCow && (
             <div className="card mb-4">
               <div className="card-body">
-                <h4 className="card-title mb-4">
-                  Riwayat Nutrisi Harian
-                  {selectedCow && <span className="text-primary ms-2">({cowNames[selectedCow] || `Sapi #${selectedCow}`})</span>}
-                </h4>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h4 className="card-title">
+                    Riwayat Nutrisi Harian
+                    {selectedCow && <span className="text-primary ms-2">({cowNames[selectedCow] || `Sapi #${selectedCow}`})</span>}
+                  </h4>
+                  <button className="btn btn-sm btn-primary">
+                    <i className="ri-download-2-line me-1"></i> Export
+                  </button>
+                </div>
                 {filteredData.length === 0 ? (
                   <div className="alert alert-info text-center">
                     Tidak ada data nutrisi tersedia untuk filter yang dipilih.
                   </div>
                 ) : (
                   <div className="table-responsive">
-                    <table className="table table-bordered table-striped mb-0">
+                    <table className="table table-centered table-hover mb-0">
                       <thead className="table-light">
                         <tr>
                           <th className="text-center">#</th>
