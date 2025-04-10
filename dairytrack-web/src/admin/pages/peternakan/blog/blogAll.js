@@ -4,8 +4,8 @@ import {
   deleteBlog,
   getBlogPhoto,
 } from "../../../../api/peternakan/blog";
-import { Link } from "react-router-dom";
-import CreateBlogModal from "./createBlog"; // Perbaiki import modal
+import CreateBlogModal from "./createBlog";
+import EditBlogModal from "./editBlog";
 
 const BlogAll = () => {
   const [data, setData] = useState([]);
@@ -13,21 +13,23 @@ const BlogAll = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false); // State untuk modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editBlogId, setEditBlogId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const blogsRes = await getBlogs();
 
-      // Fetch photo URLs for each blog
       const blogsWithPhotos = await Promise.all(
         blogsRes.map(async (blog) => {
           try {
             const photoRes = await getBlogPhoto(blog.id);
             return { ...blog, photo: photoRes.photo_url };
           } catch {
-            return { ...blog, photo: null }; // Jika gagal, gunakan null
+            return { ...blog, photo: null };
           }
         })
       );
@@ -57,20 +59,62 @@ const BlogAll = () => {
     }
   };
 
+  const handleEdit = (id) => {
+    setEditBlogId(id);
+    setShowEditModal(true);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
+  const filteredData = data.filter((item) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(searchLower) ||
+      item.description.toLowerCase().includes(searchLower) ||
+      item.topic.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 m-1">Blog Articles</h2>
-        <button
-          className="btn btn-info"
-          onClick={() => setShowCreateModal(true)} // Tampilkan modal
-        >
-          + Create Blog
-        </button>
+      <div className="d-flex flex-column mb-4">
+        <h2 className="text-primary mb-3">
+          <i className="bi bi-journal-text"></i> Blog Articles
+        </h2>
+      </div>
+
+      {/* Filter Section */}
+      <div className="card p-3 mb-4 bg-light">
+        <div className="row g-3 align-items-center justify-content-between">
+          {/* Search Field */}
+          <div className="col-md-3 d-flex flex-column">
+            <label className="form-label">Search</label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                placeholder="Search blogs..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="col-md-4 d-flex gap-2 justify-content-end">
+            <button
+              className="btn btn-info"
+              onClick={() => setShowCreateModal(true)}
+            >
+              + Create Blog
+            </button>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -86,7 +130,7 @@ const BlogAll = () => {
           </div>
           <p className="mt-2">Loading blog data...</p>
         </div>
-      ) : data.length === 0 ? (
+      ) : filteredData.length === 0 ? (
         <p className="text-gray-500">No blog data available.</p>
       ) : (
         <div className="col-lg-12">
@@ -106,7 +150,7 @@ const BlogAll = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((item, index) => (
+                    {filteredData.map((item, index) => (
                       <tr key={item.id}>
                         <th scope="row">{index + 1}</th>
                         <td>
@@ -129,12 +173,12 @@ const BlogAll = () => {
                         </td>
                         <td>{item.topic}</td>
                         <td>
-                          <Link
-                            to={`/admin/blog/edit/${item.id}`}
+                          <button
+                            onClick={() => handleEdit(item.id)}
                             className="btn btn-warning me-2"
                           >
                             <i className="ri-edit-line"></i>
-                          </Link>
+                          </button>
                           <button
                             onClick={() => setDeleteId(item.id)}
                             className="btn btn-danger"
@@ -152,73 +196,20 @@ const BlogAll = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteId && (
-        <div
-          className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-          tabIndex="-1"
-          role="dialog"
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">Delete Confirmation</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Are you sure you want to delete this blog article?
-                  <br />
-                  This action cannot be undone.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Create Blog Modal */}
       {showCreateModal && (
         <CreateBlogModal
-          onClose={() => setShowCreateModal(false)} // Tutup modal
-          onSuccess={fetchData} // Refresh data setelah blog berhasil dibuat
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={fetchData}
+        />
+      )}
+
+      {/* Edit Blog Modal */}
+      {showEditModal && editBlogId && (
+        <EditBlogModal
+          blogId={editBlogId}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={fetchData}
         />
       )}
     </div>

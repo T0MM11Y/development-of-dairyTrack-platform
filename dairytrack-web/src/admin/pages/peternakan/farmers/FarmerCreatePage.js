@@ -199,6 +199,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     className="form-control"
                     placeholder="Masukkan jumlah ternak"
                     min="0"
+                    disabled // Menonaktifkan input
                   />
                 </div>
                 <div className="col-md-6 mb-3">

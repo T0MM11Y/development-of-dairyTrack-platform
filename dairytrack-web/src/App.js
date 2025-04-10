@@ -33,8 +33,7 @@ import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedIt
 
 import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
-import DataProduksiSusu from "./admin/pages/produktivitas/DataProduksiSusu";
-import AnalisisProduksi from "./admin/pages/produktivitas/AnalisisProduksi";
+import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
@@ -107,6 +106,7 @@ import ContactUs from "./user/pages/ContactUs";
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
 import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
 import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
+import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/AnalysisProduction.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -252,9 +252,11 @@ function App() {
         }
       />
       <Route
-        path="/admin/susu/analisis"
+        path="/admin/milk-production/analysis"
         element={
-          <ProtectedRoute>{withAdminLayout(AnalisisProduksi)}</ProtectedRoute>
+          <ProtectedRoute>
+            {withAdminLayout(MilkProductionAnalysis)}
+          </ProtectedRoute>
         }
       />
       {/* Admin peternakan - Sapi */}
