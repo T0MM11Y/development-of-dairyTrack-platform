@@ -1,4 +1,3 @@
-// DailyFeedListPage.jsx
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { getAllDailyFeeds, deleteDailyFeed } from "../../../../api/pakan/dailyFeed";
@@ -20,7 +19,6 @@ const DailyFeedListPage = () => {
     try {
       setLoading(true);
       
-      // Fetch feeds, farmers, and cows data in parallel
       const [feedsResponse, farmersData, cowsData] = await Promise.all([
         getAllDailyFeeds(),
         getFarmers().catch(err => {
@@ -33,7 +31,6 @@ const DailyFeedListPage = () => {
         })
       ]);
       
-      // Process feeds
       if (feedsResponse.success && feedsResponse.data) {
         setFeeds(feedsResponse.data);
       } else {
@@ -41,7 +38,6 @@ const DailyFeedListPage = () => {
         setFeeds([]);
       }
       
-      // Create lookup maps for farmer and cow names
       const farmerMap = {};
       farmersData.forEach(farmer => {
         farmerMap[farmer.id] = `${farmer.first_name} ${farmer.last_name}`;
@@ -128,13 +124,11 @@ const DailyFeedListPage = () => {
     fetchData();
   };
 
-  // Format date to be more readable
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 
-  // Capitalize first letter of session
   const formatSession = (session) => {
     return session.charAt(0).toUpperCase() + session.slice(1);
   };
@@ -165,42 +159,42 @@ const DailyFeedListPage = () => {
       )}
 
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Pakan Harian</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Data Pakan Harian</h2>
         <button
           onClick={handleAddClick}
-          className="btn btn-info waves-effect waves-light"
+          className="btn btn-info text-white px-4 py-2 rounded hover:bg-info-dark transition"
         >
           + Tambah Pakan
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-4">
-          <div className="spinner-border text-primary" role="status">
+        <div className="text-center py-5">
+          <div className="spinner-border text-info" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-2">Memuat data...</p>
+          <p className="mt-3 text-gray-600">Memuat data...</p>
         </div>
       ) : feeds.length === 0 ? (
-        <div className="alert alert-info text-center">
+        <div className="alert alert-info text-center py-4 rounded">
           Belum ada data pakan tersedia.
         </div>
       ) : (
         <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">Daftar Pakan Harian</h4>
+          <div className="card shadow-sm border-0 rounded">
+            <div className="card-body p-4">
+              <h4 className="card-title mb-4 text-lg font-semibold text-gray-700">Daftar Pakan Harian</h4>
               <div className="table-responsive">
-                <table className="table table-hover table-striped mb-0">
+                <table className="table table-hover table-striped align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th className="text-center" style={{width: "50px"}}>#</th>
-                      <th>Nama Petani</th>
-                      <th>Nama Sapi</th>
-                      <th style={{width: "120px"}}>Tanggal</th>
-                      <th style={{width: "100px"}}>Sesi</th>
-                      <th style={{width: "120px"}}>Cuaca</th>
-                      <th className="text-center" style={{width: "130px"}}>Aksi</th>
+                      <th className="text-center" style={{ width: "5%" }}>#</th>
+                      <th style={{ width: "20%" }}>Nama Petani</th>
+                      <th style={{ width: "20%" }}>Nama Sapi</th>
+                      <th style={{ width: "15%" }}>Tanggal</th>
+                      <th style={{ width: "10%" }}>Sesi</th>
+                      <th style={{ width: "15%" }}>Cuaca</th>
+                      <th className="text-center" style={{ width: "15%" }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -212,10 +206,10 @@ const DailyFeedListPage = () => {
                         <td>{formatDate(feed.date)}</td>
                         <td>{formatSession(feed.session)}</td>
                         <td>{feed.weather ? formatSession(feed.weather) : "Tidak ada data"}</td>
-                        <td>
+                        <td className="text-center">
                           <div className="d-flex justify-content-center gap-2">
                             <button
-                              className="btn btn-sm btn-info"
+                              className="btn btn-sm btn-info text-white px-3 py-1 rounded"
                               onClick={() => handleViewDetails(feed.id)}
                               title="Detail/Edit"
                             >
@@ -223,7 +217,7 @@ const DailyFeedListPage = () => {
                             </button>
                             <button
                               onClick={() => handleDelete(feed.id)}
-                              className="btn btn-sm btn-danger"
+                              className="btn btn-sm btn-danger text-white px-3 py-1 rounded"
                               title="Hapus"
                             >
                               <i className="ri-delete-bin-6-line"></i>

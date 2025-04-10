@@ -9,6 +9,11 @@ from rest_framework import generics, serializers
 from .serializers import RawMilkSerializer, ProductTypeSerializer, ProductStockSerializer, StockHistorySerializer
 from .models import RawMilk, ProductType, ProductStock, StockHistory
 
+# Create filtering
+from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
+from rest_framework import filters
+from .filters import StockHistoryFilter
+
 
 # Untuk list & create RawMilk (tanpa `pk`)
 class RawMilkListCreateView(generics.ListCreateAPIView):
@@ -60,6 +65,11 @@ class ProductStockRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
 class StockHistoryCreateView(generics.ListCreateAPIView):
     queryset = StockHistory.objects.all()
     serializer_class = StockHistorySerializer
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = StockHistoryFilter
+    ordering_fields = ['change_date']
+    ordering = ['-change_date']  # default: terbaru duluan
 
 # API untuk menjual produk
 class SellProductView(APIView):
