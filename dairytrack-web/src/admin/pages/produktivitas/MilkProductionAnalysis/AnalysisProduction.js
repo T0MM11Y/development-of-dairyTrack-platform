@@ -26,7 +26,6 @@ const MilkProductionAnalysis = () => {
       setIsLoading(true);
       try {
         if (cowId === "all") {
-          // Fetch data for all cows
           const allData = await Promise.all(
             cows.map((cow) => getDailyMilkTotalsByCowId(cow.id))
           );
@@ -35,7 +34,14 @@ const MilkProductionAnalysis = () => {
             .sort((a, b) => new Date(a.date) - new Date(b.date));
           setMilkData(mergedData);
         } else {
-          // Fetch data for a specific cow
+          const selectedCowExists = cows.some(
+            (cow) => cow.id === parseInt(cowId)
+          );
+          if (!selectedCowExists) {
+            console.error(`Cow with ID ${cowId} does not exist.`);
+            setMilkData([]);
+            return;
+          }
           const data = await getDailyMilkTotalsByCowId(cowId);
           setMilkData(data);
         }

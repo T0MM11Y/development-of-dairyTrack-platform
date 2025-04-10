@@ -5,6 +5,11 @@ import {
 } from "../../../../api/peternakan/supervisor";
 import SupervisorCreatePage from "./SupervisorCreatePage";
 import SupervisorEditPage from "./SupervisorEditPage";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const SupervisorListPage = () => {
   const [supervisors, setSupervisors] = useState([]);
@@ -13,6 +18,9 @@ const SupervisorListPage = () => {
   const [editSupervisorId, setEditSupervisorId] = useState(null);
   const [deleteSupervisorId, setDeleteSupervisorId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedEntryDate, setSelectedEntryDate] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -43,6 +51,75 @@ const SupervisorListPage = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(supervisors);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Supervisors");
+
+    // AutoFit column width
+    const columnWidths = Object.keys(supervisors[0] || {}).map((key) => ({
+      wch: Math.max(10, key.length + 2),
+    }));
+    worksheet["!cols"] = columnWidths;
+
+    XLSX.writeFile(workbook, "SupervisorsData.xlsx");
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const marginLeft = 14;
+    const startY = 25;
+    let currentY = startY;
+
+    // Judul dokumen
+    doc.setFontSize(16);
+    doc.text("Supervisors Data", marginLeft, currentY);
+    currentY += 10;
+
+    // Header tabel
+    const tableColumn = ["#", "Email", "First Name", "Last Name", "Contact"];
+    const columnWidths = [10, 50, 50, 50, 50];
+
+    // Render header tabel
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    let currentX = marginLeft;
+    tableColumn.forEach((col, index) => {
+      doc.text(col, currentX, currentY);
+      currentX += columnWidths[index];
+    });
+    currentY += 6;
+
+    // Render data tabel
+    doc.setFont("helvetica", "normal");
+    supervisors.forEach((supervisor, rowIndex) => {
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = startY;
+      }
+
+      currentX = marginLeft;
+      const rowData = [
+        rowIndex + 1,
+        supervisor.email,
+        supervisor.first_name,
+        supervisor.last_name,
+        supervisor.contact,
+      ];
+
+      rowData.forEach((cell, cellIndex) => {
+        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]);
+        doc.text(text, currentX, currentY);
+        currentX += columnWidths[cellIndex];
+      });
+
+      currentY += 6;
+    });
+
+    // Simpan file PDF
+    doc.save("SupervisorsData.pdf");
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -66,13 +143,73 @@ const SupervisorListPage = () => {
     );
   };
 
+  const filteredSupervisors = supervisors.filter((supervisor) => {
+    const searchLower = searchQuery.toLowerCase();
+    const entryDateMatch =
+      !selectedEntryDate ||
+      new Date(supervisor.entry_date).toDateString() ===
+        selectedEntryDate.toDateString();
+    const searchMatch =
+      supervisor.email?.toLowerCase().includes(searchLower) ||
+      supervisor.first_name?.toLowerCase().includes(searchLower) ||
+      supervisor.last_name?.toLowerCase().includes(searchLower) ||
+      supervisor.contact?.toLowerCase().includes(searchLower);
+
+    return entryDateMatch && searchMatch;
+  });
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Supervisor Data</h2>
-        <button onClick={() => setModalType("create")} className="btn btn-info">
-          + Add Supervisor
-        </button>
+      <div className="d-flex flex-column mb-4">
+        <h2 className="text-primary mb-3">
+          <i className="bi bi-person"></i> Supervisor Data
+        </h2>
+      </div>
+
+      {/* Filter Section */}
+      <div className="card p-3 mb-4 bg-light">
+        <div className="row g-3 align-items-center justify-content-between">
+          {/* Search Field */}
+          <div className="col-md-3 d-flex flex-column">
+            <label className="form-label">Search</label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="col-md-4 d-flex gap-2 justify-content-end">
+            <button
+              onClick={() => setModalType("create")}
+              className="btn btn-info"
+            >
+              + Add Supervisor
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="btn btn-success"
+              title="Export to Excel"
+            >
+              <i className="ri-file-excel-2-line"></i> Export to Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="btn btn-secondary"
+              title="Export to PDF"
+            >
+              <i className="ri-file-pdf-line"></i> Export to PDF
+            </button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -102,7 +239,7 @@ const SupervisorListPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {supervisors.map((supervisor, index) => (
+                    {filteredSupervisors.map((supervisor, index) => (
                       <tr key={supervisor.id}>
                         <th scope="row">{index + 1}</th>
                         <td>{supervisor.email}</td>
