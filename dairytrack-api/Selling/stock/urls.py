@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
-from . import views
+from . import views, views_export
 
 urlpatterns = [
     
@@ -39,7 +39,13 @@ urlpatterns = [
 
 
     # ================================ Product History ========================
-    path("product-history", views.StockHistoryCreateView.as_view(), name="product_history_view_create"), # GET (all) & POST
+    path("product-history/", views.StockHistoryCreateView.as_view(), name="product_history_view_create"), # GET (all) & POST
+    # http://localhost:5001/product-history/?date_from=2025-01-01&date_to=2025-01-10
+    path("product-history/export/pdf/", views_export.export_pdf, name="product_history_export_pdf"),
+    # http://localhost:5001/product-history/export/pdf/?start_date=2025-04-01&end_date=2025-04-05
+
+    path("product-history/export/excel/", views_export.export_excel, name="product_history_export_excel"),
+    # http://localhost:5001/product-history/export/excel/?start_date=2025-04-01&end_date=2025-04-05
 ]
     # Menyajikan file media hanya dalam mode DEBUG
 if settings.DEBUG:

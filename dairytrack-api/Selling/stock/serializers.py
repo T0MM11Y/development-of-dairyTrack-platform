@@ -25,8 +25,24 @@ class ProductStockSerializer(serializers.ModelSerializer):
         validated_data['quantity'] = validated_data['initial_quantity']
         return super().create(validated_data)
 
-
 class StockHistorySerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product_stock.product_type.product_name', read_only=True)
+    unit = serializers.CharField(source='product_stock.product_type.unit', read_only=True)
+
     class Meta:
         model = StockHistory
-        fields = ['change_type', 'quantity_change', 'product_stock', 'total_price', 'change_date']
+        fields = [
+            'change_type',
+            'quantity_change',
+            'product_stock',
+            'product_name',
+            'unit',
+            'total_price',
+            'change_date'
+        ]
+
+
+# class StockHistorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = StockHistory
+#         fields = ['change_type', 'quantity_change', 'product_stock', 'total_price', 'change_date']
