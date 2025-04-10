@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getProductTypeById, updateProductType } from "../../../../api/keuangan/productType";
+import {
+  getProductTypeById,
+  updateProductType,
+} from "../../../../api/keuangan/productType";
 import { useNavigate, useParams } from "react-router-dom";
 
 const ProductTypeEditPage = () => {
@@ -45,17 +48,26 @@ const ProductTypeEditPage = () => {
     }
   };
 
+  const formatRupiah = (number) => {
+    if (!number || isNaN(number)) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       const formData = new FormData();
       formData.append("product_name", form.product_name);
       formData.append("product_description", form.product_description);
       formData.append("price", Number(form.price));
       formData.append("unit", form.unit);
-      
+
       // Only append image if a new one was selected
       if (newImage) {
         formData.append("image", newImage);
@@ -74,10 +86,10 @@ const ProductTypeEditPage = () => {
   return (
     <div
       className="modal show d-block"
-      style={{ 
+      style={{
         background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
         minHeight: "100vh",
-        paddingTop: "3rem"
+        paddingTop: "3rem",
       }}
     >
       <div className="modal-dialog modal-lg">
@@ -99,7 +111,9 @@ const ProductTypeEditPage = () => {
                 <div className="row">
                   {/* Product Name */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Nama Produk</label>
+                    <label className="form-label fw-semibold">
+                      Nama Produk
+                    </label>
                     <input
                       type="text"
                       name="product_name"
@@ -113,7 +127,9 @@ const ProductTypeEditPage = () => {
 
                   {/* Price */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Harga</label>
+                    <label className="form-label fw-semibold">
+                      Harga/Satuan
+                    </label>
                     <input
                       type="number"
                       name="price"
@@ -123,25 +139,34 @@ const ProductTypeEditPage = () => {
                       disabled={submitting}
                       required
                     />
+                    <div className="form-text text-muted mt-1">
+                      Total: {formatRupiah(form.price)}
+                    </div>
                   </div>
 
                   {/* Unit */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">Satuan</label>
-                    <input
-                      type="text"
+                    <select
                       name="unit"
                       value={form.unit || ""}
                       onChange={handleChange}
                       className="form-control"
                       disabled={submitting}
                       required
-                    />
+                    >
+                      <option value="">-- Pilih Satuan --</option>
+                      <option value="bottle">Botol</option>
+                      <option value="liter">Liter</option>
+                      <option value="pcs">Pcs</option>
+                      <option value="kilogram">Kilogram</option>
+                    </select>
                   </div>
-
                   {/* Description */}
                   <div className="col-12 mb-3">
-                    <label className="form-label fw-semibold">Deskripsi Produk</label>
+                    <label className="form-label fw-semibold">
+                      Deskripsi Produk
+                    </label>
                     <textarea
                       name="product_description"
                       value={form.product_description || ""}
@@ -156,12 +181,14 @@ const ProductTypeEditPage = () => {
                   {/* Current Image Preview */}
                   {imagePreview && (
                     <div className="col-12 mb-3">
-                      <label className="form-label fw-semibold">Gambar Saat Ini</label>
+                      <label className="form-label fw-semibold">
+                        Gambar Saat Ini
+                      </label>
                       <div className="text-center mb-2">
-                        <img 
-                          src={imagePreview} 
-                          alt="Product Preview" 
-                          style={{ maxHeight: "200px", maxWidth: "100%" }} 
+                        <img
+                          src={imagePreview}
+                          alt="Product Preview"
+                          style={{ maxHeight: "200px", maxWidth: "100%" }}
                           className="border rounded"
                         />
                       </div>
@@ -170,7 +197,9 @@ const ProductTypeEditPage = () => {
 
                   {/* Image Upload */}
                   <div className="col-12 mb-3">
-                    <label className="form-label fw-semibold">Ganti Gambar (Opsional)</label>
+                    <label className="form-label fw-semibold">
+                      Ganti Gambar (Opsional)
+                    </label>
                     <input
                       type="file"
                       name="image"
@@ -179,7 +208,9 @@ const ProductTypeEditPage = () => {
                       disabled={submitting}
                       accept="image/*"
                     />
-                    <small className="text-muted">Biarkan kosong jika tidak ingin mengganti gambar</small>
+                    <small className="text-muted">
+                      Biarkan kosong jika tidak ingin mengganti gambar
+                    </small>
                   </div>
                 </div>
 

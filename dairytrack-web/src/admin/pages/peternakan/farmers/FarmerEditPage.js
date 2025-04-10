@@ -200,7 +200,7 @@ const FarmerEditPage = ({ farmerId, onClose, onFarmerUpdated }) => {
                       onChange={handleChange}
                       className="form-control"
                       min="0"
-                      disabled={submitting}
+                      disabled // Menonaktifkan input
                     />
                   </div>
                   <div className="col-md-6 mb-3">

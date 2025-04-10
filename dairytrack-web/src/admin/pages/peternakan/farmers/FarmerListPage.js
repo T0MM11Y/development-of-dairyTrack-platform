@@ -4,6 +4,8 @@ import FarmerCreatePage from "./FarmerCreatePage";
 import FarmerEditPage from "./FarmerEditPage";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "jspdf-autotable";
 
 const FarmerListPage = () => {
@@ -13,6 +15,10 @@ const FarmerListPage = () => {
   const [editFarmerId, setEditFarmerId] = useState(null);
   const [deleteFarmerId, setDeleteFarmerId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGender, setSelectedGender] = useState("");
+  const [selectedJoinDate, setSelectedJoinDate] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -141,34 +147,106 @@ const FarmerListPage = () => {
   const getSelectedFarmer = () => {
     return farmers.find((farmer) => farmer.id === deleteFarmerId);
   };
+  const filteredFarmers = farmers.filter((farmer) => {
+    const searchLower = searchQuery.toLowerCase();
+    const genderMatch =
+      !selectedGender ||
+      farmer.gender?.toLowerCase() === selectedGender.toLowerCase();
+    const joinDateMatch =
+      !selectedJoinDate ||
+      new Date(farmer.join_date).toDateString() ===
+        selectedJoinDate.toDateString();
+    const searchMatch =
+      farmer.first_name?.toLowerCase().includes(searchLower) ||
+      farmer.last_name?.toLowerCase().includes(searchLower) ||
+      farmer.contact?.toLowerCase().includes(searchLower) ||
+      farmer.email?.toLowerCase().includes(searchLower);
+
+    return genderMatch && joinDateMatch && searchMatch;
+  });
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Farmer Data</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setModalType("create")}
-            className="btn btn-info"
-            style={{ marginRight: "50px" }}
-          >
-            + Add Farmer
-          </button>
-          <button
-            onClick={handleExportExcel}
-            className="btn btn-success"
-            title="Export to Excel"
-            style={{ marginRight: "10px" }}
-          >
-            <i className="ri-file-excel-2-line"></i> Export to Excel
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="btn btn-secondary"
-            title="Export to PDF"
-          >
-            <i className="ri-file-pdf-line"></i> Export to PDF
-          </button>
+      <div className="d-flex flex-column mb-4">
+        <h2 className="text-primary mb-3">
+          <i className="bi bi-people"></i> Farmer Data
+        </h2>
+      </div>
+
+      {/* Filter Section */}
+      <div className="card p-3 mb-4 bg-light">
+        <div className="row g-3 align-items-center justify-content-between">
+          {/* Filter by Gender */}
+          <div className="col-md-2 d-flex flex-column">
+            <label className="form-label">Filter by Gender</label>
+            <select
+              className="form-select"
+              value={selectedGender}
+              onChange={(e) => setSelectedGender(e.target.value)}
+            >
+              <option value="">All Genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          {/* Filter by Join Date */}
+          <div className="col-md-2 d-flex flex-column">
+            <label className="form-label">Filter by Join Date</label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-calendar-event"></i>
+              </span>
+              <ReactDatePicker
+                selected={selectedJoinDate}
+                onChange={(date) => setSelectedJoinDate(date)}
+                placeholderText="Select Date"
+                className="form-control"
+                todayButton="Today" // Tambahkan tombol "Today"
+                isClearable // Aktifkan tombol "Clear"
+                dateFormat="yyyy-MM-dd" // Format tanggal
+              />
+            </div>
+          </div>
+          {/* Search Field */}
+          <div className="col-md-3 d-flex flex-column">
+            <label className="form-label">Search</label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-search"></i>
+              </span>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="form-control"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="col-md-4 d-flex gap-2 justify-content-end">
+            <button
+              onClick={() => setModalType("create")}
+              className="btn btn-info"
+            >
+              + Add Farmer
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="btn btn-success"
+              title="Export to Excel"
+            >
+              <i className="ri-file-excel-2-line"></i> Export to Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="btn btn-secondary"
+              title="Export to PDF"
+            >
+              <i className="ri-file-pdf-line"></i> Export to PDF
+            </button>
+          </div>
         </div>
       </div>
 
@@ -206,7 +284,7 @@ const FarmerListPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {farmers.map((farmer, index) => (
+                    {filteredFarmers.map((farmer, index) => (
                       <tr key={farmer.id}>
                         <th scope="row">{index + 1}</th>
                         <td>{farmer.email}</td>
@@ -219,7 +297,13 @@ const FarmerListPage = () => {
                         <td>{farmer.gender}</td>
                         <td>{farmer.total_cattle}</td>
                         <td>{farmer.join_date}</td>
-                        <td>{farmer.status}</td>
+                        <td>
+                          {farmer.status === "Active" ? (
+                            <span className="badge bg-success">Active</span>
+                          ) : (
+                            <span className="badge bg-danger">Inactive</span>
+                          )}
+                        </td>
                         <td>
                           <button
                             className="btn btn-warning me-2"

@@ -21,7 +21,7 @@ def create_supervisor():
     if not data:
         return jsonify({'error': 'No input data provided'}), 400
     if not data.get('password'):
-        return jsonify({'error': 'Password is required'}), 400
+        return jsonify({'error': 'Password is required'}), 400  
 
     new_supervisor = Supervisor(
         email=data.get('email'),

@@ -128,7 +128,7 @@ const ProductEditPage = () => {
                       disabled={submitting}
                     >
                       <option value="available">Available</option>
-                      <option value="sold_out">Sold Out</option>
+                      <option value="contamination">Contamination</option>
                     </select>
                   </div>
 

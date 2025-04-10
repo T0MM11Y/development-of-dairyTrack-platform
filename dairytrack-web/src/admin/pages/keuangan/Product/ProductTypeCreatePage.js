@@ -52,6 +52,15 @@ const ProductTypeCreatePage = () => {
     }
   };
 
+  const formatRupiah = (number) => {
+    if (!number) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
+
   return (
     <div
       className="modal show d-block"
@@ -107,7 +116,7 @@ const ProductTypeCreatePage = () => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Harga</label>
+                <label className="form-label fw-bold">Harga/Satuan</label>
                 <input
                   type="number"
                   name="price"
@@ -116,17 +125,25 @@ const ProductTypeCreatePage = () => {
                   className="form-control"
                   required
                 />
+                <div className="form-text text-muted mt-1">
+                  Total: {formatRupiah(form.price)}
+                </div>
               </div>
               <div className="mb-3">
                 <label className="form-label fw-bold">Satuan</label>
-                <input
-                  type="text"
+                <select
                   name="unit"
                   value={form.unit}
                   onChange={handleChange}
                   className="form-control"
                   required
-                />
+                >
+                  <option value="">-- Pilih Satuan --</option>
+                  <option value="Bootle">Bootle</option>
+                  <option value="Liter">Liter</option>
+                  <option value="Pcs">Pcs</option>
+                  <option value="Kilogram">Kilogram</option>
+                </select>
               </div>
               <button
                 type="submit"

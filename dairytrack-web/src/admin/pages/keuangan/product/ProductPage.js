@@ -23,11 +23,11 @@ const ProductStockListPage = () => {
       ]);
 
       // Process data to add time remaining info
-      const processedData = productsRes.map(item => {
+      const processedData = productsRes.map((item) => {
         const now = new Date();
         const expiryDate = new Date(item.expiry_at);
         const timeRemaining = expiryDate - now;
-        
+
         return {
           ...item,
           timeRemaining: timeRemaining > 0 ? timeRemaining : 0,
@@ -43,8 +43,7 @@ const ProductStockListPage = () => {
         // If only one is available, put available items first
         else if (a.status === "available") {
           return -1;
-        }
-        else if (b.status === "available") {
+        } else if (b.status === "available") {
           return 1;
         }
         // If neither is available, maintain original order
@@ -74,8 +73,12 @@ const ProductStockListPage = () => {
 
     // Convert milliseconds to days, hours, minutes
     const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const hours = Math.floor(
+      (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor(
+      (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
+    );
 
     if (days > 0) {
       return `${days} hari ${hours} jam`;
@@ -90,13 +93,13 @@ const ProductStockListPage = () => {
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString('id-ID', { 
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+    return date.toLocaleString("id-ID", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
   };
 
@@ -104,12 +107,12 @@ const ProductStockListPage = () => {
     if (status !== "available") {
       return "bg-danger";
     }
-    
+
     // If time remaining is less than 24 hours (86400000 ms)
     if (timeRemaining < 86400000) {
       return "bg-warning"; // Yellow for urgent
     }
-    
+
     return "bg-success"; // Green for normal available
   };
 
@@ -134,7 +137,7 @@ const ProductStockListPage = () => {
     const interval = setInterval(() => {
       fetchData();
     }, 60000); // Update every minute
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -191,21 +194,38 @@ const ProductStockListPage = () => {
                         <td>{formatDateTime(item.expiry_at)}</td>
                         <td>
                           <span
-                            className={`badge ${getStatusBadgeClass(item.status, item.timeRemaining)}`}
+                            className={`badge ${getStatusBadgeClass(
+                              item.status,
+                              item.timeRemaining
+                            )}`}
                           >
-                            {item.status === "available" 
-                              ? `${item.status} (${formatTimeRemaining(item.timeRemaining)})` 
+                            {item.status === "available"
+                              ? `${item.status} (${formatTimeRemaining(
+                                  item.timeRemaining
+                                )})`
                               : item.status}
                           </span>
                         </td>
                         <td>{item.total_milk_used} L</td>
                         <td>
-                          <Link
-                            to={`/admin/keuangan/product/edit/${item.id}`}
-                            className="btn btn-warning me-2"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </Link>
+                          {item.status === "contamination" ||
+                          item.status === "expired" ||
+                          item.status === "sold_out" ? (
+                            <button
+                              className="btn btn-warning me-2"
+                              disabled
+                              title="Tidak dapat diedit"
+                            >
+                              <i className="ri-edit-line"></i>
+                            </button>
+                          ) : (
+                            <Link
+                              to={`/admin/keuangan/product/edit/${item.id}`}
+                              className="btn btn-warning me-2"
+                            >
+                              <i className="ri-edit-line"></i>
+                            </Link>
+                          )}
                           <button
                             onClick={() => setDeleteId(item.id)}
                             className="btn btn-danger"

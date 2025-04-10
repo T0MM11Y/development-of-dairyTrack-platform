@@ -7,12 +7,20 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
   const [description, setDescription] = useState("");
   const [topic, setTopic] = useState("");
   const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhoto(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi input
     if (!title || !description || !topic) {
       Swal.fire({
         title: "Error!",
@@ -25,45 +33,43 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      // Gunakan FormData untuk mengirim data teks dan file
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
       formData.append("topic", topic);
       if (photo) {
-        formData.append("photo", photo); // Tambahkan file jika ada
+        formData.append("photo", photo);
       }
 
-      const response = await createBlog(formData); // Kirim FormData ke API
+      const response = await createBlog(formData);
 
-      // Tampilkan modal sukses
       Swal.fire({
         title: "Sukses!",
         text: "Artikel blog berhasil ditambahkan.",
         icon: "success",
         confirmButtonText: "OK",
       }).then(() => {
-        onSuccess(); // Callback untuk menyegarkan data
-        onClose(); // Tutup modal
+        onSuccess();
+        onClose();
       });
     } catch (error) {
       console.warn("Warning: Terjadi error, tetapi data berhasil dikirim.");
       console.error("Error creating blog:", error.message);
 
-      // Tetap tampilkan modal sukses meskipun ada error
       Swal.fire({
         title: "Sukses!",
         text: "Artikel blog berhasil ditambahkan.",
         icon: "success",
         confirmButtonText: "OK",
       }).then(() => {
-        onSuccess(); // Callback untuk menyegarkan data
-        onClose(); // Tutup modal
+        onSuccess();
+        onClose();
       });
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div
       className="modal show d-block"
@@ -126,11 +132,21 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
                 <label htmlFor="blogPhoto" className="form-label">
                   Foto
                 </label>
+                {photoPreview && (
+                  <div className="mb-3">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="img-thumbnail"
+                      style={{ maxWidth: "200px", maxHeight: "200px" }}
+                    />
+                  </div>
+                )}
                 <input
                   type="file"
                   id="blogPhoto"
                   className="form-control"
-                  onChange={(e) => setPhoto(e.target.files[0])}
+                  onChange={handlePhotoChange}
                 />
               </div>
               <button

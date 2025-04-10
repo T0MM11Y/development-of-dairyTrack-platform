@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { deleteHealthCheck, getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
-import { Link } from "react-router-dom";
+import HealthCheckCreatePage from "./HealthCheckCreatePage";
+import HealthCheckEditPage from "./HealthCheckEditPage";
 
 const HealthCheckListPage = () => {
   const [data, setData] = useState([]);
@@ -9,6 +10,8 @@ const HealthCheckListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [modalType, setModalType] = useState(null); // "create" | "edit"
+  const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -50,9 +53,9 @@ const HealthCheckListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl fw-bold text-dark">Data Pemeriksaan Kesehatan</h2>
-        <Link to="/admin/kesehatan/pemeriksaan/create" className="btn btn-info">
+        <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
-        </Link>
+        </button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -90,12 +93,15 @@ const HealthCheckListPage = () => {
                       <td>{item.rumination}</td>
                       <td>{item.treatment_status}</td>
                       <td>
-                        <Link
-                          to={`/admin/kesehatan/pemeriksaan/edit/${item.id}`}
+                        <button
                           className="btn btn-warning btn-sm me-2"
+                          onClick={() => {
+                            setEditId(item.id);
+                            setModalType("edit");
+                          }}
                         >
                           <i className="ri-edit-line"></i>
-                        </Link>
+                        </button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => setDeleteId(item.id)}
@@ -111,6 +117,33 @@ const HealthCheckListPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Create */}
+      {modalType === "create" && (
+        <HealthCheckCreatePage
+          onClose={() => setModalType(null)}
+          onSaved={() => {
+            fetchData();
+            setModalType(null);
+          }}
+        />
+      )}
+
+        {/* Modal Edit */}
+        {modalType === "edit" && editId && (
+          <HealthCheckEditPage
+            healthCheckId={editId}
+            onClose={() => {
+              setEditId(null);
+              setModalType(null);
+            }}
+            onSaved={() => {
+              fetchData();
+              setEditId(null);
+              setModalType(null);
+            }}
+          />
+        )}
 
       {/* Modal Konfirmasi Hapus */}
       {deleteId && (
@@ -152,10 +185,7 @@ const HealthCheckListPage = () => {
                 >
                   {submitting ? (
                     <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      ></span>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" />
                       Menghapus...
                     </>
                   ) : (
