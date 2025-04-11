@@ -13,7 +13,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
     gender: "Female",
     entry_date: "",
     lactation_status: false,
-    lactation_phase: "Early",
+    lactation_phase: "Dry", // Default to Dry
     farmer: "",
   });
   const [error, setError] = useState("");
@@ -196,6 +196,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                     />
                   </div>
                 </div>
+
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Fase Laktasi</label>
