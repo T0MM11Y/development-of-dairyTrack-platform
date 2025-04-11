@@ -39,9 +39,21 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === "checkbox" ? checked : value;
+
     if (name === "weight_kg") {
       finalValue = value ? Math.max(0, parseFloat(value)) : "";
     }
+
+    // Handle lactation_status checkbox
+    if (name === "lactation_status") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        lactation_status: checked,
+        lactation_phase: checked ? prevForm.lactation_phase : "Dry", // Set to Dry when unchecked
+      }));
+      return;
+    }
+
     setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
 
@@ -192,11 +204,15 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                       value={form.lactation_phase}
                       onChange={handleChange}
                       className="form-select"
+                      disabled={!form.lactation_status} // Disable when lactation_status is unchecked
                     >
                       <option value="Early">Early</option>
                       <option value="Mid">Mid</option>
                       <option value="Late">Late</option>
-                      <option value="Dry">Dry</option>
+                      {!form.lactation_status && (
+                        <option value="Dry">Dry</option>
+                      )}{" "}
+                      {/* Show Dry only if lactation_status is unchecked */}
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">
