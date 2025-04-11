@@ -158,6 +158,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       path: "/admin/susu",
       submenus: [
         {
+          path: "/admin/susu/produksi",
+          icon: "ri-file-list-line",
+          label: "Catatan Produksi Susu",
+        },
+        {
           path: "/admin/milk-production/analysis",
           icon: "ri-line-chart-line",
           label: "Trend Produksi Susu",
@@ -168,9 +173,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           label: "Analisis by Laktasi",
         },
         {
-          path: "/admin/susu/produksi",
+          path: "/admin/susu/kesegaransusu",
           icon: "ri-file-list-line",
-          label: "Catatan Produksi Susu",
+          label: "Kesegaran Produksi Susu",
         },
       ],
     },

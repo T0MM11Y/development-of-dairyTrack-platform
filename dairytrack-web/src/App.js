@@ -35,6 +35,7 @@ import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
 import MilkProductionPhase from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionPhaseAnalysis.js";
+import FreshnesOfMilk from "./admin/pages/produktivitas/FreshnessOfMilk/FreshnessOfMilk.js";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
@@ -264,6 +265,12 @@ function App() {
           <ProtectedRoute>
             {withAdminLayout(MilkProductionPhase)}
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/susu/kesegaransusu"
+        element={
+          <ProtectedRoute>{withAdminLayout(FreshnesOfMilk)}</ProtectedRoute>
         }
       />
       {/* Admin peternakan - Sapi */}

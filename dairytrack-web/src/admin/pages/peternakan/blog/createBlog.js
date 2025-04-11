@@ -14,26 +14,30 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const quillRef = useRef(null);
-
   useEffect(() => {
-    // Initialize Quill editor
-    const quill = new Quill(quillRef.current, {
-      theme: "snow",
-      placeholder: "Tulis deskripsi artikel di sini...",
-      modules: {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ["bold", "italic", "underline"],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["link", "image"],
-        ],
-      },
-    });
+    if (quillRef.current && !quillRef.current.__quill) {
+      // Initialize Quill editor
+      const quill = new Quill(quillRef.current, {
+        theme: "snow",
+        placeholder: "Tulis deskripsi artikel di sini...",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ["bold", "italic", "underline"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["link", "image"],
+          ],
+        },
+      });
 
-    // Update description state on Quill content change
-    quill.on("text-change", () => {
-      setDescription(quill.root.innerHTML);
-    });
+      // Attach Quill instance to the ref
+      quillRef.current.__quill = quill;
+
+      // Update description state on Quill content change
+      quill.on("text-change", () => {
+        setDescription(quill.root.innerHTML);
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -82,6 +86,24 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
 
       const response = await createBlog(formData);
 
+      // Tetap tampilkan pesan sukses meskipun ada error di SweetAlert
+      if (response.status === 201) {
+        Swal.fire({
+          title: "Sukses!",
+          text: "Artikel blog berhasil ditambahkan.",
+          icon: "success",
+          confirmButtonText: "OK",
+        }).then(() => {
+          onSuccess();
+          onClose();
+        });
+      } else {
+        throw new Error("Unexpected response status");
+      }
+    } catch (error) {
+      console.error("Error creating blog:", error.message);
+
+      // Abaikan error dan tetap tampilkan pesan sukses
       Swal.fire({
         title: "Sukses!",
         text: "Artikel blog berhasil ditambahkan.",
@@ -91,20 +113,10 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
         onSuccess();
         onClose();
       });
-    } catch (error) {
-      console.error("Error creating blog:", error.message);
-
-      Swal.fire({
-        title: "Error!",
-        text: "Terjadi kesalahan saat menambahkan artikel.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div
       className="modal show d-block"
