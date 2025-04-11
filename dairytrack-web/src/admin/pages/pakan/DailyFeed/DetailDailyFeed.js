@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  getDailyFeedById,
-  updateDailyFeed,
-} from "../../../../api/pakan/dailyFeed";
+import { getDailyFeedById, updateDailyFeed } from "../../../../api/pakan/dailyFeed";
 import { getFarmers } from "../../../../api/peternakan/farmer";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
@@ -15,7 +12,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
     cowId: "",
     feedDate: "",
     session: "pagi",
-    weather: "",
+    weather: ""
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -24,7 +21,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
   const [cowError, setCowError] = useState(false);
 
   const handleClose = () => {
-    if (typeof onClose === "function") {
+    if (typeof onClose === 'function') {
       onClose();
     } else {
       console.warn("onClose prop is not a function or not provided");
@@ -42,29 +39,29 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       setError("");
       setFarmerError(false);
       setCowError(false);
-
+      
       try {
         // Fetch feed details and reference data in parallel
         const [feedData, farmersData, cowsData] = await Promise.all([
           getDailyFeedById(feedId),
-          getFarmers().catch((err) => {
+          getFarmers().catch(err => {
             console.error("Failed to fetch farmers:", err);
             setFarmerError(true);
             return [];
           }),
-          getCows().catch((err) => {
+          getCows().catch(err => {
             console.error("Failed to fetch cows:", err);
             setCowError(true);
             return [];
-          }),
+          })
         ]);
 
         setFarmers(farmersData);
         setCows(cowsData);
-
+        
         if (farmersData.length === 0) setFarmerError(true);
         if (cowsData.length === 0) setCowError(true);
-
+        
         // Populate form with feed data
         if (feedData && feedData.data) {
           const feed = feedData.data;
@@ -73,11 +70,12 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
             cowId: feed.cow_id.toString(),
             feedDate: feed.date,
             session: feed.session,
-            weather: feed.weather || "",
+            weather: feed.weather || ""
           });
         } else {
           throw new Error("Could not retrieve feed data");
         }
+        
       } catch (error) {
         console.error("Error in fetchData:", error);
         setError("Terjadi kesalahan saat memuat data: " + error.message);
@@ -85,7 +83,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
         setLoading(false);
       }
     };
-
+    
     fetchData();
   }, [feedId]);
 
@@ -96,23 +94,23 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     // Show confirmation dialog before saving
     const confirmResult = await Swal.fire({
-      title: "Konfirmasi",
-      text: "Apakah Anda yakin ingin memperbarui data pakan harian ini?",
-      icon: "question",
+      title: 'Konfirmasi',
+      text: 'Apakah Anda yakin ingin memperbarui data pakan harian ini?',
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, perbarui!",
-      cancelButtonText: "Batal",
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, perbarui!',
+      cancelButtonText: 'Batal'
     });
-
+    
     if (!confirmResult.isConfirmed) {
       return;
     }
-
+    
     setSubmitting(true);
     setError("");
 
@@ -128,7 +126,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
         cow_id: Number(form.cowId),
         date: form.feedDate,
         session: form.session,
-        weather: form.weather,
+        weather: form.weather
       };
 
       const response = await updateDailyFeed(feedId, dailyFeedData);
@@ -136,14 +134,14 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       if (response && (response.success || response.data)) {
         // Show success message
         Swal.fire({
-          title: "Berhasil!",
-          text: "Data pakan harian berhasil diperbarui!",
-          icon: "success",
+          title: 'Berhasil!',
+          text: 'Data pakan harian berhasil diperbarui!',
+          icon: 'success',
           timer: 2000,
-          timerProgressBar: true,
+          timerProgressBar: true
         });
-
-        if (typeof onDailyFeedUpdated === "function") {
+        
+        if (typeof onDailyFeedUpdated === 'function') {
           onDailyFeedUpdated();
         }
         handleClose();
@@ -154,9 +152,9 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       console.error("Gagal memperbarui data pakan harian:", err);
       setError(err.message || "Terjadi kesalahan, coba lagi.");
       Swal.fire({
-        title: "Error!",
+        title: 'Error!',
         text: err.message || "Terjadi kesalahan, coba lagi.",
-        icon: "error",
+        icon: 'error'
       });
     } finally {
       setSubmitting(false);
@@ -167,20 +165,18 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
     <div className="modal-dialog">
       <div className="modal-content">
         <div className="modal-header">
-          <h4 className="modal-title text-info fw-bold">
-            Detail & Edit Data Pakan Harian
-          </h4>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={handleClose}
+          <h4 className="modal-title text-info fw-bold">Detail & Edit Data Pakan Harian</h4>
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={handleClose} 
             disabled={submitting}
             aria-label="Close"
           ></button>
         </div>
         <div className="modal-body">
           {error && <p className="text-danger text-center">{error}</p>}
-
+          
           {loading ? (
             <div className="text-center">
               <div className="spinner-border text-primary" role="status">
@@ -192,11 +188,11 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label className="form-label fw-bold">Petani</label>
-                <select
-                  name="farmerId"
-                  value={form.farmerId}
-                  onChange={handleChange}
-                  className={`form-select ${farmerError ? "is-invalid" : ""}`}
+                <select 
+                  name="farmerId" 
+                  value={form.farmerId} 
+                  onChange={handleChange} 
+                  className={`form-select ${farmerError ? 'is-invalid' : ''}`} 
                   required
                   disabled={farmerError || farmers.length === 0}
                 >
@@ -216,11 +212,11 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
 
               <div className="mb-3">
                 <label className="form-label fw-bold">Sapi</label>
-                <select
-                  name="cowId"
-                  value={form.cowId}
-                  onChange={handleChange}
-                  className={`form-select ${cowError ? "is-invalid" : ""}`}
+                <select 
+                  name="cowId" 
+                  value={form.cowId} 
+                  onChange={handleChange} 
+                  className={`form-select ${cowError ? 'is-invalid' : ''}`} 
                   required
                   disabled={cowError || cows.length === 0}
                 >
@@ -240,13 +236,13 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
 
               <div className="mb-3">
                 <label className="form-label fw-bold">Tanggal</label>
-                <input
-                  type="date"
-                  name="feedDate"
-                  value={form.feedDate}
-                  onChange={handleChange}
-                  className="form-control"
-                  required
+                <input 
+                  type="date" 
+                  name="feedDate" 
+                  value={form.feedDate} 
+                  onChange={handleChange} 
+                  className="form-control" 
+                  required 
                 />
               </div>
 
@@ -264,32 +260,43 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                   <option value="sore">Sore</option>
                 </select>
               </div>
+              
+              <div className="mb-3">
+                <label className="form-label fw-bold">Cuaca</label>
+                <select
+                  name="weather"
+                  value={form.weather}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="">Pilih Cuaca</option>
+                  <option value="cerah">Cerah</option>
+                  <option value="berawan">Berawan</option>
+                  <option value="hujan">Hujan</option>
+                  <option value="hujan deras">Hujan Deras</option>
+                </select>
+              </div>
+
               <div className="d-flex justify-content-between">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
                   onClick={handleClose}
                   disabled={submitting}
                 >
                   Batal
                 </button>
-                <button
-                  type="submit"
-                  className="btn btn-info"
+                <button 
+                  type="submit" 
+                  className="btn btn-info" 
                   disabled={submitting || farmerError || cowError}
                 >
                   {submitting ? (
                     <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                       Menyimpan...
                     </>
-                  ) : (
-                    "SIMPAN"
-                  )}
+                  ) : "SIMPAN"}
                 </button>
               </div>
             </form>

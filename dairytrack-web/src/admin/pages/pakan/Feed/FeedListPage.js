@@ -3,13 +3,11 @@ import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import CreateFeedPage from "./CreateFeed";
-import EditFeedModal from "./FeedDetailPage";
 
 const FeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editFeedId, setEditFeedId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -51,20 +49,8 @@ const FeedListPage = () => {
     }
   };
 
-  const handleEdit = (id) => {
-    setEditFeedId(id);
-  };
-
-  const handleCloseEdit = () => {
-    setEditFeedId(null);
-  };
-
-  const handleFeedUpdated = () => {
-    fetchData(); // Refresh data setelah update
-  };
-
   const handleAddFeed = () => {
-    setShowCreateModal(false);
+    setShowModal(false);
     fetchData(); // Refresh data setelah tambah
   };
 
@@ -74,10 +60,10 @@ const FeedListPage = () => {
 
   return (
     <div className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Pakan</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Feed Data</h2>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setShowModal(true)}
           className="btn btn-info waves-effect waves-light"
         >
           + Tambah Pakan
@@ -119,10 +105,12 @@ const FeedListPage = () => {
                       <td>{feed.energy}</td>
                       <td>{feed.fiber}</td>
                       <td>{feed.min_stock}</td>
-                      <td>Rp {feed.price.toLocaleString('id-ID')}</td>
+                      <td>{feed.price}</td>
                       <td>
                         <button
-                          onClick={() => handleEdit(feed.id)}
+                          onClick={() =>
+                            navigate(`/admin/detail-pakan/${feed.id}`)
+                          }
                           className="btn btn-info btn-sm me-2"
                         >
                           <i className="ri-eye-line"></i>
@@ -142,23 +130,7 @@ const FeedListPage = () => {
           </div>
         </div>
       )}
-      
-      {/* Create Modal */}
-      {showCreateModal && (
-        <CreateFeedPage 
-          onFeedAdded={handleAddFeed} 
-          onClose={() => setShowCreateModal(false)} 
-        />
-      )}
-      
-      {/* Edit Modal */}
-      {editFeedId && (
-        <EditFeedModal
-          feedId={editFeedId}
-          onFeedUpdated={handleFeedUpdated}
-          onClose={handleCloseEdit}
-        />
-      )}
+      {showModal && <CreateFeedPage onFeedAdded={handleAddFeed} onClose={() => setShowModal(false)} />}
     </div>
   );
 };
