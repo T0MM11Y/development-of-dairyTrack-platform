@@ -11,13 +11,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   // Mapping of menu keys to their base paths
   const menuPaths = {
-    dashboard: "/admin/dashboard",
     peternakan: "/admin/peternakan",
     pakan: "/admin/pakan",
     produktivitas: "/admin/susu",
     kesehatan: "/admin/kesehatan",
     keuangan: "/admin/keuangan",
   };
+
+  // Additional paths related to "Pakan Sapi"
+  const pakanRelatedPaths = [
+    "/admin/item-pakan-harian",
+    "/admin/nutrisi-pakan-harian",
+    "/admin/pakan-harian",
+  ];
 
   useEffect(() => {
     // Load user data from localStorage
@@ -30,6 +36,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     const activeMenus = Object.keys(menuPaths).filter((key) =>
       location.pathname.startsWith(menuPaths[key])
     );
+
+    // Tambahkan pengecekan untuk rute terkait "Pakan Sapi"
+    const isPakanRelated = pakanRelatedPaths.some((path) =>
+      location.pathname.startsWith(path)
+    );
+    if (isPakanRelated && !activeMenus.includes("pakan")) {
+      activeMenus.push("pakan");
+    }
+
     setOpenMenus(activeMenus);
   }, [location.pathname]);
 
@@ -72,177 +87,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     },
   };
 
-  // Menu data structure for consistency
-  const menuItems = [
-    {
-      key: "dashboard",
-      icon: "ri-dashboard-line",
-      label: "Dashboard",
-      path: "/admin/dashboard",
-      submenus: [],
-    },
-    {
-      key: "peternakan",
-      icon: "ri-bar-chart-box-line",
-      label: "Peternakan",
-      path: "/admin/peternakan",
-      submenus: [
-        {
-          path: "/admin/peternakan/farmer",
-          icon: "ri-line-chart-line",
-          label: "Data Peternak",
-          show: userData?.role !== "farmer",
-        },
-        {
-          path: "/admin/peternakan/sapi",
-          icon: "ri-file-list-3-line",
-          label: "Data Sapi",
-          show: true,
-        },
-        {
-          path: "/admin/peternakan/supervisor",
-          icon: "ri-file-list-3-line",
-          label: "Data Supervisor",
-          show: userData?.role !== "farmer",
-        },
-        {
-          path: "/admin/blog/all",
-          icon: "ri-article-line",
-          label: "Blog Articles",
-          show: true,
-        },
-      ],
-    },
-    {
-      key: "pakan",
-      icon: "ri-seedling-line",
-      label: "Pakan Sapi",
-      path: "/admin/pakan",
-      submenus: [
-        {
-          path: "/admin/pakan/jenis",
-          icon: "ri-stack-line",
-          label: "Jenis Pakan",
-        },
-        {
-          path: "/admin/pakan",
-          icon: "ri-leaf-line",
-          label: "Pakan",
-        },
-        {
-          path: "/admin/pakan-harian",
-          icon: "ri-calendar-check-line",
-          label: "Pakan Harian",
-        },
-        {
-          path: "/admin/item-pakan-harian",
-          icon: "ri-file-list-line",
-          label: "Item Pakan",
-        },
-        {
-          path: "/admin/pakan/stok",
-          icon: "ri-box-3-line",
-          label: "Stok Pakan",
-        },
-        {
-          path: "/admin/nutrisi-pakan-harian",
-          icon: "ri-restaurant-2-line",
-          label: "Nutrisi",
-        },
-      ],
-    },
-    {
-      key: "produktivitas",
-      icon: "ri-bar-chart-box-line",
-      label: "Produktivitas Susu",
-      path: "/admin/susu",
-      submenus: [
-        {
-          path: "/admin/milk-production/analysis",
-          icon: "ri-line-chart-line",
-          label: "Trend Produksi Susu",
-        },
-        {
-          path: "/admin/susu/milk-production/phase",
-          icon: "ri-file-list-3-line",
-          label: "Analisis by Laktasi",
-        },
-        {
-          path: "/admin/susu/produksi",
-          icon: "ri-file-list-line",
-          label: "Catatan Produksi Susu",
-        },
-      ],
-    },
-    {
-      key: "kesehatan",
-      icon: "ri-hospital-line",
-      label: "Kesehatan Sapi",
-      path: "/admin/kesehatan",
-      submenus: [
-        {
-          path: "/admin/kesehatan/dashboard",
-          icon: "ri-bar-chart-2-line",
-          label: "Dashboard Kesehatan",
-        },
-        {
-          path: "/admin/kesehatan/gejala",
-          icon: "ri-health-book-line",
-          label: "Gejala Penyakit Sapi",
-        },
-        {
-          path: "/admin/kesehatan/riwayat",
-          icon: "ri-history-line",
-          label: "Riwayat Penyakit Sapi",
-        },
-        {
-          path: "/admin/kesehatan/reproduksi",
-          icon: "ri-parent-line",
-          label: "Reproduksi Sapi",
-        },
-        {
-          path: "/admin/kesehatan/pemeriksaan",
-          icon: "ri-stethoscope-line",
-          label: "Pemeriksaan Penyakit",
-        },
-      ],
-    },
-    {
-      key: "keuangan",
-      icon: "ri-money-dollar-circle-line",
-      label: "Penjualan & Keuangan",
-      path: "/admin/keuangan",
-      submenus: [
-        {
-          path: "/admin/keuangan/product",
-          icon: "ri-drinks-2-line",
-          label: "Produk",
-        },
-        {
-          path: "/admin/keuangan/type-product",
-          icon: "ri-ink-bottle-line",
-          label: "Tipe Produk",
-        },
-        {
-          path: "/admin/keuangan/history-product",
-          icon: "ri-history-line",
-          label: "Riwayat Produk",
-        },
-        {
-          path: "/admin/keuangan/sales",
-          icon: "ri-store-line",
-          label: "Penjualan",
-        },
-        {
-          path: "/admin/keuangan/finance",
-          icon: "ri-wallet-2-line",
-          label: "Keuangan",
-        },
-      ],
-    },
-  ];
-
   return (
+    // ... (Sisa kode tetap sama, hanya bagian useEffect yang diubah) ...
     <motion.div
       className="vertical-menu"
       initial={{ width: 275 }}
@@ -292,7 +138,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <div
               style={{
                 width: "40px",
-                height: "40px",
+                height: isCollapsed ? "40px" : "40px", // atau sesuaikan nilai jika ingin berbeda
                 borderRadius: "50%",
                 overflow: "hidden",
                 marginRight: "10px",
@@ -323,94 +169,607 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
-            {menuItems.map((menu) => (
-              <motion.li
-                key={menu.key}
-                className={
-                  isActive(menu.path) || isMenuOpen(menu.key) ? "mm-active" : ""
-                }
-                variants={menuItemVariants}
-                whileHover="hover"
-                whileTap="tap"
+            {/* Dashboard */}
+            <motion.li
+              className={isActive("/admin/dashboard") ? "mm-active" : ""}
+              variants={menuItemVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link
+                to="/admin/dashboard"
+                className="waves-effect d-flex"
+                style={{ padding: "10px 15px" }}
               >
-                {menu.submenus.length > 0 ? (
-                  <>
-                    <Link
-                      to="#"
-                      className="waves-effect d-flex justify-content-between align-items-center"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleSubmenu(menu.key);
-                      }}
-                      style={{ padding: "10px 15px" }}
-                    >
-                      <div className="d-flex align-items-center">
-                        <i className={menu.icon}></i>
-                        {!isCollapsed && (
-                          <span style={{ marginLeft: "10px" }}>
-                            {menu.label}
-                          </span>
-                        )}
-                      </div>
-                      {!isCollapsed && menu.submenus.length > 0 && (
-                        <i
-                          className={`ri-arrow-down-s-line ${
-                            isMenuOpen(menu.key) ? "rotate-180" : ""
-                          }`}
-                        ></i>
-                      )}
-                    </Link>
-
-                    <AnimatePresence>
-                      {isMenuOpen(menu.key) && !isCollapsed && (
-                        <motion.ul
-                          className="sub-menu"
-                          initial="closed"
-                          animate="open"
-                          exit="closed"
-                          variants={subMenuVariants}
-                          transition={{ duration: 0.2 }}
-                          style={{ paddingLeft: "30px" }}
-                        >
-                          {menu.submenus.map(
-                            (submenu) =>
-                              (submenu.show === undefined || submenu.show) && (
-                                <motion.li
-                                  key={submenu.path}
-                                  variants={menuItemVariants}
-                                  whileHover="hover"
-                                  whileTap="tap"
-                                >
-                                  <Link
-                                    to={submenu.path}
-                                    className={
-                                      isActive(submenu.path) ? "active" : ""
-                                    }
-                                  >
-                                    <i className={submenu.icon}></i>{" "}
-                                    {submenu.label}
-                                  </Link>
-                                </motion.li>
-                              )
-                          )}
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
-                  </>
-                ) : (
-                  <Link
-                    to={menu.path}
-                    className="waves-effect d-flex"
-                    style={{ padding: "10px 15px" }}
-                  >
-                    <i className={menu.icon}></i>
-                    {!isCollapsed && (
-                      <span style={{ marginLeft: "10px" }}>{menu.label}</span>
-                    )}
-                  </Link>
+                <i className="ri-dashboard-line"></i>
+                {!isCollapsed && (
+                  <span style={{ marginLeft: "10px" }}>Dashboard</span>
                 )}
-              </motion.li>
-            ))}
+              </Link>
+            </motion.li>
+
+            {/* Peternakan */}
+            <motion.li
+              className={isMenuOpen("peternakan") ? "mm-active" : ""}
+              variants={menuItemVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link
+                to="#"
+                className="waves-effect d-flex justify-content-between align-items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu("peternakan");
+                }}
+                style={{ padding: "10px 15px" }}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="ri-bar-chart-box-line"></i>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "10px" }}>Peternakan</span>
+                  )}
+                </div>
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("peternakan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
+              </Link>
+
+              <AnimatePresence>
+                {isMenuOpen("peternakan") && !isCollapsed && (
+                  <motion.ul
+                    className="sub-menu"
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={subMenuVariants}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
+                  >
+                    {userData?.role !== "farmer" && (
+                      <motion.li
+                        variants={menuItemVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                      >
+                        <Link
+                          to="/admin/peternakan/farmer"
+                          className={
+                            isActive("/admin/peternakan/farmer") ? "active" : ""
+                          }
+                        >
+                          <i className="ri-line-chart-line"></i> Data Peternak
+                        </Link>
+                      </motion.li>
+                    )}
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/peternakan/sapi"
+                        className={
+                          isActive("/admin/peternakan/sapi") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-file-list-3-line"></i> Data Sapi
+                      </Link>
+                    </motion.li>
+                    {userData?.role !== "farmer" && (
+                      <motion.li
+                        variants={menuItemVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                      >
+                        <Link
+                          to="/admin/peternakan/supervisor"
+                          className={
+                            isActive("/admin/peternakan/supervisor")
+                              ? "active"
+                              : ""
+                          }
+                        >
+                          <i className="ri-file-list-3-line"></i> Data
+                          Supervisor
+                        </Link>
+                      </motion.li>
+                    )}
+                    {/* Blog Section */}
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/blog/all"
+                        className={isActive("/admin/blog/all") ? "active" : ""}
+                      >
+                        <i className="ri-article-line"></i> Blog Articles
+                      </Link>
+                    </motion.li>
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </motion.li>
+
+            {/* Pakan Sapi */}
+            <motion.li
+              className={openMenus.includes("pakan") ? "mm-active" : ""}
+              variants={menuItemVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link
+                to="#"
+                className="waves-effect d-flex justify-content-between align-items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu("pakan");
+                }}
+                style={{ padding: "10px 15px" }}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="ri-seedling-line"></i>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "10px" }}>Pakan Sapi</span>
+                  )}
+                </div>
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      openMenus.includes("pakan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
+              </Link>
+
+              <AnimatePresence>
+                {openMenus.includes("pakan") && !isCollapsed && (
+                  <motion.ul
+                    className="sub-menu"
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={subMenuVariants}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
+                  >
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/pakan/jenis"
+                        className={
+                          location.pathname === "/admin/pakan/jenis"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-stack-line"></i> Jenis Pakan
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/pakan"
+                        className={
+                          location.pathname === "/admin/pakan" ? "active" : ""
+                        }
+                      >
+                        <i className="ri-leaf-line"></i> Pakan
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/pakan/stok"
+                        className={
+                          location.pathname === "/admin/pakan/stok"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-box-3-line"></i> Stok Pakan
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/pakan-harian"
+                        className={
+                          location.pathname === "/admin/pakan-harian"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-calendar-check-line"></i> Pakan Harian
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/item-pakan-harian"
+                        className={
+                          location.pathname === "/admin/item-pakan-harian"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-file-list-line"></i> Item Pakan
+                      </Link>
+                    </motion.li>
+
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/nutrisi-pakan-harian"
+                        className={
+                          location.pathname === "/admin/nutrisi-pakan-harian"
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-restaurant-2-line"></i> Nutrisi
+                      </Link>
+                    </motion.li>
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </motion.li>
+
+            {/* Produktivitas Susu */}
+            <motion.li
+              className={isMenuOpen("produktivitas") ? "mm-active" : ""}
+              variants={menuItemVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link
+                to="#"
+                className="waves-effect d-flex justify-content-between align-items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu("produktivitas");
+                }}
+                style={{ padding: "10px 15px" }}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="ri-bar-chart-box-line"></i>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "10px" }}>
+                      Produktivitas Susu
+                    </span>
+                  )}
+                </div>
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("produktivitas") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
+              </Link>
+
+              <AnimatePresence>
+                {isMenuOpen("produktivitas") && !isCollapsed && (
+                  <motion.ul
+                    className="sub-menu"
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={subMenuVariants}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
+                  >
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/susu/produksi"
+                        className={
+                          isActive("/admin/susu/produksi") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-database-2-line"></i> Data Produksi
+                        Susu
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/susu/analisis"
+                        className={
+                          isActive("/admin/susu/analisis") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-line-chart-line"></i> Analisis Produksi
+                      </Link>
+                    </motion.li>
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </motion.li>
+
+                 {/* Kesehatan Sapi */}
+<motion.li
+  className={isMenuOpen("kesehatan") ? "mm-active" : ""}
+  variants={menuItemVariants}
+  whileHover="hover"
+  whileTap="tap"
+>
+  <Link
+    to="#"
+    className="waves-effect d-flex justify-content-between align-items-center"
+    onClick={(e) => {
+      e.preventDefault();
+      toggleSubmenu("kesehatan");
+    }}
+    style={{ padding: "10px 15px" }}
+  >
+    <div className="d-flex align-items-center">
+      <i className="ri-hospital-line"></i>
+      {!isCollapsed && (
+        <span style={{ marginLeft: "10px" }}>Kesehatan Sapi</span>
+      )}
+    </div>
+    {!isCollapsed && (
+      <i
+        className={`ri-arrow-down-s-line ${
+          isMenuOpen("kesehatan") ? "rotate-180" : ""
+        }`}
+      ></i>
+    )}
+  </Link>
+
+  <AnimatePresence>
+    {isMenuOpen("kesehatan") && !isCollapsed && (
+      <motion.ul
+        className="sub-menu"
+        initial="closed"
+        animate="open"
+        exit="closed"
+        variants={subMenuVariants}
+        transition={{ duration: 0.2 }}
+        style={{ paddingLeft: "30px" }}
+      >
+        {/* Dashboard */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/dashboard"
+            className={
+              isActive("/admin/kesehatan/dashboard") ? "active" : ""
+            }
+          >
+            <i className="ri-bar-chart-2-line"></i> Dashboard Kesehatan
+          </Link>
+        </motion.li>
+
+        {/* Gejala */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/gejala"
+            className={
+              isActive("/admin/kesehatan/gejala") ? "active" : ""
+            }
+          >
+            <i className="ri-health-book-line"></i> Gejala Penyakit Sapi
+          </Link>
+        </motion.li>
+
+        {/* Riwayat */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/riwayat"
+            className={
+              isActive("/admin/kesehatan/riwayat") ? "active" : ""
+            }
+          >
+            <i className="ri-history-line"></i> Riwayat Penyakit Sapi
+          </Link>
+        </motion.li>
+
+        {/* Reproduksi */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/reproduksi"
+            className={
+              isActive("/admin/kesehatan/reproduksi") ? "active" : ""
+            }
+          >
+            <i className="ri-parent-line"></i> Reproduksi Sapi
+          </Link>
+        </motion.li>
+
+        {/* Pemeriksaan */}
+        <motion.li
+          variants={menuItemVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
+          <Link
+            to="/admin/kesehatan/pemeriksaan"
+            className={
+              isActive("/admin/kesehatan/pemeriksaan") ? "active" : ""
+            }
+          >
+            <i className="ri-stethoscope-line"></i> Pemeriksaan Penyakit
+          </Link>
+        </motion.li>
+      </motion.ul>
+    )}
+  </AnimatePresence>
+</motion.li>
+
+            {/* Keuangan */}
+            <motion.li
+              className={isMenuOpen("keuangan") ? "mm-active" : ""}
+              variants={menuItemVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link
+                to="#"
+                className="waves-effect d-flex justify-content-between align-items-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu("keuangan");
+                }}
+                style={{ padding: "10px 15px" }}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="ri-money-dollar-circle-line"></i>
+                  {!isCollapsed && (
+                    <span style={{ marginLeft: "10px" }}>
+                      Penjualan & Keuangan
+                    </span>
+                  )}
+                </div>
+                {!isCollapsed && (
+                  <i
+                    className={`ri-arrow-down-s-line ${
+                      isMenuOpen("keuangan") ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                )}
+              </Link>
+
+              <AnimatePresence>
+                {isMenuOpen("keuangan") && !isCollapsed && (
+                  <motion.ul
+                    className="sub-menu"
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={subMenuVariants}
+                    transition={{ duration: 0.2 }}
+                    style={{ paddingLeft: "30px" }}
+                  >
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/product"
+                        className={
+                          isActive("/admin/keuangan/product") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-drinks-2-line"></i> Produk
+                        {/* <i className="ri-ink-bottle-line"></i> Produk */}
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/type-product"
+                        className={
+                          isActive("/admin/keuangan/type-product")
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-ink-bottle-line"></i> Tipe Produk
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/history-product"
+                        className={
+                          isActive("/admin/keuangan/history-product")
+                            ? "active"
+                            : ""
+                        }
+                      >
+                        <i className="ri-history-line"></i> Riwayat Produk
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/sales"
+                        className={
+                          isActive("/admin/keuangan/sales") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-store-line"></i> Penjualan
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      variants={menuItemVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link
+                        to="/admin/keuangan/finance"
+                        className={
+                          isActive("/admin/keuangan/finance") ? "active" : ""
+                        }
+                      >
+                        <i className="ri-wallet-2-line"></i> Keuangan
+                      </Link>
+                    </motion.li>
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </motion.li>
           </ul>
         </div>
       </div>
