@@ -6,6 +6,7 @@ import {
 } from "../../../../api/peternakan/blog";
 import CreateBlogModal from "./createBlog";
 import EditBlogModal from "./editBlog";
+import CreateTopicModal from "./createTopic"; // Import CreateTopicModal
 
 const BlogAll = () => {
   const [data, setData] = useState([]);
@@ -15,6 +16,7 @@ const BlogAll = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateTopicModal, setShowCreateTopicModal] = useState(false); // State for CreateTopicModal
   const [editBlogId, setEditBlogId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -113,6 +115,12 @@ const BlogAll = () => {
             >
               + Create Blog
             </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowCreateTopicModal(true)} // Open CreateTopicModal
+            >
+              + Add Topic
+            </button>
           </div>
         </div>
       </div>
@@ -171,7 +179,7 @@ const BlogAll = () => {
                             ? `${item.description.substring(0, 50)}...`
                             : item.description}
                         </td>
-                        <td>{item.topic}</td>
+                        <td>{item.topic_name}</td>
                         <td>
                           <button
                             onClick={() => handleEdit(item.id)}
@@ -209,6 +217,14 @@ const BlogAll = () => {
         <EditBlogModal
           blogId={editBlogId}
           onClose={() => setShowEditModal(false)}
+          onSuccess={fetchData}
+        />
+      )}
+
+      {/* Create Topic Modal */}
+      {showCreateTopicModal && (
+        <CreateTopicModal
+          onClose={() => setShowCreateTopicModal(false)}
           onSuccess={fetchData}
         />
       )}

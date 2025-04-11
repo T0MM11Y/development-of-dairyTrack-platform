@@ -27,7 +27,6 @@ def get_blog(id):
     blog = Blog.query.get_or_404(id)
     return jsonify(blog.to_dict())
 
-
 @blogs_bp.route('/blogs', methods=['POST'])
 def create_blog():
     try:
@@ -38,7 +37,7 @@ def create_blog():
             logger.error("No input data provided in the request.")
             return jsonify({'error': 'No input data provided'}), 400
 
-        
+        # Handle photo upload
         photo_url = None
         if file:
             filename = secure_filename(file.filename)
@@ -46,12 +45,12 @@ def create_blog():
             file.save(file_path)
             photo_url = f'/uploads/{filename}'  
 
-        
+        # Create the blog object with topic_id instead of topic
         blog = Blog(
             title=data.get('title'),
             description=data.get('description'),
             photo=photo_url,  
-            topic=data.get('topic')
+            topic_id=data.get('topic_id')  # Use topic_id here
         )
 
         db.session.add(blog)
@@ -59,7 +58,6 @@ def create_blog():
         return jsonify(blog.to_dict()), 201
 
     except Exception as e:
-        
         logger.error(f"Error occurred while creating a blog: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred while creating the blog. Please check the server logs for more details.'}), 500
 
@@ -87,8 +85,8 @@ def update_blog(id):
         blog.title = data.get('title')
     if 'description' in data:
         blog.description = data.get('description')
-    if 'topic' in data:
-        blog.topic = data.get('topic')
+    if 'topic_id' in data:
+        blog.topic_id = data.get('topic_id')
 
     db.session.commit()
     return jsonify(blog.to_dict()), 200

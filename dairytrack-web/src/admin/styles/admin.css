@@ -31,3 +31,8 @@
     text-align: center;
     width: 100%;
 }
+
+.custom-select {
+    color: #000; /* Warna teks */
+    background-color: #fff; /* Warna latar belakang */
+  }
