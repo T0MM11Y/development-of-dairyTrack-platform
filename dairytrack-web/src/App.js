@@ -35,6 +35,7 @@ import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js"
 import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
 
 import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
+import DashboardPakan from "./admin/pages/pakan/Dashboard/FeedDashboard.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
 import MilkProductionPhase from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionPhaseAnalysis.js";
@@ -190,6 +191,10 @@ function App() {
       <Route
         path="/admin/dashboard"
         element={<ProtectedRoute>{withAdminLayout(Dashboard)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/pakan/dashboard"
+        element={<ProtectedRoute>{withAdminLayout(DashboardPakan)}</ProtectedRoute>}
       />
       <Route
         path="/admin/pakan/jenis"

@@ -124,6 +124,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       path: "/admin/pakan",
       submenus: [
         {
+          path: "/admin/pakan/dashboard",
+          icon: "ri-dashboard-line",
+          label: "Dashboard Pakan",
+        },
+        {
           path: "/admin/pakan/jenis",
           icon: "ri-stack-line",
           label: "Jenis Pakan",
