@@ -111,6 +111,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           label: "Blog Articles",
           show: true,
         },
+        {
+          path: "/admin/gallery/all",
+          icon: "ri-article-line",
+          label: "Gallery",
+          show: true,
+        },
       ],
     },
     {

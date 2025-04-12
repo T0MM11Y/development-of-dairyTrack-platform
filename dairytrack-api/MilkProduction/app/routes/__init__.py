@@ -7,3 +7,4 @@ from .auth import auth_bp
 from .blog import blogs_bp
 from .daily_milk_totals import daily_milk_totals_bp
 from .topicBlogs import topic_blogs_bp
+from .galleries import galleries_bp

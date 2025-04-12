@@ -1,4 +1,3 @@
-# FILE: topicBlog.py
 from app import db
 
 class TopicBlog(db.Model):
@@ -10,7 +9,7 @@ class TopicBlog(db.Model):
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     # Relasi ke Blog
-    blogs = db.relationship('Blog', backref='topic_blog', lazy=True, cascade="all, delete")
+    blogs = db.relationship('Blog', backref='topic_blog', lazy=True, cascade="all, delete", overlaps='topic')
 
     def to_dict(self):
         return {

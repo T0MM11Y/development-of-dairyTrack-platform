@@ -12,6 +12,8 @@ const FreshnessOfMilk = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all"); // Tambahkan state untuk filter status
 
+  const [sessionFilter, setSessionFilter] = useState("all"); // Tambahkan state untuk filter sesi
+
   const itemsPerPage = 10;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -42,6 +44,11 @@ const FreshnessOfMilk = () => {
       data = data.filter((entry) => entry.is_expired === isExpired);
     }
 
+    if (sessionFilter !== "all") {
+      const session = parseInt(sessionFilter, 10);
+      data = data.filter((entry) => entry.session === session);
+    }
+
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
       data = data.filter((entry) => {
@@ -68,7 +75,7 @@ const FreshnessOfMilk = () => {
     }
 
     return data;
-  }, [rawMilkData, searchQuery, statusFilter]);
+  }, [rawMilkData, searchQuery, statusFilter, sessionFilter]);
 
   const currentData = filteredData().slice(indexOfFirstItem, indexOfLastItem);
 
@@ -235,6 +242,19 @@ const FreshnessOfMilk = () => {
             <option value="expired">Expired</option>
           </select>
         </div>
+        <div className="col-md-1">
+          <label className="form-label">Filter by Session</label>
+          <select
+            className="form-select"
+            value={sessionFilter}
+            onChange={(e) => setSessionFilter(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="1">Session 1</option>
+            <option value="2">Session 2</option>
+            <option value="3">Session 3</option>
+          </select>
+        </div>
         <div className="col-md-3 d-flex flex-column ms-auto">
           <label className="form-label">Search</label>
           <div className="input-group">
@@ -304,7 +324,6 @@ const FreshnessOfMilk = () => {
                       Math.ceil((expirationDate - now) / (1000 * 60 * 60))
                     );
 
-                    // Fungsi untuk menentukan badge sesi
                     const sessionBadge = (session) => {
                       switch (session) {
                         case 1:

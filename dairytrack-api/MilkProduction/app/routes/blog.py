@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 blogs_bp = Blueprint('blogs', __name__)
 
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads/blog')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @blogs_bp.route('/blogs', methods=['GET'])
@@ -43,7 +43,7 @@ def create_blog():
             filename = secure_filename(file.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(file_path)
-            photo_url = f'/uploads/{filename}'  
+            photo_url = f'/uploads/blog/{filename}'  
 
         # Create the blog object with topic_id instead of topic
         blog = Blog(
@@ -78,7 +78,7 @@ def update_blog(id):
         filename = secure_filename(file.filename)
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
-        blog.photo = f'/uploads/{filename}'  
+        blog.photo = f'/uploads/blog/{filename}'  
 
     
     if 'title' in data:
@@ -100,10 +100,10 @@ def get_blog_photo(id):
     photo_url = request.host_url.rstrip('/') + '/api' + blog.photo
     return jsonify({'photo_url': photo_url})
 
-@blogs_bp.route('/uploads/<filename>', methods=['GET'])
+@blogs_bp.route('/uploads/blog/<filename>', methods=['GET'])
 def serve_photo(filename):
     
-    upload_folder = os.path.join(os.path.dirname(__file__), '../uploads')
+    upload_folder = os.path.join(os.path.dirname(__file__), '../uploads/blog/')
     
     return send_from_directory(upload_folder, filename)
 

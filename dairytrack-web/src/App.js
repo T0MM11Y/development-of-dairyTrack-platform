@@ -106,6 +106,7 @@ import ContactUs from "./user/pages/ContactUs";
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
 import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
 import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
+import galleryAll from "./admin/pages/peternakan/gallery/gallery_all.js";
 import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionTrendAnalysis.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
@@ -340,6 +341,10 @@ function App() {
       <Route
         path="/admin/blog/create"
         element={<ProtectedRoute>{withAdminLayout(blogCreate)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/gallery/all"
+        element={<ProtectedRoute>{withAdminLayout(galleryAll)}</ProtectedRoute>}
       />
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route
