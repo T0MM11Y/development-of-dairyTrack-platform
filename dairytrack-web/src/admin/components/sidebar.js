@@ -274,19 +274,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           overflowY: "auto",
         }}
       >
-        {/* Toggle Button */}
-        <motion.div
-          className="text-center py-2 cursor-pointer"
-          onClick={toggleSidebar}
-          style={{ borderBottom: "1px solid #eee" }}
-          whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <i
-            className={`ri-${isCollapsed ? "menu-unfold" : "menu-fold"}-line`}
-          ></i>
-        </motion.div>
-
         {/* User Profile */}
         {!isCollapsed && (
           <motion.div

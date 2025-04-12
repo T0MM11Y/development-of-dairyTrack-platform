@@ -241,22 +241,9 @@ const Header = () => {
         <div className="d-flex align-items-start w-100">
           {/* Logo */}
           <div className="navbar-brand-box">
-            <Link to="/" className="logo logo-dark">
-              <span className="logo-sm">
-                <img src={logoSm} alt="logo-sm" height="20" />
-              </span>
-              <span className="logo-lg">
-                <img src={logoDark} alt="logo-dark" height="90" />
-              </span>
-            </Link>
-            <Link to="/" className="logo logo-light">
-              <span className="logo-sm">
-                <img src={logoSm} alt="logo-sm-light" height="20" />
-              </span>
-              <span className="logo-lg">
-                <img src={logoLight} alt="logo-light" height="20" />
-              </span>
-            </Link>
+            <span className="logo-lg">
+              <img src={logoDark} alt="logo-dark" height="90" />
+            </span>
           </div>
 
           {/* Language Dropdown */}
