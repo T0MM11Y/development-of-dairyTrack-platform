@@ -260,22 +260,6 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                   <option value="sore">Sore</option>
                 </select>
               </div>
-              
-              <div className="mb-3">
-                <label className="form-label fw-bold">Cuaca</label>
-                <select
-                  name="weather"
-                  value={form.weather}
-                  onChange={handleChange}
-                  className="form-select"
-                >
-                  <option value="">Pilih Cuaca</option>
-                  <option value="cerah">Cerah</option>
-                  <option value="berawan">Berawan</option>
-                  <option value="hujan">Hujan</option>
-                  <option value="hujan deras">Hujan Deras</option>
-                </select>
-              </div>
 
               <div className="d-flex justify-content-between">
                 <button 

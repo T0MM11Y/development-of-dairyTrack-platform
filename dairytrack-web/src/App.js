@@ -16,6 +16,7 @@ import Dashboard from "./admin/pages/dashboard/Dashboard";
 
 import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
+import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js"
 
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
@@ -23,6 +24,8 @@ import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
 
 import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
 import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
+import EditStock from "./admin/pages/pakan/FeedStock/EditStock.js";
+
 
 import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
@@ -193,6 +196,10 @@ function App() {
         element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
       />
       <Route
+        path="/admin/detail/jenis-pakan/:id"
+        element={<ProtectedRoute>{withAdminLayout(DetailJenisPakan)}</ProtectedRoute>}
+      />
+      <Route
         path="/admin/pakan/jenis/tambah"
         element={
           <ProtectedRoute>{withAdminLayout(TambahJenisPakan)}</ProtectedRoute>
@@ -217,6 +224,10 @@ function App() {
       <Route
         path="/admin/pakan/stok"
         element={<ProtectedRoute>{withAdminLayout(StokPakan)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/stok/edit/:id"
+        element={<ProtectedRoute>{withAdminLayout(EditStock)}</ProtectedRoute>}
       />
       <Route
         path="/admin/pakan/tambah-stok"

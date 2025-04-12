@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
 import { getFeedStock } from "../../../../api/pakan/feedstock";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import AddFeedStockPage from "./AddStock";
+import EditFeedStockPage from "./EditStock";
+
+// Helper function to format stock numbers
+const formatStockNumber = (value) => {
+  const num = parseFloat(value);
+  if (isNaN(num)) return "0";
+
+  // Convert to integer if no decimal part
+  const formatted = Math.floor(num).toString();
+  
+  // Add thousand separator
+  return formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
 const FeedStockPage = () => {
   const [feedStock, setFeedStock] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editStockId, setEditStockId] = useState(null);
+  const [preFeedId, setPreFeedId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -29,11 +45,23 @@ const FeedStockPage = () => {
   };
 
   const handleAddStock = (feedId) => {
-    if (!feedId) {
-      Swal.fire("Error", "Feed ID not found!", "error");
-      return;
-    }
-    navigate(`/admin/pakan/tambah-stok?feedId=${feedId}`);
+    setPreFeedId(feedId);
+    setShowAddModal(true);
+  };
+
+  const handleEditStock = (stockId) => {
+    setEditStockId(stockId);
+    setShowEditModal(true);
+  };
+
+  const handleStockAdded = () => {
+    setShowAddModal(false);
+    fetchData(); // Refresh the list
+  };
+
+  const handleStockUpdated = () => {
+    setShowEditModal(false);
+    fetchData(); // Refresh the list
   };
 
   useEffect(() => {
@@ -45,7 +73,7 @@ const FeedStockPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Feed Stock Data</h2>
         <button
-          onClick={() => navigate("/admin/pakan/tambah-stok")}
+          onClick={() => setShowAddModal(true)}
           className="btn btn-success waves-effect waves-light"
         >
           + Add Stock
@@ -73,7 +101,7 @@ const FeedStockPage = () => {
                 <table className="table table-striped mb-0">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th>No</th>
                       <th>Name</th>
                       <th>Stock (kg)</th>
                       <th>Actions</th>
@@ -84,19 +112,21 @@ const FeedStockPage = () => {
                       <tr key={item.id}>
                         <th scope="row">{index + 1}</th>
                         <td>{item.feed?.name || "Unknown"}</td>
-                        <td>{item.stock}</td>
+                        <td>{formatStockNumber(item.stock)}</td>
                         <td>
                           <button
-                            className="btn btn-info waves-effect waves-light mr-2"
-                            onClick={() => navigate(`/feedstock/${item.id}`)}
+                            className="btn btn-info waves-effect waves-light"
+                            onClick={() => handleEditStock(item.id)}
+                            style={{ marginRight: "12px" }}
                           >
-                            <i className="ri-eye-line"></i>
+                            <i className="ri-edit-line"></i>
                           </button>
                           <button
                             onClick={() => handleAddStock(item.feed?.id)}
-                            className="btn btn-success waves-effect waves-light mr-2"
+                            className="btn btn-success waves-effect waves-light"
+                            style={{ padding: "6px 12px" }}
                           >
-                            <i className="ri-add-circle-line"></i>
+                            <i className="ri-add-line"></i>
                           </button>
                         </td>
                       </tr>
@@ -107,6 +137,22 @@ const FeedStockPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showAddModal && (
+        <AddFeedStockPage
+          preFeedId={preFeedId}
+          onStockAdded={handleStockAdded}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {showEditModal && (
+        <EditFeedStockPage
+          stockId={editStockId}
+          onStockUpdated={handleStockUpdated}
+          onClose={() => setShowEditModal(false)}
+        />
       )}
     </div>
   );

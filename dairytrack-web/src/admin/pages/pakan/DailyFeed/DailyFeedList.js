@@ -1,6 +1,6 @@
-// DailyFeedListPage.jsx
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
+import DataTable from "react-data-table-component";
 import { getAllDailyFeeds, deleteDailyFeed } from "../../../../api/pakan/dailyFeed";
 import { getFarmers } from "../../../../api/peternakan/farmer";
 import { getCows } from "../../../../api/peternakan/cow";
@@ -9,63 +9,61 @@ import DailyFeedDetailEdit from "./DetailDailyFeed";
 
 const DailyFeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
+  const [filteredFeeds, setFilteredFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedFeedId, setSelectedFeedId] = useState(null);
   const [farmerNames, setFarmerNames] = useState({});
   const [cowNames, setCowNames] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch feeds, farmers, and cows data in parallel
       const [feedsResponse, farmersData, cowsData] = await Promise.all([
         getAllDailyFeeds(),
-        getFarmers().catch(err => {
-          console.error("Failed to fetch farmers:", err);
-          return [];
-        }),
-        getCows().catch(err => {
-          console.error("Failed to fetch cows:", err);
-          return [];
-        })
+        getFarmers().catch(err => []),
+        getCows().catch(err => [])
       ]);
-      
-      // Process feeds
+
       if (feedsResponse.success && feedsResponse.data) {
         setFeeds(feedsResponse.data);
-      } else {
-        console.error("Unexpected response format", feedsResponse);
-        setFeeds([]);
+        setFilteredFeeds(feedsResponse.data);
       }
-      
-      // Create lookup maps for farmer and cow names
-      const farmerMap = {};
-      farmersData.forEach(farmer => {
-        farmerMap[farmer.id] = `${farmer.first_name} ${farmer.last_name}`;
-      });
+
+      const farmerMap = Object.fromEntries(
+        farmersData.map(farmer => [farmer.id, `${farmer.first_name} ${farmer.last_name}`])
+      );
       setFarmerNames(farmerMap);
-      
-      const cowMap = {};
-      cowsData.forEach(cow => {
-        cowMap[cow.id] = cow.name;
-      });
+
+      const cowMap = Object.fromEntries(
+        cowsData.map(cow => [cow.id, cow.name])
+      );
       setCowNames(cowMap);
-      
     } catch (error) {
       console.error("Failed to fetch data:", error.message);
       setFeeds([]);
-      
-      Swal.fire({
-        title: "Error!",
-        text: "Failed to load data.",
-        icon: "error"
-      });
+      setFilteredFeeds([]);
+      Swal.fire("Error!", "Failed to load data.", "error");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Search handler
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+
+    const filtered = feeds.filter(feed =>
+      farmerNames[feed.farmer_id]?.toLowerCase().includes(term) ||
+      cowNames[feed.cow_id]?.toLowerCase().includes(term) ||
+      feed.date.toLowerCase().includes(term) ||
+      feed.session.toLowerCase().includes(term) ||
+      feed.weather?.toLowerCase().includes(term)
+    );
+    setFilteredFeeds(filtered);
   };
 
   const handleDelete = async (id) => {
@@ -92,49 +90,19 @@ const DailyFeedListPage = () => {
         });
         fetchData();
       } catch (error) {
-        console.error("Failed to delete feed:", error.message);
-        Swal.fire({
-          title: "Error!",
-          text: "Terjadi kesalahan saat menghapus data.",
-          icon: "error"
-        });
+        Swal.fire("Error!", "Terjadi kesalahan saat menghapus data.", "error");
       }
     }
   };
 
-  const handleAddClick = () => {
-    setShowCreateModal(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-  };
-
-  const handleViewDetails = (id) => {
-    setSelectedFeedId(id);
-    setShowDetailModal(true);
-  };
-
-  const handleCloseDetailModal = () => {
-    setShowDetailModal(false);
-    setSelectedFeedId(null);
-  };
-  
-  const handleDailyFeedAdded = () => {
-    fetchData();
-  };
-  
-  const handleDailyFeedUpdated = () => {
-    fetchData();
-  };
-
-  // Format date to be more readable
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('id-ID', options);
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
-  // Capitalize first letter of session
   const formatSession = (session) => {
     return session.charAt(0).toUpperCase() + session.slice(1);
   };
@@ -143,23 +111,112 @@ const DailyFeedListPage = () => {
     fetchData();
   }, []);
 
+  // Uniform column width
+  const columnWidth = "14%"; // Equal width for all 7 columns (100% / 7 ≈ 14%)
+
+  // DataTable columns with uniform width
+  const columns = [
+    {
+      name: "#",
+      selector: (row, index) => index + 1,
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Nama Petani",
+      selector: row => farmerNames[row.farmer_id] || `Petani #${row.farmer_id}`,
+      wrap: true,
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Nama Sapi",
+      selector: row => cowNames[row.cow_id] || `Sapi #${row.cow_id}`,
+      wrap: true,
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Tanggal",
+      selector: row => formatDate(row.date),
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Sesi",
+      selector: row => formatSession(row.session),
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Cuaca",
+      selector: row => row.weather ? formatSession(row.weather) : "Tidak ada",
+      width: columnWidth,
+      center: true,
+    },
+    {
+      name: "Aksi",
+      cell: (row) => (
+        <div className="d-flex gap-2 justify-content-center">
+          <button
+            className="btn btn-sm btn-info"
+            onClick={() => { setSelectedFeedId(row.id); setShowDetailModal(true); }}
+          >
+            <i className="ri-edit-line"></i>
+          </button>
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={() => handleDelete(row.id)}
+          >
+            <i className="ri-delete-bin-6-line"></i>
+          </button>
+        </div>
+      ),
+      width: columnWidth,
+      center: true,
+    },
+  ];
+
+  // Custom styles for DataTable
+  const customStyles = {
+    headCells: {
+      style: {
+        backgroundColor: '#f8f9fa',
+        fontWeight: 'bold',
+        padding: '12px',
+        justifyContent: 'center', // Center header text
+      },
+    },
+    cells: {
+      style: {
+        padding: '12px',
+        justifyContent: 'center', // Center cell content
+      },
+    },
+    rows: {
+      style: {
+        minHeight: '50px',
+      },
+    },
+  };
+
   return (
     <div className="p-4">
       {showCreateModal && (
-        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%", overflow: "auto" }}>
+        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%" }}>
           <CreateDailyFeedPage 
-            onDailyFeedAdded={handleDailyFeedAdded} 
-            onClose={handleCloseCreateModal} 
+            onDailyFeedAdded={fetchData} 
+            onClose={() => setShowCreateModal(false)} 
           />
         </div>
       )}
       
       {showDetailModal && selectedFeedId && (
-        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%", overflow: "auto" }}>
+        <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, zIndex: 1050, width: "100%", height: "100%" }}>
           <DailyFeedDetailEdit 
             feedId={selectedFeedId}
-            onDailyFeedUpdated={handleDailyFeedUpdated}
-            onClose={handleCloseDetailModal} 
+            onDailyFeedUpdated={fetchData}
+            onClose={() => { setShowDetailModal(false); setSelectedFeedId(null); }}
           />
         </div>
       )}
@@ -167,11 +224,22 @@ const DailyFeedListPage = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Pakan Harian</h2>
         <button
-          onClick={handleAddClick}
-          className="btn btn-info waves-effect waves-light"
+          onClick={() => setShowCreateModal(true)}
+          className="btn btn-info waves-effect waves-light text-uppercase"
+          style={{ backgroundColor: '#17a2b8', borderColor: '#17a2b8' }}
         >
-          + Tambah Pakan
+          Tambah Pakan
         </button>
+      </div>
+
+      <div className="mb-4" style={{ maxWidth: "250px" }}>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Cari..."
+          value={searchTerm}
+          onChange={handleSearch}
+        />
       </div>
 
       {loading ? (
@@ -181,63 +249,26 @@ const DailyFeedListPage = () => {
           </div>
           <p className="mt-2">Memuat data...</p>
         </div>
-      ) : feeds.length === 0 ? (
+      ) : filteredFeeds.length === 0 ? (
         <div className="alert alert-info text-center">
-          Belum ada data pakan tersedia.
+          {searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data pakan tersedia."}
         </div>
       ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title mb-4">Daftar Pakan Harian</h4>
-              <div className="table-responsive">
-                <table className="table table-hover table-striped mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th className="text-center" style={{width: "50px"}}>#</th>
-                      <th>Nama Petani</th>
-                      <th>Nama Sapi</th>
-                      <th style={{width: "120px"}}>Tanggal</th>
-                      <th style={{width: "100px"}}>Sesi</th>
-                      <th style={{width: "120px"}}>Cuaca</th>
-                      <th className="text-center" style={{width: "130px"}}>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {feeds.map((feed, index) => (
-                      <tr key={feed.id}>
-                        <td className="text-center">{index + 1}</td>
-                        <td>{farmerNames[feed.farmer_id] || `Petani #${feed.farmer_id}`}</td>
-                        <td>{cowNames[feed.cow_id] || `Sapi #${feed.cow_id}`}</td>
-                        <td>{formatDate(feed.date)}</td>
-                        <td>{formatSession(feed.session)}</td>
-                        <td>{feed.weather ? formatSession(feed.weather) : "Tidak ada data"}</td>
-                        <td>
-                          <div className="d-flex justify-content-center gap-2">
-                            <button
-                              className="btn btn-sm btn-info"
-                              onClick={() => handleViewDetails(feed.id)}
-                              title="Detail/Edit"
-                            >
-                              <i className="ri-edit-line"></i>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(feed.id)}
-                              className="btn btn-sm btn-danger"
-                              title="Hapus"
-                            >
-                              <i className="ri-delete-bin-6-line"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        <DataTable
+          columns={columns}
+          data={filteredFeeds}
+          pagination
+          paginationPerPage={15} // Default to 15 rows per page
+          paginationRowsPerPageOptions={[5, 10, 15, 20, 25, 30]} // Options for rows per page
+          customStyles={customStyles}
+          noDataComponent={<div className="text-center p-4">Tidak ada data tersedia</div>}
+          progressPending={loading}
+          progressComponent={<div className="text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
             </div>
-          </div>
-        </div>
+          </div>}
+        />
       )}
     </div>
   );

@@ -3,11 +3,16 @@ import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import CreateFeedPage from "./CreateFeed";
+import FeedDetailPage from "./FeedDetailPage";
 
 const FeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
+  const [filteredFeeds, setFilteredFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedFeedId, setSelectedFeedId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -16,16 +21,30 @@ const FeedListPage = () => {
       const response = await getFeeds();
       if (response.success && response.feeds) {
         setFeeds(response.feeds);
+        setFilteredFeeds(response.feeds);
       } else {
         setFeeds([]);
+        setFilteredFeeds([]);
       }
     } catch (error) {
       console.error("Gagal mengambil data pakan:", error.message);
       setFeeds([]);
+      setFilteredFeeds([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const filtered = feeds.filter((feed) =>
+      feed.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredFeeds(filtered);
+  }, [searchTerm, feeds]);
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
@@ -50,87 +69,113 @@ const FeedListPage = () => {
   };
 
   const handleAddFeed = () => {
-    setShowModal(false);
+    setShowCreateModal(false);
     fetchData(); // Refresh data setelah tambah
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const handleViewDetail = (id) => {
+    setSelectedFeedId(id);
+    setShowDetailModal(true);
+  };
+
+  const handleDetailClose = () => {
+    setShowDetailModal(false);
+    setSelectedFeedId(null);
+    fetchData(); // Refresh data setelah edit
+  };
+
+  const formatNumber = (num) => {
+    return Number(num).toLocaleString("id-ID").split(",")[0];
+  };
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Feed Data</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Data Pakan</h2>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowCreateModal(true)}
           className="btn btn-info waves-effect waves-light"
         >
           + Tambah Pakan
         </button>
       </div>
 
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Cari nama pakan..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       {loading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status" />
-          <p className="mt-2">Loading feed data...</p>
+          <p className="mt-2">Loading data pakan...</p>
         </div>
-      ) : feeds.length === 0 ? (
-        <p className="text-gray-500">Tidak ada data pakan tersedia.</p>
+      ) : filteredFeeds.length === 0 ? (
+        <p className="text-gray-500">Tidak ada data pakan ditemukan.</p>
       ) : (
         <div className="card">
-          <div className="card-body">
-            <div className="table-responsive">
-              <table className="table table-striped mb-0">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nama</th>
-                    <th>Jenis</th>
-                    <th>Protein (%)</th>
-                    <th>Energi (kcal/kg)</th>
-                    <th>Serat (%)</th>
-                    <th>Stok Minimum</th>
-                    <th>Harga</th>
-                    <th>Aksi</th>
+          <div className="card-body table-responsive">
+            <table className="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nama</th>
+                  <th>Jenis</th>
+                  <th>Protein (%)</th>
+                  <th>Energi (kcal/kg)</th>
+                  <th>Serat (%)</th>
+                  <th>Stok Minimum</th>
+                  <th>Harga</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFeeds.map((feed, index) => (
+                  <tr key={feed.id}>
+                    <td>{index + 1}</td>
+                    <td>{feed.name}</td>
+                    <td>{feed.feedType?.name || "N/A"}</td>
+                    <td>{formatNumber(feed.protein)}</td>
+                    <td>{formatNumber(feed.energy)}</td>
+                    <td>{formatNumber(feed.fiber)}</td>
+                    <td>{formatNumber(feed.min_stock)}</td>
+                    <td>Rp {formatNumber(feed.price)}</td>
+                    <td>
+                      <button
+                        onClick={() => handleViewDetail(feed.id)}
+                        className="btn btn-info btn-sm me-2"
+                      >
+                        <i className="ri-eye-line"></i>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(feed.id)}
+                        className="btn btn-danger btn-sm"
+                      >
+                        <i className="ri-delete-bin-6-line"></i>
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {feeds.map((feed, index) => (
-                    <tr key={feed.id}>
-                      <td>{index + 1}</td>
-                      <td>{feed.name}</td>
-                      <td>{feed.feedType?.name || "N/A"}</td>
-                      <td>{feed.protein}</td>
-                      <td>{feed.energy}</td>
-                      <td>{feed.fiber}</td>
-                      <td>{feed.min_stock}</td>
-                      <td>{feed.price}</td>
-                      <td>
-                        <button
-                          onClick={() =>
-                            navigate(`/admin/detail-pakan/${feed.id}`)
-                          }
-                          className="btn btn-info btn-sm me-2"
-                        >
-                          <i className="ri-eye-line"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(feed.id)}
-                          className="btn btn-danger btn-sm"
-                        >
-                          <i className="ri-delete-bin-6-line"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
-      {showModal && <CreateFeedPage onFeedAdded={handleAddFeed} onClose={() => setShowModal(false)} />}
+
+      {showCreateModal && (
+        <CreateFeedPage
+          onFeedAdded={handleAddFeed}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
+      {showDetailModal && (
+        <FeedDetailPage id={selectedFeedId} onClose={handleDetailClose} />
+      )}
     </div>
   );
 };

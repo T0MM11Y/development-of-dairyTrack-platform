@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { getFeedTypes, deleteFeedType } from "../../../../api/pakan/feedType";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import CreateFeedTypeModal from "./CreateFeedType"; // pastikan path-nya sesuai
+import CreateFeedTypeModal from "./CreateFeedType";
+import FeedTypeDetailEditModal from "./FeedTypeDetail";
 
 const FeedTypeListPage = () => {
   const [feedTypes, setFeedTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedFeedId, setSelectedFeedId] = useState(null);
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -21,7 +24,7 @@ const FeedTypeListPage = () => {
         setFeedTypes([]);
       }
     } catch (error) {
-      console.error("Gagal mengambil data jenis pakan:", error.message);
+      console.error("Failed to fetch feed types:", error.message);
       setFeedTypes([]);
     } finally {
       setLoading(false);
@@ -30,33 +33,47 @@ const FeedTypeListPage = () => {
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
-      title: "Konfirmasi",
-      text: "Apakah anda yakin ingin menghapus jenis pakan ini?",
+      title: "Are you sure?",
+      text: "Do you want to delete this feed type?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
+      confirmButtonText: "Yes, delete!",
+      cancelButtonText: "Cancel",
     });
 
     if (result.isConfirmed) {
       try {
         const response = await deleteFeedType(id);
-        console.log("Response dari deleteFeedType:", response);
+        console.log("Delete Response:", response);
 
-        Swal.fire("Terhapus!", "Jenis pakan berhasil dihapus.", "success");
+        Swal.fire("Deleted!", "Feed type has been deleted.", "success");
         setFeedTypes(feedTypes.filter((item) => item.id !== id));
       } catch (error) {
-        console.error("Gagal menghapus jenis pakan:", error.message);
-        Swal.fire("Error!", "Terjadi kesalahan saat menghapus.", "error");
+        console.error("Failed to delete feed type:", error.message);
+        Swal.fire("Error!", "An error occurred while deleting.", "error");
       }
     }
   };
 
   const handleAddFeedType = (newFeedType) => {
     setFeedTypes((prev) => [...prev, newFeedType]);
-    setShowModal(false);
+    setShowCreateModal(false);
+  };
+
+  const handleUpdateFeedType = (updatedFeedType) => {
+    setFeedTypes((prev) =>
+      prev.map((item) =>
+        item.id === updatedFeedType.id ? { ...item, ...updatedFeedType } : item
+      )
+    );
+    setShowDetailModal(false);
+  };
+
+  const handleViewFeedType = (id) => {
+    setSelectedFeedId(id);
+    setShowDetailModal(true);
   };
 
   useEffect(() => {
@@ -66,22 +83,27 @@ const FeedTypeListPage = () => {
   return (
     <div className="p-4 position-relative">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl fw-bold text-dark">Data Jenis Pakan</h2>
+        <h2 className="text-xl fw-bold text-dark">Feed Types Data</h2>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowCreateModal(true)}
           className="btn btn-info waves-effect waves-light"
+          style={{
+            borderRadius: "8px",
+            padding: "8px 20px",
+            fontSize: "1rem",
+          }}
         >
-          + Tambah Jenis Pakan
+          + Add Feed Type
         </button>
       </div>
 
       {loading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status" />
-          <p className="mt-2">Memuat data jenis pakan...</p>
+          <p className="mt-2">Loading feed types data...</p>
         </div>
       ) : feedTypes.length === 0 ? (
-        <p className="text-muted">Belum ada data jenis pakan.</p>
+        <p className="text-muted">No feed types data available.</p>
       ) : (
         <div className="card">
           <div className="card-body">
@@ -90,8 +112,8 @@ const FeedTypeListPage = () => {
                 <thead className="table-light">
                   <tr>
                     <th>#</th>
-                    <th>Nama</th>
-                    <th>Aksi</th>
+                    <th>Name</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -102,17 +124,17 @@ const FeedTypeListPage = () => {
                       <td>
                         <button
                           className="btn btn-info btn-sm me-2"
-                          onClick={() =>
-                            navigate(`/admin/peternakan/pakan/detail/${feed.id}`)
-                          }
-                          aria-label={`Lihat detail ${feed.name}`}
+                          onClick={() => handleViewFeedType(feed.id)}
+                          aria-label={`View details of ${feed.name}`}
+                          style={{ borderRadius: "6px" }}
                         >
                           <i className="ri-eye-line"></i>
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(feed.id)}
-                          aria-label={`Hapus jenis ${feed.name}`}
+                          aria-label={`Delete ${feed.name}`}
+                          style={{ borderRadius: "6px" }}
                         >
                           <i className="ri-delete-bin-6-line"></i>
                         </button>
@@ -126,10 +148,18 @@ const FeedTypeListPage = () => {
         </div>
       )}
 
-      {showModal && (
+      {showCreateModal && (
         <CreateFeedTypeModal
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowCreateModal(false)}
           onSuccess={handleAddFeedType}
+        />
+      )}
+
+      {showDetailModal && (
+        <FeedTypeDetailEditModal
+          feedId={selectedFeedId}
+          onClose={() => setShowDetailModal(false)}
+          onSuccess={handleUpdateFeedType}
         />
       )}
     </div>

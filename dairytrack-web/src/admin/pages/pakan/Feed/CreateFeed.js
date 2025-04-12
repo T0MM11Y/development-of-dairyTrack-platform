@@ -38,7 +38,17 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    
+    // Special formatting for price field
+    if (name === 'price') {
+      // Remove non-numeric characters
+      const numericValue = value.replace(/\D/g, '');
+      // Format with thousand separators
+      const formattedValue = numericValue ? Number(numericValue).toLocaleString('id-ID').split(",")[0] : '';
+      setForm((prev) => ({ ...prev, [name]: formattedValue }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -66,6 +76,9 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   
     setSubmitting(true);
   
+    // Remove thousand separators from price for processing
+    const priceValue = form.price.replace(/\./g, '');
+    
     const feedData = {
       typeId: Number(form.typeId),
       name: form.name,
@@ -73,14 +86,13 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
       energy: parseFloat(form.energy),
       fiber: parseFloat(form.fiber),
       min_stock: parseInt(form.minStock, 10),
-      price: parseFloat(form.price),
+      price: parseFloat(priceValue),
     };
   
     try {
       const response = await createFeed(feedData);
     
       if (response.success) {
-        // Fix: menggunakan success icon, bukan error icon
         await Swal.fire({
           title: 'Berhasil!',
           text: 'Pakan berhasil ditambahkan.',
@@ -200,13 +212,17 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                 </div>
                 <div className="mb-2">
                   <label className="form-label fw-bold">Harga</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={form.price}
-                    onChange={handleChange}
-                    className="form-control"
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text">Rp</span>
+                    <input
+                      type="text"
+                      name="price"
+                      value={form.price}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button type="submit" className="btn btn-success" disabled={submitting}>

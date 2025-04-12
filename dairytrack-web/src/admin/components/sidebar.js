@@ -9,14 +9,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const [openMenus, setOpenMenus] = useState([]);
   const [userData, setUserData] = useState(null);
 
-  // Mapping of menu keys to their base paths
+  // Mapping of menu keys to their base paths and additional related paths
   const menuPaths = {
-    dashboard: "/admin/dashboard",
-    peternakan: "/admin/peternakan",
-    pakan: "/admin/pakan",
-    produktivitas: "/admin/susu",
-    kesehatan: "/admin/kesehatan",
-    keuangan: "/admin/keuangan",
+    dashboard: ["/admin/dashboard"],
+    peternakan: ["/admin/peternakan", "/admin/blog/all", "/admin/gallery/all"],
+    pakan: [
+      "/admin/pakan",
+      "/admin/pakan-harian",
+      "/admin/item-pakan-harian",
+      "/admin/nutrisi-pakan-harian",
+    ],
+    produktivitas: ["/admin/susu"],
+    kesehatan: ["/admin/kesehatan"],
+    keuangan: ["/admin/keuangan"],
   };
 
   useEffect(() => {
@@ -28,7 +33,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
     // Automatically open menus based on current route
     const activeMenus = Object.keys(menuPaths).filter((key) =>
-      location.pathname.startsWith(menuPaths[key])
+      menuPaths[key].some((path) => location.pathname.startsWith(path))
     );
     setOpenMenus(activeMenus);
   }, [location.pathname]);
@@ -40,25 +45,20 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   const isMenuOpen = (key) => openMenus.includes(key);
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (paths) =>
+    paths.some((path) => location.pathname.startsWith(path));
 
   // Animation variants
   const subMenuVariants = {
     open: {
       opacity: 1,
       height: "auto",
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
     closed: {
       opacity: 0,
       height: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
   };
 
@@ -67,9 +67,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       backgroundColor: "rgba(0, 0, 0, 0.05)",
       transition: { duration: 0.2 },
     },
-    tap: {
-      scale: 0.98,
-    },
+    tap: { scale: 0.98 },
   };
 
   // Menu data structure for consistency
@@ -130,10 +128,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           icon: "ri-stack-line",
           label: "Jenis Pakan",
         },
+        { 
+          path: "/admin/pakan", 
+          icon: "ri-leaf-line", 
+          label: "Pakan" },
         {
-          path: "/admin/pakan",
-          icon: "ri-leaf-line",
-          label: "Pakan",
+          path: "/admin/pakan/stok",
+          icon: "ri-box-3-line",
+          label: "Stok Pakan",
         },
         {
           path: "/admin/pakan-harian",
@@ -144,11 +146,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           path: "/admin/item-pakan-harian",
           icon: "ri-file-list-line",
           label: "Item Pakan",
-        },
-        {
-          path: "/admin/pakan/stok",
-          icon: "ri-box-3-line",
-          label: "Stok Pakan",
         },
         {
           path: "/admin/nutrisi-pakan-harian",
@@ -267,13 +264,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         boxShadow: "0 0 15px rgba(0,0,0,0.1)",
       }}
     >
-      <div
-        data-simplebar
-        style={{
-          height: "100vh",
-          overflowY: "auto",
-        }}
-      >
+      <div data-simplebar style={{ height: "100vh", overflowY: "auto" }}>
         {/* User Profile */}
         {!isCollapsed && (
           <motion.div
@@ -299,11 +290,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <img
                 src={avatar1}
                 alt="Avatar"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
             <div>
@@ -325,7 +312,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <motion.li
                 key={menu.key}
                 className={
-                  isActive(menu.path) || isMenuOpen(menu.key) ? "mm-active" : ""
+                  isActive(menuPaths[menu.key]) || isMenuOpen(menu.key)
+                    ? "mm-active"
+                    : ""
                 }
                 variants={menuItemVariants}
                 whileHover="hover"
@@ -382,7 +371,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                                   <Link
                                     to={submenu.path}
                                     className={
-                                      isActive(submenu.path) ? "active" : ""
+                                      location.pathname === submenu.path
+                                        ? "active"
+                                        : ""
                                     }
                                   >
                                     <i className={submenu.icon}></i>{" "}

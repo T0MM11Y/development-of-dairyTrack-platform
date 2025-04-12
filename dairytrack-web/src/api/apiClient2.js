@@ -18,17 +18,18 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
   if (!response.ok) {
     if (contentType && contentType.includes("application/json")) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || "Something went wrong.");
+      // Look for 'message' property instead of 'detail'
+      throw new Error(errorData.message || "An error occurred.");
     } else {
-      const errorText = await response.text(); // tangani HTML error
+      const errorText = await response.text(); // Handle non-JSON error (e.g., HTML)
       console.error("Server Error:", errorText);
       throw new Error("Internal Server Error");
     }
   }
 
-  // DELETE biasanya status 204, tidak ada body
+  // DELETE usually returns status 204 with no body
   if (response.status === 204) return true;
 
-  // response JSON
+  // Return JSON response for successful requests
   return await response.json();
 };

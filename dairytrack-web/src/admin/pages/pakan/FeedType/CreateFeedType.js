@@ -46,13 +46,21 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
         });
 
         onSuccess(response.data); // Kirim data baru ke parent
-        setName("");
+        setName(""); // Reset form
       } else {
-        throw new Error(response.message || "Gagal menambahkan jenis pakan.");
+        throw new Error(response?.message || "Gagal menambahkan jenis pakan.");
       }
     } catch (error) {
       console.error("Create Error:", error.message);
-      Swal.fire("Error!", error.message, "error");
+      const errorMessage = error.message.includes("sudah ada")
+        ? error.message // Use the exact message from the API
+        : "Gagal menambahkan jenis pakan: " + error.message;
+      Swal.fire({
+        title: "Error!",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
@@ -61,22 +69,60 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
   return (
     <div
       className="modal show d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1050,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }}
     >
-      <div className="modal-dialog">
-        <div className="modal-content shadow-lg">
-          <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">Tambah Jenis Pakan</h5>
+      <div
+        className="modal-dialog"
+        style={{
+          maxWidth: "500px",
+          margin: "auto",
+        }}
+      >
+        <div
+          className="modal-content shadow-lg"
+          style={{
+            borderRadius: "12px",
+            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.2)",
+            border: "none",
+          }}
+        >
+          <div
+            className="modal-header"
+            style={{
+              backgroundColor: "#f8f9fa",
+              borderBottom: "1px solid #e9ecef",
+              padding: "15px 20px",
+            }}
+          >
+            <h5
+              className="modal-title fw-bold"
+              style={{ color: "#17a2b8", fontSize: "1.5rem" }}
+            >
+              Tambah Jenis Pakan
+            </h5>
             <button
               className="btn-close"
               onClick={onClose}
               disabled={loading}
+              style={{ fontSize: "1.2rem" }}
             ></button>
           </div>
-          <div className="modal-body">
+          <div className="modal-body" style={{ padding: "20px" }}>
             <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label htmlFor="feedTypeName" className="form-label">
+              <div className="mb-4">
+                <label htmlFor="feedTypeName" className="form-label fw-semibold">
                   Nama Jenis Pakan
                 </label>
                 <input
@@ -87,26 +133,51 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Contoh: Konsentrat"
+                  style={{
+                    borderRadius: "8px",
+                    padding: "10px",
+                    fontSize: "1rem",
+                  }}
                 />
               </div>
-              <button
-                type="submit"
-                className="btn btn-info w-100"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                    Menyimpan...
-                  </>
-                ) : (
-                  "Tambah"
-                )}
-              </button>
+              <div className="d-flex justify-content-between mt-4">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={onClose}
+                  disabled={loading}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "8px 20px",
+                    fontSize: "1rem",
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-info"
+                  disabled={loading}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "8px 20px",
+                    fontSize: "1rem",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Menyimpan...
+                    </>
+                  ) : (
+                    "Tambah"
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
