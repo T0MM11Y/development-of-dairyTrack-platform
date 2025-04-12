@@ -255,46 +255,57 @@ const SymptomListPage = () => {
             <h4 className="card-title">Tabel Gejala</h4>
             <div className="table-responsive">
               <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nama Sapi</th>
-                    <th>Status Penanganan</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((item, index) => (
-                    <tr key={item.id}>
-                      <td>{index + 1}</td>
-                      <td>{getCowName(item.health_check)}</td>
-                      <td>{item.treatment_status}</td>
-                      <td>
-                        <button
-                          className="btn btn-secondary btn-sm me-2"
-                          onClick={() => setViewId(item.id)}
-                        >
-                          <i className="ri-eye-line" /> 
-                        </button>
-                        <button
-                          className="btn btn-warning btn-sm me-2"
-                          onClick={() => {
-                            setEditId(item.id);
-                            setModalType("edit");
-                          }}
-                        >
-                          <i className="ri-edit-line" /> 
-                        </button>
-                        <button
-                          onClick={() => setDeleteId(item.id)}
-                          className="btn btn-danger btn-sm"
-                        >
-                          <i className="ri-delete-bin-6-line" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+              <thead>
+  <tr>
+    <th>#</th>
+    <th>Nama Sapi</th>
+    <th>Status Pemeriksaan</th> {/* ✅ ganti dari 'Penanganan' */}
+    <th>Aksi</th>
+  </tr>
+</thead>
+<tbody>
+  {data.map((item, index) => {
+    const hc = healthChecks.find((h) => h.id === item.health_check);
+    const cow = cows.find((c) => c.id === hc?.cow || c.id === hc?.cow?.id);
+    const cowName = cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan";
+
+    const statusBadge = hc?.status === "handled"
+      ? <span className="badge bg-success">Sudah Ditangani</span>
+      : <span className="badge bg-warning text-dark">Belum Ditangani</span>;
+
+    return (
+      <tr key={item.id}>
+        <td>{index + 1}</td>
+        <td>{cowName}</td>
+        <td>{statusBadge}</td>
+        <td>
+          <button
+            className="btn btn-secondary btn-sm me-2"
+            onClick={() => setViewId(item.id)}
+          >
+            <i className="ri-eye-line" />
+          </button>
+          <button
+            className="btn btn-warning btn-sm me-2"
+            onClick={() => {
+              setEditId(item.id);
+              setModalType("edit");
+            }}
+          >
+            <i className="ri-edit-line" />
+          </button>
+          <button
+            onClick={() => setDeleteId(item.id)}
+            className="btn btn-danger btn-sm"
+          >
+            <i className="ri-delete-bin-6-line" />
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
               </table>
             </div>
           </div>

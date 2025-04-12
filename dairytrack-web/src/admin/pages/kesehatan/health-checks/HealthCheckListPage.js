@@ -10,7 +10,7 @@ const HealthCheckListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [modalType, setModalType] = useState(null); // "create" | "edit"
+  const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
@@ -26,10 +26,15 @@ const HealthCheckListPage = () => {
     }
   };
 
-  const getCowName = (id) => {
-    const cow = cows.find((c) => c.id === id);
-    return cow ? cow.name : "Tidak diketahui";
+  const getCowName = (cow) => {
+    if (!cow) return "Tidak diketahui";
+    if (typeof cow === "object") return cow.name || "Tidak diketahui";
+  
+    const found = cows.find((c) => String(c.id) === String(cow));
+    return found ? found.name : "Tidak diketahui";
   };
+  
+  
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -85,13 +90,21 @@ const HealthCheckListPage = () => {
                   {data.map((item, idx) => (
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
-                      <td>{item.checkup_date}</td>
+                      <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
                       <td>{getCowName(item.cow)}</td>
                       <td>{item.rectal_temperature}°C</td>
-                      <td>{item.heart_rate}</td>
-                      <td>{item.respiration_rate}</td>
-                      <td>{item.rumination}</td>
-                      <td>{item.treatment_status}</td>
+                      <td>{item.heart_rate} bpm</td>
+                      <td>{item.respiration_rate} x/menit</td>
+                      <td>{item.rumination} jam</td>
+                      <td>
+                        <span
+                          className={`badge fw-semibold ${
+                            item.status === "handled" ? "bg-success" : "bg-warning text-dark"
+                          }`}
+                        >
+                          {item.status === "handled" ? "Sudah Ditangani" : "Belum Ditangani"}
+                        </span>
+                      </td>
                       <td>
                         <button
                           className="btn btn-warning btn-sm me-2"
@@ -129,21 +142,21 @@ const HealthCheckListPage = () => {
         />
       )}
 
-        {/* Modal Edit */}
-        {modalType === "edit" && editId && (
-          <HealthCheckEditPage
-            healthCheckId={editId}
-            onClose={() => {
-              setEditId(null);
-              setModalType(null);
-            }}
-            onSaved={() => {
-              fetchData();
-              setEditId(null);
-              setModalType(null);
-            }}
-          />
-        )}
+      {/* Modal Edit */}
+      {modalType === "edit" && editId && (
+        <HealthCheckEditPage
+          healthCheckId={editId}
+          onClose={() => {
+            setEditId(null);
+            setModalType(null);
+          }}
+          onSaved={() => {
+            fetchData();
+            setEditId(null);
+            setModalType(null);
+          }}
+        />
+      )}
 
       {/* Modal Konfirmasi Hapus */}
       {deleteId && (

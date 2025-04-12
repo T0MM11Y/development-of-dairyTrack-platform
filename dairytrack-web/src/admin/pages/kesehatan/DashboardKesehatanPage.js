@@ -3,6 +3,7 @@ import { getHealthChecks } from "../../../api/kesehatan/healthCheck";
 import { getDiseaseHistories } from "../../../api/kesehatan/diseaseHistory";
 import { getSymptoms } from "../../../api/kesehatan/symptom";
 import { getCows } from "../../../api/peternakan/cow";
+import { getReproductions } from "../../../api/kesehatan/reproduction";
 import {
   BarChart,
   Bar,
@@ -32,45 +33,53 @@ const DashboardKesehatanPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [hcs, symptoms, diseases, cows] = await Promise.all([
+        const [hcs, symptoms, diseases, cows, reproductions] = await Promise.all([
           getHealthChecks(),
           getSymptoms(),
           getDiseaseHistories(),
           getCows(),
+          getReproductions(),
         ]);
 
-        // 1. Statistik bulanan
-        const monthMap = {};
-        const getMonth = (dateStr) => new Date(dateStr).toLocaleString("default", { month: "short", year: "numeric" });
+// 1. Statistik bulanan
+const monthMap = {};
+const getMonth = (dateStr) =>
+  new Date(dateStr).toLocaleString("default", { month: "short", year: "numeric" });
 
-        hcs.forEach((hc) => {
-          const m = getMonth(hc.checkup_date);
-          if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
-          monthMap[m].pemeriksaan++;
-        });
+// 💡 Inisialisasi berdasarkan tanggal checkup
+hcs.forEach((hc) => {
+  const m = getMonth(hc.checkup_date);
+  if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
+  monthMap[m].pemeriksaan++;
 
-        symptoms.forEach((s) => {
-          const m = getMonth(s.created_at || s.updated_at || new Date());
-          if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
-          monthMap[m].gejala++;
-          if (s.treatment_status === "Treated") monthMap[m].treated++;
-          else monthMap[m].untreated++;
-        });
+  // ✅ Gunakan 'status' dari healthcheck
+  if (hc.status === "handled") monthMap[m].treated++;
+  else if (hc.status === "pending") monthMap[m].untreated++;
+});
 
-        const monthly = Object.entries(monthMap).map(([month, val]) => ({
-          month,
-          ...val,
-        })).sort((a, b) => new Date("1 " + a.month) - new Date("1 " + b.month));
+// 💡 Hitung jumlah gejala berdasarkan tanggal symptom
+symptoms.forEach((s) => {
+  const m = getMonth(s.created_at || s.updated_at || new Date());
+  if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
+  monthMap[m].gejala++;
+});
 
-        setMonthlyStats(monthly);
+// 🔃 Convert to array & sort by month
+const monthly = Object.entries(monthMap)
+  .map(([month, val]) => ({ month, ...val }))
+  .sort((a, b) => new Date("1 " + a.month) - new Date("1 " + b.month));
+
+setMonthlyStats(monthly);
 
         // 2. Pie Chart Penanganan
-        const treated = symptoms.filter((s) => s.treatment_status === "Treated").length;
-        const untreated = symptoms.length - treated;
+        const handled = hcs.filter((hc) => hc.status === "handled").length;
+        const pending = hcs.filter((hc) => hc.status === "pending").length;
+        
         setTreatmentPieData([
-          { name: "Sudah Ditangani", value: treated },
-          { name: "Belum Ditangani", value: untreated },
+          { name: "Sudah Ditangani", value: handled },
+          { name: "Belum Ditangani", value: pending },
         ]);
+        
 
         // 3. Top 5 Sapi Sakit
         const cowCount = {};
@@ -117,7 +126,7 @@ const DashboardKesehatanPage = () => {
           pemeriksaan: hcs.length,
           gejala: symptoms.length,
           penyakit: diseases.length,
-          reproduksi: 0,
+          reproduksi: reproductions.length,
         });
       } catch (err) {
         console.error("Gagal memuat dashboard:", err);
@@ -143,6 +152,7 @@ const DashboardKesehatanPage = () => {
               { title: "Pemeriksaan", value: summary.pemeriksaan, color: "info" },
               { title: "Gejala", value: summary.gejala, color: "primary" },
               { title: "Riwayat Penyakit", value: summary.penyakit, color: "danger" },
+              { title: "Riwayat Reproduksi", value: summary.reproduksi, color: "warning" },
             ].map((item, idx) => (
               <div className="col-md-4 mb-3" key={idx}>
                 <div className={`card text-bg-${item.color}`}>
