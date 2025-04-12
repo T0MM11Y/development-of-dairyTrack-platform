@@ -1,126 +1,71 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-import Merawat from "../../assets/image/merawat.jpg";
-import Teknologi from "../../assets/image/teknologi.jpg";
-import Makanan from "../../assets/image/makanan.jpg";
-import Kesehatan from "../../assets/image/kesehatan.jpg";
-import Stress from "../../assets/image/stress.jpg";
-import Lingkungan from "../../assets/image/lingkungan.jpg";
+import { getBlogs, getBlogPhoto } from "../../api/peternakan/blog"; // Tambahkan getBlogPhoto
 
 const BlogPage = () => {
-  const blogPosts = [
-    {
-      title: "Cara Merawat Sapi untuk Produksi Susu Berkualitas",
-      date: "1 April 2025",
-      topic: "Perawatan Sapi",
-      content:
-        "Merawat sapi dengan baik adalah kunci untuk menghasilkan susu berkualitas tinggi. Dalam artikel ini, kami akan membahas berbagai cara merawat sapi agar tetap sehat dan produktif.",
-      image: Merawat,
-      link: "#",
-    },
-    {
-      title: "Pemanfaatan Teknologi dalam Peternakan Sapi",
-      date: "25 Maret 2025",
-      topic: "Teknologi Peternakan",
-      content:
-        "Teknologi memainkan peran penting dalam meningkatkan efisiensi peternakan sapi. Artikel ini akan menjelaskan beberapa inovasi terkini dalam bidang peternakan sapi.",
-      image: Teknologi,
-      link: "#",
-    },
-    {
-      title: "Makanan Terbaik untuk Sapi Perah",
-      date: "18 Maret 2025",
-      topic: "Pakan Ternak",
-      content:
-        "Memilih pakan yang tepat sangat penting untuk sapi perah. Dalam artikel ini, kami akan membahas berbagai jenis pakan yang dapat meningkatkan kualitas susu sapi.",
-      image: Makanan,
-      link: "#",
-    },
-    {
-      title: "Manajemen Kesehatan Sapi di Peternakan",
-      date: "01 April 2025",
-      topic: "Manajemen Kesehatan",
-      content:
-        "Menjaga kesehatan sapi adalah faktor kunci dalam keberhasilan peternakan. Artikel ini membahas cara terbaik dalam menangani kesehatan sapi secara optimal.",
-      image: Kesehatan,
-      link: "#",
-    },
-    {
-      title: "Strategi Peningkatan Produksi Susu Sapi",
-      date: "10 Maret 2025",
-      topic: "Produksi Susu",
-      content:
-        "Artikel ini membahas strategi yang dapat diterapkan untuk meningkatkan produksi susu sapi secara efisien dan berkelanjutan.",
-      image: Merawat,
-      link: "#",
-    },
-    {
-      title: "Teknologi IoT untuk Monitoring Peternakan",
-      date: "5 Maret 2025",
-      topic: "Teknologi Peternakan",
-      content:
-        "Penggunaan teknologi IoT dalam peternakan dapat membantu peternak memantau kondisi sapi secara real-time. Artikel ini menjelaskan manfaatnya.",
-      image: Teknologi,
-      link: "#",
-    },
-    {
-      title: "Pakan Fermentasi untuk Sapi: Manfaat dan Cara Membuatnya",
-      date: "28 Februari 2025",
-      topic: "Pakan Ternak",
-      content:
-        "Pakan fermentasi dapat meningkatkan pencernaan sapi dan kualitas susu. Artikel ini membahas manfaat dan cara membuatnya.",
-      image: Makanan,
-      link: "#",
-    },
-    {
-      title: "Pentingnya Vaksinasi untuk Sapi di Peternakan",
-      date: "20 Februari 2025",
-      topic: "Manajemen Kesehatan",
-      content:
-        "Vaksinasi adalah langkah penting dalam menjaga kesehatan sapi. Artikel ini menjelaskan jenis vaksin yang diperlukan dan jadwalnya.",
-      image: Kesehatan,
-      link: "#",
-    },
-    {
-      title: "Mengelola Limbah Peternakan dengan Teknologi Modern",
-      date: "15 Februari 2025",
-      topic: "Teknologi Peternakan",
-      content:
-        "Limbah peternakan dapat dikelola dengan teknologi modern untuk mengurangi dampak lingkungan. Artikel ini membahas solusi inovatif.",
-      image: Teknologi,
-      link: "#",
-    },
-    {
-      title: "Tips Memilih Bibit Sapi Berkualitas untuk Peternakan",
-      date: "10 Februari 2025",
-      topic: "Perawatan Sapi",
-      content:
-        "Memilih bibit sapi yang berkualitas adalah langkah awal untuk peternakan yang sukses. Artikel ini memberikan tips praktis untuk memilih bibit terbaik.",
-      image: Merawat,
-      link: "#",
-    },
-  ];
-
-  // State management
+  const [blogPosts, setBlogPosts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("Semua");
   const [currentPage, setCurrentPage] = useState(0);
   const postsPerPage = 4;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const blogs = await getBlogs();
+
+        // Ambil foto untuk setiap blog
+        const blogsWithPhotos = await Promise.all(
+          blogs.map(async (blog) => {
+            try {
+              const photoRes = await getBlogPhoto(blog.id);
+              return { ...blog, photo: photoRes.photo_url };
+            } catch {
+              return { ...blog, photo: null }; // Fallback jika foto tidak tersedia
+            }
+          })
+        );
+
+        setBlogPosts(blogsWithPhotos);
+        setError("");
+      } catch (err) {
+        console.error("Gagal mengambil data:", err.message);
+        setError("Gagal mengambil data. Pastikan server API aktif.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Get all unique topics
   const allTopics = [
     "Semua",
-    ...Array.from(new Set(blogPosts.map((post) => post.topic))),
+    ...Array.from(new Set(blogPosts.map((post) => post.topic_name))),
   ];
+  // Fungsi untuk membersihkan HTML tag
+  const stripHtmlTags = (html) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  };
+
+  // Fungsi untuk memotong teks hingga 200 karakter
+  const truncateText = (text, maxLength = 200) => {
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  };
 
   // Filter posts based on search term and selected topic
   const filteredPosts = blogPosts.filter((post) => {
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchTerm.toLowerCase());
+      post.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTopic =
-      selectedTopic === "Semua" || post.topic === selectedTopic;
+      selectedTopic === "Semua" || post.topic_name === selectedTopic;
     return matchesSearch && matchesTopic;
   });
 
@@ -184,7 +129,18 @@ const BlogPage = () => {
             </div>
           </div>
 
-          {filteredPosts.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
+              <p className="mt-2">Loading blog data...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-5">
+              <h4 className="text-danger">{error}</h4>
+            </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="text-center py-5">
               <i
                 className="bi bi-search"
@@ -234,19 +190,13 @@ const BlogPage = () => {
                       >
                         <div style={{ overflow: "hidden", height: "200px" }}>
                           <img
-                            src={post.image}
+                            src={post.photo || "/placeholder-image.jpg"} // Gunakan fallback jika photo tidak tersedia
                             alt={post.title}
                             className="card-img-top w-100 h-100"
                             style={{
                               objectFit: "cover",
                               transition: "transform 0.5s",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.transform = "scale(1.1)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.transform = "scale(1)")
-                            }
                           />
                         </div>
                         <div className="card-body d-flex flex-column">
@@ -258,7 +208,7 @@ const BlogPage = () => {
                               alignSelf: "flex-start",
                             }}
                           >
-                            {post.topic}
+                            {post.topic_name}
                           </span>
                           <h5
                             className="card-title"
@@ -269,9 +219,9 @@ const BlogPage = () => {
                           <p className="card-text text-muted small">
                             {post.date}
                           </p>
-                          <p className="card-text mb-4">{post.content}</p>
+                          {truncateText(stripHtmlTags(post.description))}
                           <Link
-                            to={`/blog/${index}`}
+                            to={`/blog/${post.id}`}
                             className="btn mt-auto align-self-start"
                             style={{
                               backgroundColor: "#4caf50",
@@ -418,7 +368,7 @@ const BlogPage = () => {
                   }
                 >
                   <Link
-                    to={`/blog/${index}`}
+                    to={`/blog/${post.id}`}
                     className="d-block text-decoration-none"
                     style={{ color: "#4caf50" }}
                   >
@@ -435,7 +385,7 @@ const BlogPage = () => {
                         }}
                       >
                         <img
-                          src={post.image}
+                          src={post.photo || "/placeholder-image.jpg"}
                           alt={post.title}
                           className="w-100 h-100"
                           style={{ objectFit: "cover" }}
@@ -449,7 +399,7 @@ const BlogPage = () => {
                     className="mt-1 mb-0 text-muted"
                     style={{ fontSize: "0.875rem" }}
                   >
-                    {post.content.slice(0, 100)}...
+                    {stripHtmlTags(post.description).slice(0, 100)}...
                   </p>
                 </li>
               ))}
