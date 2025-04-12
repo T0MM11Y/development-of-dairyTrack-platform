@@ -1,5 +1,4 @@
 const { Op } = require("sequelize");
-const Nutrisi = require("../models/dailyFeedNutrients");
 const DailyFeedComplete = require("../models/dailyFeedComplete");
 const DailyFeedItems = require("../models/dailyFeedItemsModel");
 const Feed = require("../models/feedModel");

@@ -26,60 +26,59 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         const [
-          dailyFeedResponse, 
-          feedResponse, 
-          stockResponse, 
+          dailyFeedResponse,
+          feedResponse,
+          stockResponse,
           feedItemsResponse,
-          cowsResponse
+          cowsResponse,
         ] = await Promise.all([
           getAllDailyFeedDetails(),
           getFeeds(),
           getFeedStock(),
           getAlldailyFeedItems(),
-          getCows()
+          getCows(),
         ]);
-  
+
         console.log("Daily Feed Response:", dailyFeedResponse);
         console.log("Feed Items Response:", feedItemsResponse);
         console.log("Cows Response:", cowsResponse);
-        
+
         const cowMap = {};
         if (Array.isArray(cowsResponse)) {
-          cowsResponse.forEach(cow => {
+          cowsResponse.forEach((cow) => {
             cowMap[cow.id] = cow.name;
           });
         }
         setCowNames(cowMap);
-        
+
         if (dailyFeedResponse.success && Array.isArray(dailyFeedResponse.data)) {
           setDailyFeeds(dailyFeedResponse.data);
         } else {
           throw new Error("Invalid daily feed data received");
         }
-        
+
         if (feedItemsResponse.success && Array.isArray(feedItemsResponse.data)) {
           setFeedItems(feedItemsResponse.data);
         } else {
           console.error("Invalid feed items data received");
           setFeedItems([]);
         }
-  
+
         if (stockResponse.success && Array.isArray(stockResponse.stocks)) {
           setFeedStocks(stockResponse.stocks);
         } else {
           throw new Error("Invalid feed stock data received");
         }
-  
+
         if (feedResponse.success && Array.isArray(feedResponse.feeds)) {
           setFeeds(feedResponse.feeds);
         } else {
           throw new Error("Invalid feed data received");
         }
-        
+
         filterAvailableDailyFeeds(dailyFeedResponse.data, feedItemsResponse.data, cowMap);
-        
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(error.message || "Failed to fetch required data");
@@ -87,17 +86,17 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
+
   const filterAvailableDailyFeeds = (dailyFeedsData, feedItemsData, cowMap) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       const feedItemCounts = {};
       if (Array.isArray(feedItemsData)) {
-        feedItemsData.forEach(item => {
+        feedItemsData.forEach((item) => {
           const dailyFeedId = item.daily_feed_id;
           if (!feedItemCounts[dailyFeedId]) {
             feedItemCounts[dailyFeedId] = 0;
@@ -105,39 +104,51 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
           feedItemCounts[dailyFeedId]++;
         });
       }
-      
+
       console.log("Feed Item Counts:", feedItemCounts);
-      
-      const validDailyFeeds = dailyFeedsData.filter(feed => {
-        const feedDate = new Date(feed.date).toISOString().split('T')[0];
+
+      const validDailyFeeds = dailyFeedsData.filter((feed) => {
+        const feedDate = new Date(feed.date).toISOString().split("T")[0];
         const isValidDate = feedDate >= today;
         const itemCount = feedItemCounts[feed.id] || 0;
         const hasSpaceForMore = itemCount < 3;
-        
-        const cowName = (feed.cow && feed.cow.name) ? feed.cow.name : 
-                       (feed.cow_id && cowMap[feed.cow_id]) ? cowMap[feed.cow_id] : 
-                       feed.cow_id ? `Sapi #${feed.cow_id}` : "Tidak Ada Info Sapi";
-        
-        console.log(`Feed ID: ${feed.id}, Date: ${feedDate}, Items: ${itemCount}/3, Cow: ${cowName}, Valid: ${isValidDate && hasSpaceForMore}`);
-        
+
+        const cowName =
+          feed.cow && feed.cow.name
+            ? feed.cow.name
+            : feed.cow_id && cowMap[feed.cow_id]
+            ? cowMap[feed.cow_id]
+            : feed.cow_id
+            ? `Sapi #${feed.cow_id}`
+            : "Tidak Ada Info Sapi";
+
+        console.log(
+          `Feed ID: ${feed.id}, Date: ${feedDate}, Items: ${itemCount}/3, Cow: ${cowName}, Valid: ${isValidDate && hasSpaceForMore}`
+        );
+
         return isValidDate && hasSpaceForMore;
       });
-      
+
       console.log("Valid Daily Feeds:", validDailyFeeds);
-      
-      const enhancedDailyFeeds = validDailyFeeds.map(feed => {
-        const cowName = (feed.cow && feed.cow.name) ? feed.cow.name : 
-                       (feed.cow_id && cowMap[feed.cow_id]) ? cowMap[feed.cow_id] : 
-                       feed.cow_id ? `Sapi #${feed.cow_id}` : "Tidak Ada Info Sapi";
+
+      const enhancedDailyFeeds = validDailyFeeds.map((feed) => {
+        const cowName =
+          feed.cow && feed.cow.name
+            ? feed.cow.name
+            : feed.cow_id && cowMap[feed.cow_id]
+            ? cowMap[feed.cow_id]
+            : feed.cow_id
+            ? `Sapi #${feed.cow_id}`
+            : "Tidak Ada Info Sapi";
         const itemCount = feedItemCounts[feed.id] || 0;
-        
+
         return {
           ...feed,
           cowName,
-          itemCount
+          itemCount,
         };
       });
-      
+
       setAvailableDailyFeeds(enhancedDailyFeeds);
     } catch (error) {
       console.error("Error filtering daily feeds:", error);
@@ -147,9 +158,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
 
   useEffect(() => {
     if (selectedDailyFeedId) {
-      const details = availableDailyFeeds.find(
-        (feed) => feed.id === selectedDailyFeedId
-      );
+      const details = availableDailyFeeds.find((feed) => feed.id === selectedDailyFeedId);
       setSelectedDailyFeedDetails(details);
     } else {
       setSelectedDailyFeedDetails(null);
@@ -183,10 +192,19 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
   };
 
   const getFeedStockInfo = (feedId) => {
-    const feedStock = feedStocks.find(
-      (stock) => stock.feed?.id === parseInt(feedId)
-    );
+    const feedStock = feedStocks.find((stock) => stock.feed?.id === parseInt(feedId));
     return feedStock?.stock || 0;
+  };
+
+  // New function to get available feeds for a given row
+  const getAvailableFeedsForRow = (currentIndex) => {
+    // Get feed_ids selected in other rows
+    const selectedFeedIds = formList
+      .map((item, index) => (index !== currentIndex && item.feed_id ? parseInt(item.feed_id) : null))
+      .filter((id) => id !== null);
+
+    // Return feeds that are not selected in other rows
+    return feeds.filter((feed) => !selectedFeedIds.includes(feed.id));
   };
 
   const handleSubmit = async (e) => {
@@ -221,15 +239,12 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
       if (insufficientStockItems.length > 0) {
         const insufficientMessages = insufficientStockItems.map((item) => {
           const feedName =
-            feeds.find((f) => f.id === item.feedId)?.name ||
-            `Feed ID: ${item.feedId}`;
+            feeds.find((f) => f.id === item.feedId)?.name || `Feed ID: ${item.feedId}`;
           return `- ${feedName}: Tersedia ${item.availableStock} kg, diminta ${item.requestedQuantity} kg`;
         });
 
         setError(
-          `Stok tidak mencukupi untuk beberapa pakan:\n${insufficientMessages.join(
-            "\n"
-          )}`
+          `Stok tidak mencukupi untuk beberapa pakan:\n${insufficientMessages.join("\n")}`
         );
         setLoading(false);
         Swal.fire({
@@ -242,15 +257,34 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
         return;
       }
 
-      const uniqueFeedIds = new Set(formList.map((item) => item.feed_id));
-      if (uniqueFeedIds.size !== formList.length) {
-        setError(
-          "Terdapat jenis pakan yang sama dalam permintaan. Pilih jenis pakan yang berbeda."
-        );
+      // Check for duplicate feed items (optional, since dropdowns prevent duplicates)
+      const feedIdCounts = {};
+      formList.forEach((item) => {
+        const feedId = item.feed_id;
+        feedIdCounts[feedId] = (feedIdCounts[feedId] || 0) + 1;
+      });
+
+      const duplicateFeedIds = Object.keys(feedIdCounts).filter(
+        (feedId) => feedIdCounts[feedId] > 1 && feedId !== ""
+      );
+
+      if (duplicateFeedIds.length > 0) {
+        const duplicateFeedNames = duplicateFeedIds
+          .map((feedId) => {
+            const feed = feeds.find((f) => f.id === parseInt(feedId));
+            return feed ? feed.name : `Feed ID: ${feedId}`;
+          })
+          .filter((name) => name);
+
+        const errorMessage = `${duplicateFeedNames.join(
+          ", "
+        )} sudah dipilih lebih dari satu kali. Silakan pilih jenis pakan yang berbeda.`;
+
+        setError(errorMessage);
         setLoading(false);
         Swal.fire({
-          title: "Jenis Pakan Duplikat",
-          text: "Terdapat jenis pakan yang sama dalam permintaan. Pilih jenis pakan yang berbeda.",
+          title: "Pakan Duplikat",
+          text: errorMessage,
           icon: "warning",
         });
         return;
@@ -288,12 +322,23 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
       }
     } catch (error) {
       console.error("Error submitting feed items:", error);
-      setError(error.message || "Failed to save feed items");
-      Swal.fire({
-        title: "Error",
-        text: error.message || "Gagal menyimpan data pakan",
-        icon: "error",
-      });
+
+      // Handle backend duplicate feed error
+      if (error.message.includes("Beberapa jenis pakan sudah ada dalam sesi ini")) {
+        setError(error.message);
+        Swal.fire({
+          title: "Pakan Sudah Ada",
+          text: error.message,
+          icon: "warning",
+        });
+      } else {
+        setError(error.message || "Failed to save feed items");
+        Swal.fire({
+          title: "Error",
+          text: error.message || "Gagal menyimpan data pakan",
+          icon: "error",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -312,8 +357,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('id-ID', options);
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(dateString).toLocaleDateString("id-ID", options);
   };
 
   const formatSession = (session) => {
@@ -329,9 +374,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content shadow-lg">
           <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">
-              Tambah Pakan Harian
-            </h5>
+            <h5 className="modal-title fw-bold text-info">Tambah Pakan Harian</h5>
             <button
               className="btn-close"
               onClick={() => onClose?.() || navigate("/admin/item-pakan-harian")}
@@ -351,9 +394,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="form-label fw-bold">
-                    Sesi Pakan Harian
-                  </label>
+                  <label className="form-label fw-bold">Sesi Pakan Harian</label>
                   <select
                     className="form-select"
                     value={selectedDailyFeedId}
@@ -368,13 +409,15 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     ) : (
                       availableDailyFeeds.map((df) => (
                         <option key={df.id} value={df.id}>
-                          {formatDate(df.date)} - Sesi {formatSession(df.session)} - {df.cowName} ({df.itemCount}/3 pakan)
+                          {formatDate(df.date)} - Sesi {formatSession(df.session)} - {df.cowName} (
+                          {df.itemCount}/3 pakan)
                         </option>
                       ))
                     )}
                   </select>
                   <small className="form-text text-muted">
-                    Hanya menampilkan sesi pakan untuk hari ini dan setelahnya yang belum memiliki 3 jenis pakan
+                    Hanya menampilkan sesi pakan untuk hari ini dan setelahnya yang belum memiliki 3 jenis
+                    pakan
                   </small>
                 </div>
 
@@ -382,9 +425,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                   <div className="row mb-4">
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">
-                          Tanggal
-                        </label>
+                        <label className="form-label text-secondary">Tanggal</label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -395,9 +436,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">
-                          Sesi
-                        </label>
+                        <label className="form-label text-secondary">Sesi</label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -408,9 +447,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">
-                          Sapi
-                        </label>
+                        <label className="form-label text-secondary">Sapi</label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -425,9 +462,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                 {formList.map((item, index) => (
                   <div className="row mb-3" key={index}>
                     <div className="col-md-6">
-                      <label className="form-label fw-bold">
-                        Jenis Pakan
-                      </label>
+                      <label className="form-label fw-bold">Jenis Pakan</label>
                       <select
                         name="feed_id"
                         className="form-select"
@@ -436,7 +471,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                         required
                       >
                         <option value="">Pilih Pakan</option>
-                        {feeds.map((feed) => (
+                        {getAvailableFeedsForRow(index).map((feed) => (
                           <option key={feed.id} value={feed.id}>
                             {feed.name}
                           </option>
@@ -446,9 +481,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
 
                     <div className="col-md-4">
-                      <label className="form-label fw-bold">
-                        Jumlah (kg)
-                      </label>
+                      <label className="form-label fw-bold">Jumlah (kg)</label>
                       <input
                         type="number"
                         name="quantity"
@@ -493,11 +526,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                   </button>
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-info w-100"
-                  disabled={loading}
-                >
+                <button type="submit" className="btn btn-info w-100" disabled={loading}>
                   {loading ? (
                     <>
                       <span

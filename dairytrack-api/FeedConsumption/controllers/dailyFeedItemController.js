@@ -64,12 +64,28 @@ exports.addFeedItem = async (req, res) => {
       const uniqueFeedIds = [...new Set(feedIdsInRequest)];
       
       if (feedIdsInRequest.length !== uniqueFeedIds.length) {
-          await t.rollback();
-          return res.status(400).json({
-              success: false,
-              message: "Terdapat jenis pakan yang sama dalam permintaan. Pilih jenis pakan yang berbeda."
-          });
-      }
+        // Find duplicate feed_ids
+        const feedIdCounts = {};
+        feedIdsInRequest.forEach(id => {
+            feedIdCounts[id] = (feedIdCounts[id] || 0) + 1;
+        });
+        const duplicateFeedIds = Object.keys(feedIdCounts)
+            .filter(id => feedIdCounts[id] > 1)
+            .map(Number);
+    
+        // Fetch names of duplicate feeds
+        const duplicateFeedNames = await Feed.findAll({
+            where: { id: duplicateFeedIds },
+            attributes: ['id', 'name']
+        });
+    
+        await t.rollback();
+        return res.status(400).json({
+            success: false,
+            message: `Terdapat jenis pakan yang sama dalam permintaan: ${duplicateFeedNames.map(feed => feed.name).join(', ')}. Pilih jenis pakan yang berbeda.`,
+            duplicates: duplicateFeedNames.map(feed => ({ id: feed.id, name: feed.name }))
+        });
+    }
 
       // Check if any of the requested feed_ids already exist in this daily feed
       if (feed.feedItems && feed.feedItems.length > 0) {

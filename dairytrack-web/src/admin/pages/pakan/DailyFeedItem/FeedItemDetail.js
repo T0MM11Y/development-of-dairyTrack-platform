@@ -175,6 +175,16 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
     }
   };
 
+  const getAvailableFeedsForRow = (currentIndex) => {
+    // Get feed_ids selected in other rows
+    const selectedFeedIds = formList
+      .map((item, index) => (index !== currentIndex && item.feed_id ? parseInt(item.feed_id) : null))
+      .filter((id) => id !== null);
+
+    // Return feeds that are not selected in other rows
+    return feeds.filter((feed) => !selectedFeedIds.includes(feed.id));
+  };
+
   const handleSave = async () => {
     try {
       // Tambahkan konfirmasi sebelum menyimpan
@@ -202,15 +212,36 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         return;
       }
   
-      const uniqueFeedIds = new Set(formList.map((item) => item.feed_id));
-      if (uniqueFeedIds.size !== formList.length) {
-        setError("Terdapat jenis pakan yang sama dalam permintaan.");
+      // Check for duplicate feed items
+      const feedIdCounts = {};
+      formList.forEach((item) => {
+        const feedId = item.feed_id;
+        feedIdCounts[feedId] = (feedIdCounts[feedId] || 0) + 1;
+      });
+  
+      const duplicateFeedIds = Object.keys(feedIdCounts).filter(
+        (feedId) => feedIdCounts[feedId] > 1 && feedId !== ""
+      );
+  
+      if (duplicateFeedIds.length > 0) {
+        const duplicateFeedNames = duplicateFeedIds
+          .map((feedId) => {
+            const feed = feeds.find((f) => f.id === parseInt(feedId));
+            return feed ? feed.name : `Feed ID: ${feedId}`;
+          })
+          .filter((name) => name);
+  
+        const errorMessage = `${duplicateFeedNames.join(
+          ", "
+        )} sudah dipilih lebih dari satu kali. Silakan pilih jenis pakan yang berbeda.`;
+  
+        setError(errorMessage);
+        setLoading(false);
         Swal.fire({
-          title: "Jenis Pakan Duplikat",
-          text: "Terdapat jenis pakan yang sama dalam permintaan.",
+          title: "Pakan Duplikat",
+          text: errorMessage,
           icon: "warning",
         });
-        setLoading(false);
         return;
       }
   
@@ -471,7 +502,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             disabled={item.id} // Disable changing feed_id for existing items
                           >
                             <option value="">Pilih Pakan</option>
-                            {feeds.map((feed) => (
+                            {(item.id ? feeds : getAvailableFeedsForRow(index)).map((feed) => (
                               <option key={feed.id} value={feed.id}>
                                 {feed.name}
                               </option>
