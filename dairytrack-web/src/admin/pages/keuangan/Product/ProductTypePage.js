@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getProductTypes, deleteProductType } from "../../../../api/keuangan/productType";
 import { Link } from "react-router-dom";
+import DataTable from "react-data-table-component";
 
 const ProductTypePage = () => {
   const [data, setData] = useState([]);
@@ -28,11 +29,7 @@ const ProductTypePage = () => {
 
     setSubmitting(true);
     try {
-      // Assume you have a deleteProductType function similar to deleteProductStock
-        await deleteProductType(deleteId);
-    //   alert(
-    //     "Delete functionality needs tso be implemented with the appropriate API"
-    //   );
+      await deleteProductType(deleteId);
       fetchData();
       setDeleteId(null);
     } catch (err) {
@@ -42,13 +39,99 @@ const ProductTypePage = () => {
     }
   };
 
+  // DataTable columns configuration
+  const columns = [
+    {
+      name: 'Image',
+      cell: row => (
+        <img
+          src={row.image || "/placeholder-image.jpg"}
+          alt={row.product_name}
+          className="rounded"
+          style={{
+            width: "50px",
+            height: "50px",
+            objectFit: "cover",
+          }}
+        />
+      ),
+      width: '80px',
+    },
+    {
+      name: 'Product Name',
+      selector: row => row.product_name,
+      sortable: true,
+    },
+    {
+      name: 'Description',
+      selector: row => row.product_description,
+      cell: row => (
+        <div>
+          {row.product_description.length > 50
+            ? `${row.product_description.substring(0, 50)}...`
+            : row.product_description}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      name: 'Price',
+      selector: row => parseFloat(row.price),
+      cell: row => `Rp ${parseFloat(row.price).toLocaleString("id-ID")}`,
+      sortable: true,
+      right: true,
+    },
+    {
+      name: 'Unit',
+      selector: row => row.unit,
+      sortable: true,
+    },
+    {
+      name: 'Actions',
+      cell: row => (
+        <>
+          <Link
+            to={`/admin/keuangan/type-product/edit/${row.id}`}
+            className="btn btn-warning btn-sm me-2"
+          >
+            <i className="ri-edit-line"></i>
+          </Link>
+          <button
+            onClick={() => setDeleteId(row.id)}
+            className="btn btn-danger btn-sm"
+          >
+            <i className="ri-delete-bin-6-line"></i>
+          </button>
+        </>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
+  ];
+
+  // Custom DataTable styles
+  const customStyles = {
+    headCells: {
+      style: {
+        fontWeight: 'bold',
+        fontSize: '14px',
+      },
+    },
+    rows: {
+      style: {
+        minHeight: '70px', // Increased to accommodate the image
+      },
+    },
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Product Types</h2>
         <Link to="/admin/keuangan/type-product/create" className="btn btn-info">
           + Product Type
@@ -61,82 +144,35 @@ const ProductTypePage = () => {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading product type data...</p>
-        </div>
-      ) : data.length === 0 ? (
-        <p className="text-gray-500">No product type data available.</p>
-      ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Product Type Data</h4>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Image</th>
-                      <th>Product Name</th>
-                      <th>Description</th>
-                      <th>Price</th>
-                      <th>Unit</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.map((item, index) => (
-                      <tr key={item.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>
-                          <img
-                            src={item.image || "/placeholder-image.jpg"}
-                            alt={item.product_name}
-                            className="rounded"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </td>
-                        <td>{item.product_name}</td>
-                        <td>
-                          {item.product_description.length > 50
-                            ? `${item.product_description.substring(0, 50)}...`
-                            : item.product_description}
-                        </td>
-                        <td>
-                          Rp {parseFloat(item.price).toLocaleString("id-ID")}
-                        </td>
-                        <td>{item.unit}</td>
-                        <td>
-                          <Link
-                            to={`/admin/keuangan/type-product/edit/${item.id}`}
-                            className="btn btn-warning me-2"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </Link>
-                          <button
-                            onClick={() => setDeleteId(item.id)}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      <div className="card">
+        <div className="card-body">
+          {/* <h4 className="card-title">Product Type Data</h4> */}
+          
+          <DataTable
+            columns={columns}
+            data={data}
+            pagination
+            persistTableHead
+            progressPendingIndicator={
+              <div className="text-center my-3">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Loading product type data...</p>
               </div>
-            </div>
-          </div>
+            }
+            progressPending={loading}
+            noDataComponent={
+              <div className="text-center my-3">
+                <p className="text-gray-500">No product type data available.</p>
+              </div>
+            }
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+          />
         </div>
-      )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {deleteId && (

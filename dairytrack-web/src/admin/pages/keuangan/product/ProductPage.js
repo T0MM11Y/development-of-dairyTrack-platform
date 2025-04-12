@@ -3,12 +3,11 @@ import {
   deleteProductStock,
   getProductStocks,
 } from "../../../../api/keuangan/product";
-import { getProductTypes } from "../../../../api/keuangan/productType";
 import { Link } from "react-router-dom";
+import DataTable from "react-data-table-component";
 
 const ProductStockListPage = () => {
   const [data, setData] = useState([]);
-  const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -17,10 +16,7 @@ const ProductStockListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [productsRes, productTypesRes] = await Promise.all([
-        getProductStocks(),
-        getProductTypes(),
-      ]);
+      const productsRes = await getProductStocks();
 
       // Process data to add time remaining info
       const processedData = productsRes.map((item) => {
@@ -51,7 +47,6 @@ const ProductStockListPage = () => {
       });
 
       setData(sortedData);
-      setProductTypes(productTypesRes);
       setError("");
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
@@ -59,11 +54,6 @@ const ProductStockListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getProductTypeName = (productTypeId) => {
-    const productType = productTypes.find((type) => type.id === productTypeId);
-    return productType ? productType.product_name : "Unknown";
   };
 
   const formatTimeRemaining = (timeRemaining) => {
@@ -87,7 +77,7 @@ const ProductStockListPage = () => {
     } else if (minutes > 0) {
       return `${minutes} menit`;
     } else {
-      return "< 1 menit"; // Fix for NaN menit when minutes is 0
+      return "< 1 menit";
     }
   };
 
@@ -131,6 +121,96 @@ const ProductStockListPage = () => {
     }
   };
 
+  // DataTable columns configuration
+  const columns = [
+    {
+      name: 'Product Type',
+      selector: row => row.product_type_detail?.product_name || "Unknown",
+      sortable: true,
+    },
+    {
+      name: 'Remaining Qty',
+      selector: row => row.quantity,
+      sortable: true,
+    },
+    {
+      name: 'Production Date',
+      selector: row => formatDateTime(row.production_at),
+      sortable: true,
+    },
+    {
+      name: 'Expiry Date',
+      selector: row => formatDateTime(row.expiry_at),
+      sortable: true,
+    },
+    {
+      name: 'Status',
+      cell: row => (
+        <span className={`badge ${getStatusBadgeClass(row.status, row.timeRemaining)}`}>
+          {row.status === "available"
+            ? `${row.status} (${formatTimeRemaining(row.timeRemaining)})`
+            : row.status}
+        </span>
+      ),
+      sortable: true,
+      selector: row => row.status,
+    },
+    {
+      name: 'Total Milk Used',
+      selector: row => `${row.total_milk_used} L`,
+      sortable: true,
+    },
+    {
+      name: 'Actions',
+      cell: row => (
+        <>
+          {row.status === "contamination" ||
+          row.status === "expired" ||
+          row.status === "sold_out" ? (
+            <button
+              className="btn btn-warning btn-sm me-2"
+              disabled
+              title="Tidak dapat diedit"
+            >
+              <i className="ri-edit-line"></i>
+            </button>
+          ) : (
+            <Link
+              to={`/admin/keuangan/product/edit/${row.id}`}
+              className="btn btn-warning btn-sm me-2"
+            >
+              <i className="ri-edit-line"></i>
+            </Link>
+          )}
+          <button
+            onClick={() => setDeleteId(row.id)}
+            className="btn btn-danger btn-sm"
+          >
+            <i className="ri-delete-bin-6-line"></i>
+          </button>
+        </>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
+  ];
+
+  // Custom DataTable styles
+  const customStyles = {
+    headCells: {
+      style: {
+        fontWeight: 'bold',
+        fontSize: '14px',
+      },
+    },
+    rows: {
+      style: {
+        minHeight: '55px',
+      },
+    },
+  };
+
   // Update data every minute to refresh time remaining
   useEffect(() => {
     fetchData();
@@ -143,7 +223,7 @@ const ProductStockListPage = () => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Product Stock</h2>
         <Link to="/admin/keuangan/product/create" className="btn btn-info">
           + Product Stock
@@ -156,92 +236,33 @@ const ProductStockListPage = () => {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading product stock data...</p>
-        </div>
-      ) : data.length === 0 ? (
-        <p className="text-gray-500">No product stock data available.</p>
-      ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Product Stock Data</h4>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Product Type</th>
-                      <th>Remaining Qty</th>
-                      <th>Production Date</th>
-                      <th>Expiry Date</th>
-                      <th>Status</th>
-                      <th>Total Milk Used</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.map((item, index) => (
-                      <tr key={item.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>{getProductTypeName(item.product_type)}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatDateTime(item.production_at)}</td>
-                        <td>{formatDateTime(item.expiry_at)}</td>
-                        <td>
-                          <span
-                            className={`badge ${getStatusBadgeClass(
-                              item.status,
-                              item.timeRemaining
-                            )}`}
-                          >
-                            {item.status === "available"
-                              ? `${item.status} (${formatTimeRemaining(
-                                  item.timeRemaining
-                                )})`
-                              : item.status}
-                          </span>
-                        </td>
-                        <td>{item.total_milk_used} L</td>
-                        <td>
-                          {item.status === "contamination" ||
-                          item.status === "expired" ||
-                          item.status === "sold_out" ? (
-                            <button
-                              className="btn btn-warning me-2"
-                              disabled
-                              title="Tidak dapat diedit"
-                            >
-                              <i className="ri-edit-line"></i>
-                            </button>
-                          ) : (
-                            <Link
-                              to={`/admin/keuangan/product/edit/${item.id}`}
-                              className="btn btn-warning me-2"
-                            >
-                              <i className="ri-edit-line"></i>
-                            </Link>
-                          )}
-                          <button
-                            onClick={() => setDeleteId(item.id)}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      <div className="card">
+        <div className="card-body">
+          <DataTable
+            columns={columns}
+            data={data}
+            pagination
+            persistTableHead
+            progressPendingIndicator={
+              <div className="text-center my-3">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Loading product stock data...</p>
               </div>
-            </div>
-          </div>
+            }
+            progressPending={loading}
+            noDataComponent={
+              <div className="text-center my-3">
+                <p className="text-gray-500">No product stock data available.</p>
+              </div>
+            }
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+          />
         </div>
-      )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {deleteId && (

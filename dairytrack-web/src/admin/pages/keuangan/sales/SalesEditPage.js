@@ -1,41 +1,41 @@
 import { useEffect, useState } from "react";
 import { getOrderById, updateOrder } from "../../../../api/keuangan/order";
-import { getProductTypes } from "../../../../api/keuangan/productType";
 import { useNavigate, useParams } from "react-router-dom";
 
 const OrderEditPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
-  const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [orderStatuses] = useState([
     "Requested",
-    "Processing",
+    "Processed",
     "Completed",
     "Cancelled",
   ]);
   const [paymentMethods] = useState([
-    "Cash",
-    "Credit Card",
-    "Bank Transfer",
-    "E-Wallet",
+    { value: "", label: "Select Payment Method" },
+    { value: "Cash", label: "Cash" },
+    { value: "Credit Card", label: "Credit Card" },
+    { value: "Bank Transfer", label: "Bank Transfer" },
   ]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [orderRes, productTypesRes] = await Promise.all([
-          getOrderById(id),
-          getProductTypes(),
-        ]);
-
+        const orderRes = await getOrderById(id);
+        console.log(
+          "Respons getOrderById:",
+          JSON.stringify(orderRes, null, 2)
+        ); // Log JSON respons
         setForm(orderRes);
-        setProductTypes(productTypesRes);
       } catch (err) {
-        console.error("Error fetching order:", err);
+        console.error("Error fetching order:", {
+          message: err.message,
+          response: err.response ? err.response.data : null,
+        }); // Log detail error
         setError("Gagal mengambil data order.");
       } finally {
         setLoading(false);
@@ -58,19 +58,35 @@ const OrderEditPage = () => {
       // Construct the update payload
       const updatePayload = {
         status: form.status,
-        payment_method: form.payment_method,
+        payment_method: form.payment_method || null,
       };
 
-      // Add shipping cost only if status is Requested
       if (form.status === "Requested") {
-        updatePayload.shipping_cost = form.shipping_cost;
+        updatePayload.shipping_cost = form.shipping_cost
+          ? parseFloat(form.shipping_cost)
+          : 0;
       }
+
+      // Validasi payment_method untuk status Completed
+      if (form.status === "Completed" && !form.payment_method) {
+        setError("Metode pembayaran harus diisi untuk status Completed.");
+        setSubmitting(false);
+        return;
+      }
+
+      console.log(
+        "Payload updateOrder:",
+        JSON.stringify(updatePayload, null, 2)
+      ); // Log payload sebelum kirim
 
       await updateOrder(id, updatePayload);
       navigate("/admin/keuangan/sales");
     } catch (err) {
-      console.error("Error updating order:", err);
-      setError("Gagal memperbarui data order.");
+      console.error("Error updating order:", {
+        message: err.message,
+        response: err.response ? err.response.data : null,
+      }); // Log detail error
+      setError("Gagal memperbarui data order: " + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -82,11 +98,6 @@ const OrderEditPage = () => {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(price);
-  };
-
-  const getProductTypeName = (productTypeId) => {
-    const productType = productTypes.find((type) => type.id === productTypeId);
-    return productType ? productType.product_name : "Unknown";
   };
 
   return (
@@ -204,26 +215,24 @@ const OrderEditPage = () => {
                       </div>
                     )}
 
-                    {form.status === "Processing" && (
-                      <div className="mb-3">
-                        <label className="form-label fw-semibold">
-                          Metode Pembayaran
-                        </label>
-                        <select
-                          name="payment_method"
-                          value={form.payment_method || ""}
-                          onChange={handleChange}
-                          className="form-select"
-                          disabled={submitting}
-                        >
-                          {paymentMethods.map((method) => (
-                            <option key={method} value={method}>
-                              {method}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold">
+                        Metode Pembayaran
+                      </label>
+                      <select
+                        name="payment_method"
+                        value={form.payment_method || ""}
+                        onChange={handleChange}
+                        className="form-select"
+                        disabled={submitting}
+                      >
+                        {paymentMethods.map((method) => (
+                          <option key={method.value} value={method.value}>
+                            {method.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
                     <div className="mb-3">
                       <label className="form-label">Total Harga</label>
@@ -240,9 +249,7 @@ const OrderEditPage = () => {
                       <input
                         type="text"
                         className="form-control"
-                        value={new Date(form.created_at).toLocaleString(
-                          "id-ID"
-                        )}
+                        value={new Date(form.created_at).toLocaleString("id-ID")}
                         disabled
                       />
                     </div>
@@ -258,6 +265,7 @@ const OrderEditPage = () => {
                           <tr>
                             <th>#</th>
                             <th>Produk</th>
+                            <th>Gambar</th>
                             <th>Jumlah</th>
                             <th>Harga</th>
                           </tr>
@@ -267,7 +275,26 @@ const OrderEditPage = () => {
                             form.order_items.map((item, index) => (
                               <tr key={item.id}>
                                 <td>{index + 1}</td>
-                                <td>{getProductTypeName(item.product_type)}</td>
+                                <td>{item.product_type?.product_name || "Unknown"}</td>
+                                <td>
+                                  {item.product_type?.image ? (
+                                    <img
+                                      src={item.product_type.image}
+                                      alt={item.product_type.product_name}
+                                      style={{
+                                        width: "50px",
+                                        height: "50px",
+                                        objectFit: "cover",
+                                        borderRadius: "5px",
+                                      }}
+                                      onError={(e) => {
+                                        e.target.src = "/images/fallback.jpg";
+                                      }}
+                                    />
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
                                 <td>{item.quantity}</td>
                                 <td>{formatPrice(item.total_price)}</td>
                               </tr>
@@ -275,7 +302,7 @@ const OrderEditPage = () => {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan="3" className="text-end fw-bold">
+                            <td colSpan="4" className="text-end fw-bold">
                               Subtotal:
                             </td>
                             <td>
@@ -289,13 +316,13 @@ const OrderEditPage = () => {
                             </td>
                           </tr>
                           <tr>
-                            <td colSpan="3" className="text-end fw-bold">
+                            <td colSpan="4" className="text-end fw-bold">
                               Biaya Pengiriman:
                             </td>
                             <td>{formatPrice(form.shipping_cost)}</td>
                           </tr>
                           <tr>
-                            <td colSpan="3" className="text-end fw-bold">
+                            <td colSpan="4" className="text-end fw-bold">
                               Total:
                             </td>
                             <td className="fw-bold">
