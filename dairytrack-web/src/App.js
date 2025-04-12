@@ -128,7 +128,18 @@ const withAdminLayout = (Component) => {
           >
             <Component />
           </div>
-          <Footer />
+          <Footer
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+
+              width: "100%",
+              zIndex: 1000,
+              backgroundColor: "#f8f9fa", // Sesuaikan warna latar belakang
+              boxShadow: "0 -2px 5px rgba(0, 0, 0, 0.1)", // Tambahkan bayangan jika diperlukan
+            }}
+          />
         </div>
       </div>
     );
