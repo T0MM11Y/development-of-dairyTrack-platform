@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { getOrders, deleteOrder } from "../../../../api/keuangan/order";
-import { getProductTypes } from "../../../../api/keuangan/productType";
 import { Link } from "react-router-dom";
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
-  const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -15,13 +13,8 @@ const Sales = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [ordersRes, productTypesRes] = await Promise.all([
-        getOrders(),
-        getProductTypes(),
-      ]);
-
+      const ordersRes = await getOrders();
       setOrders(ordersRes);
-      setProductTypes(productTypesRes);
       setError("");
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
@@ -29,11 +22,6 @@ const Sales = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getProductTypeName = (productTypeId) => {
-    const productType = productTypes.find((type) => type.id === productTypeId);
-    return productType ? productType.product_name : "Unknown";
   };
 
   const handleDelete = async () => {
@@ -101,7 +89,7 @@ const Sales = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Sales</h2>
-        <Link to="/admin/keuangan/order/create" className="btn btn-info">
+        <Link to="/admin/keuangan/sales/create" className="btn btn-info">
           + Order
         </Link>
       </div>
@@ -168,13 +156,6 @@ const Sales = () => {
                           >
                             <i className="ri-eye-line"></i>
                           </button>
-                          <Link
-                            to={`/admin/keuangan/sales/edit/${order.id}`}
-                            className="btn btn-warning me-2"
-                            title="Edit Order"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </Link>
                           <button
                             onClick={() => setDeleteId(order.id)}
                             className="btn btn-danger"
@@ -261,6 +242,7 @@ const Sales = () => {
                         <tr>
                           <th>#</th>
                           <th>Product</th>
+                          <th>Image</th>
                           <th>Quantity</th>
                           <th>Price</th>
                         </tr>
@@ -269,7 +251,23 @@ const Sales = () => {
                         {selectedOrder.order_items.map((item, index) => (
                           <tr key={item.id}>
                             <td>{index + 1}</td>
-                            <td>{getProductTypeName(item.product_type)}</td>
+                            <td>{item.product_type.product_name}</td>
+                            <td>
+                              {item.product_type.image ? (
+                                <img
+                                  src={item.product_type.image}
+                                  alt={item.product_type.product_name}
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    objectFit: "cover",
+                                    borderRadius: "5px",
+                                  }}
+                                />
+                              ) : (
+                                "-"
+                              )}
+                            </td>
                             <td>{item.quantity}</td>
                             <td>{formatPrice(item.total_price)}</td>
                           </tr>
@@ -277,7 +275,7 @@ const Sales = () => {
                       </tbody>
                       <tfoot>
                         <tr>
-                          <td colSpan="3" className="text-end">
+                          <td colSpan="4" className="text-end">
                             <strong>Subtotal:</strong>
                           </td>
                           <td>
@@ -291,13 +289,13 @@ const Sales = () => {
                           </td>
                         </tr>
                         <tr>
-                          <td colSpan="3" className="text-end">
+                          <td colSpan="4" className="text-end">
                             <strong>Shipping Cost:</strong>
                           </td>
                           <td>{formatPrice(selectedOrder.shipping_cost)}</td>
                         </tr>
                         <tr>
-                          <td colSpan="3" className="text-end">
+                          <td colSpan="4" className="text-end">
                             <strong>Total:</strong>
                           </td>
                           <td>

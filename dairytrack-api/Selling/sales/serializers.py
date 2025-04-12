@@ -1,15 +1,28 @@
 from django.db.models import Sum
 from rest_framework import serializers
 from .models import Order, OrderItem, ProductType, ProductStock
+from stock.serializers import ProductTypeSerializer
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_type = serializers.PrimaryKeyRelatedField(queryset=ProductType.objects.all())  # Pastikan menggunakan model yang benar
+    # product_type = serializers.PrimaryKeyRelatedField(queryset=ProductType.objects.all())  # Pastikan menggunakan model yang benar
+    product_type = ProductTypeSerializer(read_only=True)
 
     class Meta:
         model = OrderItem
         fields = ['id', 'product_type', 'quantity', 'total_price']
         read_only_fields = ['total_price'] # Tambahkan product_stock agar tidak bisa diubah setelah dibuat
+
+    # Override untuk menangani penulisan (write) product_type saat create/update
+    def create(self, validated_data):
+        # Saat create, product_type diharapkan sebagai objek (bukan hanya ID)
+        return OrderItem.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 class OrderSerializer(serializers.ModelSerializer):
     # Remove read_only=True so we can accept nested order items in create
