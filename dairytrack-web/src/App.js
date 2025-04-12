@@ -40,19 +40,20 @@ import FreshnesOfMilk from "./admin/pages/produktivitas/FreshnessOfMilk/Freshnes
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
 import SalesEditPage from "./admin/pages/keuangan/sales/SalesEditPage.js";
+import SalesCreatePage from "./admin/pages/keuangan/sales/SalesCreatePage.js";
 
 import Finance from "./admin/pages/keuangan/finance/Finance.js";
 import AddIncomePage from "./admin/pages/keuangan/finance/AddIncomePage.js";
 import AddExpensePage from "./admin/pages/keuangan/finance/AddExpensePage.js";
 
-import ProductListPage from "./admin/pages/keuangan/product/ProductPage.js";
-import ProductCreatePage from "./admin/pages/keuangan/product/ProductCreatePage.js";
-import ProductEditPage from "./admin/pages/keuangan/product/ProductEditPage.js";
-import ProductHistoryPage from "./admin/pages/keuangan/product/ProductHistoryPage.js";
+import ProductListPage from "./admin/pages/keuangan/Product/ProductPage.js";
+import ProductCreatePage from "./admin/pages/keuangan/Product/ProductCreatePage.js";
+import ProductEditPage from "./admin/pages/keuangan/Product/ProductEditPage.js";
+import ProductHistoryPage from "./admin/pages/keuangan/Product/ProductHistoryPage.js";
 
-import ProductTypePage from "./admin/pages/keuangan/product/ProductTypePage.js";
-import ProductTypeCreatePage from "./admin/pages/keuangan/product/ProductTypeCreatePage.js";
-import ProductTypeEditPage from "./admin/pages/keuangan/product/ProductTypeEditPage.js";
+import ProductTypePage from "./admin/pages/keuangan/Product/ProductTypePage.js";
+import ProductTypeCreatePage from "./admin/pages/keuangan/Product/ProductTypeCreatePage.js";
+import ProductTypeEditPage from "./admin/pages/keuangan/Product/ProductTypeEditPage.js";
 
 //kesehatan
 import CowListPage from "./admin/pages/peternakan/cows/CowListPage.js";
@@ -498,6 +499,10 @@ function App() {
       <Route
         path="/admin/keuangan/sales"
         element={<ProtectedRoute>{withAdminLayout(Sales)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/keuangan/sales/create"
+        element={<ProtectedRoute>{withAdminLayout(SalesCreatePage)}</ProtectedRoute>}
       />
       <Route
         path="/admin/keuangan/sales/edit/:id"
