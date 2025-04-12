@@ -6,6 +6,8 @@ import {
 } from "../../../../api/peternakan/blog";
 import CreateBlogModal from "./createBlog";
 import EditBlogModal from "./editBlog";
+import CreateTopicModal from "./createTopic"; // Import CreateTopicModal
+import Swal from "sweetalert2";
 
 const BlogAll = () => {
   const [data, setData] = useState([]);
@@ -15,6 +17,7 @@ const BlogAll = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateTopicModal, setShowCreateTopicModal] = useState(false); // State for CreateTopicModal
   const [editBlogId, setEditBlogId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -43,17 +46,36 @@ const BlogAll = () => {
       setLoading(false);
     }
   };
+  const stripHtmlTags = (html) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleDelete = async (id) => {
+    if (!id) return;
+
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (!result.isConfirmed) return;
 
     setSubmitting(true);
     try {
-      await deleteBlog(deleteId);
-      fetchData();
-      setDeleteId(null);
+      await deleteBlog(id); // Pastikan API ini berfungsi dengan benar
+      fetchData(); // Refresh data setelah penghapusan berhasil
+      setDeleteId(null); // Reset deleteId setelah penghapusan
+      Swal.fire("Deleted!", "Your blog has been deleted.", "success");
     } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
+      console.error("Failed to delete blog:", err.message);
+      Swal.fire("Error!", "Failed to delete blog: " + err.message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -113,6 +135,12 @@ const BlogAll = () => {
             >
               + Create Blog
             </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowCreateTopicModal(true)} // Open CreateTopicModal
+            >
+              + Add Topic
+            </button>
           </div>
         </div>
       </div>
@@ -166,12 +194,16 @@ const BlogAll = () => {
                           />
                         </td>
                         <td>{item.title}</td>
+
                         <td>
-                          {item.description.length > 50
-                            ? `${item.description.substring(0, 50)}...`
-                            : item.description}
+                          {stripHtmlTags(item.description).length > 50
+                            ? `${stripHtmlTags(item.description).substring(
+                                0,
+                                50
+                              )}...`
+                            : stripHtmlTags(item.description)}
                         </td>
-                        <td>{item.topic}</td>
+                        <td>{item.topic_name}</td>
                         <td>
                           <button
                             onClick={() => handleEdit(item.id)}
@@ -180,7 +212,7 @@ const BlogAll = () => {
                             <i className="ri-edit-line"></i>
                           </button>
                           <button
-                            onClick={() => setDeleteId(item.id)}
+                            onClick={() => handleDelete(item.id)} // Panggil handleDelete dengan id
                             className="btn btn-danger"
                           >
                             <i className="ri-delete-bin-6-line"></i>
@@ -209,6 +241,14 @@ const BlogAll = () => {
         <EditBlogModal
           blogId={editBlogId}
           onClose={() => setShowEditModal(false)}
+          onSuccess={fetchData}
+        />
+      )}
+
+      {/* Create Topic Modal */}
+      {showCreateTopicModal && (
+        <CreateTopicModal
+          onClose={() => setShowCreateTopicModal(false)}
           onSuccess={fetchData}
         />
       )}

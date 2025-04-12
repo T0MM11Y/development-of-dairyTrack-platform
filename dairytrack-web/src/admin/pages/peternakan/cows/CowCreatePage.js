@@ -13,7 +13,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
     gender: "Female",
     entry_date: "",
     lactation_status: false,
-    lactation_phase: "Early",
+    lactation_phase: "Dry", // Default to Dry
     farmer: "",
   });
   const [error, setError] = useState("");
@@ -39,9 +39,21 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === "checkbox" ? checked : value;
+
     if (name === "weight_kg") {
       finalValue = value ? Math.max(0, parseFloat(value)) : "";
     }
+
+    // Handle lactation_status checkbox
+    if (name === "lactation_status") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        lactation_status: checked,
+        lactation_phase: checked ? prevForm.lactation_phase : "Dry", // Set to Dry when unchecked
+      }));
+      return;
+    }
+
     setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
 
@@ -184,6 +196,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                     />
                   </div>
                 </div>
+
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-bold">Fase Laktasi</label>
@@ -192,11 +205,15 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                       value={form.lactation_phase}
                       onChange={handleChange}
                       className="form-select"
+                      disabled={!form.lactation_status} // Disable when lactation_status is unchecked
                     >
                       <option value="Early">Early</option>
                       <option value="Mid">Mid</option>
                       <option value="Late">Late</option>
-                      <option value="Dry">Dry</option>
+                      {!form.lactation_status && (
+                        <option value="Dry">Dry</option>
+                      )}{" "}
+                      {/* Show Dry only if lactation_status is unchecked */}
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">

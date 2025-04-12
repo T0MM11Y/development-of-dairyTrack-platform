@@ -29,7 +29,7 @@ class DailyMilkTotal(db.Model):
             'id': self.id,
             'date': self.date,
             'total_volume': self.total_volume,
-            'total_sessions': self.total_sessions,
+            'total_sessions': self.total_sessions,  
             'cow': {
                 'id': self.cow.id,
                 'name': self.cow.name,

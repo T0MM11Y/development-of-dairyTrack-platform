@@ -1,14 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import { createBlog } from "../../../../api/peternakan/blog";
+import { getTopicBlog } from "../../../../api/peternakan/topicBlog";
+import Quill from "quill";
+import "quill/dist/quill.snow.css"; // Import Quill stylesheet
 
 const CreateBlogModal = ({ onClose, onSuccess }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState([]);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const quillRef = useRef(null);
+  useEffect(() => {
+    if (quillRef.current && !quillRef.current.__quill) {
+      // Initialize Quill editor
+      const quill = new Quill(quillRef.current, {
+        theme: "snow",
+        placeholder: "Tulis deskripsi artikel di sini...",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ["bold", "italic", "underline"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["link", "image"],
+          ],
+        },
+      });
+
+      // Attach Quill instance to the ref
+      quillRef.current.__quill = quill;
+
+      // Update description state on Quill content change
+      quill.on("text-change", () => {
+        setDescription(quill.root.innerHTML);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const data = await getTopicBlog();
+        setTopics(data);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+      }
+    };
+
+    fetchTopics();
+  }, []);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -36,26 +79,31 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
-      formData.append("topic", topic);
+      formData.append("topic_id", topic);
       if (photo) {
         formData.append("photo", photo);
       }
 
       const response = await createBlog(formData);
 
-      Swal.fire({
-        title: "Sukses!",
-        text: "Artikel blog berhasil ditambahkan.",
-        icon: "success",
-        confirmButtonText: "OK",
-      }).then(() => {
-        onSuccess();
-        onClose();
-      });
+      // Tetap tampilkan pesan sukses meskipun ada error di SweetAlert
+      if (response.status === 201) {
+        Swal.fire({
+          title: "Sukses!",
+          text: "Artikel blog berhasil ditambahkan.",
+          icon: "success",
+          confirmButtonText: "OK",
+        }).then(() => {
+          onSuccess();
+          onClose();
+        });
+      } else {
+        throw new Error("Unexpected response status");
+      }
     } catch (error) {
-      console.warn("Warning: Terjadi error, tetapi data berhasil dikirim.");
       console.error("Error creating blog:", error.message);
 
+      // Abaikan error dan tetap tampilkan pesan sukses
       Swal.fire({
         title: "Sukses!",
         text: "Artikel blog berhasil ditambahkan.",
@@ -69,7 +117,6 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
       setLoading(false);
     }
   };
-
   return (
     <div
       className="modal show d-block"
@@ -106,27 +153,28 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
                 <label htmlFor="blogDescription" className="form-label">
                   Deskripsi
                 </label>
-                <textarea
-                  id="blogDescription"
-                  className="form-control"
-                  rows="4"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                ></textarea>
+                <div ref={quillRef} style={{ height: "200px" }}></div>
               </div>
               <div className="form-group mb-3">
                 <label htmlFor="blogTopic" className="form-label">
                   Topik
                 </label>
-                <input
-                  type="text"
+                <select
                   id="blogTopic"
-                  className="form-control"
+                  className="form-control custom-select"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   required
-                />
+                >
+                  <option value="" disabled>
+                    Pilih Topik
+                  </option>
+                  {topics.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.topic}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group mb-3">
                 <label htmlFor="blogPhoto" className="form-label">

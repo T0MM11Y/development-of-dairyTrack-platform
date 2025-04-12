@@ -37,7 +37,7 @@ const DataProduksiSusu = () => {
     previous_volume: 0,
     status: "fresh",
     lactation_status: false,
-    lactation_phase: "Early",
+    lactation_phase: "Dry",
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -257,7 +257,7 @@ const DataProduksiSusu = () => {
           previous_volume: 0,
           status: "fresh",
           lactation_status: false,
-          lactation_phase: "Early",
+          lactation_phase: "Dry",
         });
       }
     },

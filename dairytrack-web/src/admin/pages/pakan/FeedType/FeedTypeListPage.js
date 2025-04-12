@@ -103,7 +103,7 @@ const FeedTypeListPage = () => {
                         <button
                           className="btn btn-info btn-sm me-2"
                           onClick={() =>
-                            navigate(`/admin/detail/jenis-pakan/${feed.id}`)
+                            navigate(`/admin/peternakan/pakan/detail/${feed.id}`)
                           }
                           aria-label={`Lihat detail ${feed.name}`}
                         >

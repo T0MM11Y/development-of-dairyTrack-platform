@@ -16,7 +16,6 @@ import Dashboard from "./admin/pages/dashboard/Dashboard";
 
 import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
-import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js";
 
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
@@ -24,7 +23,6 @@ import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
 
 import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
 import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
-import DetailStok from "./admin/pages/pakan/FeedStock/EditStock.js";
 
 import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
@@ -32,12 +30,12 @@ import DetailPakanHarian from "./admin/pages/pakan/DailyFeed/DetailDailyFeed.js"
 
 import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js";
 import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
-import DetailItemPakan from "./admin/pages/pakan/DailyFeedItem/FeedItemDetail.js";
 
 import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
 import MilkProductionPhase from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionPhaseAnalysis.js";
+import FreshnesOfMilk from "./admin/pages/produktivitas/FreshnessOfMilk/FreshnessOfMilk.js";
 
 // Sales & Financial
 import Sales from "./admin/pages/keuangan/sales/Sales.js";
@@ -108,6 +106,7 @@ import ContactUs from "./user/pages/ContactUs";
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
 import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
 import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
+import galleryAll from "./admin/pages/peternakan/gallery/gallery_all.js";
 import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionTrendAnalysis.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
@@ -182,10 +181,6 @@ function App() {
         element={<ProtectedRoute>{withAdminLayout(JenisPakan)}</ProtectedRoute>}
       />
       <Route
-        path="/admin/detail/jenis-pakan/:id"
-        element={<ProtectedRoute>{withAdminLayout(DetailJenisPakan)}</ProtectedRoute>}
-      />
-      <Route
         path="/admin/pakan/jenis/tambah"
         element={
           <ProtectedRoute>{withAdminLayout(TambahJenisPakan)}</ProtectedRoute>
@@ -210,10 +205,6 @@ function App() {
       <Route
         path="/admin/pakan/stok"
         element={<ProtectedRoute>{withAdminLayout(StokPakan)}</ProtectedRoute>}
-      />
-      <Route
-        path="/admin/pakan/detail/:id"
-        element={<ProtectedRoute>{withAdminLayout(DetailStok)}</ProtectedRoute>}
       />
       <Route
         path="/admin/pakan/tambah-stok"
@@ -252,12 +243,6 @@ function App() {
         }
       />
       <Route
-        path="/admin/detail/item-pakan-harian/:id"
-        element={
-          <ProtectedRoute>{withAdminLayout(DetailItemPakan)}</ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin/nutrisi-pakan-harian"
         element={<ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>}
       />
@@ -281,6 +266,12 @@ function App() {
           <ProtectedRoute>
             {withAdminLayout(MilkProductionPhase)}
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/susu/kesegaransusu"
+        element={
+          <ProtectedRoute>{withAdminLayout(FreshnesOfMilk)}</ProtectedRoute>
         }
       />
       {/* Admin peternakan - Sapi */}
@@ -350,6 +341,10 @@ function App() {
       <Route
         path="/admin/blog/create"
         element={<ProtectedRoute>{withAdminLayout(blogCreate)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/gallery/all"
+        element={<ProtectedRoute>{withAdminLayout(galleryAll)}</ProtectedRoute>}
       />
       {/* Admin Kesehatan - Pemeriksaan */}
       <Route

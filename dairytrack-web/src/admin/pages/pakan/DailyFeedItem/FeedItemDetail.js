@@ -1,112 +1,68 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  getAlldailyFeedItems,
-  updatedailyFeedItem,
-  deletedailyFeedItem,
-  createdailyFeedItem,
-} from "../../../../api/pakan/dailyFeedItem";
+import { getdailyFeedItemById, updatedailyFeedItem } from "../../../../api/pakan/dailyFeedItem";
 import { getFeeds } from "../../../../api/pakan/feed";
-import { getFeedStock } from "../../../../api/pakan/feedstock";
-import { getCows } from "../../../../api/peternakan/cow";
-import { getDailyFeedById } from "../../../../api/pakan/dailyFeed";
 import Swal from "sweetalert2";
 
-const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
-  const [dailyFeed, setDailyFeed] = useState(null);
-  const [feedItems, setFeedItems] = useState([]);
+const FeedItemDetailEditPage = ({ dailyFeedId, onClose, onUpdateSuccess }) => {
+  const [formList, setFormList] = useState([{ feed_id: "", quantity: "" }]);
   const [feeds, setFeeds] = useState([]);
-  const [feedStocks, setFeedStocks] = useState([]);
-  const [cowNames, setCowNames] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [dailyFeed, setDailyFeed] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [formList, setFormList] = useState([]);
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [feedItems, setFeedItems] = useState([]);
+  const [isEditing, setIsEditing] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
     const fetchData = async () => {
-      if (!dailyFeedId || !isMounted) return;
-
       try {
         setLoading(true);
-        setError("");
-
-        const [
-          dailyFeedResponse,
-          allFeedItemsResponse,
-          feedResponse,
-          stockResponse,
-          cowsResponse,
-        ] = await Promise.all([
-          getDailyFeedById(dailyFeedId),
-          getAlldailyFeedItems(),
-          getFeeds(),
-          getFeedStock(),
-          getCows(),
-        ]);
-
-        if (!isMounted) return;
-
-        setFeeds(feedResponse.success && Array.isArray(feedResponse.feeds) ? feedResponse.feeds : []);
-        setFeedStocks(stockResponse.success && Array.isArray(stockResponse.stocks) ? stockResponse.stocks : []);
-
-        const cowMap = {};
-        if (Array.isArray(cowsResponse)) {
-          cowsResponse.forEach((cow) => (cowMap[cow.id] = cow.name));
+        
+        // Fetch feed options
+        const feedResponse = await getFeeds();
+        if (feedResponse.success && Array.isArray(feedResponse.feeds)) {
+          setFeeds(feedResponse.feeds);
+        } else {
+          throw new Error("Invalid feed data received");
         }
-        setCowNames(cowMap);
-
-        if (dailyFeedResponse.success) {
-          setDailyFeed(dailyFeedResponse.data);
-        }
-
-        if (allFeedItemsResponse.success && Array.isArray(allFeedItemsResponse.data)) {
-          const relevantFeedItems = allFeedItemsResponse.data.filter(
-            (item) => item.daily_feed_id === parseInt(dailyFeedId)
-          );
-          setFeedItems(relevantFeedItems);
-          setFormList(
-            relevantFeedItems.map((item) => ({
-              id: item.id,
-              feed_id: item.feed_id?.toString() || "",
-              quantity: item.quantity?.toString() || "",
-              daily_feed_id: item.daily_feed_id,
-            }))
-          );
+        
+        // Fetch current feed items for this daily feed
+        const response = await getdailyFeedItemById(dailyFeedId);
+        
+        if (response.success) {
+          setDailyFeed(response.dailyFeed);
+          
+          // If there are feed items, format them for the form
+          if (response.feedItems && Array.isArray(response.feedItems)) {
+            if (response.feedItems.length > 0) {
+              setFormList(response.feedItems.map(item => ({
+                id: item.id,
+                feed_id: item.feed_id.toString(),
+                quantity: item.quantity.toString()
+              })));
+              setFeedItems(response.feedItems);
+            } else {
+              // If no items, start with one empty form item
+              setFormList([{ feed_id: "", quantity: "" }]);
+            }
+          } else {
+            setFormList([{ feed_id: "", quantity: "" }]);
+          }
+        } else {
+          throw new Error("Failed to fetch feed item details");
         }
       } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching data:", error);
-          setError(error.message || "Gagal mengambil data");
-        }
+        console.error("Error fetching data:", error);
+        setError(error.message || "Failed to load feed item details");
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [dailyFeedId]);
-
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (!isEditing) {
-      setFormList(
-        feedItems.map((item) => ({
-          id: item.id,
-          feed_id: item.feed_id?.toString() || "",
-          quantity: item.quantity?.toString() || "",
-          daily_feed_id: item.daily_feed_id,
-        }))
-      );
+    if (dailyFeedId) {
+      fetchData();
     }
-  };
+  }, [dailyFeedId]);
 
   const handleChange = (e, index) => {
     const updatedFormList = [...formList];
@@ -115,61 +71,21 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   };
 
   const handleAddFeedItem = () => {
+    // Check if we already have 3 feed items (maximum allowed)
     if (formList.length >= 3) {
       Swal.fire({
         title: "Perhatian",
         text: "Maksimal 3 jenis pakan untuk satu sesi",
-        icon: "warning",
+        icon: "warning"
       });
       return;
     }
-    setFormList([
-      ...formList,
-      { feed_id: "", quantity: "", daily_feed_id: parseInt(dailyFeedId) },
-    ]);
+    setFormList([...formList, { feed_id: "", quantity: "" }]);
   };
 
-  const handleRemoveFeedItem = async (index) => {
-    const updatedFormList = [...formList];
-    const removedItem = updatedFormList[index];
-
-    if (removedItem.id) {
-      const result = await Swal.fire({
-        title: "Konfirmasi",
-        text: "Apakah Anda yakin ingin menghapus item pakan ini?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Ya, hapus!",
-        cancelButtonText: "Batal",
-      });
-
-      if (result.isConfirmed) {
-        try {
-          const response = await deletedailyFeedItem(removedItem.id);
-          if (response.success) {
-            updatedFormList.splice(index, 1);
-            setFormList(updatedFormList);
-            setFeedItems(feedItems.filter((item) => item.id !== removedItem.id));
-            Swal.fire({
-              title: "Berhasil!",
-              text: "Item pakan berhasil dihapus",
-              icon: "success",
-              timer: 1500,
-            });
-          } else {
-            throw new Error(response.message || "Gagal menghapus item");
-          }
-        } catch (error) {
-          Swal.fire({
-            title: "Error",
-            text: error.message || "Gagal menghapus item pakan",
-            icon: "error",
-          });
-        }
-      }
-    } else {
+  const handleRemoveFeedItem = (index) => {
+    if (formList.length > 1) {
+      const updatedFormList = [...formList];
       updatedFormList.splice(index, 1);
       setFormList(updatedFormList);
     }
@@ -183,6 +99,56 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
 
     // Return feeds that are not selected in other rows
     return feeds.filter((feed) => !selectedFeedIds.includes(feed.id));
+  };
+
+  const validateFeedItems = () => {
+    // Check if at least one feed item is specified
+    if (formList.length === 0) {
+      setError("Silakan tambahkan minimal satu jenis pakan");
+      Swal.fire({
+        title: "Perhatian",
+        text: "Silakan tambahkan minimal satu jenis pakan",
+        icon: "warning"
+      });
+      return false;
+    }
+
+    // Check if all required fields are filled
+    const hasEmptyFields = formList.some(item => 
+      !item.feed_id || !item.quantity || parseFloat(item.quantity) <= 0
+    );
+
+    if (hasEmptyFields) {
+      setError("Silakan lengkapi semua data pakan dan pastikan jumlah pakan lebih dari 0");
+      Swal.fire({
+        title: "Perhatian",
+        text: "Silakan lengkapi semua data pakan dan pastikan jumlah pakan lebih dari 0",
+        icon: "warning"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const getFeedStockInfo = (feedId) => {
+    const feed = feeds.find(f => f.id === feedId);
+    return feed ? feed.stock_quantity || 0 : 0;
+  };
+
+  const renderStockAvailability = (feedId) => {
+    if (!feedId) return null;
+    
+    const feedIdNum = parseInt(feedId);
+    const feed = feeds.find(f => f.id === feedIdNum);
+    
+    if (!feed) return null;
+    
+    return (
+      <small className="form-text text-info">
+        Stok tersedia: {feed.stock_quantity || 0} kg
+      </small>
+    );
   };
 
   const handleSave = async () => {
@@ -249,191 +215,112 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
       const updatedItems = formList.filter((item) => item.id);
       let updatedFeedItems = [...feedItems];
   
-      // Add new items in bulk
-      if (newItems.length > 0) {
-        const feedItemsPayload = newItems.map((item) => ({
-          feed_id: parseInt(item.feed_id),
-          quantity: parseFloat(item.quantity),
-        }));
-        const addPayload = {
-          daily_feed_id: parseInt(dailyFeedId),
-          feed_items: feedItemsPayload,
-        };
-        console.log("Add Payload:", addPayload);
-        const addResponse = await createdailyFeedItem(addPayload);
-        console.log("Add Response:", addResponse);
-        if (addResponse.success && addResponse.data) {
-          updatedFeedItems = [
-            ...updatedFeedItems,
-            ...addResponse.data.feedItems.map((item) => ({
-              id: item.id,
-              daily_feed_id: parseInt(dailyFeedId),
-              feed_id: item.feed_id,
-              quantity: item.quantity,
-              feed: item.feed,
-            })),
-          ];
-        } else {
-          throw new Error(addResponse.message || "Gagal menambahkan item baru");
-        }
-      }
-  
-      // Update existing items individually
-      if (updatedItems.length > 0) {
-        for (const item of updatedItems) {
-          const updatePayload = {
-            quantity: parseFloat(item.quantity),
-          };
-          console.log(`Update Payload for ID ${item.id}:`, updatePayload);
-          const updateResponse = await updatedailyFeedItem(item.id, updatePayload);
-          console.log(`Update Response for ID ${item.id}:`, updateResponse);
-          if (updateResponse.success && updateResponse.data) {
-            updatedFeedItems = updatedFeedItems.map((feedItem) =>
-              feedItem.id === item.id
-                ? {
-                    ...feedItem,
-                    quantity: parseFloat(item.quantity),
-                    feed: feeds.find((f) => f.id === parseInt(item.feed_id)),
-                  }
-                : feedItem
-            );
-          } else {
-            throw new Error(updateResponse.message || "Gagal memperbarui item");
-          }
-        }
-      }
-  
-      setFeedItems(updatedFeedItems);
-      setFormList(
-        updatedFeedItems.map((item) => ({
-          id: item.id,
-          feed_id: item.feed_id.toString(),
-          quantity: item.quantity.toString(),
-          daily_feed_id: item.daily_feed_id,
-        }))
-      );
-      setIsEditing(false);
-  
-      // Alert setelah berhasil menyimpan
-      await Swal.fire({
-        title: "Berhasil!",
-        text: "Data pakan harian berhasil diperbarui",
-        icon: "success",
-        timer: 1500,
-      });
-      if (onUpdateSuccess) onUpdateSuccess();
+      // Update processing code would go here
+      // This function is replaced by handleSubmit in the actual implementation
+      setLoading(false);
     } catch (error) {
-      console.error("Error saving feed items:", error);
-      setError(error.message || "Terjadi kesalahan saat menyimpan data");
-      Swal.fire({
-        title: "Error",
-        text: error.message || "Terjadi kesalahan saat menyimpan data",
-        icon: "error",
-      });
-    } finally {
+      console.error("Error in handleSave:", error);
+      setError(error.message || "Error saving feed items");
       setLoading(false);
     }
   };
 
-  const validateFeedItems = () => {
-    if (formList.length === 0) {
-      setError("Harus ada minimal satu jenis pakan");
-      Swal.fire({
-        title: "Perhatian",
-        text: "Harus ada minimal satu jenis pakan",
-        icon: "warning",
-      });
-      return false;
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-    const invalidItems = formList.filter(
-      (item) => !item.feed_id || !item.quantity || parseFloat(item.quantity) <= 0
-    );
-    if (invalidItems.length > 0) {
-      setError("Semua item pakan harus memiliki jenis dan jumlah yang valid");
-      Swal.fire({
-        title: "Form Tidak Lengkap",
-        text: "Semua item pakan harus memiliki jenis dan jumlah yang valid",
-        icon: "warning",
-      });
-      return false;
-    }
+    try {
+      if (!validateFeedItems()) {
+        setSubmitting(false);
+        return;
+      }
 
-    const insufficientStockItems = formList.filter(
-      (item) => parseFloat(item.quantity) > getFeedStockInfo(parseInt(item.feed_id))
-    );
-    if (insufficientStockItems.length > 0) {
-      const messages = insufficientStockItems.map(
-        (item) =>
-          `- ${feeds.find((f) => f.id === parseInt(item.feed_id))?.name}: Tersedia ${getFeedStockInfo(
-            parseInt(item.feed_id)
-          )} kg, diminta ${item.quantity} kg`
+      // Check for duplicate feed items
+      const feedIdCounts = {};
+      formList.forEach((item) => {
+        const feedId = item.feed_id;
+        feedIdCounts[feedId] = (feedIdCounts[feedId] || 0) + 1;
+      });
+
+      const duplicateFeedIds = Object.keys(feedIdCounts).filter(
+        (feedId) => feedIdCounts[feedId] > 1 && feedId !== ""
       );
-      setError(`Stok tidak mencukupi:\n${messages.join("\n")}`);
-      Swal.fire({
-        title: "Stok Tidak Mencukupi",
-        html: `Stok tidak mencukupi:<br>${messages.join("<br>")}`,
-        icon: "error",
-      });
-      return false;
-    }
 
-    return true;
+      if (duplicateFeedIds.length > 0) {
+        const duplicateFeedNames = duplicateFeedIds
+          .map((feedId) => {
+            const feed = feeds.find((f) => f.id === parseInt(feedId));
+            return feed ? feed.name : `Feed ID: ${feedId}`;
+          })
+          .filter((name) => name);
+
+        const errorMessage = `${duplicateFeedNames.join(
+          ", "
+        )} sudah dipilih lebih dari satu kali. Silakan pilih jenis pakan yang berbeda.`;
+
+        setError(errorMessage);
+        setSubmitting(false);
+        Swal.fire({
+          title: "Pakan Duplikat",
+          text: errorMessage,
+          icon: "warning",
+        });
+        return;
+      }
+
+      const payload = {
+        daily_feed_id: dailyFeedId,
+        feed_items: formList.map(({ id, feed_id, quantity }) => ({
+          id: id || undefined, // Include ID only if it exists (for existing items)
+          feed_id: Number(feed_id),
+          quantity: Number(quantity)
+        }))
+      };
+      
+      const response = await updatedailyFeedItem(payload);
+      
+      if (response.success) {
+        Swal.fire({
+          title: "Berhasil!",
+          text: "Data pakan harian berhasil diperbarui",
+          icon: "success",
+          timer: 1500
+        });
+        onUpdateSuccess && onUpdateSuccess();
+        onClose();
+      } else {
+        throw new Error(response.message || "Failed to update feed items");
+      }
+    } catch (error) {
+      console.error("Error updating feed items:", error);
+      setError(error.message || "Failed to update feed items");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const getFeedStockInfo = (feedId) =>
-    feedStocks.find((stock) => stock.feed?.id === feedId)?.stock || 0;
-
-  const renderStockAvailability = (feedId) =>
-    feedId ? (
-      <div className="form-text fw-bold fs-5 text-primary">
-        Stok tersedia: <strong>{getFeedStockInfo(parseInt(feedId))} kg</strong>
-      </div>
-    ) : null;
-
-  const formatDate = (dateString) =>
-    dateString
-      ? new Date(dateString).toLocaleDateString("id-ID", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "-";
-
-  const formatSession = (session) =>
-    session ? session.charAt(0).toUpperCase() + session.slice(1) : "-";
-
-  const getCowName = () => {
-    if (!dailyFeed) return "-";
-    return (
-      dailyFeed.cow?.name ||
-      dailyFeed.cow_name ||
-      (dailyFeed.cow_id && cowNames[dailyFeed.cow_id]) ||
-      (dailyFeed.cow_id && `Sapi #${dailyFeed.cow_id}`) ||
-      "Tidak Ada Info Sapi"
-    );
+  // For debug only - remove in production
+  const logDailyFeed = () => {
+    console.log("Daily Feed Data:", dailyFeed);
   };
 
   return (
-    <div
-      className="modal show d-block"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
-    >
+    <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog modal-lg">
-        <div className="modal-content shadow-lg">
-          <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">
-              Detail Pakan Harian
-            </h5>
+        <div className="modal-content">
+          <div className="modal-header bg-info text-white">
+            <h4 className="modal-title fw-bold">Detail & Edit Pakan Harian</h4>
             <button
+              type="button"
               className="btn-close"
               onClick={onClose}
-              disabled={loading}
-            ></button>
+              aria-label="Close"
+            />
           </div>
           <div className="modal-body">
             {error && <div className="alert alert-danger">{error}</div>}
-
+            
             {loading ? (
               <div className="text-center py-4">
                 <div className="spinner-border text-info" role="status">
@@ -443,47 +330,36 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
               </div>
             ) : (
               <>
-                <div className="row mb-4">
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label text-secondary">
-                        Tanggal
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control bg-white"
-                        value={formatDate(dailyFeed?.date) || ""}
-                        readOnly
-                      />
+                <form onSubmit={handleSubmit}>
+                  <div className="card mb-4 bg-light border-0">
+                    <div className="card-body">
+                      <h5 className="card-title mb-3 border-bottom pb-2">Informasi Pakan Harian</h5>
+                      <div className="row">
+                        <div className="col-md-4 mb-3">
+                          <div className="form-group">
+                            <label className="form-label fw-bold text-secondary">Tanggal</label>
+                            <input 
+                              type="text" 
+                              className="form-control"
+                              value={dailyFeed?.date || "-"}
+                              disabled
+                            />
+                          </div>
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <div className="form-group">
+                            <label className="form-label fw-bold text-secondary">Peternak</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={dailyFeed?.farmer_name || "-"}
+                              disabled
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label text-secondary">
-                        Sesi
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control bg-white"
-                        value={formatSession(dailyFeed?.session) || ""}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label className="form-label text-secondary">
-                        Sapi
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control bg-white"
-                        value={getCowName()}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 {isEditing ? (
                   <>
@@ -533,104 +409,87 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             )}
                         </div>
                         <div className="col-md-2 d-flex align-items-end">
-                          <button
-                            type="button"
-                            className="btn btn-danger me-2"
-                            onClick={() => handleRemoveFeedItem(index)}
-                          >
-                            Hapus
-                          </button>
+                          {formList.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              onClick={() => handleRemoveFeedItem(index)}
+                            >
+                              Hapus
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
-
-                    <div className="mb-4 text-end">
-                      <button
-                        type="button"
-                        className="btn btn-outline-info"
-                        onClick={handleAddFeedItem}
-                        disabled={formList.length >= 3}
-                      >
-                        + Tambah Pakan {formList.length >= 3 ? " (Maksimum)" : ""}
-                      </button>
-                    </div>
                   </>
                 ) : (
                   <>
-                    {feedItems.length === 0 ? (
-                      <div className="alert alert-info">
-                        <i className="ri-information-line me-2"></i> Tidak ada data pakan untuk sesi ini.
-                      </div>
-                    ) : (
-                      <div className="table-responsive mb-4">
-                        <table className="table table-bordered">
-                          <thead className="table-light">
-                            <tr>
-                              <th className="text-center" style={{ width: "5%" }}>No</th>
-                              <th style={{ width: "50%" }}>Jenis Pakan</th>
-                              <th className="text-center" style={{ width: "20%" }}>Jumlah (kg)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {feedItems.map((item, index) => (
-                              <tr key={item.id}>
-                                <td className="text-center">{index + 1}</td>
-                                <td>
-                                  {item.feed?.name ||
-                                    feeds.find((f) => f.id === item.feed_id)?.name ||
-                                    "-"}
-                                </td>
-                                <td className="text-center">{item.quantity} kg</td>
-                              </tr>
+                    <h5 className="fw-bold mb-3">Daftar Pakan</h5>
+                    {formList.map((item, index) => (
+                      <div className="row mb-3" key={index}>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold">Jenis Pakan</label>
+                          <select
+                            name="feed_id"
+                            className="form-select"
+                            value={item.feed_id}
+                            onChange={(e) => handleChange(e, index)}
+                            required
+                          >
+                            <option value="">-- Pilih Pakan --</option>
+                            {feeds.map((feed) => (
+                              <option key={feed.id} value={feed.id}>
+                                {feed.name}
+                              </option>
                             ))}
-                          </tbody>
-                        </table>
+                          </select>
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label fw-semibold">Jumlah (kg)</label>
+                          <input
+                            type="number"
+                            name="quantity"
+                            className="form-control"
+                            value={item.quantity}
+                            onChange={(e) => handleChange(e, index)}
+                            min="0"
+                            step="0.01"
+                            required
+                          />
+                        </div>
+                        <div className="col-md-2 d-flex align-items-end">
+                          {formList.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              onClick={() => handleRemoveFeedItem(index)}
+                            >
+                              Hapus
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </>
                 )}
 
-                <div className="d-flex justify-content-between">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={onClose}
-                    disabled={loading}
-                  >
-                    Kembali
-                  </button>
-                  
-                  {isEditing ? (
+                  <div className="d-flex justify-content-between mt-4">
                     <button
                       type="button"
-                      className="btn btn-info text-white"
-                      onClick={handleSave}
-                      disabled={loading}
+                      className="btn btn-outline-primary"
+                      onClick={handleAddFeedItem}
                     >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                          Menyimpan...
-                        </>
-                      ) : (
-                        "Simpan"
-                      )}
+                      + Tambah Pakan
                     </button>
-                  ) : (
                     <button
-                      type="button"
-                      className="btn btn-info text-white"
-                      onClick={toggleEditMode}
-                      disabled={loading}
+                      type="submit"
+                      className="btn btn-success"
+                      disabled={submitting}
                     >
-                      Edit
+                      {submitting ? "Menyimpan..." : "Simpan Perubahan"}
                     </button>
-                  )}
-                </div>
+                  </div>
+                </form>
               </>
             )}
           </div>
