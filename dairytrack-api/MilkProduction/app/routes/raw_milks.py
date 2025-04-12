@@ -90,6 +90,42 @@ def get_raw_milks_by_cow_id(cow_id):
     result = [raw_milk.to_dict() for raw_milk in raw_milks]
     return jsonify(result)    
 
+@raw_milks_bp.route('/raw_milks/expired_status', methods=['GET'])
+def get_all_raw_milks_with_expired_status():
+    # Ambil waktu saat ini dengan timezone lokal
+    current_time = datetime.now(local_tz)  # Offset-aware datetime
+
+    # Ambil semua data RawMilk
+    raw_milks = RawMilk.query.order_by(RawMilk.id).all()
+
+    # Buat daftar hasil dengan status expired
+    result = []
+    for raw_milk in raw_milks:
+        # Pastikan expiration_time juga offset-aware
+        expiration_time = raw_milk.expiration_time
+        if expiration_time.tzinfo is None:
+            expiration_time = expiration_time.replace(tzinfo=local_tz)
+
+        # Periksa apakah sudah expired
+        is_expired = expiration_time < current_time
+
+        # Ambil nama sapi dari relasi
+        cow_name = raw_milk.cow.name if raw_milk.cow else None
+
+        result.append({
+            'id': raw_milk.id,
+            'cow_id': raw_milk.cow_id,
+            'cow_name': cow_name,  # Tambahkan nama sapi
+            'production_time': raw_milk.production_time.isoformat(),
+            'expiration_time': expiration_time.isoformat(),
+            'session': raw_milk.session,
+            'is_expired': is_expired,
+            'status': raw_milk.status,
+            'volume_liters': raw_milk.volume_liters,
+            'available_stocks': raw_milk.available_stocks
+        })
+
+    return jsonify(result), 200
 
 @raw_milks_bp.route('/raw_milks/today_last_session/<int:cow_id>', methods=['GET'])
 def get_today_last_session_by_cow_id(cow_id):

@@ -80,8 +80,8 @@ def update_cow(id):
 @cows_bp.route('/cows/<int:id>', methods=['DELETE'])
 def delete_cow(id):
     cow = Cow.query.get_or_404(id)
-    cow_name = cow.name  # Retrieve the cow's name before deletion
-    farmer_id = cow.farmer_id  # Get the farmer_id associated with the cow
+    cow_name = cow.name  # Retrieve the cow's name before deletion  
+    farmer_id = cow.farmer_id  # Get the farmer_id associated with the cow      
 
     # Cari Farmer berdasarkan farmer_id
     farmer = Farmer.query.get(farmer_id)

@@ -111,6 +111,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           label: "Blog Articles",
           show: true,
         },
+        {
+          path: "/admin/gallery/all",
+          icon: "ri-article-line",
+          label: "Gallery",
+          show: true,
+        },
       ],
     },
     {
@@ -158,14 +164,24 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       path: "/admin/susu",
       submenus: [
         {
-          path: "/admin/milk-production/analysis",
-          icon: "ri-line-chart-line",
-          label: "Analisis Produksi Susu",
-        },
-        {
           path: "/admin/susu/produksi",
           icon: "ri-file-list-line",
           label: "Catatan Produksi Susu",
+        },
+        {
+          path: "/admin/milk-production/analysis",
+          icon: "ri-line-chart-line",
+          label: "Trend Produksi Susu",
+        },
+        {
+          path: "/admin/susu/milk-production/phase",
+          icon: "ri-file-list-3-line",
+          label: "Analisis by Laktasi",
+        },
+        {
+          path: "/admin/susu/kesegaransusu",
+          icon: "ri-file-list-line",
+          label: "Kesegaran Produksi Susu",
         },
       ],
     },
@@ -258,19 +274,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           overflowY: "auto",
         }}
       >
-        {/* Toggle Button */}
-        <motion.div
-          className="text-center py-2 cursor-pointer"
-          onClick={toggleSidebar}
-          style={{ borderBottom: "1px solid #eee" }}
-          whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <i
-            className={`ri-${isCollapsed ? "menu-unfold" : "menu-fold"}-line`}
-          ></i>
-        </motion.div>
-
         {/* User Profile */}
         {!isCollapsed && (
           <motion.div

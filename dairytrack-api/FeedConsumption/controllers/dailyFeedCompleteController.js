@@ -42,12 +42,15 @@ exports.createDailyFeed = async (req, res) => {
       });
   
       if (existingFeed) {
+        const cow = await Cow.findByPk(cow_id);
         await t.rollback();
+      
         return res.status(409).json({
-          message: "Data sudah ada untuk sapi, tanggal, dan sesi yang diberikan",
+          success: false,
+          message: `Sapi dengan nama "${cow?.name || 'Tidak Diketahui'}" sudah memiliki data untuk sesi "${session}" pada tanggal ${date}. Silakan periksa kembali atau gunakan sesi yang berbeda.`,
           existing: existingFeed
         });
-      }
+      }      
   
       // Create new feed with default nutrition values
       const newFeed = await DailyFeedComplete.create({

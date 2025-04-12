@@ -282,7 +282,13 @@ const CowListPage = () => {
                         <td>{cow.reproductive_status}</td>
                         <td>{cow.gender}</td>
                         <td>{cow.entry_date}</td>
-                        <td>{cow.lactation_status ? "Yes" : "No"}</td>
+                        <td>
+                          {cow.lactation_status ? (
+                            <span className="badge bg-success">Active</span>
+                          ) : (
+                            <span className="badge bg-secondary">Inactive</span>
+                          )}
+                        </td>{" "}
                         <td>{cow.lactation_phase || "-"}</td>
                         <td>
                           <button

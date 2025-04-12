@@ -56,7 +56,7 @@ const Modal = ({
       previous_volume: 0,
       status: "fresh",
       lactation_status: false,
-      lactation_phase: "Early",
+      lactation_phase: "Dry",
     });
   }, [setFormData]);
 
@@ -200,12 +200,19 @@ const Modal = ({
                         lactation_phase: e.target.value,
                       })
                     }
-                    disabled={isProcessing} // Tetap dapat diedit
+                    disabled={!formData.lactation_status || isProcessing} // Disabled when lactation_status is unchecked
                   >
-                    <option value="Early">Early</option>
-                    <option value="Mid">Mid</option>
-                    <option value="Late">Late</option>
-                    <option value="Dry">Dry</option>
+                    {!formData.lactation_status && (
+                      <option value="Dry">Dry</option>
+                    )}{" "}
+                    {/* Show Dry only if lactation_status is unchecked */}
+                    {formData.lactation_status && (
+                      <>
+                        <option value="Early">Early</option>
+                        <option value="Mid">Mid</option>
+                        <option value="Late">Late</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div className="mb-3 d-flex align-items-center">
@@ -215,12 +222,14 @@ const Modal = ({
                       type="checkbox"
                       className="form-check-input me-2"
                       checked={formData.lactation_status}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
                         setFormData({
                           ...formData,
-                          lactation_status: e.target.checked,
-                        })
-                      }
+                          lactation_status: isChecked,
+                          lactation_phase: isChecked ? "Early" : "Dry", // Reset lactation_phase based on checkbox
+                        });
+                      }}
                       disabled={isProcessing} // Tetap dapat diedit
                     />
                     <label

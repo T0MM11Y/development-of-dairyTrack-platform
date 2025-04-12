@@ -4,20 +4,24 @@ from sqlalchemy import event
 from app.models.raw_milk import RawMilk
 from sqlalchemy import insert
 from sqlalchemy import update
+from app.models.cow import Cow  
 
 
 
 class DailyMilkTotal(db.Model):
     __tablename__ = 'daily_milk_totals'
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False, unique=True)  # Tanggal pemerahan
-    total_volume = db.Column(db.Numeric(10, 2), nullable=False, default=0)  # Total volume susu per hari
-    total_sessions = db.Column(db.Integer, nullable=False, default=0)  # Total sesi pemerahan per hari
+    date = db.Column(db.Date, nullable=False, unique=True)  
+    total_volume = db.Column(db.Numeric(10, 2), nullable=False, default=0)  
+    total_sessions = db.Column(db.Integer, nullable=False, default=0)  
     cow_id = db.Column(db.Integer, db.ForeignKey('cows.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
-    # Relationship with RawMilk
+    
+    cow = db.relationship('Cow', backref='daily_milk_totals')
+
+    
     raw_milks = db.relationship('RawMilk', back_populates='daily_total', lazy='dynamic')
 
     def to_dict(self):
@@ -25,7 +29,15 @@ class DailyMilkTotal(db.Model):
             'id': self.id,
             'date': self.date,
             'total_volume': self.total_volume,
-            'total_sessions': self.total_sessions,
+            'total_sessions': self.total_sessions,  
+            'cow': {
+                'id': self.cow.id,
+                'name': self.cow.name,
+                'breed': self.cow.breed,
+                'gender': self.cow.gender,
+                'lactation_status': self.cow.lactation_status,
+                'lactation_phase': self.cow.lactation_phase,
+            } if self.cow else None,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
         }
@@ -36,7 +48,7 @@ class DailyMilkTotal(db.Model):
 @event.listens_for(RawMilk, 'after_insert')
 @event.listens_for(RawMilk, 'after_update')
 def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
-    # Pastikan production_time adalah objek datetime
+    
     if isinstance(target.production_time, str):
         for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
             try:
@@ -49,10 +61,10 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
     else:
         production_time = target.production_time
 
-    # Ambil tanggal dari waktu produksi
+    
     production_date = production_time.date()
 
-    # Periksa apakah entri di daily_milk_totals sudah ada untuk kombinasi tanggal dan cow_id
+    
     daily_total = connection.execute(
         db.select(DailyMilkTotal).where(
             DailyMilkTotal.date == production_date,
@@ -61,7 +73,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
     ).fetchone()
 
     if not daily_total:
-        # Jika entri belum ada, tambahkan entri baru di daily_milk_totals
+        
         connection.execute(
             db.insert(DailyMilkTotal).values(
                 date=production_date,
@@ -71,7 +83,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
             )
         )
 
-        # Ambil ID dari entri yang baru saja dimasukkan
+        
         daily_total_id = connection.execute(
             db.select(DailyMilkTotal.id).where(
                 DailyMilkTotal.date == production_date,
@@ -79,7 +91,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
             )
         ).scalar()
     else:
-        # Jika entri sudah ada, hitung ulang total_volume dan total_sessions
+        
         result = connection.execute(
             db.select(
                 db.func.sum(RawMilk.volume_liters).label('total_volume'),
@@ -93,7 +105,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
         total_volume = result.total_volume or 0
         total_sessions = result.total_sessions or 0
 
-        # Perbarui entri di daily_milk_totals
+        
         connection.execute(
             db.update(DailyMilkTotal)
             .where(
@@ -106,10 +118,10 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
             )
         )
 
-        # Ambil ID dari daily_milk_totals
+        
         daily_total_id = daily_total.id
 
-    # Perbarui kolom daily_total_id di raw_milks
+    
     connection.execute(
         db.update(RawMilk)
         .where(RawMilk.id == target.id)
@@ -118,7 +130,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
 
     @event.listens_for(RawMilk, 'after_delete')
     def update_daily_milk_total_after_delete(mapper, connection, target):
-        # Pastikan production_time adalah objek datetime
+        
         if isinstance(target.production_time, str):
             for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
                 try:
@@ -131,10 +143,10 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
         else:
             production_time = target.production_time
     
-        # Ambil tanggal dari waktu produksi
+        
         production_date = production_time.date()
     
-        # Periksa apakah entri di daily_milk_totals sudah ada untuk kombinasi tanggal dan cow_id
+        
         daily_total = connection.execute(
             db.select(DailyMilkTotal).where(
                 DailyMilkTotal.date == production_date,
@@ -143,7 +155,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
         ).fetchone()
     
         if daily_total:
-            # Hitung ulang total_volume dan total_sessions
+            
             result = connection.execute(
                 db.select(
                     db.func.sum(RawMilk.volume_liters).label('total_volume'),
@@ -158,7 +170,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
             total_sessions = result.total_sessions or 0
     
             if total_sessions == 0:
-                # Jika tidak ada sesi tersisa, hapus entri dari daily_milk_totals
+                
                 connection.execute(
                     db.delete(DailyMilkTotal).where(
                         DailyMilkTotal.date == production_date,
@@ -166,7 +178,7 @@ def update_daily_milk_total_after_insert_or_update(mapper, connection, target):
                     )
                 )
             else:
-                # Perbarui entri di daily_milk_totals
+                
                 connection.execute(
                     db.update(DailyMilkTotal)
                     .where(

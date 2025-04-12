@@ -29,29 +29,66 @@ const Feed = sequelize.define(
       unique: {
         msg: "Feed name must be unique",
       },
+      validate: {
+        notEmpty: { msg: "Feed name cannot be empty" }
+      }
     },
     protein: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        isDecimal: { msg: "Protein must be a decimal number" },
-        min: { args: [0], msg: "Protein must be at least 0" },
+        // Gunakan validator kustom untuk protein untuk mengizinkan nilai 0
+        isValidProtein(value) {
+          // Jika nilai ada dan bisa dikonversi ke angka
+          if (value === null || value === undefined) {
+            throw new Error('Protein value is required');
+          }
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) {
+            throw new Error('Protein must be a number');
+          }
+          if (numValue < 0) {
+            throw new Error('Protein cannot be negative');
+          }
+        }
       },
     },
     energy: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        isDecimal: { msg: "Energy must be a decimal number" },
-        min: { args: [0], msg: "Energy must be at least 0" },
+        // Gunakan validator kustom untuk energi untuk mengizinkan nilai 0
+        isValidEnergy(value) {
+          if (value === null || value === undefined) {
+            throw new Error('Energy value is required');
+          }
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) {
+            throw new Error('Energy must be a number');
+          }
+          if (numValue < 0) {
+            throw new Error('Energy cannot be negative');
+          }
+        }
       },
     },
     fiber: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        isDecimal: { msg: "Fiber must be a decimal number" },
-        min: { args: [0], msg: "Fiber must be at least 0" },
+        // Gunakan validator kustom untuk serat untuk mengizinkan nilai 0
+        isValidFiber(value) {
+          if (value === null || value === undefined) {
+            throw new Error('Fiber value is required');
+          }
+          const numValue = parseFloat(value);
+          if (isNaN(numValue)) {
+            throw new Error('Fiber must be a number');
+          }
+          if (numValue < 0) {
+            throw new Error('Fiber cannot be negative');
+          }
+        }
       },
     },
     min_stock: {
@@ -59,6 +96,7 @@ const Feed = sequelize.define(
       allowNull: false,
       defaultValue: 0,
       validate: {
+        isInt: { msg: "Minimum stock must be an integer" },
         min: { args: [0], msg: "Minimum stock must be at least 0" },
       },
     },
