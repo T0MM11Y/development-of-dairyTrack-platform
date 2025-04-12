@@ -63,51 +63,6 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-/* Ikon Aplikasi */
-.app-icon {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  background-size: cover;
-  background-repeat: no-repeat;
-  border-radius: 50%;
-}
-
-.app-icon.Pakan {
-  top: 50px;
-  left: calc(50% + 350px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/PakanSapi.jpg');
-}
-
-.app-icon.Kesehatan {
-  top: 50px;
-  right: calc(50% + 350px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/KesehatanSapi.jpg');
-}
-
-.app-icon.Susu {
-  bottom: 145px;
-  left: calc(23% - 205px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/ProduksiSusu.jpg');
-}
-
-.app-icon.Keuangan {
-  bottom: 145px;
-  right: calc(23% - 205px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/Keuangan.jpg');
-}
-
-.app-icon.Ternak {
-  bottom: 50px;
-  left: calc(50% + 350px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/Ternak.jpg');
-}
-
-.app-icon.Sapi {
-  bottom: 50px;
-  right: calc(50% + 350px); /* Sesuaikan posisi */
-  background-image: url('../../assets/image/Sapi.jpg');
-}
 
 /* Container untuk peta dan form */
 .map-form-container {
