@@ -101,7 +101,7 @@ const Sales = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Sales</h2>
-        <Link to="/admin/keuangan/order/create" className="btn btn-info">
+        <Link to="/admin/keuangan/sales/create" className="btn btn-info">
           + Order
         </Link>
       </div>
@@ -168,13 +168,6 @@ const Sales = () => {
                           >
                             <i className="ri-eye-line"></i>
                           </button>
-                          <Link
-                            to={`/admin/keuangan/sales/edit/${order.id}`}
-                            className="btn btn-warning me-2"
-                            title="Edit Order"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </Link>
                           <button
                             onClick={() => setDeleteId(order.id)}
                             className="btn btn-danger"

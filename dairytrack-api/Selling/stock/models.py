@@ -1,6 +1,7 @@
 from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from rest_framework import serializers
 
 # Create your models here.
 # Model Produksi Susu Mentah
@@ -54,7 +55,8 @@ class ProductType(models.Model):
 
 # Model Stok Produk
 class ProductStock(models.Model):
-    
+    product_type_detail = serializers.SerializerMethodField()
+
     class Meta:
         db_table = "product_stock"
     
