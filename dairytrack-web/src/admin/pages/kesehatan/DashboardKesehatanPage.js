@@ -4,239 +4,220 @@ import { getDiseaseHistories } from "../../../api/kesehatan/diseaseHistory";
 import { getSymptoms } from "../../../api/kesehatan/symptom";
 import { getCows } from "../../../api/peternakan/cow";
 import { getReproductions } from "../../../api/kesehatan/reproduction";
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-const COLORS = ["#198754", "#dc3545", "#0d6efd", "#ffc107", "#6610f2"];
+const COLORS = ["#28a745", "#dc3545", "#ffc107", "#0d6efd", "#6f42c1"];
 
 const DashboardKesehatanPage = () => {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [summary, setSummary] = useState({ pemeriksaan: 0, gejala: 0, penyakit: 0, reproduksi: 0 });
+  const [chartDiseaseData, setChartDiseaseData] = useState([]);
+  const [chartHealthData, setChartHealthData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({});
-  const [monthlyStats, setMonthlyStats] = useState([]);
-  const [treatmentPieData, setTreatmentPieData] = useState([]);
-  const [topSickCows, setTopSickCows] = useState([]);
-  const [gejalaDistribusi, setGejalaDistribusi] = useState([]);
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const filterByDate = (data, field = "created_at") => {
+    if (!startDate || !endDate) return data;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    return data.filter(item => {
+      const date = new Date(item[field]);
+      return date >= start && date <= end;
+    });
+  };
+
+  const fetchStats = async (isFilter = false) => {
+    setLoading(true);
+    try {
+      const [healthChecks, diseaseHistories, symptoms, cows, reproductions] = await Promise.all([
+        getHealthChecks(),
+        getDiseaseHistories(),
+        getSymptoms(),
+        getCows(),
+        getReproductions(),
+      ]);
+
+      const filteredHealth = filterByDate(healthChecks, "created_at");
+      const filteredDisease = filterByDate(diseaseHistories, "created_at");
+      const filteredSymptom = filterByDate(symptoms, "created_at");
+      const filteredRepro = filterByDate(reproductions, "recorded_at");
+
+      setSummary({
+        pemeriksaan: filteredHealth.length,
+        gejala: filteredSymptom.length,
+        penyakit: filteredDisease.length,
+        reproduksi: filteredRepro.length,
+      });
+
+      const grouped = filteredDisease.reduce((acc, curr) => {
+        const key = curr.disease_name || "Tidak Diketahui";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      setChartDiseaseData(Object.entries(grouped).map(([name, value]) => ({ name, value })));
+
+      const sehat = filteredHealth.filter(item => !item.needs_attention).length;
+      const sakit = filteredHealth.filter(item => item.needs_attention).length;
+      setChartHealthData([
+        { name: "Sehat", value: sehat },
+        { name: "Butuh Perhatian", value: sakit },
+      ]);
+
+      if (isFilter) {
+        const total = filteredHealth.length + filteredDisease.length + filteredSymptom.length + filteredRepro.length;
+        if (total === 0) {
+          setModalMessage("🔍 Tidak ditemukan data dalam rentang tanggal tersebut.");
+        } else {
+          setModalMessage("✅ Data berhasil difilter sesuai tanggal.");
+        }
+        setShowModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setModalMessage("❌ Terjadi kesalahan saat mengambil data.");
+      setShowModal(true);
+    } finally {
+      setLoading(false);
+      setModalLoading(false);
+    }    
+  };
+
+  const handleFilter = () => {
+    if (!startDate || !endDate) {
+      setModalMessage("📌 Silakan isi Tanggal Mulai dan Tanggal Berakhir terlebih dahulu.");
+      setModalLoading(false);
+      setShowModal(true);
+      return;
+    }
+    setModalLoading(true);
+    setShowModal(true);
+    fetchStats(true);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [hcs, symptoms, diseases, cows, reproductions] = await Promise.all([
-          getHealthChecks(),
-          getSymptoms(),
-          getDiseaseHistories(),
-          getCows(),
-          getReproductions(),
-        ]);
-
-// 1. Statistik bulanan
-const monthMap = {};
-const getMonth = (dateStr) =>
-  new Date(dateStr).toLocaleString("default", { month: "short", year: "numeric" });
-
-// 💡 Inisialisasi berdasarkan tanggal checkup
-hcs.forEach((hc) => {
-  const m = getMonth(hc.checkup_date);
-  if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
-  monthMap[m].pemeriksaan++;
-
-  // ✅ Gunakan 'status' dari healthcheck
-  if (hc.status === "handled") monthMap[m].treated++;
-  else if (hc.status === "pending") monthMap[m].untreated++;
-});
-
-// 💡 Hitung jumlah gejala berdasarkan tanggal symptom
-symptoms.forEach((s) => {
-  const m = getMonth(s.created_at || s.updated_at || new Date());
-  if (!monthMap[m]) monthMap[m] = { pemeriksaan: 0, gejala: 0, treated: 0, untreated: 0 };
-  monthMap[m].gejala++;
-});
-
-// 🔃 Convert to array & sort by month
-const monthly = Object.entries(monthMap)
-  .map(([month, val]) => ({ month, ...val }))
-  .sort((a, b) => new Date("1 " + a.month) - new Date("1 " + b.month));
-
-setMonthlyStats(monthly);
-
-        // 2. Pie Chart Penanganan
-        const handled = hcs.filter((hc) => hc.status === "handled").length;
-        const pending = hcs.filter((hc) => hc.status === "pending").length;
-        
-        setTreatmentPieData([
-          { name: "Sudah Ditangani", value: handled },
-          { name: "Belum Ditangani", value: pending },
-        ]);
-        
-
-        // 3. Top 5 Sapi Sakit
-        const cowCount = {};
-        const cowMap = {};
-        cows.forEach((c) => (cowMap[c.id] = c.name));
-        symptoms.forEach((s) => {
-          const cowId = hcs.find((h) => h.id === s.health_check)?.cow;
-          if (!cowId) return;
-          cowCount[cowId] = (cowCount[cowId] || 0) + 1;
-        });
-        diseases.forEach((d) => {
-          cowCount[d.cow] = (cowCount[d.cow] || 0) + 1;
-        });
-        const top5 = Object.entries(cowCount)
-          .map(([cowId, count]) => ({ name: cowMap[cowId] || `Sapi ${cowId}`, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-        setTopSickCows(top5);
-
-        // 4. Distribusi Jenis Gejala
-        const gejalaFields = [
-          "eye_condition",
-          "mouth_condition",
-          "nose_condition",
-          "anus_condition",
-          "leg_condition",
-          "skin_condition",
-          "behavior",
-          "weight_condition",
-          "reproductive_condition",
-        ];
-        const gejalaStat = {};
-        symptoms.forEach((s) => {
-          gejalaFields.forEach((f) => {
-            const val = s[f];
-            if (val && val !== "Normal") {
-              gejalaStat[val] = (gejalaStat[val] || 0) + 1;
-            }
-          });
-        });
-        setGejalaDistribusi(Object.entries(gejalaStat).map(([name, value]) => ({ name, value })));
-
-        setSummary({
-          pemeriksaan: hcs.length,
-          gejala: symptoms.length,
-          penyakit: diseases.length,
-          reproduksi: reproductions.length,
-        });
-      } catch (err) {
-        console.error("Gagal memuat dashboard:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    setModalMessage("📊 Menampilkan seluruh data kesehatan sapi.");
+    setModalLoading(true);
+    setShowModal(true);
+    fetchStats();
   }, []);
 
   return (
-    <div className="p-4">
-      <h3 className="fw-bold mb-4">Dashboard Kesehatan Peternakan</h3>
+    <div className="container py-4 px-3 bg-light rounded shadow-sm">
+      <h3 className="mb-4 text-center fw-bold text-primary">📈 Dashboard Kesehatan Sapi</h3>
 
-      {loading ? (
-        <p>Memuat...</p>
-      ) : (
-        <>
-          {/* Rangkuman */}
-          <div className="row mb-4">
-            {[
-              { title: "Pemeriksaan", value: summary.pemeriksaan, color: "info" },
-              { title: "Gejala", value: summary.gejala, color: "primary" },
-              { title: "Riwayat Penyakit", value: summary.penyakit, color: "danger" },
-              { title: "Riwayat Reproduksi", value: summary.reproduksi, color: "warning" },
-            ].map((item, idx) => (
-              <div className="col-md-4 mb-3" key={idx}>
-                <div className={`card text-bg-${item.color}`}>
-                  <div className="card-body text-center">
-                    <h5>{item.title}</h5>
-                    <h2 className="fw-bold">{item.value}</h2>
-                  </div>
-                </div>
+      {/* Filter Tanggal */}
+      <div className="row mb-4 p-3 border rounded bg-white shadow-sm">
+        <div className="col-md-5">
+          <label className="form-label fw-semibold">📅 Tanggal Mulai</label>
+          <input type="date" className="form-control" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div className="col-md-5">
+          <label className="form-label fw-semibold">📅 Tanggal Berakhir</label>
+          <input type="date" className="form-control" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+        <div className="col-md-2 d-flex align-items-end gap-2">
+          <button className="btn btn-info w-100 fw-semibold" onClick={handleFilter}>🔍 Filter</button>
+          <button className="btn btn-outline-secondary w-100 fw-semibold" onClick={() => {
+            setStartDate("");
+            setEndDate("");
+            fetchStats(false);
+          }}>🔁 Reset</button>
+        </div>
+      </div>
+
+      {/* Modal Alert */}
+      {showModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog">
+            <div className="modal-content rounded shadow-sm">
+              <div className="modal-header">
+                <h5 className="modal-title text-info">Informasi</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)} disabled={modalLoading}></button>
               </div>
-            ))}
-          </div>
-
-          {/* Chart Jumlah Bulanan */}
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Statistik Bulanan</h5>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="pemeriksaan" fill="#0d6efd" name="Pemeriksaan" />
-                  <Bar dataKey="gejala" fill="#ffc107" name="Gejala" />
-                  <Bar dataKey="treated" fill="#198754" name="Sudah Ditangani" />
-                  <Bar dataKey="untreated" fill="#dc3545" name="Belum Ditangani" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="modal-body text-center">
+                {modalLoading ? (
+                  <>
+                    <div className="spinner-border text-info mb-3" role="status" />
+                    <p>🔄 Sedang memuat data...</p>
+                  </>
+                ) : (
+                  <p>{modalMessage}</p>
+                )}
+              </div>
+              {!modalLoading && (
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-info" onClick={() => setShowModal(false)}>Tutup</button>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Pie Penanganan */}
-          <div className="card mb-4">
+      {/* Rangkuman */}
+      <div className="row mb-4">
+        {[
+          { title: "Pemeriksaan", value: summary.pemeriksaan, color: "info", icon: "🩺" },
+          { title: "Gejala", value: summary.gejala, color: "primary", icon: "🦠" },
+          { title: "Riwayat Penyakit", value: summary.penyakit, color: "danger", icon: "📋" },
+          { title: "Riwayat Reproduksi", value: summary.reproduksi, color: "warning", icon: "🐄" },
+        ].map((item, idx) => (
+          <div className="col-md-3 mb-3" key={idx}>
+            <div className={`card text-bg-${item.color} shadow-sm`}>
+              <div className="card-body text-center">
+                <div className="fs-2">{item.icon}</div>
+                <h6 className="mt-2">{item.title}</h6>
+                <h3 className="fw-bold">{item.value}</h3>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Grafik */}
+      <div className="row">
+        <div className="col-md-6">
+          <div className="card shadow-sm mb-3">
             <div className="card-body">
-              <h5 className="card-title">Persentase Penanganan Gejala</h5>
+              <h5 className="text-center mb-3 text-secondary">📊 Statistik Penyakit</h5>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie data={treatmentPieData} dataKey="value" nameKey="name" outerRadius={100} label>
-                    {treatmentPieData.map((entry, index) => (
+                  <Pie data={chartDiseaseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                    {chartDiseaseData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Legend />
                   <Tooltip />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
-
-          {/* Top 5 Sapi */}
-          <div className="card mb-4">
+        </div>
+        <div className="col-md-6">
+          <div className="card shadow-sm mb-3">
             <div className="card-body">
-              <h5 className="card-title">Top 5 Sapi Paling Sering Sakit</h5>
+              <h5 className="text-center mb-3 text-secondary">📉 Grafik Kesehatan Sapi</h5>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topSickCows}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <PieChart>
+                  <Pie data={chartHealthData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
+                    {chartHealthData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="count" fill="#6610f2" name="Jumlah Gejala/Penyakit" />
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
-
-          {/* Distribusi Jenis Gejala */}
-          <div className="card mb-5">
-            <div className="card-body">
-              <h5 className="card-title">Distribusi Jenis Gejala</h5>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={gejalaDistribusi} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={200} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#0dcaf0" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

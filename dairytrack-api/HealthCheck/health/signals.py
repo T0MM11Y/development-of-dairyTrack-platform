@@ -11,9 +11,9 @@ def check_health_status(sender, instance, **kwargs):
         abnormal = True
     if instance.heart_rate < 60 or instance.heart_rate > 80:
         abnormal = True
-    if instance.respiration_rate < 10 or instance.respiration_rate > 30:
+    if instance.respiration_rate < 20 or instance.respiration_rate > 40:
         abnormal = True
-    if instance.rumination < 6.0 or instance.rumination > 10.0:
+    if instance.rumination < 1.0 or instance.rumination > 3.0:
         abnormal = True
 
     instance.needs_attention = abnormal
