@@ -11,7 +11,7 @@ const formatStockNumber = (value) => {
 
   // Convert to integer if no decimal part
   const formatted = Math.floor(num).toString();
-  
+
   // Add thousand separator
   return formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
@@ -74,7 +74,7 @@ const FeedStockPage = () => {
         <h2 className="text-xl font-bold text-gray-800">Feed Stock Data</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="btn btn-success waves-effect waves-light"
+          className="btn btn-info waves-effect waves-light"
         >
           + Add Stock
         </button>
@@ -115,18 +115,24 @@ const FeedStockPage = () => {
                         <td>{formatStockNumber(item.stock)}</td>
                         <td>
                           <button
-                            className="btn btn-info waves-effect waves-light"
+                            className="btn btn-warning btn-sm waves-effect waves-light me-3"
                             onClick={() => handleEditStock(item.id)}
-                            style={{ marginRight: "12px" }}
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => handleAddStock(item.feed?.id)}
-                            className="btn btn-success waves-effect waves-light"
                             style={{ padding: "6px 12px" }}
                           >
-                            <i className="ri-add-line"></i>
+                            <i
+                              className="ri-edit-line"
+                              style={{ fontSize: "1.2rem" }}
+                            ></i>
+                          </button>
+                          <button
+                            className="btn btn-info waves-effect waves-light"
+                            onClick={() => handleAddStock(item.feed?.id)}
+                            style={{ padding: "6px 12px" }}
+                          >
+                            <i
+                              className="ri-add-line"
+                              style={{ fontSize: "1.2rem" }}
+                            ></i>
                           </button>
                         </td>
                       </tr>

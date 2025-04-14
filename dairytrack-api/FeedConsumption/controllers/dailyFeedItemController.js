@@ -616,3 +616,106 @@ exports.getFeedItemsByDailyFeedId = async (req, res) => {
     });
   }
 };
+
+exports.getFeedUsageByDate = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+
+    // Validate date inputs
+    if (start_date && isNaN(Date.parse(start_date))) {
+      return res.status(400).json({
+        success: false,
+        message: "Format tanggal mulai tidak valid. Gunakan YYYY-MM-DD.",
+      });
+    }
+    if (end_date && isNaN(Date.parse(end_date))) {
+      return res.status(400).json({
+        success: false,
+        message: "Format tanggal akhir tidak valid. Gunakan YYYY-MM-DD.",
+      });
+    }
+    if (start_date && end_date && new Date(start_date) > new Date(end_date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Tanggal mulai harus sebelum tanggal akhir.",
+      });
+    }
+
+    // Build date filter
+    const whereClause = {};
+    if (start_date || end_date) {
+      whereClause['$feedSession.date$'] = {};
+      if (start_date) {
+        whereClause['$feedSession.date$'][Op.gte] = start_date;
+      }
+      if (end_date) {
+        whereClause['$feedSession.date$'][Op.lte] = end_date;
+      }
+    }
+
+    // Query feed usage by date
+    const feedUsage = await DailyFeedItems.findAll({
+      attributes: [
+        [sequelize.col('feedSession.date'), 'date'],
+        'feed_id',
+        [sequelize.fn('SUM', sequelize.col('quantity')), 'total_quantity'],
+      ],
+      include: [
+        {
+          model: Feed,
+          as: 'feed',
+          attributes: ['name'],
+        },
+        {
+          model: DailyFeedComplete,
+          as: 'feedSession',
+          attributes: [],
+          where: whereClause['$feedSession.date$'] ? {
+            date: whereClause['$feedSession.date$'],
+          } : undefined,
+        },
+      ],
+      group: ['feedSession.date', 'feed_id', 'feed.id', 'feed.name'],
+      order: [[sequelize.col('feedSession.date'), 'ASC']],
+    });
+
+    // Format response
+    const formattedData = [];
+    const dateMap = {};
+
+    feedUsage.forEach((item) => {
+      const date = item.dataValues.date;
+      const feedData = {
+        feed_id: item.feed_id,
+        feed_name: item.feed.name,
+        quantity_kg: parseFloat(item.dataValues.total_quantity).toFixed(2),
+      };
+
+      if (!dateMap[date]) {
+        dateMap[date] = {
+          date,
+          feeds: [],
+        };
+        formattedData.push(dateMap[date]);
+      }
+
+      dateMap[date].feeds.push(feedData);
+    });
+
+    // Sort formattedData by date to ensure consistent order
+    formattedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return res.status(200).json({
+      success: true,
+      message: "Berhasil mengambil data penggunaan pakan per tanggal",
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("Error fetching feed usage by date:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: error.message,
+    });
+  }
+};

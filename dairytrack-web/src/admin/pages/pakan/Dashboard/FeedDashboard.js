@@ -1,150 +1,367 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { getFeedUsageByDate } from "../../../../api/pakan/dailyFeedItem";
 import { getFeeds } from "../../../../api/pakan/feed";
 import { getFeedTypes } from "../../../../api/pakan/feedType";
-import { getAlldailyFeedItems } from "../../../../api/pakan/dailyFeedItem";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-const FeedAnalyticsDashboard = () => {
-  const [totalFeeds, setTotalFeeds] = useState(0);
-  const [totalFeedTypes, setTotalFeedTypes] = useState(0);
-  const [feedConsumptionData, setFeedConsumptionData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+import Swal from "sweetalert2";
+import ReactApexChart from "react-apexcharts";
+
+const FeedConsumptionDashboard = () => {
+  const [feedTypes, setFeedTypes] = useState([]);
+  const [dailyFeedItems, setDailyFeedItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30))
+      .toISOString()
+      .split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  });
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [feedTypesResponse, feedUsageResponse] = await Promise.all([
+        getFeedTypes(),
+        getFeedUsageByDate({
+          start_date: dateRange.startDate,
+          end_date: dateRange.endDate,
+        }),
+      ]);
+
+      // Handle feed types
+      if (feedTypesResponse.success && feedTypesResponse.feedTypes) {
+        setFeedTypes(feedTypesResponse.feedTypes);
+      } else {
+        console.error("Unexpected feed types response:", feedTypesResponse);
+        setFeedTypes([]);
+      }
+
+      // Handle feed usage
+      if (feedUsageResponse.success && feedUsageResponse.data) {
+        setDailyFeedItems(feedUsageResponse.data);
+      } else {
+        console.error("Unexpected feed usage response:", feedUsageResponse);
+        setDailyFeedItems([]);
+      }
+    } catch (error) {
+      console.error("API Error:", error.message, error.stack);
+      setFeedTypes([]);
+      setDailyFeedItems([]);
+      Swal.fire({
+        title: "Error!",
+        text: "Gagal memuat data pakan. Silakan coba lagi.",
+        icon: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch all data in parallel
-        const [feedsResponse, feedTypesResponse, dailyFeedItemsResponse] = await Promise.all([
-          getFeeds(),
-          getFeedTypes(),
-          getAlldailyFeedItems()
-        ]);
-
-        // Process total feeds
-        if (feedsResponse.success && feedsResponse.data) {
-          setTotalFeeds(feedsResponse.data.length);
-        } else {
-          setTotalFeeds(0);
-        }
-
-        // Process total feed types
-        if (feedTypesResponse.success && feedTypesResponse.data) {
-          setTotalFeedTypes(feedTypesResponse.data.length);
-        } else {
-          setTotalFeedTypes(0);
-        }
-
-        // Process daily feed items for the chart
-        if (dailyFeedItemsResponse.success && dailyFeedItemsResponse.data) {
-          // Aggregate feed amounts by date
-          const feedByDate = dailyFeedItemsResponse.data.reduce((acc, item) => {
-            const date = new Date(item.date).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            });
-
-            if (!acc[date]) {
-              acc[date] = 0;
-            }
-            acc[date] += item.amount || 0; // Assuming 'amount' is the field for feed quantity
-            return acc;
-          }, {});
-
-          // Convert to array and sort by date
-          const chartData = Object.keys(feedByDate)
-            .map(date => ({
-              date,
-              amount: feedByDate[date]
-            }))
-            .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
-
-          setFeedConsumptionData(chartData);
-        } else {
-          setFeedConsumptionData([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err.message);
-        setError("Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+    return () => {
+      setDailyFeedItems([]); // Cleanup to prevent memory leaks
+    };
+  }, [dateRange.startDate, dateRange.endDate]);
+
+  // Calculate metrics for cards
+  const uniqueFeedTypesCount = feedTypes.length;
+  const uniqueConsumedFeedsCount = useMemo(() => {
+    const feedIds = new Set();
+    dailyFeedItems.forEach((day) => {
+      day.feeds.forEach((feed) => feedIds.add(feed.feed_id));
+    });
+    return feedIds.size;
+  }, [dailyFeedItems]);
+  const totalFeedQuantity = useMemo(() => {
+    return dailyFeedItems
+      .reduce((sum, day) => {
+        return (
+          sum +
+          day.feeds.reduce(
+            (daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0),
+            0
+          )
+        );
+      }, 0)
+      .toFixed(2);
+  }, [dailyFeedItems]);
+
+  // Prepare chart data
+  const chartData = useMemo(() => {
+    // Get unique dates
+    const dates = [
+      ...new Set(
+        dailyFeedItems.map((item) =>
+          new Date(item.date).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+          })
+        )
+      ),
+    ].sort((a, b) => new Date(a) - new Date(b));
+
+    // Get top 5 feed types by quantity
+    const feedQuantities = {};
+    dailyFeedItems.forEach((day) => {
+      day.feeds.forEach((feed) => {
+        feedQuantities[feed.feed_name] =
+          (feedQuantities[feed.feed_name] || 0) +
+          parseFloat(feed.quantity_kg || 0);
+      });
+    });
+    const topFeedNames = Object.entries(feedQuantities)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([feedName]) => feedName);
+
+    // Create series for top feed types
+    const series = topFeedNames.map((feedName) => ({
+      name: feedName,
+      data: dates.map((date) => {
+        const day = dailyFeedItems.find(
+          (item) =>
+            new Date(item.date).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            }) === date
+        );
+        const feed = day?.feeds.find((f) => f.feed_name === feedName);
+        return parseFloat(feed?.quantity_kg || 0);
+      }),
+    }));
+
+    return { dates, series };
+  }, [dailyFeedItems]);
+
+  const handleApplyFilters = () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      Swal.fire({
+        title: "Perhatian!",
+        text: "Silakan pilih rentang tanggal yang valid.",
+        icon: "warning",
+      });
+      return;
+    }
+    if (new Date(dateRange.startDate) > new Date(dateRange.endDate)) {
+      Swal.fire({
+        title: "Perhatian!",
+        text: "Tanggal mulai harus sebelum tanggal akhir.",
+        icon: "warning",
+      });
+      return;
+    }
+    fetchData();
+  };
+
+  const areaChartOptions = {
+    series: chartData.series,
+    chart: {
+      height: 350,
+      type: "area",
+      toolbar: {
+        show: false,
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2,
+    },
+    colors: ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#ff4d94"],
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.3,
+        stops: [0, 90, 100],
+      },
+    },
+    xaxis: {
+      categories: chartData.dates,
+      labels: {
+        rotate: -45,
+        style: {
+          fontSize: "12px",
+        },
+      },
+    },
+    yaxis: {
+      title: {
+        text: "Jumlah Pakan (kg)",
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val.toFixed(2)} kg`,
+      },
+    },
+    legend: {
+      position: "top",
+    },
+  };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Feed Analytics Dashboard</h1>
+    <div className="p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Dashboard Konsumsi Pakan</h2>
+          <p className="text-muted">Ringkasan konsumsi pakan ternak</p>
+        </div>
+        <button
+          onClick={fetchData}
+          className="btn btn-secondary waves-effect waves-light"
+          disabled={loading}
+        >
+          <i className="ri-refresh-line me-1"></i> Refresh
+        </button>
+      </div>
 
+      {/* Cards Section */}
+      <div className="row mb-4">
+        <div className="col-xl-4 col-md-6 mb-4">
+          <div className="card border-left-primary shadow h-100 py-2">
+            <div className="card-body">
+              <div className="row no-gutters align-items-center">
+                <div className="col mr-2">
+                  <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                    Jumlah Jenis Pakan
+                  </div>
+                  <div className="h5 mb-0 font-weight-bold text-gray-800">
+                    {uniqueFeedTypesCount}
+                  </div>
+                </div>
+                <div className="col-auto">
+                  <div className="avatar-sm rounded-circle bg-primary bg-soft p-4 ms-3">
+                    <span className="avatar-title rounded-circle h4 mb-0">
+                      🥕
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-xl-4 col-md-6 mb-4">
+          <div className="card border-left-success shadow h-100 py-2">
+            <div className="card-body">
+              <div className="row no-gutters align-items-center">
+                <div className="col mr-2">
+                  <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
+                    Jumlah Pakan
+                  </div>
+                  <div className="h5 mb-0 font-weight-bold text-gray-800">
+                    {uniqueConsumedFeedsCount}
+                  </div>
+                </div>
+                <div className="col-auto">
+                  <div className="avatar-sm rounded-circle bg-success bg-soft p-4 ms-3">
+                    <span className="avatar-title rounded-circle h4 mb-0">
+                      📦
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-xl-4 col-md-6 mb-4">
+          <div className="card border-left-info shadow h-100 py-2">
+            <div className="card-body">
+              <div className="row no-gutters align-items-center">
+                <div className="col mr-2">
+                  <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
+                    Total Konsumsi Pakan
+                  </div>
+                  <div className="h5 mb-0 font-weight-bold text-gray-800">
+                    {totalFeedQuantity} kg
+                  </div>
+                </div>
+                <div className="col-auto">
+                  <div className="avatar-sm rounded-circle bg-info bg-soft p-4 ms-3">
+                    <span className="avatar-title rounded-circle h4 mb-0">
+                      🐄
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-5 mb-3">
+              <label className="form-label fw-bold">Tanggal Mulai</label>
+              <input
+                type="date"
+                className="form-control"
+                value={dateRange.startDate}
+                onChange={(e) =>
+                  setDateRange({ ...dateRange, startDate: e.target.value })
+                }
+                disabled={loading}
+              />
+            </div>
+            <div className="col-md-5 mb-3">
+              <label className="form-label fw-bold">Tanggal Akhir</label>
+              <input
+                type="date"
+                className="form-control"
+                value={dateRange.endDate}
+                onChange={(e) =>
+                  setDateRange({ ...dateRange, endDate: e.target.value })
+                }
+                disabled={loading}
+              />
+            </div>
+            <div className="col-md-2 mb-3 d-flex align-items-end">
+              <button
+                className="btn btn-primary w-100"
+                onClick={handleApplyFilters}
+                disabled={loading}
+              >
+                <i className="ri-filter-3-line me-1"></i> Terapkan Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Section */}
       {loading ? (
         <div className="text-center py-4">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-2">Loading data...</p>
+          <p className="mt-2">Memuat data pakan...</p>
         </div>
-      ) : error ? (
-        <div className="alert alert-danger text-center">
-          {error}
+      ) : dailyFeedItems.length === 0 ? (
+        <div className="alert alert-warning text-center">
+          <i className="ri-error-warning-line me-2"></i>
+          Tidak ada data konsumsi pakan tersedia untuk rentang tanggal yang dipilih.
         </div>
       ) : (
-        <div>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">Total Feeds</h2>
-              <p className="text-3xl font-bold text-blue-600">{totalFeeds}</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">Total Feed Types</h2>
-              <p className="text-3xl font-bold text-green-600">{totalFeedTypes}</p>
-            </div>
-          </div>
-
-          {/* Feed Consumption Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Feed Consumption Over Time</h2>
-            {feedConsumptionData.length === 0 ? (
-              <div className="text-center text-gray-500 py-4">
-                No feed consumption data available.
+        <div className="row mb-4">
+          <div className="col-xl-12">
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title mb-4">Konsumsi Pakan Harian</h5>
+                <div id="feed-consumption-chart">
+                  <ReactApexChart
+                    options={areaChartOptions}
+                    series={areaChartOptions.series}
+                    type="area"
+                    height={350}
+                  />
+                </div>
               </div>
-            ) : (
-              <div style={{ height: '400px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={feedConsumptionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }} 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={70} 
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12 }} 
-                      label={{ value: 'Amount (kg)', angle: -90, position: 'insideLeft', fontSize: 14 }} 
-                    />
-                    <Tooltip 
-                      contentStyle={{ fontSize: 12 }} 
-                      formatter={(value) => `${value} kg`} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2} 
-                      dot={false} 
-                      activeDot={{ r: 8 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -152,4 +369,4 @@ const FeedAnalyticsDashboard = () => {
   );
 };
 
-export default FeedAnalyticsDashboard;
+export default FeedConsumptionDashboard;

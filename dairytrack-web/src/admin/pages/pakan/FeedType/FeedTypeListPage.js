@@ -123,12 +123,12 @@ const FeedTypeListPage = () => {
                       <td>{feed.name}</td>
                       <td>
                         <button
-                          className="btn btn-info btn-sm me-2"
+                          className="btn btn-warning btn-sm me-2"
                           onClick={() => handleViewFeedType(feed.id)}
-                          aria-label={`View details of ${feed.name}`}
+                          aria-label={`Edit ${feed.name}`}
                           style={{ borderRadius: "6px" }}
                         >
-                          <i className="ri-eye-line"></i>
+                          <i className="ri-edit-line"></i>
                         </button>
                         <button
                           className="btn btn-danger btn-sm"

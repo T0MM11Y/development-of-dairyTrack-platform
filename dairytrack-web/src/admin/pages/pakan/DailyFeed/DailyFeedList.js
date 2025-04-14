@@ -159,7 +159,7 @@ const DailyFeedListPage = () => {
       cell: (row) => (
         <div className="d-flex gap-2 justify-content-center">
           <button
-            className="btn btn-sm btn-info"
+            className="btn btn-warning btn-sm waves-effect waves-light me-2"
             onClick={() => { setSelectedFeedId(row.id); setShowDetailModal(true); }}
           >
             <i className="ri-edit-line"></i>
