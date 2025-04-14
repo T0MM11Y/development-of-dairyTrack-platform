@@ -103,6 +103,7 @@ import SejarahPage from "./user/pages/SejarahPage";
 import FasilitasPage from "./user/pages/FasilitasPage";
 import BlogPage from "./user/pages/BlogPage";
 import ProdukPage from "./user/pages/ProdukPage";
+import ProdukPesanPage from "./user/pages/ProduksiSusuPage.js";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
 import ContactUs from "./user/pages/ContactUs";
@@ -170,6 +171,7 @@ function App() {
       <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
       <Route path="/blog" element={withUserLayout(BlogPage)} />
       <Route path="/produk" element={withUserLayout(ProdukPage)} />
+      <Route path="/produk-pesan" element={withUserLayout(ProdukPesanPage)} />
       <Route path="/galeri" element={withUserLayout(GaleriPage)} />
       <Route
         path="/identitas-peternakan"

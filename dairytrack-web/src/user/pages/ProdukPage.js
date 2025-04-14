@@ -1,104 +1,155 @@
-import React from "react";
-import susuSegarFullCream from "../../assets/image/sususegarfullcreamm.jpeg";
-import susuPasteurisasi from "../../assets/image/SusuPasteurisasi.jpg";
-import yogurtRasaBuah from "../../assets/image/YogurtRasaBuah.jpg";
-import kejuMozzarellaCheddar from "../../assets/image/KejuMozzarellaCheddar.jpg";
-import susuRendahLemak from "../../assets/image/SusuRendahLemak.jpeg";
+import { useEffect, useState } from "react";
+import { getProductStocks } from "../../api/keuangan/product";
+import { Link } from "react-router-dom";
 import "../../assets/client/css/publicUserProduct.css";
 
-const produkList = [
-  {
-    nama: "Susu Segar Full Cream",
-    image: susuSegarFullCream,
-    link: "productdetails.js",
-    deskripsi: "Susu segar dengan kualitas terbaik untuk kesehatan Anda.",
-    harga: "Rp 30.000",
-  },
-  {
-    nama: "Susu Pasteurisasi",
-    image: susuSegarFullCream,
-    link: "productdetails.js",
-    deskripsi: "Susu pasteurisasi yang aman dan bergizi untuk keluarga.",
-    harga: "Rp 25.000",
-  },
-  {
-    nama: "Yogurt Rasa Buah",
-    image: yogurtRasaBuah,
-    link: "productdetails.js",
-    deskripsi: "Yogurt segar dengan berbagai pilihan rasa buah alami.",
-    harga: "Rp 20.000",
-  },
-  {
-    nama: "Keju Mozzarella & Cheddar",
-    image: kejuMozzarellaCheddar,
-    link: "productdetails.js",
-    deskripsi: "Keju berkualitas tinggi untuk hidangan lezat Anda.",
-    harga: "Rp 40.000",
-  },
-  {
-    nama: "Susu Rendah Lemak",
-    image: susuSegarFullCream,
-    link: "productdetails.js",
-    deskripsi: "Pilihan terbaik untuk gaya hidup sehat Anda.",
-    harga: "Rp 35.000",
-  },
-  {
-    nama: "Susu Sapi Organik",
-    image: susuSegarFullCream,
-    link: "productdetails.js",
-    deskripsi:
-      "Susu sapi segar yang dihasilkan dari sapi yang diberi pakan organik.",
-    harga: "Rp 50.000",
-  },
-];
-
 const ProdukPage = () => {
+  const [productData, setProductData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [groupedProducts, setGroupedProducts] = useState({});
+
+  useEffect(() => {
+    fetchProductStocks();
+  }, []);
+
+  const fetchProductStocks = async () => {
+    try {
+      setLoading(true);
+      const products = await getProductStocks();
+      setProductData(products);
+      
+      // Group products by their product type
+      const grouped = groupProductsByType(products);
+      setGroupedProducts(grouped);
+      setError("");
+    } catch (err) {
+      console.error("Failed to fetch product stocks:", err.message);
+      setError("Failed to load products. Please ensure the API server is active.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to group products by their product type
+  const groupProductsByType = (products) => {
+    const grouped = {};
+    
+    products.forEach(product => {
+      const typeId = product.product_type;
+      const typeDetails = product.product_type_detail;
+      
+      if (!grouped[typeId]) {
+        grouped[typeId] = {
+          typeDetails: typeDetails,
+          totalAvailableQuantity: 0,
+          products: []
+        };
+      }
+      
+      grouped[typeId].products.push(product);
+      
+      // Only count available products in the total
+      if (product.status === "available") {
+        grouped[typeId].totalAvailableQuantity += product.quantity;
+      }
+    });
+    
+    return grouped;
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-5 text-center" style={{ marginTop: "170px", marginBottom: "100px" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+        <p className="mt-3">Loading products...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-5" style={{ marginTop: "170px", marginBottom: "100px" }}>
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="container mx-auto py-5"
       style={{ marginTop: "170px", marginBottom: "100px" }}
     >
+      <h2 className="text-2xl font-bold mb-6 text-center">Our Products</h2>
+      
+      {/* Display message if no products available */}
+      {Object.keys(groupedProducts).length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-gray-500">No products available at the moment.</p>
+        </div>
+      )}
+      
       {/* Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-        {produkList.map((produk, index) => (
-          <ProdukItem key={index} {...produk} />
+        {Object.values(groupedProducts).map((group, index) => (
+          <ProdukItem 
+            key={index} 
+            productType={group.typeDetails}
+            availableQuantity={group.totalAvailableQuantity}
+          />
         ))}
       </div>
     </div>
   );
 };
 
-const ProdukItem = ({ nama, image, link, deskripsi, harga }) => {
+const ProdukItem = ({ productType, availableQuantity }) => {
+  const formatPrice = (price) => {
+    return `Rp ${parseFloat(price).toLocaleString("id-ID")}`;
+  };
+
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-      {/* Gambar */}
-      <img src={image} alt={nama} className="w-full h-40 object-cover" />
+      {/* Product Image */}
+      <img 
+        src={productType.image || "/placeholder-image.jpg"} 
+        alt={productType.product_name} 
+        className="w-full h-48 object-cover"
+      />
 
-      {/* Detail */}
+      {/* Product Details */}
       <div className="p-4">
-        <h5 className="product-name">{nama}</h5>
-        {/* Deskripsi */}
-        <p className="text-gray-600 mt-2">{deskripsi}</p>
+        <h5 className="product-name">{productType.product_name}</h5>
+        
+        {/* Description */}
+        <p className="text-gray-600 mt-2">
+          {productType.product_description.length > 100
+            ? `${productType.product_description.substring(0, 100)}...`
+            : productType.product_description}
+        </p>
 
-        {/* Harga */}
-        <div className="product-price">{harga}</div>
-
-        {/* Rating dan Jumlah Terjual */}
-        <div className="mt-2 flex items-center text-gray-700 text-sm">
-          <span className="text-yellow-400 text-lg">⭐</span>
-          <span className="ml-1 font-medium">4.9</span>
-          <span className="mx-2">|</span>
-          <span>5 terjual</span>
+        {/* Price and Unit */}
+        <div className="product-price">
+          {formatPrice(productType.price)} / {productType.unit}
         </div>
 
-        {/* Tombol View Details */}
+        {/* Available Stock */}
+        <div className="mt-2 flex items-center text-gray-700 text-sm">
+          <span className="font-medium">{availableQuantity} {productType.unit} available</span>
+        </div>
+
+        {/* View Details Button */}
         <div className="mt-4 text-center">
-          <a
-            href={`/blog/${nama.replace(/\s+/g, "-").toLowerCase()}`}
+          <Link
+            to={`/product/${productType.id}`}
             className="view-details-btn"
           >
-            View Details
-          </a>
+            Pesan
+          </Link>
         </div>
       </div>
     </div>
