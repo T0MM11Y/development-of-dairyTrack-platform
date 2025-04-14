@@ -231,7 +231,7 @@ const FeedItemListPage = () => {
                       <td>
                         <div className="d-flex justify-content-center gap-2">
                           <button
-                            className="btn btn-sm btn-info text-white"
+                            className="btn btn-warning btn-sm waves-effect waves-light me-2"
                             onClick={() => handleEditClick(group.daily_feed_id)}
                             title="Detail / Edit"
                           >

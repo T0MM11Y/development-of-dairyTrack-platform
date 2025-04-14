@@ -5,6 +5,7 @@ const dailyFeedItemsController = require('../controllers/dailyFeedItemController
 // Daily Feed Items Routes
 router.post('/', dailyFeedItemsController.addFeedItem);
 router.get('/', dailyFeedItemsController.getAllFeedItems);
+router.get('/feedUsage', dailyFeedItemsController.getFeedUsageByDate);
 router.get('/:id', dailyFeedItemsController.getFeedItemById);
 router.get('/daily-feeds/:daily_feed_id/', dailyFeedItemsController.getFeedItemsByDailyFeedId);
 router.put('/:id', dailyFeedItemsController.updateFeedItem);

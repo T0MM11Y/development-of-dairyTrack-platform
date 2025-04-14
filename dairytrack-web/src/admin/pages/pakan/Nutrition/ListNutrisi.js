@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Swal from "sweetalert2";
 import { getAllDailyFeeds } from "../../../../api/pakan/dailyFeed";
 import { getCows } from "../../../../api/peternakan/cow";
 import ReactApexChart from "react-apexcharts";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const FeedNutritionSummaryPage = () => {
   const [nutritionData, setNutritionData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [cowNames, setCowNames] = useState({});
   const [selectedCow, setSelectedCow] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -16,14 +16,22 @@ const FeedNutritionSummaryPage = () => {
       .split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
   });
-  const [chartData, setChartData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (abortController) => {
     try {
       setLoading(true);
-      const [feedsResponse, cowsData] = await Promise.all([
-        getAllDailyFeeds(),
+      const params = {
+        start_date: dateRange.startDate,
+        end_date: dateRange.endDate,
+        cow_id: selectedCow || undefined,
+      };
+
+      const [feedsResponse, cowsResponse] = await Promise.all([
+        getAllDailyFeeds(params, { signal: abortController.signal }),
         getCows().catch((err) => {
           console.error("Failed to fetch cows:", err);
           return [];
@@ -33,137 +41,133 @@ const FeedNutritionSummaryPage = () => {
       if (feedsResponse.success && feedsResponse.data) {
         setNutritionData(feedsResponse.data);
       } else {
-        console.error("Unexpected response format", feedsResponse);
+        console.error("Unexpected feeds response:", feedsResponse);
         setNutritionData([]);
       }
 
       const cowMap = {};
-      cowsData.forEach((cow) => {
+      cowsResponse.forEach((cow) => {
         cowMap[cow.id] = cow.name;
       });
       setCowNames(cowMap);
     } catch (error) {
+      if (error.name === "AbortError") return;
       console.error("Failed to fetch data:", error.message);
       setNutritionData([]);
       Swal.fire({
         title: "Error!",
-        text: "Failed to load nutrition data.",
+        text: "Gagal memuat data nutrisi.",
         icon: "error",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange.startDate, dateRange.endDate, selectedCow]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const abortController = new AbortController();
+    fetchData(abortController);
+    return () => {
+      abortController.abort();
+      setNutritionData([]);
+    };
+  }, [fetchData]);
 
-  // Tambahkan pengecekan rute
-  useEffect(() => {
-    if (location.pathname !== "/admin/nutrisi-pakan-harian") {
-      // Jika rute berubah, pastikan komponen ini tidak mengganggu navigasi
-      console.log("Navigating away from FeedNutritionSummaryPage");
-    }
-  }, [location.pathname]);
+  const filteredData = useMemo(() => {
+    return nutritionData.filter((item) => {
+      const dateMatch =
+        new Date(item.date) >= new Date(dateRange.startDate) &&
+        new Date(item.date) <= new Date(dateRange.endDate);
+      const cowMatch = selectedCow ? item.cow_id.toString() === selectedCow : true;
+      return dateMatch && cowMatch;
+    });
+  }, [nutritionData, dateRange.startDate, dateRange.endDate, selectedCow]);
 
-  const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString("id-ID", options);
-  };
+  const uniqueCows = useMemo(() => {
+    return [...new Set(nutritionData.map((item) => item.cow_id))];
+  }, [nutritionData]);
 
-  const formatChartDate = (dateString) => {
-    const options = { day: "numeric", month: "short" };
-    return new Date(dateString).toLocaleDateString("id-ID", options);
-  };
+  const chartData = useMemo(() => {
+    if (!selectedCow) return [];
+    const sortedData = [...filteredData].sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
 
-  const formatValue = (value, unit = "") => {
-    return `${parseFloat(value).toFixed(2)} ${unit}`;
-  };
-
-  const filteredData = nutritionData.filter((item) => {
-    const dateMatch =
-      new Date(item.date) >= new Date(dateRange.startDate) &&
-      new Date(item.date) <= new Date(dateRange.endDate);
-    const cowMatch = selectedCow ? item.cow_id.toString() === selectedCow : false;
-    return dateMatch && cowMatch;
-  });
-
-  const uniqueCows = [...new Set(nutritionData.map((item) => item.cow_id))];
-
-  useEffect(() => {
-    if (selectedCow) {
-      const sortedData = [...filteredData].sort(
-        (a, b) => new Date(a.date) - new Date(b.date)
-      );
-
-      const groupedData = {};
-      sortedData.forEach((item) => {
-        const date = formatChartDate(item.date);
-        const session = item.session.charAt(0).toUpperCase() + item.session.slice(1);
-        const key = `${date} (${session})`;
-
-        if (!groupedData[key]) {
-          groupedData[key] = {
-            date: date,
-            fullDate: item.date,
-            session: session,
-            protein: parseFloat(item.total_protein) || 0,
-            energy: parseFloat(item.total_energy) / 1000 || 0,
-            fiber: parseFloat(item.total_fiber) || 0,
-          };
-        }
+    const groupedData = {};
+    sortedData.forEach((item) => {
+      const date = new Date(item.date).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
       });
+      const session = item.session.charAt(0).toUpperCase() + item.session.slice(1);
+      const key = `${date} (${session})`;
 
-      setChartData(Object.values(groupedData));
-    } else {
-      setChartData([]);
-    }
+      groupedData[key] = {
+        date,
+        fullDate: item.date,
+        session,
+        protein: parseFloat(item.total_protein) || 0,
+        energy: parseFloat(item.total_energy) / 1000 || 0,
+        fiber: parseFloat(item.total_fiber) || 0,
+      };
+    });
+
+    return Object.values(groupedData);
   }, [filteredData, selectedCow]);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const handleCowChange = (e) => {
     setSelectedCow(e.target.value);
+    setCurrentPage(1);
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = useCallback(() => {
     if (!selectedCow) {
       Swal.fire({
         title: "Perhatian!",
         text: "Silakan pilih sapi terlebih dahulu untuk melihat grafik.",
         icon: "warning",
       });
+      return;
     }
+    if (new Date(dateRange.startDate) > new Date(dateRange.endDate)) {
+      Swal.fire({
+        title: "Perhatian!",
+        text: "Tanggal mulai harus sebelum tanggal akhir.",
+        icon: "warning",
+      });
+      return;
+    }
+    fetchData(new AbortController());
+  }, [selectedCow, dateRange.startDate, dateRange.endDate, fetchData]);
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  const areaChartOptions = {
+  const areaChartOptions = useMemo(() => ({
     series: [
-      {
-        name: "Protein (g)",
-        data: chartData.map((item) => item.protein),
-      },
-      {
-        name: "Energi (ribu kcal)",
-        data: chartData.map((item) => item.energy),
-      },
-      {
-        name: "Serat (g)",
-        data: chartData.map((item) => item.fiber),
-      },
+      { name: "Protein (g)", data: chartData.map((item) => item.protein) },
+      { name: "Energi (ribu kcal)", data: chartData.map((item) => item.energy) },
+      { name: "Serat (g)", data: chartData.map((item) => item.fiber) },
     ],
     chart: {
       height: 350,
       type: "area",
-      toolbar: {
-        show: false,
-      },
+      toolbar: { show: false },
     },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      curve: "smooth",
-      width: 2,
-    },
+    dataLabels: { enabled: false },
+    stroke: { curve: "smooth", width: 2 },
     colors: ["#8884d8", "#82ca9d", "#ffc658"],
     fill: {
       type: "gradient",
@@ -176,83 +180,111 @@ const FeedNutritionSummaryPage = () => {
     },
     xaxis: {
       categories: chartData.map((item) => `${item.date} (${item.session})`),
-      labels: {
-        rotate: -45,
-        style: {
-          fontSize: "12px",
-        },
-      },
+      labels: { rotate: -45, style: { fontSize: "12px" } },
     },
     tooltip: {
       y: {
-        formatter: function (val, { seriesIndex }) {
-          const units = ["g", "kcal", "g"];
-          if (seriesIndex === 1) {
-            return `${(val * 1000).toFixed(2)} kcal`;
-          }
-          return `${val.toFixed(2)} ${units[seriesIndex]}`;
-        },
+        formatter: (val, { seriesIndex }) =>
+          seriesIndex === 1
+            ? `${(val * 1000).toFixed(2)} kcal`
+            : `${val.toFixed(2)} ${seriesIndex === 0 ? "g" : "g"}`,
       },
     },
-    legend: {
-      position: "top",
-    },
-  };
+    legend: { position: "top" },
+  }), [chartData]);
 
-  const pieChartOptions = {
+  const pieChartOptions = useMemo(() => ({
     series:
       chartData.length > 0
         ? [
-            chartData.reduce((sum, item) => sum + item.protein, 0) /
-              chartData.length,
-            chartData.reduce((sum, item) => sum + item.energy * 1000, 0) /
-              chartData.length,
-            chartData.reduce((sum, item) => sum + item.fiber, 0) /
-              chartData.length,
+            chartData.reduce((sum, item) => sum + item.protein, 0) / chartData.length,
+            chartData.reduce((sum, item) => sum + item.energy * 1000, 0) / chartData.length,
+            chartData.reduce((sum, item) => sum + item.fiber, 0) / chartData.length,
           ]
         : [0, 0, 0],
-    chart: {
-      type: "donut",
-      height: 300,
-    },
+    chart: { type: "donut", height: 300 },
     labels: ["Protein", "Energi", "Serat"],
     colors: ["#8884d8", "#82ca9d", "#ffc658"],
-    legend: {
-      position: "bottom",
-    },
+    legend: { position: "bottom" },
     responsive: [
       {
         breakpoint: 480,
-        options: {
-          chart: {
-            width: 200,
-          },
-          legend: {
-            position: "bottom",
-          },
-        },
+        options: { chart: { width: 200 }, legend: { position: "bottom" } },
       },
     ],
     dataLabels: {
       enabled: true,
-      formatter: function (val) {
-        return val.toFixed(1) + "%";
-      },
+      formatter: (val) => val.toFixed(1) + "%",
     },
-  };
+  }), [chartData]);
+
+  const showFeedDetails = useCallback((item) => {
+    if (!item.feedItems || item.feedItems.length === 0) {
+      Swal.fire({
+        title: "Info",
+        text: "Tidak ada detail pakan tersedia.",
+        icon: "info",
+      });
+      return;
+    }
+
+    const feedItems = item.feedItems.map((feedItem) => ({
+      name: feedItem.feed.name,
+      quantity: parseFloat(feedItem.quantity).toFixed(2),
+      protein: parseFloat(feedItem.feed.protein).toFixed(2),
+      energy: parseFloat(feedItem.feed.energy).toFixed(2),
+      fiber: parseFloat(feedItem.feed.fiber).toFixed(2),
+    }));
+
+    Swal.fire({
+      title: `Detail Pakan - ${cowNames[item.cow_id] || `Sapi #${item.cow_id}`}`,
+      html: `
+        <div class="text-start">
+          <p><strong>Tanggal:</strong> ${formatDate(item.date)}</p>
+          <p><strong>Sesi:</strong> ${item.session}</p>
+          <p><strong>Cuaca:</strong> ${item.weather || "-"}</p>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Nama Pakan</th>
+                <th class="text-end">Jumlah (kg)</th>
+                <th class="text-end">Protein (g)</th>
+                <th class="text-end">Energi (kcal)</th>
+                <th class="text-end">Serat (g)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${feedItems
+                .map(
+                  (f) => `
+                  <tr>
+                    <td>${f.name}</td>
+                    <td class="text-end">${f.quantity}</td>
+                    <td class="text-end">${f.protein}</td>
+                    <td class="text-end">${f.energy}</td>
+                    <td class="text-end">${f.fiber}</td>
+                  </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `,
+      width: "800px",
+    });
+  }, [cowNames]);
 
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
-            Ringkasan Nutrisi Pakan
-          </h2>
+          <h2 className="text-xl font-bold text-gray-800">Ringkasan Nutrisi Pakan</h2>
           <p className="text-muted">Analisis nutrisi pakan harian sapi</p>
         </div>
         <button
-          onClick={fetchData}
+          onClick={() => fetchData(new AbortController())}
           className="btn btn-secondary waves-effect waves-light"
+          disabled={loading}
         >
           <i className="ri-refresh-line me-1"></i> Refresh
         </button>
@@ -269,7 +301,7 @@ const FeedNutritionSummaryPage = () => {
                 className="form-select"
                 value={selectedCow}
                 onChange={handleCowChange}
-                required
+                disabled={loading}
               >
                 <option value="">-- Pilih Sapi --</option>
                 {uniqueCows.map((cowId) => (
@@ -293,6 +325,7 @@ const FeedNutritionSummaryPage = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, startDate: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
             <div className="col-md-3 mb-3">
@@ -304,12 +337,14 @@ const FeedNutritionSummaryPage = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, endDate: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
             <div className="col-md-2 mb-3 d-flex align-items-end">
               <button
                 className="btn btn-primary w-100"
                 onClick={handleApplyFilters}
+                disabled={loading}
               >
                 <i className="ri-filter-3-line me-1"></i> Terapkan Filter
               </button>
@@ -339,21 +374,16 @@ const FeedNutritionSummaryPage = () => {
                       </span>
                     )}
                   </h5>
-
                   {!selectedCow ? (
                     <div className="alert alert-info text-center p-4">
                       <i className="ri-information-line fs-3 mb-3"></i>
                       <h5>Silakan Pilih Sapi</h5>
-                      <p>
-                        Untuk melihat grafik nutrisi, harap pilih sapi terlebih
-                        dahulu.
-                      </p>
+                      <p>Untuk melihat grafik nutrisi, harap pilih sapi terlebih dahulu.</p>
                     </div>
                   ) : chartData.length === 0 ? (
                     <div className="alert alert-warning text-center">
                       <i className="ri-error-warning-line me-2"></i>
-                      Tidak ada data nutrisi tersedia untuk sapi dan rentang
-                      tanggal yang dipilih.
+                      Tidak ada data nutrisi tersedia untuk sapi dan rentang tanggal yang dipilih.
                     </div>
                   ) : (
                     <div id="nutrition-chart">
@@ -368,7 +398,6 @@ const FeedNutritionSummaryPage = () => {
                 </div>
               </div>
             </div>
-
             <div className="col-xl-4">
               <div className="card">
                 <div className="card-body">
@@ -404,28 +433,18 @@ const FeedNutritionSummaryPage = () => {
                           Rata-rata Protein
                         </div>
                         <div className="h5 mb-0 font-weight-bold text-gray-800">
-                          {(
-                            filteredData.reduce(
-                              (sum, item) =>
-                                sum + parseFloat(item.total_protein || 0),
-                              0
-                            ) / filteredData.length
-                          ).toFixed(2)}{" "}
-                          g
+                          {(filteredData.reduce((sum, item) => sum + parseFloat(item.total_protein || 0), 0) / filteredData.length).toFixed(2)} g
                         </div>
                       </div>
                       <div className="col-auto">
                         <div className="avatar-sm rounded-circle bg-primary bg-soft p-4 ms-3">
-                          <span className="avatar-title rounded-circle h4 mb-0">
-                            🍖
-                          </span>
+                          <span className="avatar-title rounded-circle h4 mb-0">🍖</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-success shadow h-100 py-2">
                   <div className="card-body">
@@ -435,28 +454,18 @@ const FeedNutritionSummaryPage = () => {
                           Rata-rata Energi
                         </div>
                         <div className="h5 mb-0 font-weight-bold text-gray-800">
-                          {(
-                            filteredData.reduce(
-                              (sum, item) =>
-                                sum + parseFloat(item.total_energy || 0),
-                              0
-                            ) / filteredData.length
-                          ).toFixed(2)}{" "}
-                          kcal
+                          {(filteredData.reduce((sum, item) => sum + parseFloat(item.total_energy || 0), 0) / filteredData.length).toFixed(2)} kcal
                         </div>
                       </div>
                       <div className="col-auto">
                         <div className="avatar-sm rounded-circle bg-success bg-soft p-4 ms-3">
-                          <span className="avatar-title rounded-circle h4 mb-0">
-                            ⚡
-                          </span>
+                          <span className="avatar-title rounded-circle h4 mb-0">⚡</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-warning shadow h-100 py-2">
                   <div className="card-body">
@@ -466,28 +475,18 @@ const FeedNutritionSummaryPage = () => {
                           Rata-rata Serat
                         </div>
                         <div className="h5 mb-0 font-weight-bold text-gray-800">
-                          {(
-                            filteredData.reduce(
-                              (sum, item) =>
-                                sum + parseFloat(item.total_fiber || 0),
-                              0
-                            ) / filteredData.length
-                          ).toFixed(2)}{" "}
-                          g
+                          {(filteredData.reduce((sum, item) => sum + parseFloat(item.total_fiber || 0), 0) / filteredData.length).toFixed(2)} g
                         </div>
                       </div>
                       <div className="col-auto">
                         <div className="avatar-sm rounded-circle bg-warning bg-soft p-4 ms-3">
-                          <span className="avatar-title rounded-circle h4 mb-0">
-                            🌿
-                          </span>
+                          <span className="avatar-title rounded-circle h4 mb-0">🌿</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
               <div className="col-xl-3 col-md-6 mb-4">
                 <div className="card border-left-info shadow h-100 py-2">
                   <div className="card-body">
@@ -502,9 +501,7 @@ const FeedNutritionSummaryPage = () => {
                       </div>
                       <div className="col-auto">
                         <div className="avatar-sm rounded-circle bg-info bg-soft p-4 ms-3">
-                          <span className="avatar-title rounded-circle h4 mb-0">
-                            🐄
-                          </span>
+                          <span className="avatar-title rounded-circle h4 mb-0">🐄</span>
                         </div>
                       </div>
                     </div>
@@ -530,125 +527,73 @@ const FeedNutritionSummaryPage = () => {
                     <i className="ri-download-2-line me-1"></i> Export
                   </button>
                 </div>
-                {filteredData.length === 0 ? (
+                {paginatedData.length === 0 ? (
                   <div className="alert alert-info text-center">
                     Tidak ada data nutrisi tersedia untuk filter yang dipilih.
                   </div>
                 ) : (
-                  <div className="table-responsive">
-                    <table className="table table-centered table-hover mb-0">
-                      <thead className="table-light">
-                        <tr>
-                          <th className="text-center">#</th>
-                          <th>Tanggal</th>
-                          <th>Sesi</th>
-                          <th>Cuaca</th>
-                          <th className="text-center">Protein (g)</th>
-                          <th className="text-center">Energi (kcal)</th>
-                          <th className="text-center">Serat (g)</th>
-                          <th className="text-center">Detail</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredData.map((item, index) => (
-                          <tr key={item.id}>
-                            <td className="text-center">{index + 1}</td>
-                            <td>{formatDate(item.date)}</td>
-                            <td>
-                              {item.session.charAt(0).toUpperCase() +
-                                item.session.slice(1)}
-                            </td>
-                            <td>
-                              {item.weather
-                                ? item.weather.charAt(0).toUpperCase() +
-                                  item.weather.slice(1)
-                                : "-"}
-                            </td>
-                            <td className="text-center fw-bold text-primary">
-                              {parseFloat(item.total_protein).toFixed(2)}
-                            </td>
-                            <td className="text-center fw-bold text-success">
-                              {parseFloat(item.total_energy).toFixed(2)}
-                            </td>
-                            <td className="text-center fw-bold text-warning">
-                              {parseFloat(item.total_fiber).toFixed(2)}
-                            </td>
-                            <td className="text-center">
-                              <button
-                                className="btn btn-sm btn-info"
-                                onClick={() => {
-                                  if (item.feedItems && item.feedItems.length > 0) {
-                                    const feedItemsHtml = item.feedItems
-                                      .map(
-                                        (feedItem) => `
-                                      <tr>
-                                        <td>${feedItem.feed.name}</td>
-                                        <td class="text-end">${feedItem.quantity}</td>
-                                        <td class="text-end">${parseFloat(
-                                          feedItem.feed.protein
-                                        ).toFixed(2)}</td>
-                                        <td class="text-end">${parseFloat(
-                                          feedItem.feed.energy
-                                        ).toFixed(2)}</td>
-                                        <td class="text-end">${parseFloat(
-                                          feedItem.feed.fiber
-                                        ).toFixed(2)}</td>
-                                      </tr>`
-                                      )
-                                      .join("");
-
-                                    Swal.fire({
-                                      title: `Detail Pakan - ${
-                                        cowNames[item.cow_id] ||
-                                        `Sapi #${item.cow_id}`
-                                      }`,
-                                      html: `
-                                        <div class="text-start">
-                                          <p><strong>Tanggal:</strong> ${formatDate(
-                                            item.date
-                                          )}</p>
-                                          <p><strong>Sesi:</strong> ${
-                                            item.session
-                                          }</p>
-                                          <p><strong>Cuaca:</strong> ${
-                                            item.weather || "-"
-                                          }</p>
-                                          <table class="table table-bordered">
-                                            <thead>
-                                              <tr>
-                                                <th>Nama Pakan</th>
-                                                <th class="text-end">Jumlah</th>
-                                                <th class="text-end">Protein</th>
-                                                <th class="text-end">Energi</th>
-                                                <th class="text-end">Serat</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              ${feedItemsHtml}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      `,
-                                      width: "800px",
-                                    });
-                                  } else {
-                                    Swal.fire({
-                                      title: "Info",
-                                      text: "Tidak ada detail pakan tersedia.",
-                                      icon: "info",
-                                    });
-                                  }
-                                }}
-                                title="Lihat Detail"
-                              >
-                                <i className="ri-eye-line"></i>
-                              </button>
-                            </td>
+                  <>
+                    <div className="table-responsive">
+                      <table className="table table-centered table-hover mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th className="text-center">#</th>
+                            <th>Tanggal</th>
+                            <th>Sesi</th>
+                            <th>Cuaca</th>
+                            <th className="text-center">Protein (g)</th>
+                            <th className="text-center">Energi (kcal)</th>
+                            <th className="text-center">Serat (g)</th>
+                            <th className="text-center">Detail</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {paginatedData.map((item, index) => (
+                            <tr key={item.id}>
+                              <td className="text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                              <td>{formatDate(item.date)}</td>
+                              <td>{item.session.charAt(0).toUpperCase() + item.session.slice(1)}</td>
+                              <td>{item.weather ? item.weather.charAt(0).toUpperCase() + item.weather.slice(1) : "-"}</td>
+                              <td className="text-center fw-bold text-primary">{parseFloat(item.total_protein).toFixed(2)}</td>
+                              <td className="text-center fw-bold text-success">{parseFloat(item.total_energy).toFixed(2)}</td>
+                              <td className="text-center fw-bold text-warning">{parseFloat(item.total_fiber).toFixed(2)}</td>
+                              <td className="text-center">
+                                <button
+                                  className="btn btn-sm btn-info"
+                                  onClick={() => showFeedDetails(item)}
+                                  title="Lihat Detail"
+                                  disabled={loading}
+                                >
+                                  <i className="ri-eye-line"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="d-flex justify-content-between align-items-center mt-3">
+                        <button
+                          className="btn btn-outline-primary"
+                          disabled={currentPage === 1 || loading}
+                          onClick={() => setCurrentPage((p) => p - 1)}
+                        >
+                          Sebelumnya
+                        </button>
+                        <span>
+                          Halaman {currentPage} dari {totalPages}
+                        </span>
+                        <button
+                          className="btn btn-outline-primary"
+                          disabled={currentPage === totalPages || loading}
+                          onClick={() => setCurrentPage((p) => p + 1)}
+                        >
+                          Selanjutnya
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

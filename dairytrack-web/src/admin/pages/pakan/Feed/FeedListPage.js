@@ -147,10 +147,12 @@ const FeedListPage = () => {
                     <td>Rp {formatNumber(feed.price)}</td>
                     <td>
                       <button
+                        className="btn btn-warning btn-sm me-2"
                         onClick={() => handleViewDetail(feed.id)}
-                        className="btn btn-info btn-sm me-2"
+                        aria-label={`Edit ${feed.name}`}
+                        style={{ borderRadius: "6px" }}
                       >
-                        <i className="ri-eye-line"></i>
+                        <i className="ri-edit-line"></i>
                       </button>
                       <button
                         onClick={() => handleDelete(feed.id)}
