@@ -87,42 +87,42 @@ const GaleriPage = () => {
               <div className="row g-4">
                 {galleries.map((gallery, index) => (
                   <div className="col-md-4 col-sm-6" key={gallery.id}>
-                    <div
+                    <figure
                       className="gallery-item position-relative overflow-hidden"
                       style={{
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
                         cursor: "pointer",
+                        transition: "transform 0.3s ease",
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = "scale(1.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = "scale(1)")
+                      }
                     >
                       <img
                         src={gallery.photo || "/placeholder-image.jpg"}
-                        alt={gallery.tittle || `Gallery ${index + 1}`}
+                        alt={gallery.tittle || `Gallery item ${index + 1}`}
                         className="w-100 h-100"
                         style={{
                           objectFit: "cover",
-                          transition: "transform 0.3s ease",
                         }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.transform = "scale(1.1)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.transform = "scale(1)")
-                        }
                       />
-                      <div
-                        className="gallery-title position-absolute top-50 start-50 translate-middle text-white text-center"
+                      <figcaption
+                        className="gallery-title position-absolute bottom-0 start-0 w-100 text-white text-center"
                         style={{
-                          backgroundColor: "rgba(0, 0, 0, 0.5)",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "0.25rem",
+                          backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          padding: "1rem",
                           fontSize: "1.25rem",
                           fontWeight: "bold",
+                          textShadow: "1px 1px 2px rgba(0, 0, 0, 0.8)",
                         }}
                       >
                         {gallery.tittle || "Untitled"}
-                      </div>
-                    </div>
+                      </figcaption>
+                    </figure>
                   </div>
                 ))}
               </div>
