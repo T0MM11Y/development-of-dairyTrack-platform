@@ -111,7 +111,7 @@ const FeedTypeListPage = () => {
               <table className="table table-bordered table-hover text-center">
                 <thead className="table-light">
                   <tr>
-                    <th>#</th>
+                    <th>No</th>
                     <th>Name</th>
                     <th>Actions</th>
                   </tr>

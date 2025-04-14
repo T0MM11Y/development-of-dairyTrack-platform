@@ -6,35 +6,66 @@ import { getAllDailyFeeds } from "../../../../api/pakan/dailyFeed";
 import { getCows } from "../../../../api/peternakan/cow";
 import FeedItemDetailEditPage from "./FeedItemDetail";
 import FeedItemFormPage from "./CreateDailyFeedItem";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const FeedItemListPage = () => {
   const [feedItems, setFeedItems] = useState([]);
   const [dailyFeeds, setDailyFeeds] = useState([]);
-  const [cows, setCows] = useState([]);
+  const [cowNames, setCowNames] = useState({});
+  const [cowBirthDates, setCowBirthDates] = useState({});
+  const [cowWeights, setCowWeights] = useState({});
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDailyFeedId, setSelectedDailyFeedId] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedItemsResponse, dailyFeedsResponse, cowsResponse] = await Promise.all([
+      const [feedItemsResponse, dailyFeedsResponse, cowsData] = await Promise.all([
         getAlldailyFeedItems(),
         getAllDailyFeeds(),
-        getCows(),
+        getCows().catch((err) => {
+          console.error("Error fetching cows:", err);
+          return [];
+        }),
       ]);
 
-      setFeedItems(feedItemsResponse.success ? feedItemsResponse.data : []);
-      setDailyFeeds(dailyFeedsResponse.success ? dailyFeedsResponse.data : []);
-      setCows(cowsResponse.success ? cowsResponse.data : []);
+      const feedItemsData = feedItemsResponse.success && Array.isArray(feedItemsResponse.data)
+        ? feedItemsResponse.data
+        : [];
+      const dailyFeedsData = dailyFeedsResponse.success && Array.isArray(dailyFeedsResponse.data)
+        ? dailyFeedsResponse.data
+        : [];
+
+      setFeedItems(feedItemsData);
+      setDailyFeeds(dailyFeedsData);
+
+      const cowMap = Object.fromEntries(cowsData.map((cow) => [cow.id, cow.name]));
+      const birthDateMap = Object.fromEntries(cowsData.map((cow) => [cow.id, cow.birth_date]));
+      const weightMap = Object.fromEntries(cowsData.map((cow) => [cow.id, cow.weight_kg || "Tidak Diketahui"]));
+      setCowNames(cowMap);
+      setCowBirthDates(birthDateMap);
+      setCowWeights(weightMap);
+
+      if (Object.keys(cowMap).length === 0) {
+        console.warn("No cow data available or invalid format");
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error.message);
       setFeedItems([]);
       setDailyFeeds([]);
-      setCows([]);
+      setCowNames({});
+      setCowBirthDates({});
+      setCowWeights({});
+      Swal.fire("Error!", "Failed to load data.", "error");
     } finally {
       setLoading(false);
     }
@@ -45,11 +76,10 @@ const FeedItemListPage = () => {
   }, []);
 
   useEffect(() => {
-    // Handle URL parameters for edit/add modes
     const params = new URLSearchParams(location.search);
-    const editId = params.get('edit');
-    const isAdd = params.get('add') === 'true';
-    
+    const editId = params.get("edit");
+    const isAdd = params.get("add") === "true";
+
     if (editId) {
       setSelectedDailyFeedId(editId);
       setShowEditModal(true);
@@ -61,37 +91,126 @@ const FeedItemListPage = () => {
     }
   }, [location]);
 
-  const groupedFeedItems = dailyFeeds.map((dailyFeed) => {
-    const items = feedItems.filter(item => item.daily_feed_id === dailyFeed.id);
-    
-    // Improved cow name lookup
-    let cowName = "Tidak Ditemukan";
-    if (dailyFeed.cow && dailyFeed.cow.name) {
-      // If cow data is already embedded in dailyFeed
-      cowName = dailyFeed.cow.name;
-    } else if (dailyFeed.cow_id) {
-      // Otherwise look it up from cows array
-      const cow = cows.find(c => c.id === dailyFeed.cow_id);
-      if (cow) {
-        cowName = cow.name;
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return "Tidak Diketahui";
+    const birth = new Date(birthDate);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (now.getDate() < birth.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
       }
     }
+    return `${years} tahun ${months} bulan`;
+  };
 
-    return {
-      daily_feed_id: dailyFeed.id,
-      date: dailyFeed.date,
-      session: dailyFeed.session,
-      cow_id: dailyFeed.cow_id,
-      cow: cowName,
-      items,
-    };
-  });
+  const filteredFeedItems = dailyFeeds
+    .filter((dailyFeed) => {
+      const feedDate = new Date(dailyFeed.date);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      return (
+        (!start || feedDate >= start) &&
+        (!end || feedDate <= end)
+      );
+    })
+    .map((dailyFeed) => {
+      const items = feedItems.filter((item) => item.daily_feed_id === dailyFeed.id);
+      const cowName = cowNames[dailyFeed.cow_id] || `Sapi #${dailyFeed.cow_id}`;
+      const cowAge = calculateAge(cowBirthDates[dailyFeed.cow_id]);
+      const cowWeight = cowWeights[dailyFeed.cow_id] || "Tidak Diketahui";
+      return {
+        daily_feed_id: dailyFeed.id,
+        date: dailyFeed.date,
+        session: dailyFeed.session,
+        cow_id: dailyFeed.cow_id,
+        cow: cowName,
+        age: cowAge,
+        weight: cowWeight,
+        weather: dailyFeed.weather || "Tidak Ada",
+        items,
+      };
+    })
+    .filter((group) => {
+      if (!searchQuery) return true;
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        group.date.toLowerCase().includes(searchLower) ||
+        group.cow.toLowerCase().includes(searchLower) ||
+        group.age.toLowerCase().includes(searchLower) ||
+        group.weight.toString().toLowerCase().includes(searchLower) ||
+        group.session.toString().toLowerCase().includes(searchLower) ||
+        group.weather.toLowerCase().includes(searchLower) ||
+        group.items.some(item => 
+          (item.feed?.name || "").toLowerCase().includes(searchLower) ||
+          (item.quantity?.toString() || "").includes(searchLower)
+        )
+      );
+    });
+
+  const exportToExcel = () => {
+    const data = filteredFeedItems.map((group) => ({
+      "Tanggal": group.date,
+      "Sapi": group.cow,
+      "Usia": group.age,
+      "Berat (kg)": group.weight,
+      "Sesi": group.session,
+      "Cuaca": group.weather,
+      "Pakan 1": group.items[0]?.feed?.name || "-",
+      "Jumlah 1 (kg)": group.items[0]?.quantity || "-",
+      "Pakan 2": group.items[1]?.feed?.name || "-",
+      "Jumlah 2 (kg)": group.items[1]?.quantity || "-",
+      "Pakan 3": group.items[2]?.feed?.name || "-",
+      "Jumlah 3 (kg)": group.items[2]?.quantity || "-",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "FeedItems");
+    XLSX.writeFile(wb, `FeedItems_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" }); // Set orientation to landscape
+    doc.text("Daftar Pakan Harian", 14, 10);
+    autoTable(doc, {
+      startY: 20,
+      head: [
+        ["Tanggal", "Sapi", "Usia", "Berat (kg)", "Sesi", "Cuaca", "Pakan 1", "Jumlah 1", "Pakan 2", "Jumlah 2", "Pakan 3", "Jumlah 3"],
+      ],
+      body: filteredFeedItems.map((group) => [
+        group.date,
+        group.cow,
+        group.age,
+        group.weight,
+        group.session,
+        group.weather,
+        group.items[0]?.feed?.name || "-",
+        group.items[0]?.quantity || "-",
+        group.items[1]?.feed?.name || "-",
+        group.items[1]?.quantity || "-",
+        group.items[2]?.feed?.name || "-",
+        group.items[2]?.quantity || "-",
+      ]),
+    });
+    doc.save(`FeedItems_${new Date().toISOString().split("T")[0]}.pdf`);
+  };
+
+  const handleApplyFilters = () => {
+    console.log("Applying filters:", { startDate, endDate });
+  };
 
   const handleEditClick = (dailyFeedId) => {
     setSelectedDailyFeedId(dailyFeedId);
     setShowEditModal(true);
     setShowAddModal(false);
-    // Use query parameter to track edit mode
     navigate(`${location.pathname}?edit=${dailyFeedId}`, { replace: true });
   };
 
@@ -99,7 +218,6 @@ const FeedItemListPage = () => {
     setShowAddModal(true);
     setShowEditModal(false);
     setSelectedDailyFeedId(null);
-    // Use query parameter to track add mode
     navigate(`${location.pathname}?add=true`, { replace: true });
   };
 
@@ -125,27 +243,22 @@ const FeedItemListPage = () => {
     if (result.isConfirmed) {
       try {
         setLoading(true);
-        
-        // Check if there are items to delete
         if (group.items && group.items.length > 0) {
-          // Delete all feed items for this daily feed
-          await Promise.all(group.items.map(item => deletedailyFeedItem(item.id)));
+          await Promise.all(group.items.map((item) => deletedailyFeedItem(item.id)));
           Swal.fire({
             title: "Berhasil!",
             text: "Data pakan harian telah dihapus.",
             icon: "success",
-            timer: 1500
+            timer: 1500,
           });
         } else {
           Swal.fire({
             title: "Perhatian",
             text: "Tidak ada item pakan untuk dihapus.",
             icon: "info",
-            timer: 1500
+            timer: 1500,
           });
         }
-        
-        // Refresh data after deletion
         fetchData();
       } catch (error) {
         console.error("Gagal menghapus data pakan:", error.message);
@@ -160,12 +273,79 @@ const FeedItemListPage = () => {
     <div className="p-4 position-relative">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Pakan Harian</h2>
-        <button
-          onClick={handleAddClick}
-          className="btn btn-info waves-effect waves-light text-white"
-        >
-          <i className="ri-add-line me-1"></i> Tambah Pakan Harian
-        </button>
+        <div>
+          <button
+            onClick={handleAddClick}
+            className="btn btn-info waves-effect waves-light text-white"
+          >
+            <i className="ri-add-line me-1"></i> Tambah Pakan Harian
+          </button>
+        </div>
+      </div>
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-6">
+              <div className="mb-3">
+                <label className="form-label">Pencarian</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Cari berdasarkan nama sapi, cuaca, dll."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="row">
+                <div className="col-md-5">
+                  <div className="mb-3">
+                    <label className="form-label">Tanggal Mulai</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="col-md-5">
+                  <div className="mb-3">
+                    <label className="form-label">Tanggal Akhir</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="col-md-2">
+                  <div className="mb-3">
+                    <label className="form-label d-none d-md-block"> </label>
+                    <button 
+                      className="btn btn-primary w-100" 
+                      onClick={handleApplyFilters}
+                    >
+                      Terapkan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="d-flex justify-content-end gap-2">
+            <button className="btn btn-success" onClick={exportToExcel}>
+              <i className="ri-file-excel-line me-1"></i> Ekspor ke Excel
+            </button>
+            <button className="btn btn-primary" onClick={exportToPDF}>
+              <i className="ri-file-pdf-line me-1"></i> Ekspor ke PDF
+            </button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -175,9 +355,9 @@ const FeedItemListPage = () => {
           </div>
           <p className="mt-2">Memuat data pakan harian...</p>
         </div>
-      ) : groupedFeedItems.length === 0 ? (
+      ) : filteredFeedItems.length === 0 ? (
         <div className="alert alert-info">
-          <i className="ri-information-line me-2"></i> Tidak ada data pakan harian tersedia.
+          <i className="ri-information-line me-2"></i> Tidak ada data pakan harian tersedia untuk rentang tanggal ini.
         </div>
       ) : (
         <div className="card">
@@ -185,6 +365,11 @@ const FeedItemListPage = () => {
             <h4 className="card-title mb-0">Data Pakan Harian</h4>
           </div>
           <div className="card-body">
+            {Object.keys(cowNames).length === 0 && (
+              <div className="alert alert-warning mb-3">
+                <i className="ri-alert-line me-2"></i> Data sapi tidak tersedia. Nama sapi akan ditampilkan sebagai ID.
+              </div>
+            )}
             <div className="table-responsive">
               <table className="table table-striped table-hover align-middle">
                 <thead className="table-light">
@@ -206,20 +391,20 @@ const FeedItemListPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {groupedFeedItems.map((group) => (
+                  {filteredFeedItems.map((group) => (
                     <tr key={group.daily_feed_id}>
                       <td className="text-center">{group.date}</td>
                       <td>{group.cow}</td>
                       <td className="text-center">
                         <span className="badge bg-info">{group.session}</span>
                       </td>
-                      {[0, 1, 2].map(idx => {
+                      {[0, 1, 2].map((idx) => {
                         const feedItem = group.items[idx];
                         return (
                           <td key={idx} className="text-center">
                             {feedItem ? (
                               <div>
-                                <div className="fw-medium">{feedItem.feed?.name || '-'}</div>
+                                <div className="fw-medium">{feedItem.feed?.name || "-"}</div>
                                 <small className="text-muted">{feedItem.quantity} kg</small>
                               </div>
                             ) : (
@@ -255,15 +440,10 @@ const FeedItemListPage = () => {
         </div>
       )}
 
-      {/* Add Modal */}
       {showAddModal && (
-        <FeedItemFormPage
-          onFeedItemAdded={fetchData}
-          onClose={handleCloseModal}
-        />
+        <FeedItemFormPage onFeedItemAdded={fetchData} onClose={handleCloseModal} />
       )}
 
-      {/* Edit Modal */}
       {showEditModal && selectedDailyFeedId && (
         <FeedItemDetailEditPage
           dailyFeedId={selectedDailyFeedId}

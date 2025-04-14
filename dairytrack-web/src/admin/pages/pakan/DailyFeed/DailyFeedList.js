@@ -117,7 +117,7 @@ const DailyFeedListPage = () => {
   // DataTable columns with uniform width
   const columns = [
     {
-      name: "#",
+      name: "No",
       selector: (row, index) => index + 1,
       width: columnWidth,
       center: true,

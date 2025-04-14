@@ -93,10 +93,6 @@ const FeedStockPage = () => {
         <div className="col-lg-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title">Feed Stock Data</h4>
-              <p className="card-title-desc">
-                This table provides a list of feed stock currently available.
-              </p>
               <div className="table-responsive">
                 <table className="table table-striped mb-0">
                   <thead>

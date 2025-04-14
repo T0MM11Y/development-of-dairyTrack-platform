@@ -100,7 +100,7 @@ const FeedListPage = () => {
         </button>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-3" style={{ maxWidth: "250px" }}>
         <input
           type="text"
           className="form-control"
@@ -123,7 +123,7 @@ const FeedListPage = () => {
             <table className="table table-striped table-bordered">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th>No</th>
                   <th>Nama</th>
                   <th>Jenis</th>
                   <th>Protein (%)</th>

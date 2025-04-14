@@ -1,13 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { getFeedUsageByDate } from "../../../../api/pakan/dailyFeedItem";
-import { getFeeds } from "../../../../api/pakan/feed";
 import { getFeedTypes } from "../../../../api/pakan/feedType";
 import Swal from "sweetalert2";
 import ReactApexChart from "react-apexcharts";
 
 const FeedConsumptionDashboard = () => {
   const [feedTypes, setFeedTypes] = useState([]);
-  const [dailyFeedItems, setDailyFeedItems] = useState([]);
+  const [feedUsageData, setFeedUsageData] = useState([]); // Ubah inisialisasi ke array kosong
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setDate(new Date().getDate() - 30))
@@ -26,7 +25,7 @@ const FeedConsumptionDashboard = () => {
           end_date: dateRange.endDate,
         }),
       ]);
-
+  
       // Handle feed types
       if (feedTypesResponse.success && feedTypesResponse.feedTypes) {
         setFeedTypes(feedTypesResponse.feedTypes);
@@ -34,18 +33,36 @@ const FeedConsumptionDashboard = () => {
         console.error("Unexpected feed types response:", feedTypesResponse);
         setFeedTypes([]);
       }
-
-      // Handle feed usage
-      if (feedUsageResponse.success && feedUsageResponse.data) {
-        setDailyFeedItems(feedUsageResponse.data);
+  
+      // Handle feed usage data
+      if (feedUsageResponse.success && Array.isArray(feedUsageResponse.data)) {
+        // Filter data to ensure it's within the selected date range
+        const filteredData = feedUsageResponse.data.filter(item => {
+          const itemDate = new Date(item.date);
+          const startDate = new Date(dateRange.startDate);
+          const endDate = new Date(dateRange.endDate);
+          
+          // Set times to midnight for accurate date comparison
+          itemDate.setHours(0, 0, 0, 0);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(0, 0, 0, 0);
+          
+          return itemDate >= startDate && itemDate <= endDate;
+        });
+        
+        setFeedUsageData(filteredData);
+        
+        if (filteredData.length === 0 && feedUsageResponse.data.length > 0) {
+          console.warn("Data was received from API but none matched the date filter");
+        }
       } else {
         console.error("Unexpected feed usage response:", feedUsageResponse);
-        setDailyFeedItems([]);
+        setFeedUsageData([]);
       }
     } catch (error) {
       console.error("API Error:", error.message, error.stack);
       setFeedTypes([]);
-      setDailyFeedItems([]);
+      setFeedUsageData([]);
       Swal.fire({
         title: "Error!",
         text: "Gagal memuat data pakan. Silakan coba lagi.",
@@ -59,79 +76,54 @@ const FeedConsumptionDashboard = () => {
   useEffect(() => {
     fetchData();
     return () => {
-      setDailyFeedItems([]); // Cleanup to prevent memory leaks
+      setFeedUsageData([]); // Cleanup
     };
   }, [dateRange.startDate, dateRange.endDate]);
 
   // Calculate metrics for cards
   const uniqueFeedTypesCount = feedTypes.length;
   const uniqueConsumedFeedsCount = useMemo(() => {
-    const feedIds = new Set();
-    dailyFeedItems.forEach((day) => {
-      day.feeds.forEach((feed) => feedIds.add(feed.feed_id));
-    });
-    return feedIds.size;
-  }, [dailyFeedItems]);
+    return feedUsageData.length > 0
+      ? new Set(feedUsageData.flatMap(day => day.feeds.map(feed => feed.feed_id))).size
+      : 0;
+  }, [feedUsageData]);
   const totalFeedQuantity = useMemo(() => {
-    return dailyFeedItems
-      .reduce((sum, day) => {
-        return (
-          sum +
-          day.feeds.reduce(
-            (daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0),
-            0
-          )
-        );
-      }, 0)
-      .toFixed(2);
-  }, [dailyFeedItems]);
+    return feedUsageData.length > 0
+      ? feedUsageData
+          .reduce((sum, day) => {
+            return sum + day.feeds.reduce((daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0), 0);
+          }, 0)
+          .toFixed(2)
+      : "0.00";
+  }, [feedUsageData]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
-    // Get unique dates
-    const dates = [
-      ...new Set(
-        dailyFeedItems.map((item) =>
-          new Date(item.date).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          })
-        )
-      ),
-    ].sort((a, b) => new Date(a) - new Date(b));
+    if (!feedUsageData || feedUsageData.length === 0) {
+      return { dates: [], series: [] };
+    }
 
-    // Get top 5 feed types by quantity
-    const feedQuantities = {};
-    dailyFeedItems.forEach((day) => {
-      day.feeds.forEach((feed) => {
-        feedQuantities[feed.feed_name] =
-          (feedQuantities[feed.feed_name] || 0) +
-          parseFloat(feed.quantity_kg || 0);
-      });
-    });
-    const topFeedNames = Object.entries(feedQuantities)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([feedName]) => feedName);
+    const dates = feedUsageData.map(item =>
+      new Date(item.date).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+      })
+    );
 
-    // Create series for top feed types
-    const series = topFeedNames.map((feedName) => ({
+    const feedNames = [...new Set(
+      feedUsageData.flatMap(day => day.feeds.map(feed => feed.feed_name))
+    )];
+
+    const series = feedNames.map(feedName => ({
       name: feedName,
-      data: dates.map((date) => {
-        const day = dailyFeedItems.find(
-          (item) =>
-            new Date(item.date).toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            }) === date
-        );
-        const feed = day?.feeds.find((f) => f.feed_name === feedName);
-        return parseFloat(feed?.quantity_kg || 0);
+      data: feedUsageData.map(day => {
+        const feed = day.feeds.find(f => f.feed_name === feedName);
+        return feed ? parseFloat(feed.quantity_kg) : 0;
       }),
     }));
 
     return { dates, series };
-  }, [dailyFeedItems]);
+  }, [feedUsageData]);
 
   const handleApplyFilters = () => {
     if (!dateRange.startDate || !dateRange.endDate) {
@@ -195,7 +187,7 @@ const FeedConsumptionDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val.toFixed(2)} kg`,
+        formatter: (val) => `${val} kg`,
       },
     },
     legend: {
@@ -341,7 +333,7 @@ const FeedConsumptionDashboard = () => {
           </div>
           <p className="mt-2">Memuat data pakan...</p>
         </div>
-      ) : dailyFeedItems.length === 0 ? (
+      ) : feedUsageData.length === 0 ? (
         <div className="alert alert-warning text-center">
           <i className="ri-error-warning-line me-2"></i>
           Tidak ada data konsumsi pakan tersedia untuk rentang tanggal yang dipilih.
