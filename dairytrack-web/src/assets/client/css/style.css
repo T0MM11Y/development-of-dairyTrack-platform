@@ -1853,14 +1853,14 @@ Breadcrumb
   .breadcrumb__wrap__content {
     text-align: center; }
     .breadcrumb__wrap__content .title {
-      font-size: 65px;
-      letter-spacing: -0.01em;
+      font-size: 45px;
+      letter-spacing: -0.006em;
       text-transform: capitalize;
       line-height: 1.1;
       margin-bottom: 15px; }
       @media (max-width: 767.98px) {
         .breadcrumb__wrap__content .title {
-          font-size: 46px; } }
+          font-size: 26px; } }
   .breadcrumb__wrap .breadcrumb {
     margin-bottom: 0;
     justify-content: center; }
@@ -2383,7 +2383,7 @@ Breadcrumb
     .about__exp__list li:last-child {
       margin-bottom: 0; }
   .about__exp__list .title {
-    font-family: "Roboto", sans-serif;
+    font-family: "lato", sans-serif;
     font-size: 20px;
     font-weight: 500;
     margin-bottom: 15px; }
@@ -2402,7 +2402,7 @@ Breadcrumb
       .about__skill__item {
         width: 100%; } }
     .about__skill__item .title {
-      font-family: "Roboto", sans-serif;
+      font-family: "lato", sans-serif;
       color: #68666C;
       text-transform: uppercase;
       font-size: 14px;

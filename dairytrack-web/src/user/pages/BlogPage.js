@@ -176,7 +176,7 @@ const BlogPage = () => {
                   Coba kata kunci atau topik yang berbeda
                 </p>
                 <button
-                  className="btn btn-outline-success"
+                  className="btn btn-outline-info"
                   onClick={() => {
                     setSearchTerm("");
                     setSelectedTopic("Semua");
