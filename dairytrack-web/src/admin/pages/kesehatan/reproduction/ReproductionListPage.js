@@ -13,7 +13,7 @@ const ReproductionListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [modalType, setModalType] = useState(null); // 'create' | 'edit'
+  const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
 
   const fetchData = async () => {
@@ -44,8 +44,8 @@ const ReproductionListPage = () => {
   };
 
   const getCowName = (id) => {
-    const cow = cows.find((c) => c.id === id);
-    return cow ? cow.name : "Tidak diketahui";
+    const cow = cows.find((c) => c.id === id || c.id === id?.id);
+    return cow ? `${cow.name} (${cow.breed})` : "Tidak diketahui";
   };
 
   useEffect(() => {
@@ -54,34 +54,30 @@ const ReproductionListPage = () => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Reproduksi Sapi</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold text-dark">Data Reproduksi Sapi</h2>
         <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
         </button>
       </div>
 
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {data.length === 0 && !error ? (
-        <p className="text-gray-500">Belum ada data reproduksi.</p>
+        <p className="text-muted">Belum ada data reproduksi.</p>
       ) : (
         <div className="card">
           <div className="card-body">
-            <h5 className="card-title">Tabel Reproduksi</h5>
             <div className="table-responsive">
-              <table className="table table-striped text-sm mb-0">
+              <table className="table table-bordered table-striped text-sm">
                 <thead className="bg-light">
                   <tr>
                     <th>#</th>
                     <th>Sapi</th>
-                    <th>Interval Kelahiran</th>
-                    <th>Masa Layanan</th>
-                    <th>Tingkat Konsepsi</th>
+                    <th>Interval Kelahiran (hari)</th>
+                    <th>Masa Layanan (hari)</th>
+                    <th>Tingkat Konsepsi (%)</th>
+                    <th>Tanggal Pencatatan</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>
@@ -90,9 +86,18 @@ const ReproductionListPage = () => {
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
                       <td>{getCowName(item.cow)}</td>
-                      <td>{item.birth_interval} hari</td>
-                      <td>{item.service_period} hari</td>
-                      <td>{item.conception_rate} %</td>
+                      <td>{item.calving_interval || "-"}</td>
+                      <td>{item.service_period || "-"}</td>
+                      <td>{item.conception_rate != null ? item.conception_rate + " %" : "-"}</td>
+                      <td>
+                        {item.recorded_at
+                          ? new Date(item.recorded_at).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </td>
                       <td>
                         <button
                           className="btn btn-warning btn-sm me-2"
@@ -104,8 +109,8 @@ const ReproductionListPage = () => {
                           <i className="ri-edit-line"></i>
                         </button>
                         <button
-                          onClick={() => setDeleteId(item.id)}
                           className="btn btn-danger btn-sm"
+                          onClick={() => setDeleteId(item.id)}
                         >
                           <i className="ri-delete-bin-6-line"></i>
                         </button>
@@ -150,9 +155,7 @@ const ReproductionListPage = () => {
       {deleteId && (
         <div
           className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
+          style={{ background: "rgba(0,0,0,0.5)" }}
         >
           <div className="modal-dialog">
             <div className="modal-content">
@@ -166,8 +169,9 @@ const ReproductionListPage = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Apakah Anda yakin ingin menghapus data reproduksi ini?
-                  <br /> Data yang dihapus tidak dapat dikembalikan.
+                  Yakin ingin menghapus data reproduksi ini?
+                  <br />
+                  Tindakan ini tidak dapat dibatalkan.
                 </p>
               </div>
               <div className="modal-footer">
@@ -183,17 +187,7 @@ const ReproductionListPage = () => {
                   onClick={handleDelete}
                   disabled={submitting}
                 >
-                  {submitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      ></span>
-                      Menghapus...
-                    </>
-                  ) : (
-                    "Hapus"
-                  )}
+                  {submitting ? "Menghapus..." : "Hapus"}
                 </button>
               </div>
             </div>

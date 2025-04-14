@@ -3,40 +3,29 @@ import {
   getDiseaseHistoryById,
   updateDiseaseHistory,
 } from "../../../../api/kesehatan/diseaseHistory";
-import { getCows } from "../../../../api/peternakan/cow";
 
 const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
   const [form, setForm] = useState({
-    cow: "",
     disease_name: "",
     description: "",
   });
 
-  const [cowName, setCowName] = useState("");
+  const [disease, setDisease] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const cowData = await getCows();
         const res = await getDiseaseHistoryById(historyId);
 
-        const cowId = res.cow || "";
-        const cowInfo = cowData.find((c) => c.id === cowId);
-
         setForm({
-          cow: cowId,
           disease_name: res.disease_name || "",
           description: res.description || "",
         });
 
-        setCowName(
-          cowInfo
-            ? `${cowInfo.name} (${cowInfo.breed})`
-            : "Data sapi tidak ditemukan"
-        );
+        setDisease(res); // berisi cow, health_check, symptom
       } catch (err) {
         console.error("Gagal mengambil data:", err);
         setError("Gagal memuat data riwayat penyakit.");
@@ -78,14 +67,8 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">
-              Edit Riwayat Penyakit
-            </h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
+            <h4 className="modal-title text-info fw-bold">Edit Riwayat Penyakit</h4>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -93,17 +76,51 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
               <p className="text-center">Memuat data riwayat penyakit...</p>
             ) : (
               <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Sapi</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={cowName}
-                    readOnly
-                    disabled
-                  />
-                </div>
+                {/* Info sapi */}
+                {disease?.health_check?.cow && (
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Sapi</label>
+                    <input
+                      type="text"
+                      value={`${disease.health_check.cow.name} (${disease.health_check.cow.breed})`}
+                      className="form-control"
+                      readOnly
+                      disabled
+                    />
+                  </div>
+                )}
 
+                {/* Info pemeriksaan */}
+                {disease?.health_check && (
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Detail Pemeriksaan</label>
+                    <div className="p-2 border bg-light rounded small">
+                      <div><strong>Suhu:</strong> {disease.health_check.rectal_temperature} °C</div>
+                      <div><strong>Denyut Jantung:</strong> {disease.health_check.heart_rate}</div>
+                      <div><strong>Napas:</strong> {disease.health_check.respiration_rate}</div>
+                      <div><strong>Ruminasi:</strong> {disease.health_check.rumination}</div>
+                      <div><strong>Tanggal:</strong> {new Date(disease.health_check.checkup_date).toLocaleString("id-ID")}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info gejala */}
+                {disease?.symptom && (
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Gejala</label>
+                    <div className="p-2 bg-light border rounded small">
+                      {Object.entries(disease.symptom)
+                        .filter(([k, v]) => !["id", "health_check", "created_at"].includes(k) && v)
+                        .map(([k, v]) => (
+                          <div key={k}>
+                            <strong>{k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}:</strong> {v}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input penyakit */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">Nama Penyakit</label>
                   <input
@@ -112,11 +129,12 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
                     value={form.disease_name}
                     onChange={handleChange}
                     className="form-control"
-                    disabled={submitting}
                     required
+                    disabled={submitting}
                   />
                 </div>
 
+                {/* Deskripsi */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">Deskripsi</label>
                   <textarea
@@ -124,10 +142,10 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
                     value={form.description}
                     onChange={handleChange}
                     className="form-control"
-                    rows={4}
-                    disabled={submitting}
+                    rows={3}
                     required
-                  ></textarea>
+                    disabled={submitting}
+                  />
                 </div>
 
                 <button

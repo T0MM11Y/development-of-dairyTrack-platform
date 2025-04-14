@@ -1,25 +1,76 @@
 import { useEffect, useState } from "react";
 import { getSymptomById, updateSymptom } from "../../../../api/kesehatan/symptom";
-import { getHealthCheckById } from "../../../../api/kesehatan/healthCheck";
 
 const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [canEditTreatmentStatus, setCanEditTreatmentStatus] = useState(false);
+
+  const selectOptions = {
+    eye_condition: [
+      "Normal",
+      "Mata merah",
+      "Mata tidak cemerlang dan atau tidak bersih",
+      "Terdapat kotoran atau lendir pada mata",
+    ],
+    mouth_condition: [
+      "Normal",
+      "Mulut berbusa",
+      "Mulut mengeluarkan lendir",
+      "Mulut terdapat kotoran (terutama di sudut mulut)",
+      "Warna bibir pucat",
+      "Mulut berbau tidak enak",
+      "Terdapat luka di mulut",
+    ],
+    nose_condition: [
+      "Normal",
+      "Hidung mengeluarkan ingus",
+      "Hidung mengeluarkan darah",
+      "Di sekitar lubang hidung terdapat kotoran",
+    ],
+    anus_condition: [
+      "Normal",
+      "Kotoran terlihat terlalu keras atau terlalu cair (mencret)",
+      "Kotoran terdapat bercak darah",
+    ],
+    leg_condition: [
+      "Normal",
+      "Kaki bengkak",
+      "Kaki terdapat luka",
+      "Luka pada kuku kaki",
+    ],
+    skin_condition: [
+      "Normal",
+      "Kulit terlihat tidak bersih (cemerlang)",
+      "Terdapat benjolan atau bentol-bentol",
+      "Terdapat luka pada kulit",
+      "Terdapat banyak kutu",
+    ],
+    behavior: [
+      "Normal",
+      "Nafsu makan berkurang, beda dari sapi lain",
+      "Memisahkan diri dari kawanannya",
+      "Seringkali dalam posisi duduk/tidur",
+    ],
+    weight_condition: [
+      "Normal",
+      "Terjadi penurunan bobot dibandingkan sebelumnya",
+      "Terlihat tulang karena ADG semakin menurun",
+    ],
+    reproductive_condition: [
+      "Normal",
+      "Kelamin sulit mengeluarkan urine",
+      "Kelamin berlendir",
+      "Kelamin berdarah",
+    ],
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const symptom = await getSymptomById(symptomId);
         setForm(symptom);
-
-        // Cek status treatment dari HealthCheck
-        if (symptom.health_check) {
-          const healthCheck = await getHealthCheckById(symptom.health_check);
-          setCanEditTreatmentStatus(healthCheck?.treatment_status === "Treated");
-        }
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal mengambil data gejala.");
@@ -33,7 +84,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -71,50 +122,37 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
                   {Object.entries(form).map(([key, value]) => {
                     if (key === "id" || key === "health_check") return null;
 
-                    if (key === "treatment_status") {
+                    const options = selectOptions[key];
+                    if (options) {
                       return (
                         <div key={key} className="col-md-6 mb-3">
-                          <label className="form-label fw-semibold">Status Pengobatan</label>
+                          <label className="form-label fw-semibold">
+                            {key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </label>
                           <select
                             name={key}
                             value={value}
                             onChange={handleChange}
                             className="form-select"
-                            disabled={!canEditTreatmentStatus || submitting}
+                            required
                           >
-                            <option value="Not Treated">Belum Ditangani</option>
-                            <option value="Treated">Sudah Ditangani</option>
+                            {options.map((opt, i) => (
+                              <option key={i} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
                           </select>
-                          {!canEditTreatmentStatus && (
-                            <div className="text-danger small mt-1">
-                              Hanya bisa diubah jika pemeriksaan sudah diperiksa.
-                            </div>
-                          )}
                         </div>
                       );
                     }
 
-                    return (
-                      <div key={key} className="col-md-6 mb-3">
-                        <label className="form-label fw-semibold">
-                          {key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </label>
-                        <input
-                          type="text"
-                          name={key}
-                          value={value || ""}
-                          readOnly
-                          disabled
-                          className="form-control bg-light"
-                        />
-                      </div>
-                    );
+                    return null;
                   })}
                 </div>
                 <button
                   type="submit"
                   className="btn btn-info w-100 fw-semibold"
-                  disabled={submitting || !canEditTreatmentStatus}
+                  disabled={submitting}
                 >
                   {submitting ? "Memperbarui..." : "Perbarui Data"}
                 </button>

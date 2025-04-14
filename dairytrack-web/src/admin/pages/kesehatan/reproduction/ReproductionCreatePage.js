@@ -5,9 +5,11 @@ import { getCows } from "../../../../api/peternakan/cow";
 const ReproductionCreatePage = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     cow: "",
-    birth_interval: "",
-    service_period: "",
-    conception_rate: "",
+    calving_date: "",
+    previous_calving_date: "",
+    insemination_date: "",
+    total_insemination: "",
+    successful_pregnancy: "1", // ✅ Default ke 1
   });
 
   const [cows, setCows] = useState([]);
@@ -32,48 +34,86 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
+
+    const calvingDate = new Date(form.calving_date);
+    const prevCalvingDate = new Date(form.previous_calving_date);
+    const inseminationDate = new Date(form.insemination_date);
+    const totalIB = parseInt(form.total_insemination);
+    const successIB = parseInt(form.successful_pregnancy);
+
+    // 🧠 Validasi logika
+    if (prevCalvingDate >= calvingDate) {
+      setError("📌 Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (inseminationDate <= calvingDate) {
+      setError("📌 Tanggal inseminasi harus setelah tanggal calving sekarang.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (isNaN(totalIB) || totalIB < 1) {
+      setError("📌 Jumlah inseminasi harus lebih dari 0.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (isNaN(successIB) || successIB < 1 || successIB > totalIB) {
+      setError("📌 Kehamilan berhasil harus 1 atau lebih dan tidak boleh melebihi jumlah inseminasi.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await createReproduction(form);
-      if (onSaved) onSaved(); // callback untuk refresh data + tutup modal
+      await createReproduction({
+        ...form,
+        total_insemination: parseInt(form.total_insemination),
+        successful_pregnancy: parseInt(form.successful_pregnancy || 1),
+      });
+      
+      if (onSaved) onSaved();
+
+      // 🔁 Reset form (optional)
+      setForm({
+        cow: "",
+        calving_date: "",
+        previous_calving_date: "",
+        insemination_date: "",
+        total_insemination: "",
+        successful_pregnancy: "1",
+      });
     } catch (err) {
-      setError("Gagal menyimpan data reproduksi.");
       console.error(err);
+      setError("❌ Gagal menyimpan data reproduksi. Pastikan semua data valid.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div
-      className="modal fade show d-block"
-      style={{
-        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-        minHeight: "100vh",
-        paddingTop: "3rem",
-      }}
-    >
-      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+    <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", minHeight: "100vh", paddingTop: "3rem" }}>
+      <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Data Reproduksi</h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
+            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
-            {error && <p className="text-danger text-center">{error}</p>}
+            {error && <div className="alert alert-danger text-center">{error}</div>}
             {loading ? (
               <p className="text-center">Memuat data sapi...</p>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* Sapi */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">Pilih Sapi</label>
                   <select
@@ -93,58 +133,65 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                   </select>
                 </div>
 
+                {/* Tanggal-tanggal */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">
-                      Interval Kelahiran (hari)
-                    </label>
+                    <label className="form-label fw-bold">Tanggal Calving Sekarang</label>
                     <input
-                      type="number"
-                      name="birth_interval"
-                      value={form.birth_interval}
+                      type="date"
+                      name="calving_date"
+                      value={form.calving_date}
                       onChange={handleChange}
                       className="form-control"
                       required
-                      min="0"
                       disabled={submitting}
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">
-                      Masa Layanan (hari)
-                    </label>
+                    <label className="form-label fw-bold">Tanggal Calving Sebelumnya</label>
                     <input
-                      type="number"
-                      name="service_period"
-                      value={form.service_period}
+                      type="date"
+                      name="previous_calving_date"
+                      value={form.previous_calving_date}
                       onChange={handleChange}
                       className="form-control"
                       required
-                      min="0"
                       disabled={submitting}
                     />
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <label className="form-label fw-bold">Tingkat Konsepsi (%)</label>
-                  <input
-                    type="number"
-                    name="conception_rate"
-                    value={form.conception_rate}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                    min="0"
-                    disabled={submitting}
-                  />
+                {/* Inseminasi */}
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Tanggal Inseminasi</label>
+                    <input
+                      type="date"
+                      name="insemination_date"
+                      value={form.insemination_date}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <label className="form-label fw-bold">Jumlah Inseminasi</label>
+                    <input
+                      type="number"
+                      name="total_insemination"
+                      value={form.total_insemination}
+                      onChange={handleChange}
+                      className="form-control"
+                      min="1"
+                      required
+                      disabled={submitting}
+                    />
+                  </div>
+                  
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-info w-100"
-                  disabled={submitting}
-                >
+                <button type="submit" className="btn btn-info w-100" disabled={submitting}>
                   {submitting ? "Menyimpan..." : "Simpan"}
                 </button>
               </form>

@@ -9,7 +9,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    cow: "",
+    cow_id: "", // sesuai field di backend
     rectal_temperature: "",
     heart_rate: "",
     respiration_rate: "",
@@ -33,22 +33,39 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+  
+    console.log("🔍 Data yang dikirim ke backend:", form); // ✅ Tambahkan ini
+  
     try {
-      await createHealthCheck(form); // tanpa kirim checkup_date & treatment_status
+      await createHealthCheck(form);
       if (onSaved) onSaved();
     } catch (err) {
-      setError("Gagal menyimpan data pemeriksaan.");
-      console.error(err);
-    } finally {
-      setSubmitting(false);
+      let message = "Gagal menyimpan data pemeriksaan.";
+    
+      // ✅ Coba ambil isi pesan dari backend
+      if (err.response && err.response.json) {
+        const detail = await err.response.json();
+        console.error("🧨 Detail error dari backend:", detail);
+        message = JSON.stringify(detail);
+      } else {
+        console.error("❌ Error dari backend:", err);
+      }
+    
+      setError(message);
     }
+    
   };
+  
 
   return (
     <div
@@ -77,19 +94,20 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                 <div className="mb-3">
                   <label className="form-label fw-bold">Sapi</label>
                   <select
-                    name="cow"
-                    value={form.cow}
-                    onChange={handleChange}
-                    className="form-select"
-                    required
-                  >
-                    <option value="">-- Pilih Sapi --</option>
-                    {cows.map((cow) => (
-                      <option key={cow.id} value={cow.id}>
-                        {cow.name} ({cow.breed})
-                      </option>
-                    ))}
-                  </select>
+  name="cow_id"
+  value={form.cow_id}
+  onChange={handleChange}
+  className="form-select"
+  required
+>
+  <option value="">-- Pilih Sapi --</option>
+  {cows.map((cow) => (
+    <option key={cow.id} value={cow.id}>
+      {cow.name} ({cow.breed})
+    </option>
+  ))}
+</select>
+
                 </div>
 
                 <div className="row">
@@ -131,7 +149,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Ruminasi</label>
+                    <label className="form-label fw-bold">Ruminasi (jam)</label>
                     <input
                       type="number"
                       step="0.1"

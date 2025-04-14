@@ -6,6 +6,23 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const fieldOrder = [
+    "eye_condition",
+    "mouth_condition",
+    "nose_condition",
+    "anus_condition",
+    "leg_condition",
+    "skin_condition",
+    "behavior",
+    "weight_condition",
+    "reproductive_condition",
+  ];
+
+  const renderFieldLabel = (key) =>
+    key
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -20,11 +37,6 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
     };
     fetch();
   }, [symptomId]);
-
-  const renderFieldLabel = (key) =>
-    key
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div
@@ -43,21 +55,18 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
-            {loading ? (
+            {loading || !data ? (
               <p className="text-center">Memuat data...</p>
             ) : (
               <div className="table-responsive">
                 <table className="table table-bordered table-striped">
                   <tbody>
-                    {Object.entries(data).map(([key, value]) => {
-                      if (key === "id" || key === "health_check") return null;
-                      return (
-                        <tr key={key}>
-                          <th style={{ width: "40%" }}>{renderFieldLabel(key)}</th>
-                          <td>{value || "-"}</td>
-                        </tr>
-                      );
-                    })}
+                    {fieldOrder.map((key) => (
+                      <tr key={key}>
+                        <th style={{ width: "40%" }}>{renderFieldLabel(key)}</th>
+                        <td>{data[key] || "Normal"}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

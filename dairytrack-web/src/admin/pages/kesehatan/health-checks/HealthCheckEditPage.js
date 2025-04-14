@@ -16,9 +16,9 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
           getHealthCheckById(healthCheckId),
           getCows(),
         ]);
-        setForm(res);
 
-        const cow = cowList.find((c) => c.id === res.cow);
+        setForm(res);
+        const cow = typeof res.cow === "object" ? res.cow : cowList.find((c) => c.id === res.cow);
         setCowName(cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan");
       } catch (err) {
         setError("Gagal memuat data pemeriksaan.");
@@ -80,44 +80,85 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                     <input type="text" className="form-control" value={cowName} disabled readOnly />
                   </div>
 
-                  {/* Field Lain */}
-                  {Object.entries(form).map(([key, value]) => {
-                    if (["id", "cow", "checkup_date"].includes(key)) return null;
+                  {/* Checkup Date (readonly) */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Tanggal Pemeriksaan</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={new Date(form.checkup_date).toLocaleString("id-ID")}
+                      readOnly
+                    />
+                  </div>
 
-                    if (key === "treatment_status") {
-                      return (
-                        <div className="col-md-6 mb-3" key={key}>
-                          <label className="form-label fw-bold">Status Pengobatan</label>
-                          <select
-                            name={key}
-                            value={value}
-                            onChange={handleChange}
-                            className="form-select"
-                            disabled={submitting}
-                          >
-                            <option value="Not Treated">Belum Diperiksa</option>
-                            <option value="Treated">Sudah Diperiksa</option>
-                          </select>
-                        </div>
-                      );
-                    }
+                  {/* Suhu */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Suhu Rektal (°C)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="rectal_temperature"
+                      value={form.rectal_temperature}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
+                  </div>
 
-                    return (
-                      <div className="col-md-6 mb-3" key={key}>
-                        <label className="form-label fw-bold">
-                          {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                        </label>
-                        <input
-                          type="text"
-                          name={key}
-                          value={value}
-                          className="form-control"
-                          disabled
-                          readOnly
-                        />
-                      </div>
-                    );
-                  })}
+                  {/* Denyut Jantung */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Denyut Jantung</label>
+                    <input
+                      type="number"
+                      name="heart_rate"
+                      value={form.heart_rate}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
+                  </div>
+
+                  {/* Napas */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Frekuensi Napas</label>
+                    <input
+                      type="number"
+                      name="respiration_rate"
+                      value={form.respiration_rate}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
+                  </div>
+
+                  {/* Ruminasi */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold">Ruminasi (jam)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="rumination"
+                      value={form.rumination}
+                      onChange={handleChange}
+                      className="form-control"
+                      required
+                    />
+                  </div>
+
+                  {/* Status */}
+                 {/* Status (readonly, otomatis dari backend) */}
+<div className="col-md-6 mb-3">
+  <label className="form-label fw-bold">Status</label>
+  <input
+    type="text"
+    className={`form-control fw-semibold ${
+      form.status === "handled" ? "text-success" : "text-warning"
+    }`}
+    value={form.status === "handled" ? "Sudah Ditangani" : "Belum Ditangani"}
+    readOnly
+    disabled
+  />
+</div>
                 </div>
 
                 <button type="submit" className="btn btn-info w-100" disabled={submitting}>

@@ -17,8 +17,8 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
     behavior: "Normal",
     weight_condition: "Normal",
     reproductive_condition: "Normal",
-    treatment_status: "Not Treated", // default, tidak ditampilkan
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -157,10 +157,10 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
                   >
                     <option value="">-- Pilih Pemeriksaan --</option>
                     {healthChecks.map((hc) => {
-                      const cow = cows.find((c) => c.id === hc.cow);
+                      const cow = cows.find((c) => c.id === hc.cow || c.id === hc.cow?.id);
                       return (
                         <option key={hc.id} value={hc.id}>
-                          {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"} - {hc.rectal_temperature}°C
+                          {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"} - Suhu: {hc.rectal_temperature}°C
                         </option>
                       );
                     })}
