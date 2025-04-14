@@ -14,6 +14,11 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const quillRef = useRef(null);
+
+  // Regex to detect emojis
+  const emojiRegex =
+    /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+
   useEffect(() => {
     if (quillRef.current && !quillRef.current.__quill) {
       // Initialize Quill editor
@@ -25,7 +30,7 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
             [{ header: [1, 2, 3, false] }],
             ["bold", "italic", "underline"],
             [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "image"],
+            ["link"], // Removed "image" from toolbar
           ],
         },
       });
@@ -35,7 +40,18 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
 
       // Update description state on Quill content change
       quill.on("text-change", () => {
-        setDescription(quill.root.innerHTML);
+        const content = quill.root.innerHTML;
+        if (emojiRegex.test(content)) {
+          Swal.fire({
+            title: "Error!",
+            text: "Deskripsi tidak boleh mengandung emoji.",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+          quill.root.innerHTML = ""; // Clear the content
+        } else {
+          setDescription(content);
+        }
       });
     }
   }, []);
@@ -74,6 +90,16 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
       return;
     }
 
+    if (emojiRegex.test(title) || emojiRegex.test(description)) {
+      Swal.fire({
+        title: "Error!",
+        text: "Input tidak boleh mengandung emoji.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();
@@ -86,7 +112,6 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
 
       const response = await createBlog(formData);
 
-      // Tetap tampilkan pesan sukses meskipun ada error di SweetAlert
       if (response.status === 201) {
         Swal.fire({
           title: "Sukses!",
@@ -103,7 +128,6 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
     } catch (error) {
       console.error("Error creating blog:", error.message);
 
-      // Abaikan error dan tetap tampilkan pesan sukses
       Swal.fire({
         title: "Sukses!",
         text: "Artikel blog berhasil ditambahkan.",
@@ -117,6 +141,7 @@ const CreateBlogModal = ({ onClose, onSuccess }) => {
       setLoading(false);
     }
   };
+
   return (
     <div
       className="modal show d-block"
