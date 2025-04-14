@@ -24,7 +24,16 @@ const withUserLayout = (Component) => {
       >
         <Component />
       </div>
-      <Footer />
+      <div
+        className="user-footer"
+        style={{
+          width: "100%",
+          margin: "100px 0 0", // Tambahkan margin atas untuk jarak
+          padding: "0",
+        }}
+      >
+        <Footer />
+      </div>
     </div>
   );
 };

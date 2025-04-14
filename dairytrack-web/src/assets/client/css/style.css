@@ -1842,8 +1842,8 @@ label {
 Breadcrumb
 =============================*/
 .breadcrumb__wrap {
-  background: #F7F7F7;
-  padding: 275px 0 155px;
+  background: #f3f0eb;
+  padding: 125px 0 105px;
   position: relative;
   overflow: hidden;
   z-index: 1; }
@@ -1871,61 +1871,8 @@ Breadcrumb
       color: #FCAF17; }
       .breadcrumb__wrap .breadcrumb li a {
         color: #68666C; }
-  .breadcrumb__wrap__icon {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 52px;
-    max-width: 1560px;
-    min-height: 285px;
-    margin: 0 auto;
-    z-index: -1; }
-    @media (max-width: 1500px) {
-      .breadcrumb__wrap__icon {
-        bottom: 30px;
-        min-height: 235px; } }
-    @media (max-width: 1199.98px) {
-      .breadcrumb__wrap__icon {
-        max-width: 960px; } }
-    @media (max-width: 991.98px) {
-      .breadcrumb__wrap__icon {
-        display: none; } }
-    .breadcrumb__wrap__icon ul li {
-      position: absolute; }
-      .breadcrumb__wrap__icon ul li img {
-        -webkit-border-radius: 50%;
-        -moz-border-radius: 50%;
-        border-radius: 50%; }
-      .breadcrumb__wrap__icon ul li:nth-child(1) {
-        left: 9%;
-        top: 0; }
-        .breadcrumb__wrap__icon ul li:nth-child(1) img {
-          max-width: 62px; }
-      .breadcrumb__wrap__icon ul li:nth-child(2) {
-        left: 1%;
-        bottom: 21%; }
-        .breadcrumb__wrap__icon ul li:nth-child(2) img {
-          max-width: 68px; }
-      .breadcrumb__wrap__icon ul li:nth-child(3) {
-        left: 15%;
-        bottom: 0; }
-        .breadcrumb__wrap__icon ul li:nth-child(3) img {
-          max-width: 40px; }
-      .breadcrumb__wrap__icon ul li:nth-child(4) {
-        right: 14%;
-        top: 0; }
-        .breadcrumb__wrap__icon ul li:nth-child(4) img {
-          max-width: 58px; }
-      .breadcrumb__wrap__icon ul li:nth-child(5) {
-        right: 1%;
-        top: 13%; }
-        .breadcrumb__wrap__icon ul li:nth-child(5) img {
-          max-width: 42px; }
-      .breadcrumb__wrap__icon ul li:nth-child(6) {
-        right: 5.5%;
-        bottom: 0; }
-        .breadcrumb__wrap__icon ul li:nth-child(6) img {
-          max-width: 102px; }
+  
+   
 
 /*=============================
 03. Banner
@@ -4847,67 +4794,86 @@ Breadcrumb
     font-size: 17px;
     line-height: 1.5; }
 
+
 /*=============================
 13. Footer
 =============================*/
 .footer {
-  background: #191B1E;
-  padding: 310px 0 95px; }
-  @media (max-width: 767.98px) {
-    .footer {
-      padding: 310px 0 20px; } }
-  .footer__widget {
-    margin-bottom: 50px; }
-    .footer__widget .fw-title {
-      margin-bottom: 23px; }
-      .footer__widget .fw-title .sub-title {
-        color: #898989;
-        font-family: "Roboto", sans-serif;
-        font-size: 12px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        line-height: 1;
-        margin-bottom: 15px; }
-      .footer__widget .fw-title .title {
-        color: #fff;
-        font-family: "Roboto", sans-serif;
-        font-size: 22px;
-        text-transform: uppercase;
-        margin-bottom: 0; }
-    .footer__widget p {
-      margin-bottom: 0;
-      color: #898989;
-      font-size: 15px; }
-  .footer__widget__text {
-    margin-right: 40px; }
-  .footer__widget__address .mail {
-    color: #fff;
-    font-size: 15px; }
-    .footer__widget__address .mail:hover {
-      color: #FCAF17; }
-  .footer__social__list {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-top: 13px; }
-    .footer__social__list li:not(:last-child) {
-      margin-right: 17px; }
-    .footer__social__list li a {
-      display: block;
-      font-size: 13px;
-      color: #898989;
-      line-height: 1; }
-      .footer__social__list li a:hover {
-        color: #fff; }
+  padding: 310px 0 95px;
+  width: 100%; /* Tambahkan ini untuk membuat footer full layar */
+}
+@media (max-width: 467.98px) {
+  .footer {
+    padding: 310px 0 20px;
+  }
+}
+.footer__widget {
+  margin-bottom: 50px;
+  margin-top: -20px;
+}
+.footer__widget .fw-title {
+  margin-bottom: 23px;
+}
+.footer__widget .fw-title .sub-title {
+  color: #898989;
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 15px;
+}
+.footer__widget .fw-title .title {
+  color: #464646;
+  font-family: "Roboto", sans-serif;
+  font-size: 22px;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+.footer__widget p {
+  margin-bottom: 0;
+  color: #898989;
+  font-size: 15px;
+}
+.footer__widget__text {
+  margin-right: 40px;
+}
+.footer__widget__address .mail {
+  color: #464646;
+  font-size: 15px;
+}
+.footer__widget__address .mail:hover {
+  color: #FCAF17;
+}
+.footer__social__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 13px;
+}
+.footer__social__list li:not(:last-child) {
+  margin-right: 17px;
+}
+.footer__social__list li a {
+  display: block;
+  font-size: 13px;
+  color: #898989;
+  line-height: 1;
+}
+.footer__social__list li a:hover {
+  color: #fff;
+}
 
 .copyright__wrap {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #2D2D39; }
-  .copyright__wrap .copyright__text p {
-    font-size: 14px;
-    margin-bottom: 0;
-    color: #898989; }
+  border-top: 1px solid #2D2D39;
+}
+.copyright__wrap .copyright__text p {
+  font-size: 14px;
+  margin-bottom: 0;
+  color: #898989;
+}
 
 /*=============================
 14. Preloader
