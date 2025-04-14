@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom"; // Import Link for breadcrumbs
 import { getGalleries, getGalleryPhoto } from "../../api/peternakan/gallery";
 
 const GaleriPage = () => {
@@ -40,71 +41,95 @@ const GaleriPage = () => {
   }, []);
 
   return (
-    <div className="container py-5 mt-16">
-      <section className="portfolio__inner">
-        <div className="container">
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-          {loading ? (
-            <div className="text-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Loading...</span>
+    <div>
+      {/* Breadcrumb Section */}
+      <section className="breadcrumb__wrap">
+        <div className="container custom-container">
+          <div className="row justify-content-center">
+            <div className="col-xl-6 col-lg-8 col-md-10">
+              <div className="breadcrumb__wrap__content">
+                <h2 className="title">Gallery Page</h2>
+                <nav aria-label="breadcrumb">
+                  <ol className="breadcrumb">
+                    <li className="breadcrumb-item">
+                      <Link to="/">Home</Link>
+                    </li>
+                    <li className="breadcrumb-item active" aria-current="page">
+                      Gallery
+                    </li>
+                  </ol>
+                </nav>
               </div>
-              <p className="mt-2">Loading gallery data...</p>
             </div>
-          ) : galleries.length === 0 ? (
-            <p className="text-gray-500 text-center">
-              No gallery data available.
-            </p>
-          ) : (
-            <div className="row g-4">
-              {galleries.map((gallery, index) => (
-                <div className="col-md-4 col-sm-6" key={gallery.id}>
-                  <div
-                    className="gallery-item position-relative overflow-hidden"
-                    style={{
-                      borderRadius: "0.5rem",
-                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <img
-                      src={gallery.photo || "/placeholder-image.jpg"}
-                      alt={gallery.tittle || `Gallery ${index + 1}`}
-                      className="w-100 h-100"
+          </div>
+        </div>
+      </section>
+      <div className="container py-5">
+        <section className="portfolio__inner">
+          <div className="container">
+            {error && (
+              <div className="alert alert-danger" role="alert">
+                {error}
+              </div>
+            )}
+            {loading ? (
+              <div className="text-center">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Loading gallery data...</p>
+              </div>
+            ) : galleries.length === 0 ? (
+              <p className="text-gray-500 text-center">
+                No gallery data available.
+              </p>
+            ) : (
+              <div className="row g-4">
+                {galleries.map((gallery, index) => (
+                  <div className="col-md-4 col-sm-6" key={gallery.id}>
+                    <figure
+                      className="gallery-item position-relative overflow-hidden"
                       style={{
-                        objectFit: "cover",
+                        borderRadius: "0.5rem",
+                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                        cursor: "pointer",
                         transition: "transform 0.3s ease",
                       }}
                       onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.1)")
+                        (e.currentTarget.style.transform = "scale(1.05)")
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.transform = "scale(1)")
                       }
-                    />
-                    <div
-                      className="gallery-title position-absolute top-50 start-50 translate-middle text-white text-center"
-                      style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "0.25rem",
-                        fontSize: "1.25rem",
-                        fontWeight: "bold",
-                      }}
                     >
-                      {gallery.tittle || "Untitled"}
-                    </div>
+                      <img
+                        src={gallery.photo || "/placeholder-image.jpg"}
+                        alt={gallery.tittle || `Gallery item ${index + 1}`}
+                        className="w-100 h-100"
+                        style={{
+                          objectFit: "cover",
+                        }}
+                      />
+                      <figcaption
+                        className="gallery-title position-absolute bottom-0 start-0 w-100 text-white text-center"
+                        style={{
+                          backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          padding: "1rem",
+                          fontSize: "1.25rem",
+                          fontWeight: "bold",
+                          textShadow: "1px 1px 2px rgba(0, 0, 0, 0.8)",
+                        }}
+                      >
+                        {gallery.tittle || "Untitled"}
+                      </figcaption>
+                    </figure>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
