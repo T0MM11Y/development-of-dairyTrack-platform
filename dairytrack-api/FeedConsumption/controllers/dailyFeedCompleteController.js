@@ -24,68 +24,67 @@ const getCurrentWeather = async () => {
 
 // ** CREATE (Tambah Daily Feed) **
 exports.createDailyFeed = async (req, res) => {
-    const t = await sequelize.transaction();
-    
-    try {
-      // Simplified input - only require basic fields
-      const { farmer_id, cow_id, date, session } = req.body;
+  const t = await sequelize.transaction();
   
-      if (!farmer_id || !cow_id || !date || !session) {
-        await t.rollback();
-        return res.status(400).json({ message: "Semua field diperlukan" });
-      }
-  
-      const weather = await getCurrentWeather();
-  
-      const existingFeed = await DailyFeedComplete.findOne({
-        where: { cow_id, date, session }
-      });
-  
-      if (existingFeed) {
-        const cow = await Cow.findByPk(cow_id);
-        await t.rollback();
-      
-        return res.status(409).json({
-          success: false,
-          message: `Sapi dengan nama "${cow?.name || 'Tidak Diketahui'}" sudah memiliki data untuk sesi "${session}" pada tanggal ${date}. Silakan periksa kembali atau gunakan sesi yang berbeda.`,
-          existing: existingFeed
-        });
-      }      
-  
-      // Create new feed with default nutrition values
-      const newFeed = await DailyFeedComplete.create({
-        farmer_id,
-        cow_id,
-        date,
-        session,
-        weather,
-        total_protein: 0,
-        total_energy: 0,
-        total_fiber: 0
-      }, { transaction: t });
-      
-      await t.commit();
-      
-      // Return the created feed
-      const createdFeed = await DailyFeedComplete.findByPk(newFeed.id, {
-        include: [{
-          model: DailyFeedItems,
-          as: 'feedItems',
-          include: [{
-            model: Feed,
-            as: 'feed',
-            attributes: ['name', 'protein', 'energy', 'fiber']
-          }]
-        }]
-      });
-      
-      return res.status(201).json({ success: true, data: createdFeed });
-    } catch (error) {
+  try {
+    // Simplified input - only require basic fields
+    const { farmer_id, cow_id, date, session } = req.body;
+
+    if (!farmer_id || !cow_id || !date || !session) {
       await t.rollback();
-      console.error("Error creating daily feed:", error);
-      return res.status(500).json({ message: "Internal server error", error: error.message });
+      return res.status(400).json({ message: "Semua field diperlukan" });
     }
-  };
+
+    const weather = await getCurrentWeather();
+
+    const existingFeed = await DailyFeedComplete.findOne({
+      where: { cow_id, date, session }
+    });
+
+    if (existingFeed) {
+      await t.rollback();
+      return res.status(409).json({
+        success: false,
+        message: `Data untuk sapi dengan ID ${cow_id} pada tanggal ${date} sesi ${session} sudah ada. Silakan periksa kembali atau gunakan sesi yang berbeda.`,
+        existing: existingFeed,
+        cow_id // Kembalikan cow_id untuk frontend
+      });
+    }      
+
+    // Create new feed with default nutrition values
+    const newFeed = await DailyFeedComplete.create({
+      farmer_id,
+      cow_id,
+      date,
+      session,
+      weather,
+      total_protein: 0,
+      total_energy: 0,
+      total_fiber: 0
+    }, { transaction: t });
+    
+    await t.commit();
+    
+    // Return the created feed
+    const createdFeed = await DailyFeedComplete.findByPk(newFeed.id, {
+      include: [{
+        model: DailyFeedItems,
+        as: 'feedItems',
+        include: [{
+          model: Feed,
+          as: 'feed',
+          attributes: ['name', 'protein', 'energy', 'fiber']
+        }]
+      }]
+    });
+    
+    return res.status(201).json({ success: true, data: createdFeed });
+  } catch (error) {
+    await t.rollback();
+    console.error("Error creating daily feed:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
 
 // ** GET ALL (Ambil Semua Daily Feed) **
 exports.getAllDailyFeeds = async (req, res) => {
@@ -155,6 +154,26 @@ exports.updateDailyFeed = async (req, res) => {
     if (!feed) {
       await t.rollback();
       return res.status(404).json({ message: "Daily feed not found" });
+    }
+
+    // Cek apakah kombinasi cow_id, date, dan session yang diperbarui konflik dengan data lain
+    const existingFeed = await DailyFeedComplete.findOne({
+      where: {
+        cow_id: cow_id || feed.cow_id,
+        date: date || feed.date,
+        session: session || feed.session,
+        id: { [Op.ne]: id } 
+      }
+    });
+
+    if (existingFeed) {
+      await t.rollback();
+      return res.status(409).json({
+        success: false,
+        message: `Data untuk sapi dengan ID ${cow_id || feed.cow_id} pada tanggal ${date || feed.date} sesi ${session || feed.session} sudah ada. Silakan periksa kembali atau gunakan sesi yang berbeda.`,
+        existing: existingFeed,
+        cow_id: cow_id || feed.cow_id // Kembalikan cow_id untuk frontend
+      });
     }
 
     await feed.update({ farmer_id, cow_id, date, session }, { transaction: t });

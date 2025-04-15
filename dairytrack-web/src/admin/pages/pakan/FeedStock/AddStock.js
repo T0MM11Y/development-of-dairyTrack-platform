@@ -48,13 +48,29 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
       Swal.fire("Error", "Please enter additional stock", "error");
       return;
     }
+
+    // Konfirmasi sebelum menambah stok
+    const confirmation = await Swal.fire({
+      title: "Konfirmasi",
+      text: `Apakah Anda yakin ingin menambah ${additionalStock} kg stok pakan?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Iya",
+      cancelButtonText: "Tidak",
+      reverseButtons: true,
+    });
+
+    if (!confirmation.isConfirmed) {
+      return; // Batalkan jika pengguna memilih "Tidak"
+    }
+
     setLoading(true);
     try {
       const response = await AddFeedStock({ feedId, additionalStock });
       if (response.success) {
         Swal.fire({
-          title: "Success",
-          text: "Stock updated successfully",
+          title: "Berhasil",
+          text: "Stok pakan berhasil ditambahkan",
           icon: "success",
           confirmButtonText: "OK",
         }).then(() => {
@@ -62,10 +78,20 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
           onClose();
         });
       } else {
-        Swal.fire("Error", "Failed to update stock", "error");
+        Swal.fire({
+          title: "Gagal",
+          text: response.message || "Gagal menambahkan stok pakan",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
       }
     } catch (error) {
-      Swal.fire("Error", "Failed to update stock: " + error.message, "error");
+      Swal.fire({
+        title: "Gagal",
+        text: error.message || "Terjadi kesalahan saat menambahkan stok",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
@@ -99,7 +125,7 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
               {preFeedId ? (
                 <div className="form-group mb-3">
                   <label htmlFor="feedName" className="form-label">
-                    Feed
+                    Nama Pakan
                   </label>
                   <input
                     type="text"
@@ -112,7 +138,7 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
               ) : (
                 <div className="form-group mb-3">
                   <label htmlFor="feedId" className="form-label">
-                    Feed
+                    Nama Pakan
                   </label>
                   <select
                     id="feedId"
@@ -121,7 +147,7 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
                     onChange={(e) => setFeedId(e.target.value)}
                     required
                   >
-                    <option value="">Select Feed</option>
+                    <option value="">Pilih Pakan</option>
                     {feeds.map((feed) => (
                       <option key={feed.id} value={feed.id}>
                         {feed.name}
@@ -132,7 +158,7 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
               )}
               <div className="form-group mb-3">
                 <label htmlFor="additionalStock" className="form-label">
-                  Additional Stock (kg)
+                  Stok yang ditambah (kg)
                 </label>
                 <input
                   type="number"
@@ -149,7 +175,7 @@ const AddFeedStockPage = ({ preFeedId, onStockAdded, onClose }) => {
                 className="btn btn-info w-100"
                 disabled={loading}
               >
-                {loading ? "Saving..." : "Add Stock"}
+                {loading ? "Saving..." : "Tambah Pakan"}
               </button>
             </form>
           </div>

@@ -1,6 +1,6 @@
 const Feed = require("../models/feedModel.js");
 const FeedType = require("../models/feedTypeModel.js");
-
+const { Op } = require("sequelize");
 // Helper function for validation errors
 const getValidationErrors = (error) => {
   if (error.errors) {
@@ -144,7 +144,7 @@ exports.getFeedById = async (req, res) => {
   }
 };
 
-// Update feed by ID
+// Update feed
 exports.updateFeed = async (req, res) => {
   const { id } = req.params;
   const { typeId, name, protein, energy, fiber, min_stock, price } = req.body;
@@ -152,18 +152,36 @@ exports.updateFeed = async (req, res) => {
   try {
     const feed = await Feed.findByPk(id);
     if (!feed) {
-      return res.status(404).json({ success: false, field: "id", message: "Feed not found" });
+      return res.status(404).json({ success: false, field: "id", message: "Pakan tidak ditemukan" });
     }
 
     if (typeId) {
       const feedType = await FeedType.findByPk(typeId);
       if (!feedType) {
-        return res.status(404).json({ success: false, field: "typeId", message: "Feed type not found" });
+        return res.status(404).json({ success: false, field: "typeId", message: "Jenis pakan tidak ditemukan" });
+      }
+    }
+
+    // Cek apakah nama pakan sudah ada (kecuali untuk pakan yang sedang diupdate)
+    if (name) {
+      const existingFeed = await Feed.findOne({
+        where: {
+          name: name,
+          id: { [Op.ne]: id }, // Mengecualikan pakan dengan id yang sedang diupdate
+        },
+      });
+
+      if (existingFeed) {
+        return res.status(400).json({
+          success: false,
+          field: "name",
+          message: `Pakan "${name}" sudah ada`,
+        });
       }
     }
 
     await feed.update({ typeId, name, protein, energy, fiber, min_stock, price });
-    res.status(200).json({ success: true, message: "Feed updated successfully", feed });
+    res.status(200).json({ success: true, message: "Pakan berhasil diperbarui", feed });
   } catch (err) {
     if (err.name === "SequelizeValidationError") {
       return res.status(400).json({ success: false, errors: getValidationErrors(err) });
