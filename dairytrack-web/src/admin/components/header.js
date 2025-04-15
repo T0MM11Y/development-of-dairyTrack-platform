@@ -17,6 +17,7 @@ const LanguageDropdown = () => {
   const [currentLanguage, setCurrentLanguage] = useState("English");
   const [currentFlag, setCurrentFlag] = useState(englishFlag);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
 
   const handleLanguageChange = (language) => {
     if (language === "English") {
@@ -35,6 +36,7 @@ const LanguageDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  
   return (
     <div className="dropdown ms-auto mt-2">
       <button
@@ -80,7 +82,7 @@ const LanguageDropdown = () => {
     </div>
   );
 };
-const Header = () => {
+const Header = ({onToggleSidebar }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
@@ -88,6 +90,7 @@ const Header = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Processing");
   const [userName, setUserName] = useState("Guest");
+  
 
   const navigate = useNavigate();
 
@@ -230,106 +233,124 @@ const Header = () => {
     });
   };
   return (
-    <header id="page-topbar" className="header">
-      {isLoading && (
+<header
+  id="page-topbar"
+  className="header bg-white shadow-sm px-3"
+  style={{ zIndex: 1100, position: "relative" }} // <-- INI KUNCI!
+>
+        {isLoading && (
         <div className="loading-overlay">
           <div className="loading-text">{loadingText}</div>
         </div>
       )}
-
+  
       <div className="navbar-header">
-        <div className="d-flex align-items-start w-100">
-          {/* Logo */}
-          <div className="navbar-brand-box">
-            <span className="logo-lg">
-              <img src={logoDark} alt="logo-dark" height="90" />
-            </span>
-          </div>
-
-          {/* Language Dropdown */}
-          <LanguageDropdown />
-
-          {/* Full-screen Toggle */}
-          <div className="dropdown d-none d-lg-inline-block me-4 mt-2">
+        <div className="d-flex align-items-center justify-content-between w-100">
+          {/* Left Section: Toggle Button (mobile only) + Logo */}
+          <div className="d-flex align-items-center gap-3">
+            {/* Toggle Button (mobile only) */}
             <button
-              type="button"
-              className="btn header-item noti-icon waves-effect"
-              onClick={toggleFullScreen}
+              className="btn btn-outline-secondary d-md-none"
+              onClick={onToggleSidebar}
             >
-              <i
-                className={`ri-${
-                  isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-                }`}
-              ></i>
+              <i className="ri-menu-line"></i>
             </button>
-          </div>
-
-          {/* Notifications dropdown */}
-          <div className="dropdown d-inline-block mt-2">
-            <button
-              type="button"
-              className="btn header-item noti-icon waves-effect"
-              id="page-header-notifications-dropdown"
-              onClick={toggleNotificationDropdown}
-            >
-              <i className="ri-notification-3-line"></i>
-              <span className="noti-dot"></span>
-            </button>
-            <div
-              className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
-                isNotificationDropdownOpen ? "show" : ""
-              }`}
-              style={{
-                position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-270px, 70px)",
-              }}
-              aria-labelledby="page-header-notifications-dropdown"
-            >
-              {/* Notification content */}
+  
+            {/* Logo */}
+            <div className="navbar-brand-box">
+              <span className="logo-lg">
+                <img src={logoDark} alt="logo-dark" height="50" />
+              </span>
             </div>
           </div>
-
-          {/* User Dropdown */}
-          <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
-            <button
-              ref={userButtonRef}
-              type="button"
-              className="btn header-item waves-effect"
-              id="page-header-user-dropdown"
-              onClick={toggleUserDropdown}
-            >
-              <img
-                className="rounded-circle header-profile-user"
-                src={avatar1}
-                alt="Header Avatar"
-                style={{ height: "34px", width: "34px" }}
-              />
-              <span className="d-none d-xl-inline-block ms-1">{userName}</span>
-              <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
-            </button>
-            <div
-              ref={userDropdownRef}
-              className={`dropdown-menu dropdown-menu-end ${
-                isUserDropdownOpen ? "show" : ""
-              }`}
-            >
-              <a className="dropdown-item" href="#">
-                <i className="ri-user-line align-middle me-1"></i> Profile
-              </a>
-
-              <div className="dropdown-divider"></div>
-              <button className="dropdown-item" onClick={handleLogout}>
-                <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
-                Logout
+  
+          {/* Right Section: Dropdowns */}
+          <div className="d-flex align-items-center ms-auto gap-3">
+            {/* Language Dropdown */}
+            <LanguageDropdown />
+  
+            {/* Full-screen Toggle */}
+            <div className="d-none d-lg-inline-block">
+              <button
+                type="button"
+                className="btn header-item noti-icon waves-effect"
+                onClick={toggleFullScreen}
+              >
+                <i
+                  className={`ri-${
+                    isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
+                  }`}
+                ></i>
               </button>
+            </div>
+  
+            {/* Notifications dropdown */}
+            <div className="dropdown">
+              <button
+                type="button"
+                className="btn header-item noti-icon waves-effect"
+                id="page-header-notifications-dropdown"
+                onClick={toggleNotificationDropdown}
+              >
+                <i className="ri-notification-3-line"></i>
+                <span className="noti-dot"></span>
+              </button>
+              <div
+                className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
+                  isNotificationDropdownOpen ? "show" : ""
+                }`}
+                style={{
+                  position: "absolute",
+                  inset: "0px auto auto 0px",
+                  margin: "0px",
+                  transform: "translate(-270px, 70px)",
+                }}
+                aria-labelledby="page-header-notifications-dropdown"
+              >
+                {/* Notification content */}
+              </div>
+            </div>
+  
+            {/* User Dropdown */}
+            <div className="dropdown user-dropdown">
+              <button
+                ref={userButtonRef}
+                type="button"
+                className="btn header-item waves-effect"
+                id="page-header-user-dropdown"
+                onClick={toggleUserDropdown}
+              >
+                <img
+                  className="rounded-circle header-profile-user"
+                  src={avatar1}
+                  alt="Header Avatar"
+                  style={{ height: "34px", width: "34px" }}
+                />
+                <span className="d-none d-xl-inline-block ms-1">{userName}</span>
+                <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
+              </button>
+              <div
+                ref={userDropdownRef}
+                className={`dropdown-menu dropdown-menu-end ${
+                  isUserDropdownOpen ? "show" : ""
+                }`}
+              >
+                <a className="dropdown-item" href="#">
+                  <i className="ri-user-line align-middle me-1"></i> Profile
+                </a>
+                <div className="dropdown-divider"></div>
+                <button className="dropdown-item" onClick={handleLogout}>
+                  <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </header>
   );
+  
 };
 
 export default Header;

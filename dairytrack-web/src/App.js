@@ -1,6 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 // Public
 import Login from "./Auth/login";
@@ -115,39 +115,77 @@ import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAn
 // import Pemesanan from "./user/pages/Pemesanan.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
-    return (
-      <div id="layout-wrapper" style={{ display: "flex", height: "100vh" }}>
-        <div className="sidebar" style={{ width: "250px", flexShrink: 0 }}>
-          <Sidebar />
-        </div>
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-        <div
-          className="main-content"
-          style={{ flex: 1, display: "flex", flexDirection: "column" }}
-        >
-          <Header />
+    // Deteksi ukuran layar
+    useEffect(() => {
+      const handleResize = () => {
+        const mobile = window.innerWidth <= 768;
+        setIsMobile(mobile);
+        setSidebarOpen(!mobile);
+      };
+
+      handleResize(); // initial
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        {/* Header */}
+        <Header onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
+
+        <div className="d-flex flex-grow-1" style={{ position: "relative" }}>
+          {/* Sidebar (left column) */}
+          {(isSidebarOpen || !isMobile) && (
+            <Sidebar
+              isCollapsed={isCollapsed}
+              isMobile={isMobile}
+              isOpen={isSidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+            />
+          )}
+
+          {/* Overlay untuk mobile */}
+          {isMobile && isSidebarOpen && (
+            <div
+              onClick={() => setSidebarOpen(false)}
+              style={{
+                position: "fixed",
+                top: "60px", // tinggi header
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "rgba(0,0,0,0.3)",
+                zIndex: 1040,
+              }}
+            />
+          )}
+
+          {/* Main Content */}
           <div
-            className="content"
-            style={{ flex: 1, overflow: "auto", padding: "20px" }}
+            className="flex-grow-1"
+            style={{
+              marginLeft: !isMobile ? (isCollapsed ? 80 : 275) : 0,
+              padding: "20px",
+              overflowY: "auto",
+              transition: "margin-left 0.3s ease-in-out",
+            }}
           >
             <Component />
           </div>
-          <Footer
-            style={{
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-
-              width: "100%",
-              zIndex: 1000,
-              backgroundColor: "#f8f9fa", // Sesuaikan warna latar belakang
-              boxShadow: "0 -2px 5px rgba(0, 0, 0, 0.1)", // Tambahkan bayangan jika diperlukan
-            }}
-          />
         </div>
+
+        {/* Footer */}
+        <Footer />
       </div>
     );
   };
+
+
+
 
   return <AdminLayout />;
 };

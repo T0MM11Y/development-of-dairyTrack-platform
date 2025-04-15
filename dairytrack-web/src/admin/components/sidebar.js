@@ -4,7 +4,7 @@ import "simplebar-react/dist/simplebar.min.css";
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState([]);
   const [userData, setUserData] = useState(null);
@@ -25,6 +25,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   useEffect(() => {
+
+    console.log("Sidebar render - isMobile:", isMobile, "| isOpen:", isOpen);
+
     // Load user data from localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -256,57 +259,46 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   ];
 
   return (
-    <motion.div
-      className="vertical-menu"
-      initial={{ width: 275 }}
-      animate={{ width: isCollapsed ? 80 : 275 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      style={{
-        height: "100vh",
-        position: "fixed",
-        zIndex: 100,
-        background: "#fff",
-        boxShadow: "0 0 15px rgba(0,0,0,0.1)",
-      }}
-    >
+<div
+  style={{
+    position: "absolute",
+    top: 0, // ⬅️ tinggi header (ganti sesuai tingginya)
+    bottom: 0,
+    left: 0,
+    width: 275,
+    background: "#fff",
+    zIndex: 1050,
+    boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+    
+  }}
+>
+
+  
+
       <div data-simplebar style={{ height: "100vh", overflowY: "auto" }}>
+        {/* Close button for mobile */}
+        {isMobile && (
+          <div className="d-flex justify-content-end p-3 border-bottom">
+            <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>
+              <i className="ri-close-line"></i>
+            </button>
+          </div>
+        )}
+
         {/* User Profile */}
         {!isCollapsed && (
           <motion.div
             initial={{ opacity: 1 }}
             animate={{ opacity: isCollapsed ? 0 : 1 }}
             transition={{ duration: 0.2 }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "20px",
-              borderBottom: "1px solid #ddd",
-            }}
+            style={{ display: "flex", alignItems: "center", padding: "20px", borderBottom: "1px solid #ddd" }}
           >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                marginRight: "10px",
-              }}
-            >
-              <img
-                src={avatar1}
-                alt="Avatar"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
+            <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", marginRight: "10px" }}>
+              <img src={avatar1} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
-              <div style={{ fontWeight: "bold" }}>
-                {userData
-                  ? `${userData.first_name} ${userData.last_name}`
-                  : "Guest User"}
-              </div>
-              <div style={{ fontSize: "12px", color: "#666" }}>
-                {userData ? userData.email : "No Email"}
-              </div>
+              <div style={{ fontWeight: "bold" }}>{userData ? `${userData.first_name} ${userData.last_name}` : "Guest User"}</div>
+              <div style={{ fontSize: "12px", color: "#666" }}>{userData ? userData.email : "No Email"}</div>
             </div>
           </motion.div>
         )}
@@ -316,11 +308,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             {menuItems.map((menu) => (
               <motion.li
                 key={menu.key}
-                className={
-                  isActive(menuPaths[menu.key]) || isMenuOpen(menu.key)
-                    ? "mm-active"
-                    : ""
-                }
+                className={isActive(menuPaths[menu.key]) || isMenuOpen(menu.key) ? "mm-active" : ""}
                 variants={menuItemVariants}
                 whileHover="hover"
                 whileTap="tap"
@@ -338,18 +326,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     >
                       <div className="d-flex align-items-center">
                         <i className={menu.icon}></i>
-                        {!isCollapsed && (
-                          <span style={{ marginLeft: "10px" }}>
-                            {menu.label}
-                          </span>
-                        )}
+                        {!isCollapsed && <span style={{ marginLeft: "10px" }}>{menu.label}</span>}
                       </div>
                       {!isCollapsed && menu.submenus.length > 0 && (
-                        <i
-                          className={`ri-arrow-down-s-line ${
-                            isMenuOpen(menu.key) ? "rotate-180" : ""
-                          }`}
-                        ></i>
+                        <i className={`ri-arrow-down-s-line ${isMenuOpen(menu.key) ? "rotate-180" : ""}`}></i>
                       )}
                     </Link>
 
@@ -367,22 +347,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                           {menu.submenus.map(
                             (submenu) =>
                               (submenu.show === undefined || submenu.show) && (
-                                <motion.li
-                                  key={submenu.path}
-                                  variants={menuItemVariants}
-                                  whileHover="hover"
-                                  whileTap="tap"
-                                >
-                                  <Link
-                                    to={submenu.path}
-                                    className={
-                                      location.pathname === submenu.path
-                                        ? "active"
-                                        : ""
-                                    }
-                                  >
-                                    <i className={submenu.icon}></i>{" "}
-                                    {submenu.label}
+                                <motion.li key={submenu.path} variants={menuItemVariants} whileHover="hover" whileTap="tap">
+                                  <Link to={submenu.path} className={location.pathname === submenu.path ? "active" : ""}>
+                                    <i className={submenu.icon}></i> {submenu.label}
                                   </Link>
                                 </motion.li>
                               )
@@ -392,15 +359,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     </AnimatePresence>
                   </>
                 ) : (
-                  <Link
-                    to={menu.path}
-                    className="waves-effect d-flex"
-                    style={{ padding: "10px 15px" }}
-                  >
+                  <Link to={menu.path} className="waves-effect d-flex" style={{ padding: "10px 15px" }}>
                     <i className={menu.icon}></i>
-                    {!isCollapsed && (
-                      <span style={{ marginLeft: "10px" }}>{menu.label}</span>
-                    )}
+                    {!isCollapsed && <span style={{ marginLeft: "10px" }}>{menu.label}</span>}
                   </Link>
                 )}
               </motion.li>
@@ -408,7 +369,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           </ul>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
