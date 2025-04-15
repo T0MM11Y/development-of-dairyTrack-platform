@@ -6,17 +6,21 @@ import {
 import { getCows } from "../../../../api/peternakan/cow";
 import ReproductionCreatePage from "./ReproductionCreatePage";
 import ReproductionEditPage from "./ReproductionEditPage";
+import Swal from "sweetalert2"; // pastikan ini ada di atas file
+
+
 
 const ReproductionListPage = () => {
   const [data, setData] = useState([]);
   const [cows, setCows] = useState([]);
   const [error, setError] = useState("");
-  const [deleteId, setDeleteId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(true);
+
 
   const fetchData = async () => {
+    setLoading(true); // Mulai loading
     try {
       const res = await getReproductions();
       const cowList = await getCows();
@@ -26,20 +30,31 @@ const ReproductionListPage = () => {
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
       setError("Gagal mengambil data. Pastikan server API aktif.");
+    } finally {
+      setLoading(false); // Selesai loading
     }
   };
+  
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    setSubmitting(true);
+  const handleDelete = async (id) => {
+    if (!id) return;
     try {
-      await deleteReproduction(deleteId);
-      fetchData();
-      setDeleteId(null);
+      await deleteReproduction(id);
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data reproduksi berhasil dihapus.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menghapus",
+        text: "Terjadi kesalahan saat menghapus data.",
+      });
     } finally {
-      setSubmitting(false);
     }
   };
 
@@ -54,8 +69,8 @@ const ReproductionListPage = () => {
 
   return (
     <div className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold text-dark">Data Reproduksi Sapi</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Data Reproduksi Sapi</h2>
         <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
         </button>
@@ -63,9 +78,18 @@ const ReproductionListPage = () => {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {data.length === 0 && !error ? (
-        <p className="text-muted">Belum ada data reproduksi.</p>
-      ) : (
+      {loading ? (
+  <div className="card">
+    <div className="card-body text-center py-5">
+      <div className="spinner-border text-info" role="status" />
+      <p className="mt-3 text-muted">Memuat data reproduksi sapi...</p>
+    </div>
+  </div>
+) : error ? (
+  <div className="alert alert-danger">{error}</div>
+) : data.length === 0 ? (
+  <p className="text-muted">Belum ada data reproduksi.</p>
+) : (
         <div className="card">
           <div className="card-body">
             <div className="table-responsive">
@@ -99,21 +123,51 @@ const ReproductionListPage = () => {
                           : "-"}
                       </td>
                       <td>
+                      <button
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    Swal.fire({
+      title: "Edit Data Reproduksi?",
+      text: "Anda akan membuka form edit data reproduksi.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, edit",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setEditId(item.id);
+        setModalType("edit");
+      }
+    });
+  }}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
                         <button
-                          className="btn btn-warning btn-sm me-2"
-                          onClick={() => {
-                            setEditId(item.id);
-                            setModalType("edit");
-                          }}
-                        >
-                          <i className="ri-edit-line"></i>
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => setDeleteId(item.id)}
-                        >
-                          <i className="ri-delete-bin-6-line"></i>
-                        </button>
+  className="btn btn-danger btn-sm"
+  onClick={() => {
+    Swal.fire({
+      title: "Yakin ingin menghapus?",
+      text: "Data reproduksi ini tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleDelete(item.id); // langsung kirim ID
+      }
+    });
+  }}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
                       </td>
                     </tr>
                   ))}
@@ -149,50 +203,6 @@ const ReproductionListPage = () => {
             setModalType(null);
           }}
         />
-      )}
-
-      {/* Modal Konfirmasi Hapus */}
-      {deleteId && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Yakin ingin menghapus data reproduksi ini?
-                  <br />
-                  Tindakan ini tidak dapat dibatalkan.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                >
-                  Batal
-                </button>
-                <button
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                >
-                  {submitting ? "Menghapus..." : "Hapus"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

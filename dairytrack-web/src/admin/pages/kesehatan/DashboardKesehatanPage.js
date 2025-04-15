@@ -4,10 +4,9 @@ import { getDiseaseHistories } from "../../../api/kesehatan/diseaseHistory";
 import { getSymptoms } from "../../../api/kesehatan/symptom";
 import { getCows } from "../../../api/peternakan/cow";
 import { getReproductions } from "../../../api/kesehatan/reproduction";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-
-const COLORS = ["#28a745", "#dc3545", "#ffc107", "#0d6efd", "#6f42c1"];
-
+import { Tooltip, Legend, ResponsiveContainer, XAxis, YAxis, CartesianGrid,BarChart, Bar
+  ,LabelList
+ } from "recharts";
 const DashboardKesehatanPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -19,6 +18,11 @@ const DashboardKesehatanPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
+  const [resetTrigger, setResetTrigger] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
+
+  const [tableDiseaseData, setTableDiseaseData] = useState([]);
+  const [tableHealthData, setTableHealthData] = useState([]);
 
   const filterByDate = (data, field = "created_at") => {
     if (!startDate || !endDate) return data;
@@ -46,7 +50,24 @@ const DashboardKesehatanPage = () => {
       const filteredDisease = filterByDate(diseaseHistories, "created_at");
       const filteredSymptom = filterByDate(symptoms, "created_at");
       const filteredRepro = filterByDate(reproductions, "recorded_at");
-
+      setTableDiseaseData(
+        filteredDisease.map((item) => ({
+          cowName: item.health_check?.cow?.name || "-",
+          diseaseName: item.disease_name || "-",
+          description: item.description || "-",
+        }))
+      );      
+      
+      setTableHealthData(
+        filteredHealth.map((item) => ({
+          cowName: item.cow?.name || "-",
+          temperature: item.rectal_temperature,
+          heartRate: item.heart_rate,
+          respirationRate: item.respiration_rate,
+          rumination: item.rumination,
+        }))
+      );
+      
       setSummary({
         pemeriksaan: filteredHealth.length,
         gejala: filteredSymptom.length,
@@ -98,13 +119,31 @@ const DashboardKesehatanPage = () => {
     setShowModal(true);
     fetchStats(true);
   };
-
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    setResetTrigger(true); // ⬅️ aktifkan trigger reset
+  };
+  
+  
   useEffect(() => {
-    setModalMessage("📊 Menampilkan seluruh data kesehatan sapi.");
-    setModalLoading(true);
-    setShowModal(true);
-    fetchStats();
-  }, []);
+    if (firstLoad || resetTrigger) {
+      setModalMessage("📊 Menampilkan seluruh data kesehatan sapi.");
+      setModalLoading(true);
+      setShowModal(true);
+      fetchStats();
+      setFirstLoad(false);
+      setResetTrigger(false);
+  
+      // ⏱️ Auto close modal setelah 3 detik
+      setTimeout(() => {
+        setShowModal(false);
+        setModalMessage("");
+      }, 3000);
+    }
+  }, [firstLoad, resetTrigger]);
+  
+  
 
   return (
     <div className="container py-4 px-3 bg-light rounded shadow-sm">
@@ -121,13 +160,20 @@ const DashboardKesehatanPage = () => {
           <input type="date" className="form-control" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <div className="col-md-2 d-flex align-items-end gap-2">
-          <button className="btn btn-info w-100 fw-semibold" onClick={handleFilter}>🔍 Filter</button>
-          <button className="btn btn-outline-secondary w-100 fw-semibold" onClick={() => {
-            setStartDate("");
-            setEndDate("");
-            fetchStats(false);
-          }}>🔁 Reset</button>
-        </div>
+  <button 
+    className="btn btn-info w-100 fw-semibold" 
+    onClick={handleFilter}
+  >
+    🔍 Filter
+  </button>
+  <button 
+    className="btn btn-secondary w-100 fw-semibold" 
+    onClick={handleReset}
+  >
+    🔄 Reset
+  </button>
+</div>
+
       </div>
 
       {/* Modal Alert */}
@@ -181,43 +227,116 @@ const DashboardKesehatanPage = () => {
 
       {/* Grafik */}
       <div className="row">
-        <div className="col-md-6">
-          <div className="card shadow-sm mb-3">
-            <div className="card-body">
-              <h5 className="text-center mb-3 text-secondary">📊 Statistik Penyakit</h5>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={chartDiseaseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
-                    {chartDiseaseData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-6">
-          <div className="card shadow-sm mb-3">
-            <div className="card-body">
-              <h5 className="text-center mb-3 text-secondary">📉 Grafik Kesehatan Sapi</h5>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={chartHealthData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100}>
-                    {chartHealthData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+  {/* PieChart - Statistik Penyakit */}
+  <div className="col-md-6">
+    <div className="card shadow-sm mb-3">
+      <div className="card-body">
+        <h5 className="text-center mb-3 text-secondary">🦠 Statistik Penyakit Terkonfirmasi</h5>
+        <ResponsiveContainer width="100%" height={300}>
+  <BarChart data={chartDiseaseData} margin={{ top: 10, right: 20, bottom: 50, left: 10 }}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} height={60} />
+    <YAxis allowDecimals={false} />
+    <Tooltip />
+    <Bar dataKey="value" fill="#00BFFF" radius={[4, 4, 0, 0]}>
+      <LabelList dataKey="value" position="top" />
+    </Bar>
+  </BarChart>
+</ResponsiveContainer>
+
       </div>
+    </div>
+  </div>
+
+  {/* BarChart - Grafik Kesehatan Sapi */}
+  <div className="col-md-6">
+    <div className="card shadow-sm mb-3">
+      <div className="card-body">
+        <h5 className="text-center mb-3 text-secondary">🐄❤️ Kondisi Kesehatan Ternak</h5>
+        <ResponsiveContainer width="100%" height={300}>
+  <BarChart data={chartHealthData}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" />
+    <YAxis allowDecimals={false} />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="value" fill="#0d6efd">
+      <LabelList dataKey="value" position="top" />
+    </Bar>
+  </BarChart>
+</ResponsiveContainer>
+
+      </div>
+    </div>
+  </div>
+  {/* Informasi Detail Penyakit */}
+<h5 className="mt-5 mb-3 fw-semibold text-secondary">🦠 Informasi Statistik Penyakit</h5>
+<div className="table-responsive mb-4">
+  <table className="table table-bordered table-striped">
+    <thead className="table-light">
+      <tr>
+        <th>No</th>
+        <th>Nama Sapi</th>
+        <th>Nama Penyakit</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {tableDiseaseData.length > 0 ? (
+        tableDiseaseData.map((item, idx) => (
+          <tr key={idx}>
+            <td>{idx + 1}</td>
+            <td>{item.cowName}</td>
+            <td>{item.diseaseName}</td>
+            <td>{item.description}</td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="4" className="text-center text-muted">Tidak ada data penyakit</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+{/* Informasi Detail Kesehatan */}
+<h5 className="mb-3 fw-semibold text-secondary">🐄 Informasi Grafik Kesehatan Sapi</h5>
+<div className="table-responsive mb-5">
+  <table className="table table-bordered table-striped">
+    <thead className="table-light">
+      <tr>
+        <th>No</th>
+        <th>Nama Sapi</th>
+        <th>Suhu Rektal (°C)</th>
+        <th>Denyut Jantung</th>
+        <th>Laju Pernapasan</th>
+        <th>Ruminasi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {tableHealthData.length > 0 ? (
+        tableHealthData.map((item, idx) => (
+          <tr key={idx}>
+            <td>{idx + 1}</td>
+            <td>{item.cowName}</td>
+            <td>{item.temperature}</td>
+            <td>{item.heartRate}</td>
+            <td>{item.respirationRate}</td>
+            <td>{item.rumination}</td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="6" className="text-center text-muted">Tidak ada data pemeriksaan</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+</div>
+
     </div>
   );
 };

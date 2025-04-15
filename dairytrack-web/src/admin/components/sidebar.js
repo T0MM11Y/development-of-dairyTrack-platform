@@ -199,6 +199,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           label: "Dashboard Kesehatan",
         },
         {
+          path: "/admin/kesehatan/pemeriksaan",
+          icon: "ri-stethoscope-line",
+          label: "Pemeriksaan Penyakit",
+        },
+        {
           path: "/admin/kesehatan/gejala",
           icon: "ri-health-book-line",
           label: "Gejala Penyakit Sapi",
@@ -212,11 +217,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           path: "/admin/kesehatan/reproduksi",
           icon: "ri-parent-line",
           label: "Reproduksi Sapi",
-        },
-        {
-          path: "/admin/kesehatan/pemeriksaan",
-          icon: "ri-stethoscope-line",
-          label: "Pemeriksaan Penyakit",
         },
       ],
     },

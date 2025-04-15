@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createSymptom } from "../../../../api/kesehatan/symptom";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2"; // pastikan sudah di-import
 
 const SymptomCreatePage = ({ onClose, onSaved }) => {
   const [healthChecks, setHealthChecks] = useState([]);
@@ -109,12 +110,28 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
+  
     try {
       await createSymptom(form);
+  
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data gejala berhasil disimpan.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+  
       if (onSaved) onSaved();
     } catch (err) {
-      console.error("Gagal menyimpan data gejala:", err);
       setError("Gagal menyimpan data gejala: " + err.message);
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menyimpan",
+        text: "Terjadi kesalahan saat menyimpan data gejala.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -155,15 +172,24 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
                     className="form-select"
                     required
                   >
-                    <option value="">-- Pilih Pemeriksaan --</option>
-                    {healthChecks.map((hc) => {
-                      const cow = cows.find((c) => c.id === hc.cow || c.id === hc.cow?.id);
-                      return (
-                        <option key={hc.id} value={hc.id}>
-                          {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"} - Suhu: {hc.rectal_temperature}°C
-                        </option>
-                      );
-                    })}
+                 <option value="">-- Pilih Pemeriksaan --</option>
+{healthChecks
+  .filter((hc) => hc.needs_attention && hc.status !== "handled") // 🔥 hanya yang butuh perhatian & belum ditangani
+  .map((hc) => {
+    const cow = cows.find((c) => c.id === hc.cow || c.id === hc.cow?.id);
+    return (
+      <option key={hc.id} value={hc.id}>
+        {cow ? `${cow.name}` : "Sapi tidak ditemukan"} - 
+        Suhu: {hc.rectal_temperature}°C, 
+        Detak Jantung: {hc.heart_rate} bpm/menit, 
+        Pernapasan: {hc.respiration_rate} bpm/menit, 
+        Rumenasi: {hc.rumination} kontraksi/menit
+      </option>
+    );
+  })}
+
+
+
                   </select>
                 </div>
 
