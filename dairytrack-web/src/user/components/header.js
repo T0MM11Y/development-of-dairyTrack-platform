@@ -50,8 +50,8 @@ function Header() {
                       <li className={isActive("/galeri") ? "active" : ""}>
                         <Link to="/galeri">Galeri</Link>
                       </li>
-                      <li className={isActive("/contact-us") ? "active" : ""}>
-                        <Link to="/contact-us">Contact Us</Link>
+                      <li className={isActive("/pemesanan") ? "active" : ""}>
+                        <Link to="/pemesanan">Pemesanan</Link>
                       </li>
                     </ul>
                   </div>
@@ -98,7 +98,7 @@ function Header() {
                       <Link to="/galeri">Galeri</Link>
                     </li>
                     <li>
-                      <Link to="/contact-us">Contact Us</Link>
+                      <Link to="/pemesanan">Contact Us</Link>
                     </li>
                     <li>
                       <Link to="/login">Login</Link>

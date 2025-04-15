@@ -33,7 +33,7 @@ const SalesCreatePage = () => {
                 product_type: type,
                 product_name: product.product_type_detail.product_name,
                 total_quantity: 0,
-                image: product.product_type_detail.image, // Tambahkan gambar
+                image: product.product_type_detail.image,
               };
             }
             acc[type].total_quantity += product.quantity;
@@ -68,23 +68,57 @@ const SalesCreatePage = () => {
       (p) => p.product_type === parseInt(newItem.product_type)
     );
 
-    if (selectedProduct.total_quantity < parseInt(newItem.quantity)) {
+    if (!selectedProduct) {
+      setError("Produk tidak ditemukan");
+      return;
+    }
+
+    const requestedQuantity = parseInt(newItem.quantity);
+    if (selectedProduct.total_quantity < requestedQuantity) {
       setError(
         `Stok ${selectedProduct.product_name} tidak cukup. Tersedia: ${selectedProduct.total_quantity}`
       );
       return;
     }
 
-    setForm((prev) => ({
-      ...prev,
-      order_items: [
-        ...prev.order_items,
-        {
-          product_type: parseInt(newItem.product_type),
-          quantity: parseInt(newItem.quantity),
-        },
-      ],
-    }));
+    // Cek apakah produk dengan product_type yang sama sudah ada
+    const existingItemIndex = form.order_items.findIndex(
+      (item) => item.product_type === parseInt(newItem.product_type)
+    );
+
+    if (existingItemIndex !== -1) {
+      // Jika sudah ada, tambahkan quantity-nya
+      const updatedItems = [...form.order_items];
+      const newQuantity = updatedItems[existingItemIndex].quantity + requestedQuantity;
+      
+      // Validasi stok lagi setelah penggabungan
+      if (selectedProduct.total_quantity < newQuantity) {
+        setError(
+          `Stok ${selectedProduct.product_name} tidak cukup. Tersedia: ${selectedProduct.total_quantity}`
+        );
+        return;
+      }
+      
+      updatedItems[existingItemIndex].quantity = newQuantity;
+      
+      setForm((prev) => ({
+        ...prev,
+        order_items: updatedItems,
+      }));
+    } else {
+      // Jika belum ada, tambahkan sebagai item baru
+      setForm((prev) => ({
+        ...prev,
+        order_items: [
+          ...prev.order_items,
+          {
+            product_type: parseInt(newItem.product_type),
+            quantity: requestedQuantity,
+          },
+        ],
+      }));
+    }
+    
     setNewItem({ product_type: "", quantity: "" });
     setError("");
   };
@@ -93,6 +127,50 @@ const SalesCreatePage = () => {
     setForm((prev) => ({
       ...prev,
       order_items: prev.order_items.filter((_, i) => i !== index),
+    }));
+  };
+  
+  // Fungsi untuk menambah jumlah item
+  const incrementItemQuantity = (index) => {
+    const updatedItems = [...form.order_items];
+    const currentItem = updatedItems[index];
+    const selectedProduct = availableProducts.find(
+      (p) => p.product_type === currentItem.product_type
+    );
+    
+    // Cek apakah masih ada stok tersedia
+    if (currentItem.quantity + 1 > selectedProduct.total_quantity) {
+      setError(
+        `Stok ${selectedProduct.product_name} tidak cukup. Tersedia: ${selectedProduct.total_quantity}`
+      );
+      return;
+    }
+    
+    updatedItems[index].quantity += 1;
+    
+    setForm((prev) => ({
+      ...prev,
+      order_items: updatedItems,
+    }));
+    setError("");
+  };
+  
+  // Fungsi untuk mengurangi jumlah item
+  const decrementItemQuantity = (index) => {
+    const updatedItems = [...form.order_items];
+    const currentItem = updatedItems[index];
+    
+    if (currentItem.quantity <= 1) {
+      // Jika quantity hanya 1, hapus item
+      removeOrderItem(index);
+      return;
+    }
+    
+    updatedItems[index].quantity -= 1;
+    
+    setForm((prev) => ({
+      ...prev,
+      order_items: updatedItems,
     }));
   };
 
@@ -272,8 +350,28 @@ const SalesCreatePage = () => {
                               }}
                             />
                             <div className="flex-grow-1">
-                              {product?.product_name} - Jumlah: {item.quantity}
+                              {product?.product_name}
                             </div>
+                            
+                            {/* Control quantity buttons */}
+                            <div className="d-flex align-items-center me-3">
+                              <button 
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => decrementItemQuantity(index)}
+                              >
+                                -
+                              </button>
+                              <span className="mx-2">{item.quantity}</span>
+                              <button 
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => incrementItemQuantity(index)}
+                              >
+                                +
+                              </button>
+                            </div>
+                            
                             <button
                               type="button"
                               className="btn btn-danger btn-sm"

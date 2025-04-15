@@ -106,7 +106,7 @@ import ProdukPage from "./user/pages/ProdukPage";
 import ProdukPesanPage from "./user/pages/ProduksiSusuPage.js";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
-import ContactUs from "./user/pages/ContactUs";
+import Pemesanan from "./user/pages/Pemesanan.js";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
@@ -114,6 +114,7 @@ import blogAll from "./admin/pages/peternakan/blog/blogAll.js";
 import blogCreate from "./admin/pages/peternakan/blog/createBlog.js";
 import galleryAll from "./admin/pages/peternakan/gallery/gallery_all.js";
 import MilkProductionAnalysis from "./admin/pages/produktivitas/MilkProductionAnalysis/MilkProductionTrendAnalysis.js";
+// import Pemesanan from "./user/pages/Pemesanan.js";
 const withAdminLayout = (Component) => {
   const AdminLayout = () => {
     return (
@@ -177,7 +178,7 @@ function App() {
         path="/identitas-peternakan"
         element={withUserLayout(IdentitasPeternakanPage)}
       />
-      <Route path="/contact-us" element={withUserLayout(ContactUs)} />
+      <Route path="/pemesanan" element={withUserLayout(Pemesanan)} />
       {/* Artikel Detail Route */}
       <Route path="/blog/:id" element={withUserLayout(ArticleDetail)} />{" "}
       {/* Menambahkan rute untuk detail artikel */}
