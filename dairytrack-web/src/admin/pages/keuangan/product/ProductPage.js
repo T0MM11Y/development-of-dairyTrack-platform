@@ -3,8 +3,9 @@ import {
   deleteProductStock,
   getProductStocks,
 } from "../../../../api/keuangan/product";
-import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import ProductStockCreatePage from "./ProductCreatePage";
+import ProductEditPage from "./ProductEditPage";
 
 const ProductStockListPage = () => {
   const [data, setData] = useState([]);
@@ -12,40 +13,32 @@ const ProductStockListPage = () => {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(null); // State untuk modal edit (simpan ID produk)
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const productsRes = await getProductStocks();
-
-      // Process data to add time remaining info
       const processedData = productsRes.map((item) => {
         const now = new Date();
         const expiryDate = new Date(item.expiry_at);
         const timeRemaining = expiryDate - now;
-
         return {
           ...item,
           timeRemaining: timeRemaining > 0 ? timeRemaining : 0,
         };
       });
-
-      // Sort by time remaining (ascending - products expiring soon first)
       const sortedData = processedData.sort((a, b) => {
-        // If both are available, sort by time remaining
         if (a.status === "available" && b.status === "available") {
           return a.timeRemaining - b.timeRemaining;
-        }
-        // If only one is available, put available items first
-        else if (a.status === "available") {
+        } else if (a.status === "available") {
           return -1;
         } else if (b.status === "available") {
           return 1;
         }
-        // If neither is available, maintain original order
         return 0;
       });
-
       setData(sortedData);
       setError("");
     } catch (err) {
@@ -60,8 +53,6 @@ const ProductStockListPage = () => {
     if (timeRemaining <= 0) {
       return "Expired";
     }
-
-    // Convert milliseconds to days, hours, minutes
     const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
     const hours = Math.floor(
       (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -69,7 +60,6 @@ const ProductStockListPage = () => {
     const minutes = Math.floor(
       (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
     );
-
     if (days > 0) {
       return `${days} hari ${hours} jam`;
     } else if (hours > 0) {
@@ -97,18 +87,14 @@ const ProductStockListPage = () => {
     if (status !== "available") {
       return "bg-danger";
     }
-
-    // If time remaining is less than 24 hours (86400000 ms)
     if (timeRemaining < 86400000) {
-      return "bg-warning"; // Yellow for urgent
+      return "bg-warning";
     }
-
-    return "bg-success"; // Green for normal available
+    return "bg-success";
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-
     setSubmitting(true);
     try {
       await deleteProductStock(deleteId);
@@ -121,48 +107,49 @@ const ProductStockListPage = () => {
     }
   };
 
-  // DataTable columns configuration
   const columns = [
     {
-      name: 'Product Type',
-      selector: row => row.product_type_detail?.product_name || "Unknown",
+      name: "Product Type",
+      selector: (row) => row.product_type_detail?.product_name || "Unknown",
       sortable: true,
     },
     {
-      name: 'Remaining Qty',
-      selector: row => row.quantity,
+      name: "Remaining Qty",
+      selector: (row) => row.quantity,
       sortable: true,
     },
     {
-      name: 'Production Date',
-      selector: row => formatDateTime(row.production_at),
+      name: "Production Date",
+      selector: (row) => formatDateTime(row.production_at),
       sortable: true,
     },
     {
-      name: 'Expiry Date',
-      selector: row => formatDateTime(row.expiry_at),
+      name: "Expiry Date",
+      selector: (row) => formatDateTime(row.expiry_at),
       sortable: true,
     },
     {
-      name: 'Status',
-      cell: row => (
-        <span className={`badge ${getStatusBadgeClass(row.status, row.timeRemaining)}`}>
+      name: "Status",
+      cell: (row) => (
+        <span
+          className={`badge ${getStatusBadgeClass(row.status, row.timeRemaining)}`}
+        >
           {row.status === "available"
             ? `${row.status} (${formatTimeRemaining(row.timeRemaining)})`
             : row.status}
         </span>
       ),
       sortable: true,
-      selector: row => row.status,
+      selector: (row) => row.status,
     },
     {
-      name: 'Total Milk Used',
-      selector: row => `${row.total_milk_used} L`,
+      name: "Total Milk Used",
+      selector: (row) => `${row.total_milk_used} L`,
       sortable: true,
     },
     {
-      name: 'Actions',
-      cell: row => (
+      name: "Actions",
+      cell: (row) => (
         <>
           {row.status === "contamination" ||
           row.status === "expired" ||
@@ -175,12 +162,12 @@ const ProductStockListPage = () => {
               <i className="ri-edit-line"></i>
             </button>
           ) : (
-            <Link
-              to={`/admin/keuangan/product/edit/${row.id}`}
+            <button
               className="btn btn-warning btn-sm me-2"
+              onClick={() => setShowEditModal(row.id)}
             >
               <i className="ri-edit-line"></i>
-            </Link>
+            </button>
           )}
           <button
             onClick={() => setDeleteId(row.id)}
@@ -196,28 +183,25 @@ const ProductStockListPage = () => {
     },
   ];
 
-  // Custom DataTable styles
   const customStyles = {
     headCells: {
       style: {
-        fontWeight: 'bold',
-        fontSize: '14px',
+        fontWeight: "bold",
+        fontSize: "14px",
       },
     },
     rows: {
       style: {
-        minHeight: '55px',
+        minHeight: "55px",
       },
     },
   };
 
-  // Update data every minute to refresh time remaining
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
       fetchData();
-    }, 60000); // Update every minute
-
+    }, 600000); // 10 menit
     return () => clearInterval(interval);
   }, []);
 
@@ -225,9 +209,12 @@ const ProductStockListPage = () => {
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Product Stock</h2>
-        <Link to="/admin/keuangan/product/create" className="btn btn-info">
+        <button
+          className="btn btn-info"
+          onClick={() => setShowCreateModal(true)}
+        >
           + Product Stock
-        </Link>
+        </button>
       </div>
 
       {error && (
@@ -321,6 +308,63 @@ const ProductStockListPage = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div
+          className="modal fade show d-block"
+          style={{
+            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+          }}
+          tabIndex="-1"
+          role="dialog"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="modal-dialog modal-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <ProductStockCreatePage
+                onProductAdded={() => {
+                  fetchData();
+                  setShowCreateModal(false);
+                }}
+                onClose={() => setShowCreateModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div
+          className="modal fade show d-block"
+          style={{
+            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+          }}
+          tabIndex="-1"
+          role="dialog"
+          onClick={() => setShowEditModal(null)}
+        >
+          <div
+            className="modal-dialog modal-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <ProductEditPage
+                productId={showEditModal}
+                onProductUpdated={() => {
+                  fetchData();
+                  setShowEditModal(null);
+                }}
+                onClose={() => setShowEditModal(null)}
+              />
             </div>
           </div>
         </div>

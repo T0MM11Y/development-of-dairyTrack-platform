@@ -16,7 +16,7 @@ import Dashboard from "./admin/pages/dashboard/Dashboard";
 
 import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
-import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js"
+import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js";
 
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
@@ -25,7 +25,6 @@ import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
 import StokPakan from "./admin/pages/pakan/FeedStock/feedStockList.js";
 import TambahStokPakan from "./admin/pages/pakan/FeedStock/AddStock.js";
 import EditStock from "./admin/pages/pakan/FeedStock/EditStock.js";
-
 
 import PakanHarian from "./admin/pages/pakan/DailyFeed/DailyFeedList.js";
 import TambahPakanHarian from "./admin/pages/pakan/DailyFeed/CreateDailyFeed.js";
@@ -103,10 +102,9 @@ import SejarahPage from "./user/pages/SejarahPage";
 import FasilitasPage from "./user/pages/FasilitasPage";
 import BlogPage from "./user/pages/BlogPage";
 import ProdukPage from "./user/pages/ProdukPage";
-import ProdukPesanPage from "./user/pages/ProduksiSusuPage.js";
 import GaleriPage from "./user/pages/GaleriPage";
 import DashboardUser from "./user/pages/Dashboard";
-import Pemesanan from "./user/pages/Pemesanan.js";
+import Pemesanan from "./user/pages/Pemesanan/Pemesanan.js";
 
 // Artikel Detail Page (komponen baru)
 import ArticleDetail from "./user/pages/BlogDetail.js"; // Artikel Detail
@@ -172,7 +170,6 @@ function App() {
       <Route path="/fasilitas" element={withUserLayout(FasilitasPage)} />
       <Route path="/blog" element={withUserLayout(BlogPage)} />
       <Route path="/produk" element={withUserLayout(ProdukPage)} />
-      <Route path="/produk-pesan" element={withUserLayout(ProdukPesanPage)} />
       <Route path="/galeri" element={withUserLayout(GaleriPage)} />
       <Route
         path="/identitas-peternakan"
@@ -197,7 +194,9 @@ function App() {
       />
       <Route
         path="/admin/pakan/dashboard"
-        element={<ProtectedRoute>{withAdminLayout(DashboardPakan)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(DashboardPakan)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/pakan/jenis"
@@ -205,7 +204,9 @@ function App() {
       />
       <Route
         path="/admin/detail/jenis-pakan/:id"
-        element={<ProtectedRoute>{withAdminLayout(DetailJenisPakan)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(DetailJenisPakan)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/pakan/jenis/tambah"
