@@ -4,6 +4,8 @@ import {
   updateReproduction,
 } from "../../../../api/kesehatan/reproduction";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2";
+
 
 const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -92,10 +94,22 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
         total_insemination: totalIB,
         successful_pregnancy: 1, // ✅ tetap 1 seperti create
       });
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data reproduksi berhasil diperbarui.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       if (onSaved) onSaved();
     } catch (err) {
-      console.error("Gagal memperbarui data:", err);
       setError("❌ Gagal menyimpan perubahan. Silakan coba lagi.");
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal!",
+        text: "Terjadi kesalahan saat memperbarui data.",
+      });
     } finally {
       setSubmitting(false);
     }

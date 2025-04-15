@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getHealthCheckById, updateHealthCheck } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2"; // Pastikan ini ada di atas
+
 
 const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
   const [form, setForm] = useState(null);
@@ -40,10 +42,22 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
     setSubmitting(true);
     try {
       await updateHealthCheck(healthCheckId, form);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data pemeriksaan berhasil diperbarui.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       if (onSaved) onSaved();
     } catch (err) {
-      setError("Gagal memperbarui data.");
       console.error(err);
+      setError("Gagal memperbarui data.");
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text: "Terjadi kesalahan saat memperbarui data.",
+      });
     } finally {
       setSubmitting(false);
     }

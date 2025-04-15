@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createHealthCheck } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2"; // Pastikan sudah import
 
 const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   const [cows, setCows] = useState([]);
@@ -44,26 +45,34 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
     e.preventDefault();
     setSubmitting(true);
   
-    console.log("🔍 Data yang dikirim ke backend:", form); // ✅ Tambahkan ini
-  
     try {
       await createHealthCheck(form);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data pemeriksaan berhasil disimpan.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+  
       if (onSaved) onSaved();
     } catch (err) {
       let message = "Gagal menyimpan data pemeriksaan.";
-    
-      // ✅ Coba ambil isi pesan dari backend
-      if (err.response && err.response.json) {
-        const detail = await err.response.json();
-        console.error("🧨 Detail error dari backend:", detail);
-        message = JSON.stringify(detail);
-      } else {
-        console.error("❌ Error dari backend:", err);
+  
+      if (err.response && err.response.data) {
+        message = err.response.data.message || message;
       }
-    
+  
       setError(message);
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menyimpan",
+        text: message,
+      });
+    } finally {
+      setSubmitting(false);
     }
-    
   };
   
 
@@ -149,7 +158,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Ruminasi (jam)</label>
+                    <label className="form-label fw-bold">Ruminasi (menit)</label>
                     <input
                       type="number"
                       step="0.1"
