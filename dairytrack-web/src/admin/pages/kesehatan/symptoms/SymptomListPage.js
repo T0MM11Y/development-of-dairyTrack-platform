@@ -11,6 +11,8 @@ import SymptomViewPage from "./SymptomViewPage";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Swal from "sweetalert2";
+
 
 
 const SymptomListPage = () => {
@@ -51,19 +53,31 @@ const SymptomListPage = () => {
     return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleDelete = async (id) => {
+    if (!id) return;
     setSubmitting(true);
     try {
-      await deleteSymptom(deleteId);
+      await deleteSymptom(id);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data gejala berhasil dihapus.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       fetchData();
       setDeleteId(null);
     } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menghapus",
+        text: "Terjadi kesalahan saat menghapus data.",
+      });
     } finally {
       setSubmitting(false);
     }
   };
+  
 
   const prepareExportData = () => {
     return data.map((s) => {
@@ -286,20 +300,64 @@ const SymptomListPage = () => {
             <i className="ri-eye-line" />
           </button>
           <button
-            className="btn btn-warning btn-sm me-2"
-            onClick={() => {
-              setEditId(item.id);
-              setModalType("edit");
-            }}
-          >
-            <i className="ri-edit-line" />
-          </button>
-          <button
-            onClick={() => setDeleteId(item.id)}
-            className="btn btn-danger btn-sm"
-          >
-            <i className="ri-delete-bin-6-line" />
-          </button>
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    const hc = healthChecks.find((h) => h.id === item.health_check);
+
+    if (hc?.status === "handled") {
+      Swal.fire({
+        icon: "info",
+        title: "Tidak Bisa Diedit",
+        text: "Pemeriksaan ini sudah ditangani, data gejala tidak dapat diubah.",
+        confirmButtonText: "Mengerti",
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: "Edit Gejala?",
+      text: "Anda akan membuka form edit data gejala.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, edit",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setEditId(item.id);
+        setModalType("edit");
+      }
+    });
+  }}
+>
+  <i className="ri-edit-line" />
+</button>
+
+<button
+  onClick={() => {
+    Swal.fire({
+      title: "Yakin ingin menghapus?",
+      text: "Data gejala ini tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setDeleteId(item.id); // ✅ set ID dulu
+        handleDelete(item.id); // ✅ langsung panggil handleDelete
+      }
+    });
+  }}
+  className="btn btn-danger btn-sm"
+>
+  <i className="ri-delete-bin-6-line" />
+</button>
+
+
         </td>
       </tr>
     );
@@ -345,46 +403,6 @@ const SymptomListPage = () => {
           symptomId={viewId}
           onClose={() => setViewId(null)}
         />
-      )}
-
-      {/* Modal Hapus */}
-      {deleteId && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>Yakin ingin menghapus data gejala ini? Tindakan ini tidak bisa dibatalkan.</p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                >
-                  Batal
-                </button>
-                <button
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                >
-                  {submitting ? "Menghapus..." : "Hapus"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

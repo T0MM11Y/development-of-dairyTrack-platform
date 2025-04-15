@@ -4,11 +4,8 @@ import {
   updateProductStock,
 } from "../../../../api/keuangan/product";
 import { getProductTypes } from "../../../../api/keuangan/productType";
-import { useNavigate, useParams } from "react-router-dom";
 
-const ProductEditPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
   const [form, setForm] = useState(null);
   const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,8 +15,12 @@ const ProductEditPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getProductStockById(id);
-        setForm(res);
+        const res = await getProductStockById(productId);
+        setForm({
+          ...res,
+          production_at: res.production_at.split("T")[0], // Format untuk input date
+          expiry_at: res.expiry_at.split("T")[0],
+        });
 
         const typesRes = await getProductTypes();
         setProductTypes(typesRes);
@@ -31,7 +32,7 @@ const ProductEditPage = () => {
       }
     };
     fetchData();
-  }, [id]);
+  }, [productId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,8 +43,17 @@ const ProductEditPage = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await updateProductStock(id, form);
-      navigate("/admin/keuangan/product");
+      const updatedData = {
+        initial_quantity: Number(form.initial_quantity),
+        quantity: Number(form.quantity),
+        total_milk_used: parseFloat(form.total_milk_used).toFixed(2),
+        status: form.status,
+        product_type: Number(form.product_type),
+        production_at: new Date(form.production_at).toISOString(),
+        expiry_at: new Date(form.expiry_at).toISOString(),
+      };
+      await updateProductStock(productId, updatedData);
+      onProductUpdated();
     } catch (err) {
       console.error("Error updating product:", err);
       setError("Gagal memperbarui data produk.");
@@ -53,148 +63,139 @@ const ProductEditPage = () => {
   };
 
   return (
-    <div
-      className="modal show d-block"
-      style={{ background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)" }}
-    >
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Data Produk</h4>
-            <button
-              className="btn-close"
-              onClick={() => navigate("/admin/keuangan/product")}
-              disabled={submitting}
-            ></button>
-          </div>
-          <div className="modal-body">
-            {error && <p className="text-danger text-center">{error}</p>}
-            {loading || !form ? (
-              <p className="text-center">Memuat data produk...</p>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="row">
-                  {/* Initial Quantity */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">
-                      Initial Quantity
-                    </label>
-                    <input
-                      type="number"
-                      name="initial_quantity"
-                      value={form.initial_quantity || ""}
-                      onChange={handleChange}
-                      className="form-control"
-                      disabled={submitting}
-                    />
-                  </div>
+    <>
+      <div className="modal-header">
+        <h4 className="modal-title text-info fw-bold">Edit Data Produk</h4>
+        <button
+          className="btn-close"
+          onClick={onClose}
+          disabled={submitting}
+        ></button>
+      </div>
+      <div className="modal-body">
+        {error && <p className="text-danger text-center">{error}</p>}
+        {loading || !form ? (
+          <p className="text-center">Memuat data produk...</p>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="row">
+              {/* Initial Quantity */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">
+                  Initial Quantity
+                </label>
+                <input
+                  type="number"
+                  name="initial_quantity"
+                  value={form.initial_quantity || ""}
+                  onChange={handleChange}
+                  className="form-control"
+                  disabled={submitting}
+                />
+              </div>
 
-                  {/* Quantity */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Quantity</label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={form.quantity || ""}
-                      onChange={handleChange}
-                      className="form-control"
-                      disabled={submitting}
-                    />
-                  </div>
+              {/* Quantity */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">Quantity</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={form.quantity || ""}
+                  onChange={handleChange}
+                  className="form-control"
+                  disabled={submitting}
+                />
+              </div>
 
-                  {/* Total Milk Used */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">
-                      Total Milk Used
-                    </label>
-                    <input
-                      type="number"
-                      name="total_milk_used"
-                      value={form.total_milk_used || ""}
-                      onChange={handleChange}
-                      className="form-control"
-                      disabled={submitting}
-                    />
-                  </div>
+              {/* Total Milk Used */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">
+                  Total Milk Used
+                </label>
+                <input
+                  type="number"
+                  name="total_milk_used"
+                  value={form.total_milk_used || ""}
+                  onChange={handleChange}
+                  className="form-control"
+                  step="0.01"
+                  disabled={submitting}
+                />
+              </div>
 
-                  {/* Status */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Status</label>
-                    <select
-                      name="status"
-                      value={form.status || ""}
-                      onChange={handleChange}
-                      className="form-select"
-                      disabled={submitting}
-                    >
-                      <option value="available">Available</option>
-                      <option value="contamination">Contamination</option>
-                    </select>
-                  </div>
-
-                  {/* Product Type */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">
-                      Product Type
-                    </label>
-                    <select
-                      name="product_type"
-                      value={form.product_type || ""}
-                      onChange={handleChange}
-                      className="form-select"
-                      disabled={submitting}
-                    >
-                      {productTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.product_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Production Date */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">
-                      Production Date
-                    </label>
-                    <input
-                      type="date"
-                      name="production_at"
-                      value={form.production_at.split("T")[0] || ""}
-                      onChange={handleChange}
-                      className="form-control"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  {/* Expiry Date */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">
-                      Expiry Date
-                    </label>
-                    <input
-                      type="date"
-                      name="expiry_at"
-                      value={form.expiry_at.split("T")[0] || ""}
-                      onChange={handleChange}
-                      className="form-control"
-                      disabled={submitting}
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-info w-100 fw-semibold"
+              {/* Status */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">Status</label>
+                <select
+                  name="status"
+                  value={form.status || ""}
+                  onChange={handleChange}
+                  className="form-select"
                   disabled={submitting}
                 >
-                  {submitting ? "Memperbarui..." : "Perbarui Data"}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
+                  <option value="available">Available</option>
+                  <option value="contamination">Contamination</option>
+                </select>
+              </div>
+
+              {/* Product Type */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">Product Type</label>
+                <select
+                  name="product_type"
+                  value={form.product_type || ""}
+                  onChange={handleChange}
+                  className="form-select"
+                  disabled={submitting}
+                >
+                  <option value="">-- Pilih Tipe Produk --</option>
+                  {productTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.product_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Production Date */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">
+                  Production Date
+                </label>
+                <input
+                  type="date"
+                  name="production_at"
+                  value={form.production_at || ""}
+                  onChange={handleChange}
+                  className="form-control"
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Expiry Date */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-semibold">Expiry Date</label>
+                <input
+                  type="date"
+                  name="expiry_at"
+                  value={form.expiry_at || ""}
+                  onChange={handleChange}
+                  className="form-control"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="btn btn-info w-100 fw-semibold"
+              disabled={submitting}
+            >
+              {submitting ? "Memperbarui..." : "Perbarui Data"}
+            </button>
+          </form>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 

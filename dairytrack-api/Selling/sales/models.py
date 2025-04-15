@@ -37,7 +37,7 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Requested')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    notes = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
 

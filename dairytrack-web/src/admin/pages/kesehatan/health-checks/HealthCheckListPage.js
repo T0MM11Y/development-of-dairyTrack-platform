@@ -3,6 +3,8 @@ import { deleteHealthCheck, getHealthChecks } from "../../../../api/kesehatan/he
 import { getCows } from "../../../../api/peternakan/cow";
 import HealthCheckCreatePage from "./HealthCheckCreatePage";
 import HealthCheckEditPage from "./HealthCheckEditPage";
+import Swal from "sweetalert2";
+
 
 const HealthCheckListPage = () => {
   const [data, setData] = useState([]);
@@ -12,8 +14,11 @@ const HealthCheckListPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(true);
+
 
   const fetchData = async () => {
+    setLoading(true); // Mulai loading
     try {
       const res = await getHealthChecks();
       const cowList = await getCows();
@@ -23,9 +28,10 @@ const HealthCheckListPage = () => {
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
       setError("Gagal mengambil data. Pastikan server API aktif.");
+    } finally {
+      setLoading(false); // Selesai loading
     }
   };
-
   const getCowName = (cow) => {
     if (!cow) return "Tidak diketahui";
     if (typeof cow === "object") return cow.name || "Tidak diketahui";
@@ -41,14 +47,26 @@ const HealthCheckListPage = () => {
     setSubmitting(true);
     try {
       await deleteHealthCheck(deleteId);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data berhasil dihapus.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       setDeleteId(null);
       fetchData();
     } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menghapus",
+        text: "Terjadi kesalahan saat menghapus data.",
+      });
     } finally {
       setSubmitting(false);
     }
   };
+  
 
   useEffect(() => {
     fetchData();
@@ -65,9 +83,18 @@ const HealthCheckListPage = () => {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {data.length === 0 && !error ? (
-        <p className="text-muted">Belum ada data pemeriksaan.</p>
-      ) : (
+      {loading ? (
+  <div className="card">
+    <div className="card-body text-center py-5">
+      <div className="spinner-border text-info" role="status" />
+      <p className="mt-3 text-muted">Memuat data pemeriksaan kesehatan...</p>
+    </div>
+  </div>
+) : error ? (
+  <div className="alert alert-danger">{error}</div>
+) : data.length === 0 ? (
+  <p className="text-muted">Belum ada data pemeriksaan.</p>
+) : (
         <div className="card">
           <div className="card-body">
             <h5 className="card-title">Tabel Pemeriksaan</h5>
@@ -87,44 +114,86 @@ const HealthCheckListPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td>{idx + 1}</td>
-                      <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
-                      <td>{getCowName(item.cow)}</td>
-                      <td>{item.rectal_temperature}°C</td>
-                      <td>{item.heart_rate} bpm</td>
-                      <td>{item.respiration_rate} x/menit</td>
-                      <td>{item.rumination} jam</td>
-                      <td>
-                        <span
-                          className={`badge fw-semibold ${
-                            item.status === "handled" ? "bg-success" : "bg-warning text-dark"
-                          }`}
-                        >
-                          {item.status === "handled" ? "Sudah Ditangani" : "Belum Ditangani"}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-warning btn-sm me-2"
-                          onClick={() => {
-                            setEditId(item.id);
-                            setModalType("edit");
-                          }}
-                        >
-                          <i className="ri-edit-line"></i>
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => setDeleteId(item.id)}
-                        >
-                          <i className="ri-delete-bin-6-line"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+  {data.map((item, idx) => (
+    <tr key={item.id}>
+      <td>{idx + 1}</td>
+      <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
+      <td>{getCowName(item.cow)}</td>
+      <td>{item.rectal_temperature}°C</td>
+      <td>{item.heart_rate} bpm/menit</td>
+      <td>{item.respiration_rate} bpm/menit</td>
+      <td>{item.rumination} kontraksi/menit</td>
+      <td>
+  <span
+    className={`badge fw-semibold ${
+      item.needs_attention === false
+        ? "bg-primary"
+        : item.status === "handled"
+        ? "bg-success"
+        : "bg-warning text-dark"
+    }`}
+  >
+    {item.needs_attention === false
+      ? "Sehat"
+      : item.status === "handled"
+      ? "Sudah Ditangani"
+      : "Belum Ditangani"}
+  </span>
+</td>
+
+      <td>
+      <button
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    if (item.needs_attention === false) {
+      Swal.fire({
+        icon: "info",
+        title: "Tidak Bisa Diedit",
+        text: "Data ini menunjukkan kondisi sehat dan tidak perlu diedit.",
+        confirmButtonText: "Mengerti",
+      });
+    } else if (item.status === "handled") {
+      Swal.fire({
+        icon: "info",
+        title: "Tidak Bisa Diedit",
+        text: "Data ini sudah ditangani dan tidak bisa diedit.",
+        confirmButtonText: "Mengerti",
+      });
+    } else {
+      Swal.fire({
+        title: "Edit Pemeriksaan?",
+        text: "Anda akan membuka form edit data pemeriksaan.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Ya, edit",
+        cancelButtonText: "Batal",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setEditId(item.id);
+          setModalType("edit");
+        }
+      });
+    }
+  }}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+
+        <button
+          className="btn btn-danger btn-sm"
+          onClick={() => setDeleteId(item.id)}
+        >
+          <i className="ri-delete-bin-6-line"></i>
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+
               </table>
             </div>
           </div>
@@ -158,53 +227,72 @@ const HealthCheckListPage = () => {
         />
       )}
 
-      {/* Modal Konfirmasi Hapus */}
-      {deleteId && (
-        <div
-          className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
-                <button
-                  className="btn-close"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Apakah Anda yakin ingin menghapus data pemeriksaan ini?
-                  <br />
-                  Data yang dihapus tidak dapat dikembalikan.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                >
-                  Batal
-                </button>
-                <button
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" />
-                      Menghapus...
-                    </>
-                  ) : (
-                    "Hapus"
-                  )}
-                </button>
+
+{/* Modal Konfirmasi Hapus */}
+{deleteId && (
+  <div
+    className="modal fade show d-block"
+    style={{
+      background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+    }}
+  >
+    <div className="modal-dialog">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
+          <button
+            className="btn-close"
+            onClick={() => setDeleteId(null)}
+            disabled={submitting}
+          ></button>
+        </div>
+        <div className="modal-body">
+          <p>
+            Apakah Anda yakin ingin menghapus data pemeriksaan ini?
+            <br />
+            Data yang dihapus tidak dapat dikembalikan.
+          </p>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setDeleteId(null)}
+            disabled={submitting}
+          >
+            Batal
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              Swal.fire({
+                title: "Yakin ingin menghapus?",
+                text: "Data yang dihapus tidak dapat dikembalikan.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Ya, hapus!",
+                cancelButtonText: "Batal",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  handleDelete();
+                }
+              });
+            }}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                />
+                Menghapus...
+              </>
+            ) : (
+              "Hapus"
+            )}
+          </button>
               </div>
             </div>
           </div>

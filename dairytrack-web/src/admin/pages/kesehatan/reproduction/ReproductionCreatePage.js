@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { createReproduction } from "../../../../api/kesehatan/reproduction";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2"; // pastikan sudah di-import
+
 
 const ReproductionCreatePage = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -79,7 +81,13 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
         total_insemination: parseInt(form.total_insemination),
         successful_pregnancy: parseInt(form.successful_pregnancy || 1),
       });
-      
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data reproduksi berhasil disimpan.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       if (onSaved) onSaved();
 
       // 🔁 Reset form (optional)
@@ -92,13 +100,18 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
         successful_pregnancy: "1",
       });
     } catch (err) {
-      console.error(err);
       setError("❌ Gagal menyimpan data reproduksi. Pastikan semua data valid.");
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menyimpan",
+        text: "Terjadi kesalahan saat menyimpan data reproduksi.",
+      });
     } finally {
       setSubmitting(false);
     }
   };
-
+  
   return (
     <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)", minHeight: "100vh", paddingTop: "3rem" }}>
       <div className="modal-dialog modal-lg">

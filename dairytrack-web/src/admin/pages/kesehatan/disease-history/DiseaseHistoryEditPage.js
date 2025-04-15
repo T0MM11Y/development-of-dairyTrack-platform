@@ -3,6 +3,8 @@ import {
   getDiseaseHistoryById,
   updateDiseaseHistory,
 } from "../../../../api/kesehatan/diseaseHistory";
+import Swal from "sweetalert2"; // pastikan di bagian atas file
+
 
 const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -44,12 +46,28 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
+  
     try {
       await updateDiseaseHistory(historyId, form);
+  
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data riwayat penyakit berhasil diperbarui.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+  
       if (onSaved) onSaved();
     } catch (err) {
-      console.error("Gagal memperbarui data:", err);
       setError("Gagal memperbarui data. Coba lagi.");
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text: "Terjadi kesalahan saat memperbarui data riwayat penyakit.",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -251,12 +251,12 @@ const Sales = () => {
                         {selectedOrder.order_items.map((item, index) => (
                           <tr key={item.id}>
                             <td>{index + 1}</td>
-                            <td>{item.product_type.product_name}</td>
+                            <td>{item.product_type_detail?.product_name || "-"}</td>
                             <td>
-                              {item.product_type.image ? (
+                              {item.product_type_detail?.image ? (
                                 <img
-                                  src={item.product_type.image}
-                                  alt={item.product_type.product_name}
+                                  src={item.product_type_detail.image}
+                                  alt={item.product_type_detail.product_name}
                                   style={{
                                     width: "50px",
                                     height: "50px",

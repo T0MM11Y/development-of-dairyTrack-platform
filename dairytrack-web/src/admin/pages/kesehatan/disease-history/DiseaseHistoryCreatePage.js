@@ -3,6 +3,7 @@ import { createDiseaseHistory } from "../../../../api/kesehatan/diseaseHistory";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getSymptoms } from "../../../../api/kesehatan/symptom";
 import { getCows } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2"; // pastikan sudah di-import di atas
 
 const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -63,12 +64,28 @@ const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
+  
     try {
       await createDiseaseHistory(form);
+  
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Riwayat penyakit berhasil disimpan.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+  
       if (onSaved) onSaved();
     } catch (err) {
-      console.error(err);
       setError("Gagal menyimpan data riwayat penyakit.");
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menyimpan",
+        text: "Terjadi kesalahan saat menyimpan data riwayat penyakit.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -111,17 +128,23 @@ const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
                     className="form-select"
                     required
                   >
-                    <option value="">-- Pilih Pemeriksaan --</option>
-                    {symptoms.map((sym) => {
-                      const check = healthChecks.find((c) => c.id === sym.health_check);
-                      const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
-                      const cow = cows.find((c) => c.id === cowId);
-                      return (
-                        <option key={sym.id} value={check?.id}>
-                          {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"} - {sym.eye_condition} / {sym.behavior}
-                        </option>
-                      );
-                    })}
+                <option value="">-- Pilih Pemeriksaan --</option>
+{symptoms
+  .filter((sym) => {
+    const check = healthChecks.find((c) => c.id === sym.health_check);
+    return check && check.status !== "handled"; // ✅ hanya tampilkan jika belum handled
+  })
+  .map((sym) => {
+    const check = healthChecks.find((c) => c.id === sym.health_check);
+    const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
+    const cow = cows.find((c) => c.id === cowId);
+    return (
+      <option key={sym.id} value={check?.id}>
+        {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"}
+      </option>
+    );
+  })}
+
                   </select>
                 </div>
 

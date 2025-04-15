@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSymptomById, updateSymptom } from "../../../../api/kesehatan/symptom";
+import Swal from "sweetalert2"; // pastikan sudah di-import di atas
+
 
 const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   const [form, setForm] = useState(null);
@@ -90,12 +92,28 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
+  
     try {
       await updateSymptom(symptomId, form);
+  
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Data gejala berhasil diperbarui.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+  
       if (onSaved) onSaved();
     } catch (err) {
-      console.error("Error updating symptom:", err);
       setError("Gagal memperbarui data gejala.");
+  
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Memperbarui",
+        text: "Terjadi kesalahan saat memperbarui data gejala.",
+      });
     } finally {
       setSubmitting(false);
     }
