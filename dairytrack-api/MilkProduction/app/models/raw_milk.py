@@ -37,7 +37,7 @@ class RawMilk(db.Model):
         return {
             'id': self.id,
             'cow_id': self.cow_id,
-            'cow': self.cow.to_dict() if self.cow else None,  # Include cow details
+            'cow': self.cow.to_dict(include_raw_milks=False) if include_cow and self.cow else None,
             'production_time': self.production_time,
             'expiration_time': self.expiration_time,
             'volume_liters': self.volume_liters,

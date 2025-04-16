@@ -76,7 +76,8 @@ def get_low_production_notifications():
                 'date': daily_total.date.strftime('%Y-%m-%d'),
                 'total_volume': float(daily_total.total_volume),  # Convert to float
                 'deficit': deficit,
-                'message': message
+                'message': message,
+                'name': daily_total.cow.name if daily_total.cow else None,
             })
 
     db.session.commit()
