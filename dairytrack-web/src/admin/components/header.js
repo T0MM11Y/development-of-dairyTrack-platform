@@ -114,6 +114,11 @@ const Header = ({ onToggleSidebar }) => {
           ...(freshnessResponse.notifications || []),
         ];
 
+        // Sort notifications by date (newest first)
+        combinedNotifications.sort(
+          (a, b) => new Date(b.date) - new Date(a.date)
+        );
+
         setNotifications(combinedNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error.message);
@@ -270,46 +275,42 @@ const Header = ({ onToggleSidebar }) => {
         width: "100%",
       }}
     >
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="loading-text">{loadingText}</div>
-        </div>
-      )}
-
-      <div className="navbar-header">
-        <div className="d-flex align-items-center justify-content-between w-100">
-          <div className="d-md-none d-flex align-items-center me-3">
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={onToggleSidebar}
-            >
-              <i className="ri-menu-line"></i>
-            </button>
-          </div>
+      <div className="navbar-header d-flex align-items-center justify-content-between">
+        {/* Logo and Sidebar Toggle */}
+        <div className="d-flex align-items-center">
+          <button
+            type="button"
+            className="btn btn-outline-secondary d-md-none me-3"
+            onClick={onToggleSidebar}
+          >
+            <i className="ri-menu-line"></i>
+          </button>
           <div className="navbar-brand-box">
             <span className="logo-lg">
-              <img src={logoDark} alt="logo-dark" height="90" />
+              <img src={logoDark} alt="logo-dark" height="50" />
             </span>
           </div>
         </div>
-        <div className="d-flex align-items-center ms-auto gap-3">
+
+        {/* Main Navigation */}
+        <div className="d-flex align-items-center gap-3">
+          {/* Language Dropdown */}
           <LanguageDropdown />
 
-          <div className="d-none d-lg-inline-block">
-            <button
-              type="button"
-              className="btn header-item noti-icon waves-effect"
-              onClick={toggleFullScreen}
-            >
-              <i
-                className={`ri-${
-                  isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-                }`}
-              ></i>
-            </button>
-          </div>
+          {/* Fullscreen Toggle */}
+          <button
+            type="button"
+            className="btn header-item noti-icon waves-effect d-none d-lg-inline-block"
+            onClick={toggleFullScreen}
+          >
+            <i
+              className={`ri-${
+                isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
+              }`}
+            ></i>
+          </button>
 
+          {/* Notification Dropdown */}
           <div className="dropdown d-inline-block">
             <button
               type="button"
@@ -422,7 +423,8 @@ const Header = ({ onToggleSidebar }) => {
             </div>
           </div>
 
-          <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
+          {/* User Dropdown */}
+          <div className="dropdown d-inline-block user-dropdown">
             <button
               ref={userButtonRef}
               type="button"
@@ -448,7 +450,6 @@ const Header = ({ onToggleSidebar }) => {
               <a className="dropdown-item" href="#">
                 <i className="ri-user-line align-middle me-1"></i> Profile
               </a>
-
               <div className="dropdown-divider"></div>
               <button className="dropdown-item" onClick={handleLogout}>
                 <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
