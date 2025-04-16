@@ -9,6 +9,7 @@ import logoDark from "../../assets/client/img/logo/logo.png";
 import logoLight from "../../assets/client/img/logo/logo.png";
 import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
+import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
@@ -85,6 +86,10 @@ const Header = ({ onToggleSidebar }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
+  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false); // Loading state for notifications
+
+  const notificationDropdownRef = useRef(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Processing");
@@ -92,10 +97,24 @@ const Header = ({ onToggleSidebar }) => {
 
   const navigate = useNavigate();
 
-  const notificationDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
   const notificationButtonRef = useRef(null);
   const userButtonRef = useRef(null);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setIsLoadingNotifications(true);
+      try {
+        const response = await getLowProductionNotifications();
+        setNotifications(response.notifications || []);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error.message);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   useEffect(() => {
     const sessionTimeout = setTimeout(() => {
@@ -233,14 +252,16 @@ const Header = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header id="page-topbar" className="header bg-white shadow-sm px-3"
-    style={{
-      position: "sticky", // atau "fixed"
-      top: 0,
-      zIndex: 1100,
-      width: "100%",
-    }}
-  >
+    <header
+      id="page-topbar"
+      className="header bg-white shadow-sm px-3"
+      style={{
+        position: "sticky", // atau "fixed"
+        top: 0,
+        zIndex: 1100,
+        width: "100%",
+      }}
+    >
       {isLoading && (
         <div className="loading-overlay">
           <div className="loading-text">{loadingText}</div>
@@ -248,55 +269,56 @@ const Header = ({ onToggleSidebar }) => {
       )}
 
       <div className="navbar-header">
-      <div className="d-flex align-items-center justify-content-between w-100">
-      {/* ⬇️ Toggle Button Mobile ⬇️ */}
-     {/* ⬇️ Toggle Button Mobile ⬇️ */}
-    <div className="d-md-none d-flex align-items-center me-3">
-      <button
-        type="button"
-        className="btn btn-outline-secondary"
-        onClick={onToggleSidebar}
-      >
-        <i className="ri-menu-line"></i>
-      </button>
-    </div>
+        <div className="d-flex align-items-center justify-content-between w-100">
+          {/* ⬇️ Toggle Button Mobile ⬇️ */}
+          {/* ⬇️ Toggle Button Mobile ⬇️ */}
+          <div className="d-md-none d-flex align-items-center me-3">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onToggleSidebar}
+            >
+              <i className="ri-menu-line"></i>
+            </button>
+          </div>
           {/* Logo */}
           <div className="navbar-brand-box">
             <span className="logo-lg">
               <img src={logoDark} alt="logo-dark" height="90" />
             </span>
           </div>
-      </div>
-            {/* Right Section: Dropdowns */}
-            <div className="d-flex align-items-center ms-auto gap-3">
-            {/* Language Dropdown */}
-            <LanguageDropdown />
+        </div>
+        {/* Right Section: Dropdowns */}
+        <div className="d-flex align-items-center ms-auto gap-3">
+          {/* Language Dropdown */}
+          <LanguageDropdown />
 
           {/* Full-screen Toggle */}
           <div className="d-none d-lg-inline-block">
-              <button
-                type="button"
-                className="btn header-item noti-icon waves-effect"
-                onClick={toggleFullScreen}
-              >
-                <i
-                  className={`ri-${
-                    isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-                  }`}
-                ></i>
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn header-item noti-icon waves-effect"
+              onClick={toggleFullScreen}
+            >
+              <i
+                className={`ri-${
+                  isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
+                }`}
+              ></i>
+            </button>
+          </div>
 
           {/* Notifications dropdown */}
+          {/* Notifications dropdown */}
           <div className="dropdown">
-          <button
+            <button
               type="button"
               className="btn header-item noti-icon waves-effect"
               id="page-header-notifications-dropdown"
               onClick={toggleNotificationDropdown}
             >
               <i className="ri-notification-3-line"></i>
-              <span className="noti-dot"></span>
+              {notifications.length > 0 && <span className="noti-dot"></span>}
             </button>
             <div
               className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
@@ -307,7 +329,7 @@ const Header = ({ onToggleSidebar }) => {
                 inset: "0px auto auto 0px",
                 margin: "0px",
                 transform: "translate(-250px, 60px)",
-                width: "300px", // Adjusted width for compact view
+                width: "300px",
               }}
               aria-labelledby="page-header-notifications-dropdown"
             >
@@ -325,83 +347,41 @@ const Header = ({ onToggleSidebar }) => {
               </div>
               <div data-simplebar="init" style={{ maxHeight: "250px" }}>
                 <div className="simplebar-content">
-                  {/* Feed Notifications */}
-                  <a href="" className="text-reset notification-item">
-                    <div className="d-flex">
-                      <div className="avatar-xs me-3">
-                        <span className="avatar-title bg-warning rounded-circle font-size-16">
-                          <i className="ri-alert-line"></i>
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h6 className="mb-1">Feed Stock Low</h6>
-                        <div className="font-size-12 text-muted">
-                          <p className="mb-0">
-                            <i className="mdi mdi-clock-outline"></i> 10 min ago
-                          </p>
-                        </div>
-                      </div>
+                  {isLoadingNotifications ? (
+                    <div className="text-center p-3">Loading...</div>
+                  ) : notifications.length === 0 ? (
+                    <div className="text-center p-3">
+                      No notifications available.
                     </div>
-                  </a>
-
-                  {/* Health Notifications */}
-                  <a href="" className="text-reset notification-item">
-                    <div className="d-flex">
-                      <div className="avatar-xs me-3">
-                        <span className="avatar-title bg-danger rounded-circle font-size-16">
-                          <i className="ri-heart-pulse-line"></i>
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h6 className="mb-1">Health Alert</h6>
-                        <div className="font-size-12 text-muted">
-                          <p className="mb-0">
-                            <i className="mdi mdi-clock-outline"></i> 2 hours
-                            ago
-                          </p>
+                  ) : (
+                    notifications.map((notification, index) => (
+                      <a
+                        key={index}
+                        href="#"
+                        className="text-reset notification-item"
+                      >
+                        <div className="d-flex">
+                          <div className="avatar-xs me-3">
+                            <span className="avatar-title bg-info rounded-circle font-size-16">
+                              <i className="ri-drop-line"></i>
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h6 className="mb-1">
+                              {notification.name || "Cow"}
+                            </h6>
+                            <p className="mb-1">{notification.message}</p>
+                            <div className="font-size-12 text-muted">
+                              <p className="mb-0">
+                                <i className="mdi mdi-clock-outline"></i>{" "}
+                                {notification.date}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </a>
-
-                  {/* Sales Notifications */}
-                  <a href="" className="text-reset notification-item">
-                    <div className="d-flex">
-                      <div className="avatar-xs me-3">
-                        <span className="avatar-title bg-primary rounded-circle font-size-16">
-                          <i className="ri-shopping-cart-line"></i>
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h6 className="mb-1">New Order</h6>
-                        <div className="font-size-12 text-muted">
-                          <p className="mb-0">
-                            <i className="mdi mdi-clock-outline"></i> 30 min ago
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-
-                  {/* Milk Notifications */}
-                  <a href="" className="text-reset notification-item">
-                    <div className="d-flex">
-                      <div className="avatar-xs me-3">
-                        <span className="avatar-title bg-info rounded-circle font-size-16">
-                          <i className="ri-drop-line"></i>
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h6 className="mb-1">Milk Production Down</h6>
-                        <div className="font-size-12 text-muted">
-                          <p className="mb-0">
-                            <i className="mdi mdi-clock-outline"></i> 3 hours
-                            ago
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
+                      </a>
+                    ))
+                  )}
                 </div>
               </div>
               <div className="p-2 border-top">
