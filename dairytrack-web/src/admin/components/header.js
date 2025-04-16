@@ -11,6 +11,8 @@ import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
 import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
 import { getFreshnessNotifications } from "../../api/produktivitas/rawMilk";
+import { getAllNotifications } from "../../api/kesehatan/notification"; // pastikan path benar
+
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
@@ -108,10 +110,13 @@ const Header = ({ onToggleSidebar }) => {
       try {
         const lowProductionResponse = await getLowProductionNotifications();
         const freshnessResponse = await getFreshnessNotifications();
-
+        const signalNotifications = await getAllNotifications();
+        
         const combinedNotifications = [
           ...(lowProductionResponse.notifications || []),
           ...(freshnessResponse.notifications || []),
+          ...(signalNotifications || []), // ✅ tambahkan di sini
+
         ];
 
         setNotifications(combinedNotifications);

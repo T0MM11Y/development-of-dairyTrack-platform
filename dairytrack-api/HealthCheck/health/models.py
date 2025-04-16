@@ -175,15 +175,14 @@ class Reproduction(models.Model):
         return alerts
 
 class Notification(models.Model):
-    cow = models.ForeignKey("Cow", on_delete=models.CASCADE)  # Relasi ke tabel cows
-    raw_milk = models.ForeignKey("RawMilk", null=True, blank=True, on_delete=models.CASCADE)  # Bisa kosong
-    processed_milk = models.ForeignKey("ProcessedMilk", null=True, blank=True, on_delete=models.CASCADE)  # Bisa kosong
-    notification_date = models.DateTimeField(auto_now_add=True)  # Default CURRENT_TIMESTAMP
-    message = models.TextField()
-    type = models.CharField(max_length=50)  # Tipe notifikasi
+    cow = models.ForeignKey("Cow", on_delete=models.CASCADE, related_name="notifications")  # Relasi ke tabel cows
+    date = models.DateField(default=now)  # Tanggal notifikasi (bukan datetime)
+    message = models.CharField(max_length=255)  # Pesan maksimum 255 karakter
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp saat dibuat
 
     def __str__(self):
-        return f"Notification for {self.cow.name} - {self.type}"
+        return f"Notifikasi untuk {self.cow.name} - {self.date}"
+
     
     class Meta:
         db_table = "notifications"
