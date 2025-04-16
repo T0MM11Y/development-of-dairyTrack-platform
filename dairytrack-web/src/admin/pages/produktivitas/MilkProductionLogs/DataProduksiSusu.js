@@ -59,17 +59,25 @@ const DataProduksiSusu = () => {
   }, [fetchData]);
 
   const handleExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(rawMilks);
+    // Filter only important columns
+    const importantData = rawMilks.map((milk) => ({
+      CowName: milk.cow?.name || "Unknown",
+      ProductionTime: milk.production_time,
+      VolumeLiters: milk.volume_liters,
+      Status: milk.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(importantData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "MilkProduction");
 
     // AutoFit column width
-    const columnWidths = Object.keys(rawMilks[0] || {}).map((key) => ({
+    const columnWidths = Object.keys(importantData[0] || {}).map((key) => ({
       wch: Math.max(10, key.length + 2),
     }));
     worksheet["!cols"] = columnWidths;
 
-    XLSX.writeFile(workbook, "MilkProductionData.xlsx");
+    XLSX.writeFile(workbook, "MilkProductionData_Important.xlsx");
   };
 
   const handleExportPDF = () => {
@@ -78,25 +86,21 @@ const DataProduksiSusu = () => {
     const startY = 25;
     let currentY = startY;
 
-    // Judul dokumen
+    // Document title
     doc.setFontSize(16);
-    doc.text("Milk Production Data", marginLeft, currentY);
-    currentY += 10; // Tambah jarak setelah judul
+    doc.text("Milk Production Data (Important)", marginLeft, currentY);
+    currentY += 10;
 
-    // Header tabel
+    // Table header
     const tableColumn = [
       "#",
       "Cow Name",
       "Production Time",
       "Volume (Liters)",
-      "Previous Volume",
       "Status",
     ];
+    const columnWidths = [10, 50, 50, 40, 30];
 
-    // Lebar kolom
-    const columnWidths = [10, 50, 40, 30, 30, 30];
-
-    // Render header tabel
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     let currentX = marginLeft;
@@ -104,14 +108,13 @@ const DataProduksiSusu = () => {
       doc.text(col, currentX, currentY);
       currentX += columnWidths[index];
     });
-    currentY += 6; // Tambah jarak setelah header
+    currentY += 6;
 
-    // Render data tabel
+    // Table data
     doc.setFont("helvetica", "normal");
-
     rawMilks.forEach((milk, rowIndex) => {
       if (currentY > 270) {
-        doc.addPage(); // Tambah halaman baru jika sudah penuh
+        doc.addPage();
         currentY = startY;
       }
 
@@ -121,21 +124,19 @@ const DataProduksiSusu = () => {
         milk.cow?.name || "Unknown",
         milk.production_time,
         milk.volume_liters,
-        milk.previous_volume,
         milk.status,
       ];
 
       rowData.forEach((cell, cellIndex) => {
-        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]); // Membungkus teks panjang
+        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]);
         doc.text(text, currentX, currentY);
         currentX += columnWidths[cellIndex];
       });
 
-      currentY += 6; // Pindah ke baris berikutnya
+      currentY += 6;
     });
 
-    // Simpan file PDF
-    doc.save("MilkProductionData.pdf");
+    doc.save("MilkProductionData_Important.pdf");
   };
 
   const handleDelete = useCallback(async () => {
@@ -250,6 +251,9 @@ const DataProduksiSusu = () => {
         }
       } else {
         setSelectedRawMilk(null);
+
+        const filteredCows = cows.filter((cow) => cow.gender !== "male");
+
         setFormData({
           cow_id: "",
           production_time: "",
@@ -259,11 +263,13 @@ const DataProduksiSusu = () => {
           lactation_status: false,
           lactation_phase: "Dry",
         });
+
+        // Set filtered cows to state if needed
+        setCows(filteredCows);
       }
     },
-    [rawMilks, handleCowChange]
+    [rawMilks, handleCowChange, cows]
   );
-
   return (
     <div className="container py-4">
       {/* Header Section */}

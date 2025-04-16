@@ -80,6 +80,7 @@ const LanguageDropdown = () => {
     </div>
   );
 };
+
 const Header = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
@@ -185,6 +186,7 @@ const Header = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
     if (isNotificationDropdownOpen) setIsNotificationDropdownOpen(false);
   };
+
   const handleLogout = async () => {
     Swal.fire({
       title: "Are you sure?",
@@ -229,6 +231,7 @@ const Header = () => {
       }
     });
   };
+
   return (
     <header id="page-topbar" className="header">
       {isLoading && (
@@ -283,14 +286,117 @@ const Header = () => {
                 position: "absolute",
                 inset: "0px auto auto 0px",
                 margin: "0px",
-                transform: "translate(-270px, 70px)",
+                transform: "translate(-250px, 60px)",
+                width: "300px", // Adjusted width for compact view
               }}
               aria-labelledby="page-header-notifications-dropdown"
             >
-              {/* Notification content */}
+              <div className="p-3">
+                <div className="row align-items-center">
+                  <div className="col">
+                    <h6 className="m-0"> Notifications </h6>
+                  </div>
+                  <div className="col-auto">
+                    <a href="#!" className="small">
+                      View All
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div data-simplebar="init" style={{ maxHeight: "250px" }}>
+                <div className="simplebar-content">
+                  {/* Feed Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-warning rounded-circle font-size-16">
+                          <i className="ri-alert-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Feed Stock Low</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 10 min ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Health Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-danger rounded-circle font-size-16">
+                          <i className="ri-heart-pulse-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Health Alert</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 2 hours
+                            ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Sales Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-primary rounded-circle font-size-16">
+                          <i className="ri-shopping-cart-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">New Order</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 30 min ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Milk Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-info rounded-circle font-size-16">
+                          <i className="ri-drop-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Milk Production Down</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 3 hours
+                            ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+              <div className="p-2 border-top">
+                <div className="d-grid">
+                  <a
+                    className="btn btn-sm btn-link font-size-14 text-center"
+                    href="javascript:void(0)"
+                  >
+                    <i className="mdi mdi-arrow-right-circle me-1"></i> View
+                    More..
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-
           {/* User Dropdown */}
           <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
             <button

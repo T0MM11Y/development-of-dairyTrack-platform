@@ -43,13 +43,29 @@ def create_raw_milk():
     # Set expiration time to 8 hours from production time
     expiration_time = production_time + timedelta(hours=8)
     current_time = datetime.now(local_tz)
+
+    # Ambil entri terakhir berdasarkan cow_id dan urutkan berdasarkan waktu produksi
+    last_raw_milk = RawMilk.query.filter_by(cow_id=data.get('cow_id')).order_by(RawMilk.production_time.desc()).first()
+
+    # Default previous_volume adalah 0
+    previous_volume = 0.0
+
+    # Jika ada entri sebelumnya, periksa apakah masih di hari yang sama
+    if last_raw_milk:
+        last_production_date = last_raw_milk.production_time.astimezone(local_tz).date()
+        current_production_date = production_time.astimezone(local_tz).date()
+
+        if last_production_date == current_production_date:
+            previous_volume = last_raw_milk.volume_liters
+
+    # Hitung waktu tersisa
     time_left = max((expiration_time - current_time).total_seconds(), 0)
 
     raw_milk = RawMilk(
         cow_id=data.get('cow_id'),
         production_time=production_time,
         volume_liters=data.get('volume_liters'),
-        previous_volume=float(data.get('previous_volume', 0.0)),
+        previous_volume=previous_volume,  # Gunakan previous_volume yang dihitung
         status=data.get('status', 'fresh'),
         session=data.get('session'),
         daily_total_id=data.get('daily_total_id'),
