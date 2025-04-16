@@ -7,6 +7,8 @@ def schedule_notifications():
     with app.app_context():
         print(f"Running scheduled task at {datetime.now()}")
         get_low_production_notifications()
+        
+
 
 if __name__ == '__main__':
     # Create tables if they do not exist

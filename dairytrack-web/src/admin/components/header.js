@@ -10,6 +10,7 @@ import logoLight from "../../assets/client/img/logo/logo.png";
 import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
 import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
+import { getFreshnessNotifications } from "../../api/produktivitas/rawMilk";
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
@@ -100,12 +101,20 @@ const Header = ({ onToggleSidebar }) => {
   const userDropdownRef = useRef(null);
   const notificationButtonRef = useRef(null);
   const userButtonRef = useRef(null);
+
   useEffect(() => {
     const fetchNotifications = async () => {
       setIsLoadingNotifications(true);
       try {
-        const response = await getLowProductionNotifications();
-        setNotifications(response.notifications || []);
+        const lowProductionResponse = await getLowProductionNotifications();
+        const freshnessResponse = await getFreshnessNotifications();
+
+        const combinedNotifications = [
+          ...(lowProductionResponse.notifications || []),
+          ...(freshnessResponse.notifications || []),
+        ];
+
+        setNotifications(combinedNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error.message);
       } finally {
@@ -256,7 +265,7 @@ const Header = ({ onToggleSidebar }) => {
       id="page-topbar"
       className="header bg-white shadow-sm px-3"
       style={{
-        position: "sticky", // atau "fixed"
+        position: "sticky",
         top: 0,
         zIndex: 1100,
         width: "100%",
@@ -270,8 +279,6 @@ const Header = ({ onToggleSidebar }) => {
 
       <div className="navbar-header">
         <div className="d-flex align-items-center justify-content-between w-100">
-          {/* ⬇️ Toggle Button Mobile ⬇️ */}
-          {/* ⬇️ Toggle Button Mobile ⬇️ */}
           <div className="d-md-none d-flex align-items-center me-3">
             <button
               type="button"
@@ -281,19 +288,15 @@ const Header = ({ onToggleSidebar }) => {
               <i className="ri-menu-line"></i>
             </button>
           </div>
-          {/* Logo */}
           <div className="navbar-brand-box">
             <span className="logo-lg">
               <img src={logoDark} alt="logo-dark" height="90" />
             </span>
           </div>
         </div>
-        {/* Right Section: Dropdowns */}
         <div className="d-flex align-items-center ms-auto gap-3">
-          {/* Language Dropdown */}
           <LanguageDropdown />
 
-          {/* Full-screen Toggle */}
           <div className="d-none d-lg-inline-block">
             <button
               type="button"
@@ -308,8 +311,6 @@ const Header = ({ onToggleSidebar }) => {
             </button>
           </div>
 
-          {/* Notifications dropdown */}
-          {/* Notifications dropdown */}
           <div className="dropdown">
             <button
               type="button"
@@ -397,7 +398,7 @@ const Header = ({ onToggleSidebar }) => {
               </div>
             </div>
           </div>
-          {/* User Dropdown */}
+
           <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
             <button
               ref={userButtonRef}

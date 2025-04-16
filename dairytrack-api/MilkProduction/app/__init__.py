@@ -52,3 +52,4 @@ from app.routes.daily_milk_totals import get_low_production_notifications
 # Call the function when the app starts
 with app.app_context():
     get_low_production_notifications()
+    
