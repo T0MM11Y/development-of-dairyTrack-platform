@@ -18,7 +18,6 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
     setIsDarkMode(nextMode);
     localStorage.setItem("darkMode", nextMode); // simpan statusnya
   };
-  
 
   // Mapping of menu keys to their base paths and additional related paths
   const menuPaths = {
@@ -36,7 +35,6 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
   };
 
   useEffect(() => {
-
     console.log("Sidebar render - isMobile:", isMobile, "| isOpen:", isOpen);
 
     // Load user data from localStorage
@@ -83,7 +81,6 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
     },
     tap: { scale: 0.98 },
   };
-
 
   // Menu data structure for consistency
   const menuItems = [
@@ -148,10 +145,11 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
           icon: "ri-stack-line",
           label: "Jenis Pakan",
         },
-        { 
-          path: "/admin/pakan", 
-          icon: "ri-leaf-line", 
-          label: "Pakan" },
+        {
+          path: "/admin/pakan",
+          icon: "ri-leaf-line",
+          label: "Pakan",
+        },
         {
           path: "/admin/pakan/stok",
           icon: "ri-box-3-line",
@@ -271,250 +269,284 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
   ];
 
   return (
-<div
-  style={{
-    position: "fixed",
-    top: 60,
-    bottom: 0,
-    left: 0,
-    width: 275,
-    background: isDarkMode ? "#1e1e2f" : "#ffffff",
-    zIndex: 1050,
-    boxShadow: "0 0 10px rgba(0,0,0,0.2)",
-    color: isDarkMode ? "#f0f0f0" : "#333333",
-    transition: "all 0.3s ease",
-  }}
->
-  <div data-simplebar style={{ height: "100vh", overflowY: "auto" }}>
-    {isMobile && (
-      <div className="d-flex justify-content-end p-3 border-bottom">
-        <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>
-          <i className="ri-close-line"></i>
-        </button>
-      </div>
-    )}
-
-    {/* Profile & Dark Mode Toggle */}
-    {!isCollapsed && (
-      <>
-        <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: isCollapsed ? 0 : 1 }}
-          transition={{ duration: 0.2 }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "20px",
-            borderBottom: `1px solid ${isDarkMode ? "#444" : "#ddd"}`,
-          }}
-        >
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              marginRight: "10px",
-            }}
-          >
-            <img
-              src={avatar1}
-              alt="Avatar"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+    <div
+      style={{
+        position: "fixed",
+        top: 60,
+        bottom: 0,
+        left: 0,
+        width: 275,
+        background: isDarkMode ? "#1e1e2f" : "#ffffff",
+        zIndex: 1050,
+        boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+        color: isDarkMode ? "#f0f0f0" : "#333333",
+        transition: "all 0.3s ease",
+      }}
+    >
+      <div data-simplebar style={{ height: "100vh", overflowY: "auto" }}>
+        {isMobile && (
+          <div className="d-flex justify-content-end p-3 border-bottom">
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={onClose}
+            >
+              <i className="ri-close-line"></i>
+            </button>
           </div>
-          <div>
-            <div style={{ fontWeight: "bold" }}>
-              {userData ? `${userData.first_name} ${userData.last_name}` : "Guest User"}
-            </div>
-            <div style={{ fontSize: "12px", color: isDarkMode ? "#aaa" : "#666" }}>
-              {userData ? userData.email : "No Email"}
-            </div>
-          </div>
-        </motion.div>
+        )}
 
-        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${isDarkMode ? "#444" : "#eee"}` }}>
-          <button
-            onClick={toggleDarkMode}
-            style={{
-              width: "100%",
-              background: isDarkMode ? "#444" : "#f5f5f5",
-              color: isDarkMode ? "#fff" : "#333",
-              padding: "8px 12px",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-          >
-            {isDarkMode ? "🌙 Mode Gelap Aktif" : "☀️ Mode Terang Aktif"}
-          </button>
-        </div>
-      </>
-    )}
-
-    {/* Sidebar Menu */}
-    <div id="sidebar-menu">
-      <ul className="list-unstyled sidebar-menu mt-3">
-        {menuItems.map((menu) => (
-          <motion.li
-            key={menu.key}
-            className={`menu-item ${isMenuOpen(menu.key) ? "open" : ""} ${
-              isActive(menuPaths[menu.key]) ? "active" : ""
-            }`}
-            variants={menuItemVariants}
-            whileHover="hover"
-            whileTap="tap"
-          >
-            {menu.submenus.length > 0 ? (
-              <>
-                <button
-                  onClick={() => toggleSubmenu(menu.key)}
-                  className="menu-btn d-flex justify-between align-items-center w-100 px-3 py-3 border-0 bg-transparent"
+        {/* Profile & Dark Mode Toggle */}
+        {!isCollapsed && (
+          <>
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: isCollapsed ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "20px",
+                borderBottom: `1px solid ${isDarkMode ? "#444" : "#ddd"}`,
+              }}
+            >
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  marginRight: "10px",
+                }}
+              >
+                <img
+                  src={avatar1}
+                  alt="Avatar"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
+              <div>
+                <div style={{ fontWeight: "bold" }}>
+                  {userData
+                    ? `${userData.first_name} ${userData.last_name}`
+                    : "Guest User"}
+                </div>
+                <div
                   style={{
-                    fontSize: "17px",
-                    fontWeight: "500",
-                    color: isDarkMode ? "#eee" : "#333",
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    transition: "all 0.3s ease",
-                    backgroundColor: isMenuOpen(menu.key)
-                      ? isDarkMode
-                        ? "#2a2a3a"
-                        : "#f8f8f8"
-                      : "transparent",
+                    fontSize: "12px",
+                    color: isDarkMode ? "#aaa" : "#666",
                   }}
                 >
-                  <span className="d-flex align-items-center" style={{ gap: "10px" }}>
-                    <i className={menu.icon} style={{ fontSize: "20px" }}></i>
-                    <span
+                  {userData ? userData.email : "No Email"}
+                </div>
+              </div>
+            </motion.div>
+
+            <div
+              style={{
+                padding: "12px 20px",
+                borderBottom: `1px solid ${isDarkMode ? "#444" : "#eee"}`,
+              }}
+            >
+              <button
+                onClick={toggleDarkMode}
+                style={{
+                  width: "100%",
+                  background: isDarkMode ? "#444" : "#f5f5f5",
+                  color: isDarkMode ? "#fff" : "#333",
+                  padding: "8px 12px",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {isDarkMode ? "🌙 Mode Gelap Aktif" : "☀️ Mode Terang Aktif"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Sidebar Menu */}
+        <div id="sidebar-menu">
+          <ul className="list-unstyled sidebar-menu mt-3">
+            {menuItems.map((menu) => (
+              <motion.li
+                key={menu.key}
+                className={`menu-item ${isMenuOpen(menu.key) ? "open" : ""} ${
+                  isActive(menuPaths[menu.key]) ? "active" : ""
+                }`}
+                variants={menuItemVariants}
+                whileHover="hover"
+                whileTap="tap"
+              >
+                {menu.submenus.length > 0 ? (
+                  <>
+                    <button
+                      onClick={() => toggleSubmenu(menu.key)}
+                      className="menu-btn d-flex justify-between align-items-center w-100 px-3 py-3 border-0 bg-transparent"
                       style={{
-                        opacity: isCollapsed ? 0 : 1,
-                        transition: "opacity 0.2s ease",
-                        whiteSpace: "nowrap",
+                        fontSize: "17px",
+                        fontWeight: "500",
+                        color: isDarkMode ? "#eee" : "#333",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        transition: "all 0.3s ease",
+                        backgroundColor: isMenuOpen(menu.key)
+                          ? isDarkMode
+                            ? "#2a2a3a"
+                            : "#f8f8f8"
+                          : "transparent",
                       }}
                     >
-                      {menu.label}
-                    </span>
-                  </span>
-                  <i
-                    className={`ri-arrow-down-s-line transition ${
-                      isMenuOpen(menu.key) ? "rotate-180" : ""
-                    }`}
-                    style={{ fontSize: "18px" }}
-                  ></i>
-                </button>
+                      <span
+                        className="d-flex align-items-center"
+                        style={{ gap: "10px" }}
+                      >
+                        <i
+                          className={menu.icon}
+                          style={{ fontSize: "20px" }}
+                        ></i>
+                        <span
+                          style={{
+                            opacity: isCollapsed ? 0 : 1,
+                            transition: "opacity 0.2s ease",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {menu.label}
+                        </span>
+                      </span>
+                      <i
+                        className={`ri-arrow-down-s-line transition ${
+                          isMenuOpen(menu.key) ? "rotate-180" : ""
+                        }`}
+                        style={{ fontSize: "18px" }}
+                      ></i>
+                    </button>
 
-                <AnimatePresence>
-                  {isMenuOpen(menu.key) && (
-                    <motion.ul
-                      className="submenu list-unstyled ps-4"
-                      initial="closed"
-                      animate="open"
-                      exit="closed"
-                      variants={subMenuVariants}
-                    >
-                      {menu.submenus
-                        .filter((submenu) => submenu.show === undefined || submenu.show)
-                        .map((submenu) => (
-                          <li key={submenu.path} className="submenu-item mb-1">
-                            <Link
-                              to={submenu.path}
-                              className="submenu-link d-flex align-items-center px-3 py-2 rounded"
-                              style={{
-                                fontSize: "15px",
-                                fontWeight: "400",
-                                color:
-                                  location.pathname === submenu.path
-                                    ? isDarkMode
-                                      ? "#00e676"
-                                      : "#198754"
-                                    : isDarkMode
-                                    ? "#ccc"
-                                    : "#555",
-                                backgroundColor:
-                                  location.pathname === submenu.path
-                                    ? isDarkMode
-                                      ? "#2a4436"
-                                      : "#e6fff2"
-                                    : "transparent",
-                                transition: "all 0.2s ease",
-                                gap: "10px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.backgroundColor = isDarkMode ? "#2c2c3a" : "#f1f1f1")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.backgroundColor =
-                                  location.pathname === submenu.path
-                                    ? isDarkMode
-                                      ? "#2a4436"
-                                      : "#e6fff2"
-                                    : "transparent")
-                              }
-                            >
-                              <i className={submenu.icon} style={{ fontSize: "18px", minWidth: "18px" }}></i>
-                              <span>{submenu.label}</span>
-                            </Link>
-                          </li>
-                        ))}
-                    </motion.ul>
-                  )}
-                </AnimatePresence>
-              </>
-            ) : (
-              <Link
-                to={menu.path}
-                style={{
-                  color: isDarkMode ? "#e6e6e6" : "#333",
-                  backgroundColor:
-                    location.pathname === menu.path
-                      ? isDarkMode
-                        ? "#2d2d3c"
-                        : "#e6f0ff"
-                      : "transparent",
-                  fontSize: "17px",
-                  fontWeight: "500",
-                  padding: "10px 16px",
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  transition: "all 0.25s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    location.pathname === menu.path
-                      ? isDarkMode
-                        ? "#2d2d3c"
-                        : "#e6f0ff"
-                      : isDarkMode
-                      ? "#2a2a3a"
-                      : "#f0f0f0")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    location.pathname === menu.path
-                      ? isDarkMode
-                        ? "#2d2d3c"
-                        : "#e6f0ff"
-                      : "transparent")
-                }
-              >
-                <i className={menu.icon} style={{ fontSize: "22px" }}></i>
-                <span>{menu.label}</span>
-              </Link>
-            )}
-          </motion.li>
-        ))}
-      </ul>
+                    <AnimatePresence>
+                      {isMenuOpen(menu.key) && (
+                        <motion.ul
+                          className="submenu list-unstyled ps-4"
+                          initial="closed"
+                          animate="open"
+                          exit="closed"
+                          variants={subMenuVariants}
+                        >
+                          {menu.submenus
+                            .filter(
+                              (submenu) =>
+                                submenu.show === undefined || submenu.show
+                            )
+                            .map((submenu) => (
+                              <li
+                                key={submenu.path}
+                                className="submenu-item mb-1"
+                              >
+                                <Link
+                                  to={submenu.path}
+                                  className="submenu-link d-flex align-items-center px-3 py-2 rounded"
+                                  style={{
+                                    fontSize: "15px",
+                                    fontWeight: "400",
+                                    color:
+                                      location.pathname === submenu.path
+                                        ? isDarkMode
+                                          ? "#00e676"
+                                          : "#198754"
+                                        : isDarkMode
+                                        ? "#ccc"
+                                        : "#555",
+                                    backgroundColor:
+                                      location.pathname === submenu.path
+                                        ? isDarkMode
+                                          ? "#2a4436"
+                                          : "#e6fff2"
+                                        : "transparent",
+                                    transition: "all 0.2s ease",
+                                    gap: "10px",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.backgroundColor =
+                                      isDarkMode ? "#2c2c3a" : "#f1f1f1")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.backgroundColor =
+                                      location.pathname === submenu.path
+                                        ? isDarkMode
+                                          ? "#2a4436"
+                                          : "#e6fff2"
+                                        : "transparent")
+                                  }
+                                >
+                                  <i
+                                    className={submenu.icon}
+                                    style={{
+                                      fontSize: "18px",
+                                      minWidth: "18px",
+                                    }}
+                                  ></i>
+                                  <span>{submenu.label}</span>
+                                </Link>
+                              </li>
+                            ))}
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <Link
+                    to={menu.path}
+                    style={{
+                      color: isDarkMode ? "#e6e6e6" : "#333",
+                      backgroundColor:
+                        location.pathname === menu.path
+                          ? isDarkMode
+                            ? "#2d2d3c"
+                            : "#e6f0ff"
+                          : "transparent",
+                      fontSize: "17px",
+                      fontWeight: "500",
+                      padding: "10px 16px",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      transition: "all 0.25s ease",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        location.pathname === menu.path
+                          ? isDarkMode
+                            ? "#2d2d3c"
+                            : "#e6f0ff"
+                          : isDarkMode
+                          ? "#2a2a3a"
+                          : "#f0f0f0")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        location.pathname === menu.path
+                          ? isDarkMode
+                            ? "#2d2d3c"
+                            : "#e6f0ff"
+                          : "transparent")
+                    }
+                  >
+                    <i className={menu.icon} style={{ fontSize: "22px" }}></i>
+                    <span>{menu.label}</span>
+                  </Link>
+                )}
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
   );
 };
 

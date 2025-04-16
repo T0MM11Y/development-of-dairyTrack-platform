@@ -13,15 +13,13 @@ class Notification(db.Model):
     # Relationship dengan Cow
     cow = db.relationship('Cow', back_populates='notifications')
 
-    def to_dict(self):
+    def to_dict(self, include_cow=True):
         return {
             'id': self.id,
-            'cow_id': self.cow_id,
-            'date': self.date.strftime('%Y-%m-%d'),
             'message': self.message,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'cow': self.cow.to_dict() if self.cow else None  # Tambahkan data sapi
-        }
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'cow': self.cow.to_dict(include_notifications=False) if include_cow and self.cow else None
+    }
 
     def __repr__(self):
         return f"Notification('{self.cow_id}', '{self.date}', '{self.message}')"

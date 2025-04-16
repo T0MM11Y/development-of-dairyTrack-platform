@@ -17,7 +17,11 @@ def get_raw_milks():
     result = []
     for raw_milk in raw_milks:
         raw_milk_dict = raw_milk.to_dict()
-        # Gunakan timeLeft langsung dari to_dict()
+        
+        # Filter data dengan nilai null
+        if None in raw_milk_dict.values():
+            continue  # Lewati data dengan nilai null
+        
         result.append(raw_milk_dict)
     return jsonify(result)
 
