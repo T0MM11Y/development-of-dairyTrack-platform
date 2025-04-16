@@ -170,6 +170,7 @@ const withAdminLayout = (Component) => {
             style={{
               marginLeft: !isMobile ? (isCollapsed ? 80 : 275) : 0,
               padding: "20px",
+              paddingTop: isMobile ?  "15px" : "25px",  // ✅ offset tinggi header
               overflowY: "auto",
               transition: "margin-left 0.3s ease-in-out",
             }}

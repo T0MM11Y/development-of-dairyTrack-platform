@@ -236,7 +236,12 @@ const Header = ({onToggleSidebar }) => {
 <header
   id="page-topbar"
   className="header bg-white shadow-sm px-3"
-  style={{ zIndex: 1100, position: "relative" }} // <-- INI KUNCI!
+  style={{
+    position: "sticky", // atau "fixed"
+    top: 0,
+    zIndex: 1100,
+    width: "100%",
+  }}
 >
         {isLoading && (
         <div className="loading-overlay">
