@@ -2,10 +2,14 @@ from flask import Blueprint, jsonify
 from app import db
 from app.models.daily_milk_total import DailyMilkTotal
 from app.models import Notification
+import pytz
 from datetime import datetime
+
 
 # Define Blueprint
 daily_milk_totals_bp = Blueprint('daily_milk_totals', __name__)
+local_tz = pytz.timezone('Asia/Jakarta')
+
 
 @daily_milk_totals_bp.route('/daily_milk_totals', methods=['GET'])
 def get_daily_milk_totals():
@@ -45,7 +49,9 @@ def get_all_daily_milk_totals():
 
 @daily_milk_totals_bp.route('/daily_milk_totals/notifications', methods=['GET'])
 def get_low_production_notifications():
-    today = datetime.now().date()
+    current_time = datetime.now(local_tz)  # Current time with timezone
+
+    today = datetime.now(local_tz).date()  # Ensure timezone-aware date
     daily_totals = DailyMilkTotal.query.filter(DailyMilkTotal.date == today).all()
     
     MIN_PRODUCTION = 18
@@ -63,6 +69,7 @@ def get_low_production_notifications():
 
             if existing_notification:
                 existing_notification.message = message
+                notification_time = existing_notification.created_at  # Assuming created_at exists
             else:
                 notification = Notification(
                     cow_id=daily_total.cow_id,
@@ -70,10 +77,23 @@ def get_low_production_notifications():
                     message=message
                 )
                 db.session.add(notification)
+                notification_time = current_time
+
+            # Ensure notification_time is timezone-aware
+            if notification_time.tzinfo is None:
+                notification_time = local_tz.localize(notification_time)
+            else:
+                notification_time = notification_time.astimezone(local_tz)
+
+            # Calculate how long ago the notification was created
+            time_since_notification = current_time - notification_time
+            hours_ago, remainder = divmod(time_since_notification.total_seconds(), 3600)
+            minutes_ago = remainder // 60
+            human_readable_notification_time = f"{int(hours_ago)} hours {int(minutes_ago)} minutes ago"
 
             notifications.append({
                 'cow_id': daily_total.cow_id,
-                'date': daily_total.date.strftime('%Y-%m-%d'),
+                'date': human_readable_notification_time,
                 'total_volume': float(daily_total.total_volume),  # Convert to float
                 'deficit': deficit,
                 'message': message,
