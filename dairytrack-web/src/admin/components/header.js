@@ -4,9 +4,10 @@ import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 import { fetchAPI } from "../../api/apiClient";
 
+import logoSm from "../../assets/client/img/logo/logo.png";
 import logoDark from "../../assets/client/img/logo/logo.png";
+import logoLight from "../../assets/client/img/logo/logo.png";
 import englishFlag from "../../assets/admin/images/flags/us.jpg";
-import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
@@ -80,7 +81,7 @@ const LanguageDropdown = () => {
   );
 };
 
-const Header = () => {
+const Header = ({ onToggleSidebar }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
@@ -90,9 +91,6 @@ const Header = () => {
   const [userName, setUserName] = useState("Guest");
 
   const navigate = useNavigate();
-  const [lowProductionNotifications, setLowProductionNotifications] = useState(
-    []
-  );
 
   const notificationDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
@@ -153,23 +151,6 @@ const Header = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await getLowProductionNotifications();
-        if (response.notifications) {
-          setLowProductionNotifications(response.notifications);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to fetch low production notifications:",
-          error.message
-        );
-      }
-    };
-
-    fetchNotifications();
-  }, []);
   useEffect(() => {
     let interval;
     if (isLoading) {
@@ -252,7 +233,14 @@ const Header = () => {
   };
 
   return (
-    <header id="page-topbar" className="header">
+    <header id="page-topbar" className="header bg-white shadow-sm px-3"
+    style={{
+      position: "sticky", // atau "fixed"
+      top: 0,
+      zIndex: 1100,
+      width: "100%",
+    }}
+  >
       {isLoading && (
         <div className="loading-overlay">
           <div className="loading-text">{loadingText}</div>
@@ -260,35 +248,48 @@ const Header = () => {
       )}
 
       <div className="navbar-header">
-        <div className="d-flex align-items-start w-100">
+      <div className="d-flex align-items-center justify-content-between w-100">
+      {/* ⬇️ Toggle Button Mobile ⬇️ */}
+     {/* ⬇️ Toggle Button Mobile ⬇️ */}
+    <div className="d-md-none d-flex align-items-center me-3">
+      <button
+        type="button"
+        className="btn btn-outline-secondary"
+        onClick={onToggleSidebar}
+      >
+        <i className="ri-menu-line"></i>
+      </button>
+    </div>
           {/* Logo */}
           <div className="navbar-brand-box">
             <span className="logo-lg">
               <img src={logoDark} alt="logo-dark" height="90" />
             </span>
           </div>
-
-          {/* Language Dropdown */}
-          <LanguageDropdown />
+      </div>
+            {/* Right Section: Dropdowns */}
+            <div className="d-flex align-items-center ms-auto gap-3">
+            {/* Language Dropdown */}
+            <LanguageDropdown />
 
           {/* Full-screen Toggle */}
-          <div className="dropdown d-none d-lg-inline-block me-4 mt-2">
-            <button
-              type="button"
-              className="btn header-item noti-icon waves-effect"
-              onClick={toggleFullScreen}
-            >
-              <i
-                className={`ri-${
-                  isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-                }`}
-              ></i>
-            </button>
-          </div>
+          <div className="d-none d-lg-inline-block">
+              <button
+                type="button"
+                className="btn header-item noti-icon waves-effect"
+                onClick={toggleFullScreen}
+              >
+                <i
+                  className={`ri-${
+                    isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
+                  }`}
+                ></i>
+              </button>
+            </div>
 
           {/* Notifications dropdown */}
-          <div className="dropdown d-inline-block mt-2">
-            <button
+          <div className="dropdown">
+          <button
               type="button"
               className="btn header-item noti-icon waves-effect"
               id="page-header-notifications-dropdown"
@@ -324,40 +325,83 @@ const Header = () => {
               </div>
               <div data-simplebar="init" style={{ maxHeight: "250px" }}>
                 <div className="simplebar-content">
-                  {lowProductionNotifications.length > 0 ? (
-                    lowProductionNotifications.map((notification, index) => (
-                      <a
-                        key={index}
-                        href="#"
-                        className="text-reset notification-item"
-                      >
-                        <div className="d-flex">
-                          <div className="avatar-xs me-3">
-                            <span className="avatar-title bg-info rounded-circle font-size-16">
-                              <i className="ri-drop-line"></i>
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <h6 className="mb-1">
-                              ID : {notification.cow_id} - Cow Name :{" "}
-                              {notification.name}
-                            </h6>
-                            <div className="font-size-12 text-muted">
-                              <p className="mb-0">{notification.message}</p>
-                              <p className="mb-0">
-                                <i className="mdi mdi-clock-outline"></i>{" "}
-                                {notification.date}
-                              </p>
-                            </div>
-                          </div>
+                  {/* Feed Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-warning rounded-circle font-size-16">
+                          <i className="ri-alert-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Feed Stock Low</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 10 min ago
+                          </p>
                         </div>
-                      </a>
-                    ))
-                  ) : (
-                    <div className="text-center text-muted p-3">
-                      <p>No low production notifications.</p>
+                      </div>
                     </div>
-                  )}
+                  </a>
+
+                  {/* Health Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-danger rounded-circle font-size-16">
+                          <i className="ri-heart-pulse-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Health Alert</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 2 hours
+                            ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Sales Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-primary rounded-circle font-size-16">
+                          <i className="ri-shopping-cart-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">New Order</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 30 min ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+
+                  {/* Milk Notifications */}
+                  <a href="" className="text-reset notification-item">
+                    <div className="d-flex">
+                      <div className="avatar-xs me-3">
+                        <span className="avatar-title bg-info rounded-circle font-size-16">
+                          <i className="ri-drop-line"></i>
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h6 className="mb-1">Milk Production Down</h6>
+                        <div className="font-size-12 text-muted">
+                          <p className="mb-0">
+                            <i className="mdi mdi-clock-outline"></i> 3 hours
+                            ago
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
                 </div>
               </div>
               <div className="p-2 border-top">
