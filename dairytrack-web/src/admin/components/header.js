@@ -259,7 +259,6 @@ const Header = ({ onToggleSidebar }) => {
       }
     });
   };
-
   return (
     <header
       id="page-topbar"
@@ -311,33 +310,38 @@ const Header = ({ onToggleSidebar }) => {
             </button>
           </div>
 
-          <div className="dropdown">
+          <div className="dropdown d-inline-block">
             <button
               type="button"
-              className="btn header-item noti-icon waves-effect"
+              className="btn header-item noti-icon waves-effect position-relative"
               id="page-header-notifications-dropdown"
               onClick={toggleNotificationDropdown}
             >
               <i className="ri-notification-3-line"></i>
-              {notifications.length > 0 && <span className="noti-dot"></span>}
+              {notifications.length > 0 && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {notifications.filter((n) => n.isNew).length || ""}
+                </span>
+              )}
             </button>
             <div
               className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
                 isNotificationDropdownOpen ? "show" : ""
               }`}
+              aria-labelledby="page-header-notifications-dropdown"
               style={{
                 position: "absolute",
-                inset: "0px auto auto 0px",
-                margin: "0px",
-                transform: "translate(-250px, 60px)",
+                right: 0,
+                left: "auto",
                 width: "300px",
+                maxHeight: "calc(100vh - 100px)",
+                overflow: "hidden",
               }}
-              aria-labelledby="page-header-notifications-dropdown"
             >
-              <div className="p-3">
+              <div className="p-3 border-bottom">
                 <div className="row align-items-center">
                   <div className="col">
-                    <h6 className="m-0"> Notifications </h6>
+                    <h6 className="m-0">Notifications</h6>
                   </div>
                   <div className="col-auto">
                     <a href="#!" className="small">
@@ -346,53 +350,72 @@ const Header = ({ onToggleSidebar }) => {
                   </div>
                 </div>
               </div>
-              <div data-simplebar="init" style={{ maxHeight: "250px" }}>
-                <div className="simplebar-content">
-                  {isLoadingNotifications ? (
-                    <div className="text-center p-3">Loading...</div>
-                  ) : notifications.length === 0 ? (
-                    <div className="text-center p-3">
-                      No notifications available.
-                    </div>
-                  ) : (
-                    notifications.map((notification, index) => (
-                      <a
-                        key={index}
-                        href="#"
-                        className="text-reset notification-item"
-                      >
-                        <div className="d-flex">
-                          <div className="avatar-xs me-3">
-                            <span className="avatar-title bg-info rounded-circle font-size-16">
-                              <i className="ri-drop-line"></i>
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <h6 className="mb-1">
-                              {notification.name || "Cow"}
-                            </h6>
-                            <p className="mb-1">{notification.message}</p>
-                            <div className="font-size-12 text-muted">
-                              <p className="mb-0">
-                                <i className="mdi mdi-clock-outline"></i>{" "}
-                                {notification.date}
-                              </p>
-                            </div>
+              <div
+                data-simplebar
+                style={{ maxHeight: "250px", overflowY: "auto" }}
+              >
+                {isLoadingNotifications ? (
+                  <div className="text-center p-3">Loading...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="text-center p-3">
+                    No notifications available.
+                  </div>
+                ) : (
+                  notifications.map((notification, index) => (
+                    <a
+                      key={index}
+                      href="#"
+                      className={`text-reset notification-item ${
+                        notification.isNew ? "new-notification" : ""
+                      }`}
+                    >
+                      <div className="d-flex position-relative p-3 border-bottom">
+                        <div className="avatar-xs me-3">
+                          <span
+                            className={`avatar-title ${
+                              notification.type === "freshness"
+                                ? "bg-success"
+                                : "bg-warning"
+                            } rounded-circle font-size-16`}
+                          >
+                            <i
+                              className={
+                                notification.type === "freshness"
+                                  ? "ri-refresh-line"
+                                  : "ri-alert-line"
+                              }
+                            ></i>
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <h6 className="mb-1">
+                            {notification.name || "Notification"}
+                          </h6>
+                          <p className="mb-1 text-muted">
+                            {notification.message}
+                          </p>
+                          <div className="font-size-12 text-muted">
+                            <i className="mdi mdi-clock-outline"></i>{" "}
+                            {notification.date}
                           </div>
                         </div>
-                      </a>
-                    ))
-                  )}
-                </div>
+                        {notification.isNew && (
+                          <span className="position-absolute top-0 end-0 mt-2 me-2 translate-middle p-1 bg-danger border border-light rounded-circle">
+                            <span className="visually-hidden">New alerts</span>
+                          </span>
+                        )}
+                      </div>
+                    </a>
+                  ))
+                )}
               </div>
               <div className="p-2 border-top">
                 <div className="d-grid">
                   <a
-                    className="btn btn-sm btn-link font-size-14 text-center"
-                    href="javascript:void(0)"
+                    className="btn btn-sm btn-primary font-size-14 text-center"
+                    href="#!"
                   >
-                    <i className="mdi mdi-arrow-right-circle me-1"></i> View
-                    More..
+                    <i className="mdi mdi-arrow-right-circle me-1"></i> View All
                   </a>
                 </div>
               </div>

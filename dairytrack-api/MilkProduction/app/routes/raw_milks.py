@@ -252,6 +252,7 @@ def get_freshness_notifications():
                 'expiration_time': expiration_time.isoformat(),
                 'time_remaining': str(time_remaining),
                 'message': message,
+                'date'  : current_time.date(),
                 'name': raw_milk.cow.name if raw_milk.cow else None,
             })
 
