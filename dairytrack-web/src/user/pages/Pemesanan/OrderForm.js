@@ -1,5 +1,6 @@
-// PemesananComponents/OrderForm.jsx
 import React, { useState } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import TermsModal from "./TermsModal";
 import ProductList from "./ProductList";
 import OrderSummary from "./OrderSummary";
@@ -30,16 +31,24 @@ const OrderForm = ({
     setShowTermsModal(true);
   };
 
+  // Handler khusus untuk PhoneInput
+  const handlePhoneChange = (value) => {
+    handleChange({ target: { name: "phone_number", value } });
+  };
+
   return (
-    <div className="contact-form-container" style={{ height: "auto", minHeight: "650px" }}>
+    <div
+      className="contact-form-container"
+      style={{ height: "auto", minHeight: "650px" }}
+    >
       <h3 className="text-center mb-4">Form Pemesanan Produk</h3>
-      
+
       {error && (
         <div className="alert alert-danger" role="alert">
           {error}
         </div>
       )}
-      
+
       <form className="order-form" onSubmit={handleSubmit}>
         {/* Personal Information Section */}
         <div className="row g-3 mb-3">
@@ -76,15 +85,17 @@ const OrderForm = ({
             />
           </div>
           <div className="col-12">
-            <input
-              type="tel"
-              id="phone_number"
-              name="phone_number"
-              required
-              className="form-control"
-              placeholder="Nomor Telepon"
+            <PhoneInput
+              country={"id"} // Default ke Indonesia (+62)
               value={form.phone_number}
-              onChange={handleChange}
+              onChange={handlePhoneChange}
+              inputProps={{
+                name: "phone_number",
+                required: true,
+                className: "form-control",
+                placeholder: "Nomor Telepon",
+              }}
+              containerStyle={{ width: "100%" }}
             />
           </div>
           <div className="col-12">
@@ -100,7 +111,7 @@ const OrderForm = ({
             ></textarea>
           </div>
         </div>
-        
+
         {/* Order Details Section */}
         <div className="mb-3">
           <div className="row mb-2">
@@ -117,7 +128,8 @@ const OrderForm = ({
                     key={product.product_type}
                     value={product.product_type}
                   >
-                    {product.product_name} (Stok: {product.total_quantity}) - {formatPrice(product.price)}
+                    {product.product_name} (Stok: {product.total_quantity}) -{" "}
+                    {formatPrice(product.price)}
                   </option>
                 ))}
               </select>
@@ -159,9 +171,9 @@ const OrderForm = ({
               </button>
             </div>
           </div>
-          
+
           {/* List of added items */}
-          <ProductList 
+          <ProductList
             orderItems={form.order_items}
             availableProducts={availableProducts}
             formatPrice={formatPrice}
@@ -169,7 +181,7 @@ const OrderForm = ({
             incrementItemQuantity={incrementItemQuantity}
             decrementItemQuantity={decrementItemQuantity}
           />
-          
+
           {/* Notes Section */}
           <div className="mt-3">
             <div className="mb-3">
@@ -186,12 +198,12 @@ const OrderForm = ({
             </div>
           </div>
         </div>
-        
+
         {/* Order Summary */}
         {form.order_items.length > 0 && (
           <OrderSummary total={total} formatPrice={formatPrice} />
         )}
-        
+
         {/* Terms and Submit */}
         <div className="mb-3 form-check">
           <input
@@ -213,7 +225,7 @@ const OrderForm = ({
             yang berlaku
           </label>
         </div>
-        
+
         <button
           type="submit"
           className="btn btn-primary w-100"
@@ -225,7 +237,10 @@ const OrderForm = ({
       </form>
 
       {/* Terms and Conditions Modal */}
-      <TermsModal show={showTermsModal} onHide={() => setShowTermsModal(false)} />
+      <TermsModal
+        show={showTermsModal}
+        onHide={() => setShowTermsModal(false)}
+      />
     </div>
   );
 };
