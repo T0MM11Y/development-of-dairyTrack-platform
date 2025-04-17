@@ -125,11 +125,13 @@ const Modal = ({
                     required
                   >
                     <option value="">Select Cow</option>
-                    {cows.map((cow) => (
-                      <option key={cow.id} value={cow.id}>
-                        {cow.name}
-                      </option>
-                    ))}
+                    {cows
+                      .filter((cow) => cow.gender === "Female") // Filter hanya sapi bergender Female
+                      .map((cow) => (
+                        <option key={cow.id} value={cow.id}>
+                          {cow.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="mb-3">

@@ -71,24 +71,24 @@ const FeedStockPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Feed Stock Data</h2>
+        <h2 className="text-xl font-bold text-gray-800">Stok Pakan</h2>
         <button
           onClick={() => setShowAddModal(true)}
           className="btn btn-info waves-effect waves-light"
         >
-          + Add Stock
+          + Tambah Stok Pakan
         </button>
       </div>
 
       {loading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
+            <span className="sr-only">Memuat...</span>
           </div>
-          <p className="mt-2">Loading feed stock data...</p>
+          <p className="mt-2">Memuat Data Stok Pakan</p>
         </div>
       ) : feedStock.length === 0 ? (
-        <p className="text-gray-500">No feed stock data available.</p>
+        <p className="text-gray-500">Tidak ada data stok pakan yang tersedia</p>
       ) : (
         <div className="col-lg-12">
           <div className="card">
@@ -98,9 +98,9 @@ const FeedStockPage = () => {
                   <thead>
                     <tr>
                       <th>No</th>
-                      <th>Name</th>
-                      <th>Stock (kg)</th>
-                      <th>Actions</th>
+                      <th>Nama</th>
+                      <th>Stok (kg)</th>
+                      <th>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>

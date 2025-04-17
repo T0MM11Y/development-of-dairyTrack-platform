@@ -44,6 +44,27 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
       finalValue = value ? Math.max(0, parseFloat(value)) : "";
     }
 
+    // Handle gender change
+    if (name === "gender") {
+      if (value === "Male") {
+        setForm((prevForm) => ({
+          ...prevForm,
+          gender: value,
+          reproductive_status: "-", // Set reproductive_status to "-"
+          lactation_status: false, // Uncheck lactation_status
+          lactation_phase: "-", // Set lactation_phase to "-"
+        }));
+      } else {
+        setForm((prevForm) => ({
+          ...prevForm,
+          gender: value,
+          reproductive_status: "Open", // Reset reproductive_status
+          lactation_phase: "Dry", // Reset lactation_phase
+        }));
+      }
+      return;
+    }
+
     // Handle lactation_status checkbox
     if (name === "lactation_status") {
       setForm((prevForm) => ({
@@ -99,6 +120,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
     }
     return true;
   };
+
   return (
     <div
       className="modal show d-block"
@@ -106,13 +128,25 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
     >
       <div className="modal-dialog">
         <div className="modal-content">
-          <div className="modal-header">
+          <div className="modal-header d-flex justify-content-between align-items-center">
             <h4 className="modal-title text-info fw-bold">Tambah Data Sapi</h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
+            <div className="d-flex align-items-center">
+              <select
+                name="gender"
+                value={form.gender}
+                onChange={handleChange}
+                className="form-select form-select-sm me-2"
+                style={{ width: "120px" }}
+              >
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+              <button
+                className="btn-close"
+                onClick={onClose}
+                disabled={submitting}
+              ></button>
+            </div>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
@@ -179,9 +213,11 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                       value={form.reproductive_status}
                       onChange={handleChange}
                       className="form-select"
+                      disabled={form.gender === "Male"} // Disable if gender is Male
                     >
                       <option value="Pregnant">Pregnant</option>
                       <option value="Open">Open</option>
+                      <option value="-">-</option>
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">
@@ -205,15 +241,15 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                       value={form.lactation_phase}
                       onChange={handleChange}
                       className="form-select"
-                      disabled={!form.lactation_status} // Disable when lactation_status is unchecked
+                      disabled={
+                        form.gender === "Male" || !form.lactation_status
+                      } // Disable if gender is Male or lactation_status is unchecked
                     >
                       <option value="Early">Early</option>
                       <option value="Mid">Mid</option>
                       <option value="Late">Late</option>
-                      {!form.lactation_status && (
-                        <option value="Dry">Dry</option>
-                      )}{" "}
-                      {/* Show Dry only if lactation_status is unchecked */}
+                      <option value="Dry">Dry</option>
+                      <option value="-">-</option>
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">
@@ -241,6 +277,7 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                     name="lactation_status"
                     checked={form.lactation_status}
                     onChange={handleChange}
+                    disabled={form.gender === "Male"} // Disable if gender is Male
                   />
                   <label className="form-check-label fw-bold">
                     Status Laktasi Aktif

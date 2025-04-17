@@ -33,3 +33,18 @@ export const updateDailyMilkTotal = (id, data) =>
 // DELETE daily milk total
 export const deleteDailyMilkTotal = (id) =>
   fetchAPI(`daily_milk_totals/${id}`, "DELETE");
+
+// GET low production notifications
+export const getLowProductionNotifications = async () => {
+  try {
+    // Panggil endpoint API untuk mendapatkan notifikasi produksi rendah
+    const response = await fetchAPI("daily_milk_totals/notifications");
+    return response; // Kembalikan data yang diterima dari API
+  } catch (error) {
+    console.error(
+      "Failed to fetch low production notifications:",
+      error.message
+    );
+    throw error; // Lempar error agar bisa ditangani di tempat lain
+  }
+};
