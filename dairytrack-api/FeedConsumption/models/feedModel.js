@@ -13,7 +13,7 @@ const Feed = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "feed_type", // Menggunakan nama tabel
+        model: "feed_type",
         key: "id",
       },
       onDelete: "CASCADE",
@@ -30,65 +30,61 @@ const Feed = sequelize.define(
         msg: "Feed name must be unique",
       },
       validate: {
-        notEmpty: { msg: "Feed name cannot be empty" }
-      }
+        notEmpty: { msg: "Feed name cannot be empty" },
+      },
     },
     protein: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        // Gunakan validator kustom untuk protein untuk mengizinkan nilai 0
         isValidProtein(value) {
-          // Jika nilai ada dan bisa dikonversi ke angka
           if (value === null || value === undefined) {
-            throw new Error('Protein value is required');
+            throw new Error("Protein value is required");
           }
           const numValue = parseFloat(value);
           if (isNaN(numValue)) {
-            throw new Error('Protein must be a number');
+            throw new Error("Protein must be a number");
           }
           if (numValue < 0) {
-            throw new Error('Protein cannot be negative');
+            throw new Error("Protein cannot be negative");
           }
-        }
+        },
       },
     },
     energy: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        // Gunakan validator kustom untuk energi untuk mengizinkan nilai 0
         isValidEnergy(value) {
           if (value === null || value === undefined) {
-            throw new Error('Energy value is required');
+            throw new Error("Energy value is required");
           }
           const numValue = parseFloat(value);
           if (isNaN(numValue)) {
-            throw new Error('Energy must be a number');
+            throw new Error("Energy must be a number");
           }
           if (numValue < 0) {
-            throw new Error('Energy cannot be negative');
+            throw new Error("Energy cannot be negative");
           }
-        }
+        },
       },
     },
     fiber: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        // Gunakan validator kustom untuk serat untuk mengizinkan nilai 0
         isValidFiber(value) {
           if (value === null || value === undefined) {
-            throw new Error('Fiber value is required');
+            throw new Error("Fiber value is required");
           }
           const numValue = parseFloat(value);
           if (isNaN(numValue)) {
-            throw new Error('Fiber must be a number');
+            throw new Error("Fiber must be a number");
           }
           if (numValue < 0) {
-            throw new Error('Fiber cannot be negative');
+            throw new Error("Fiber cannot be negative");
           }
-        }
+        },
       },
     },
     min_stock: {

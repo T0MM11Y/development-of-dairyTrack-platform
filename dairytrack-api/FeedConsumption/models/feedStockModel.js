@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Feed = require("./feedModel");
-const Notification = require("./notificationModel"); // Tambahkan baris ini
+const Notification = require("./notificationModel");
 
 const FeedStock = sequelize.define(
   "FeedStock",
@@ -11,7 +11,7 @@ const FeedStock = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    feedId: { // properti JavaScript
+    feedId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: "feed_id",
@@ -19,6 +19,9 @@ const FeedStock = sequelize.define(
     stock: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+      validate: {
+        min: { args: [0], msg: "Stock cannot be negative" },
+      },
     },
     created_at: {
       type: DataTypes.DATE,
@@ -38,12 +41,17 @@ const FeedStock = sequelize.define(
 // Hook afterUpdate untuk membuat notifikasi jika stok sudah mendekati habis
 FeedStock.addHook("afterUpdate", async (feedStock, options) => {
   try {
-    if (parseFloat(feedStock.stock) <= parseFloat(feedStock.minStock)) {
-      // Ambil data feed untuk mendapatkan nama feed
-      const feed = await Feed.findByPk(feedStock.feedId);
-      if (feed) {
+    const feed = await Feed.findByPk(feedStock.feedId);
+    if (feed && parseFloat(feedStock.stock) <= parseFloat(feed.min_stock)) {
+      const existingNotification = await Notification.findOne({
+        where: {
+          feed_stock_id: feedStock.id,
+          is_read: false,
+        },
+      });
+
+      if (!existingNotification) {
         const message = `Stok ${feed.name} sudah mau habis, silahkan tambah stock`;
-        // Buat notifikasi
         await Notification.create({
           feed_stock_id: feedStock.id,
           message: message,
@@ -52,9 +60,15 @@ FeedStock.addHook("afterUpdate", async (feedStock, options) => {
       }
     }
   } catch (error) {
-    console.error("Error in afterUpdate hook for FeedStock:", error);
-    // Tangani error agar tidak menggagalkan update utama
+    console.error("Error in afterUpdate hook for FeedStock:", {
+      error: error.message,
+      stack: error.stack,
+    });
   }
 });
+
+// Asosiasi
+FeedStock.belongsTo(Feed, { foreignKey: "feed_id" });
+Feed.hasMany(FeedStock, { foreignKey: "feed_id" });
 
 module.exports = FeedStock;
