@@ -1,5 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+
+// Impor model lain untuk digunakan di hook
+// Ini aman karena asosiasi didefinisikan di associations.js
 const Feed = require("./feedModel");
 const Notification = require("./notificationModel");
 
@@ -51,7 +54,9 @@ FeedStock.addHook("afterUpdate", async (feedStock, options) => {
       });
 
       if (!existingNotification) {
-        const message = `Stok ${feed.name} sudah mau habis, silahkan tambah stock`;
+        // Konversi feedStock.stock menjadi integer menggunakan Math.floor()
+        const stockAsInteger = Math.floor(parseFloat(feedStock.stock));
+        const message = `Sisa stok ${feed.name} tinggal ${stockAsInteger} kg, silahkan tambah stok`;
         await Notification.create({
           feed_stock_id: feedStock.id,
           message: message,
@@ -66,9 +71,5 @@ FeedStock.addHook("afterUpdate", async (feedStock, options) => {
     });
   }
 });
-
-// Asosiasi
-FeedStock.belongsTo(Feed, { foreignKey: "feed_id" });
-Feed.hasMany(FeedStock, { foreignKey: "feed_id" });
 
 module.exports = FeedStock;

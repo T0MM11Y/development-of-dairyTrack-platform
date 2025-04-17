@@ -11,7 +11,8 @@ import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
 import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
 import { getFreshnessNotifications } from "../../api/produktivitas/rawMilk";
-import { getAllNotifications } from "../../api/kesehatan/notification"; // pastikan path benar
+import { getAllNotifications } from "../../api/kesehatan/notification"; 
+import { getFeedNotifications } from "../../api/pakan/notification"; 
 
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
@@ -111,19 +112,23 @@ const Header = ({ onToggleSidebar }) => {
         const lowProductionResponse = await getLowProductionNotifications();
         const freshnessResponse = await getFreshnessNotifications();
         const signalNotifications = await getAllNotifications();
-        
+        const feedNotificationResponse = await getFeedNotifications();
+  
+        // Pastikan untuk mengambil data dari properti `data` untuk feedNotification
+        const feedNotifications = feedNotificationResponse.data || [];
+  
         const combinedNotifications = [
           ...(lowProductionResponse.notifications || []),
           ...(freshnessResponse.notifications || []),
-          ...(signalNotifications || []), // ✅ tambahkan di sini
-
+          ...(signalNotifications || []),
+          ...feedNotifications, // Gunakan feedNotifications yang sudah dipetakan
         ];
-
+  
         // Sort notifications by date (newest first)
         combinedNotifications.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
         );
-
+  
         setNotifications(combinedNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error.message);
@@ -131,7 +136,7 @@ const Header = ({ onToggleSidebar }) => {
         setIsLoadingNotifications(false);
       }
     };
-
+  
     fetchNotifications();
   }, []);
 

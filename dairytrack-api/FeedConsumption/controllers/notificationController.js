@@ -30,13 +30,58 @@ const notificationController = {
   // Get all notifications
   getAllNotifications: async (req, res) => {
     try {
+      // Log untuk memastikan asosiasi tersedia
+      console.log("Checking associations before query...");
+      console.log("Notification associations:", Notification.associations);
+      console.log("FeedStock associations:", FeedStock.associations);
+
       const notifications = await Notification.findAll({
         order: [["date", "DESC"]],
+        include: [
+          {
+            model: FeedStock,
+            as: "feedStock",
+            required: false,
+            include: [
+              {
+                model: Feed,
+                as: "feed",
+                required: false,
+                attributes: ["name"],
+              },
+            ],
+            attributes: ["stock"],
+          },
+        ],
       });
+
+      // Map notifications to update message for feed stock notifications
+      const formattedNotifications = notifications.map((notification) => {
+        const notificationData = notification.toJSON();
+        if (
+          notificationData.feed_stock_id &&
+          notificationData.feedStock &&
+          notificationData.feedStock.feed
+        ) {
+          // Konversi stock menjadi integer
+          const stockAsInteger = Math.floor(
+            parseFloat(notificationData.feedStock.stock)
+          );
+          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+        } else if (notificationData.feed_stock_id) {
+          notificationData.message =
+            notificationData.message ||
+            "Stok pakan tidak ditemukan, silahkan periksa";
+        }
+        delete notificationData.feedStock;
+        return notificationData;
+      });
+
+      console.log("Formatted Notifications:", formattedNotifications); // Debugging
 
       return res.status(200).json({
         success: true,
-        data: notifications,
+        data: formattedNotifications,
       });
     } catch (error) {
       console.error("Error fetching notifications:", {
@@ -57,11 +102,44 @@ const notificationController = {
       const notifications = await Notification.findAll({
         where: { is_read: false },
         order: [["date", "DESC"]],
+        include: [
+          {
+            model: FeedStock,
+            as: "feedStock",
+            required: false,
+            include: [
+              {
+                model: Feed,
+                as: "feed",
+                required: false,
+                attributes: ["name"],
+              },
+            ],
+            attributes: ["stock"],
+          },
+        ],
+      });
+
+      const formattedNotifications = notifications.map((notification) => {
+        const notificationData = notification.toJSON();
+        if (
+          notificationData.feed_stock_id &&
+          notificationData.feedStock &&
+          notificationData.feedStock.feed
+        ) {
+          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${notificationData.feedStock.stock}kg, silahkan tambah stok`;
+        } else if (notificationData.feed_stock_id) {
+          notificationData.message =
+            notificationData.message ||
+            "Stok pakan tidak ditemukan, silahkan periksa";
+        }
+        delete notificationData.feedStock;
+        return notificationData;
       });
 
       return res.status(200).json({
         success: true,
-        data: notifications,
+        data: formattedNotifications,
       });
     } catch (error) {
       console.error("Error fetching unread notifications:", {
@@ -176,13 +254,14 @@ const notificationController = {
         include: [
           {
             model: Feed,
+            as: "feed",
             required: true,
             attributes: ["name", "min_stock"],
           },
         ],
         where: {
           stock: {
-            [Op.lte]: sequelize.col("Feed.min_stock"),
+            [Op.lte]: sequelize.col("feed.min_stock"),
           },
         },
       });
@@ -198,7 +277,7 @@ const notificationController = {
       const notifications = [];
 
       for (const stockItem of criticalStocks) {
-        const message = `Stok ${stockItem.Feed.name} tinggal ${stockItem.stock}kg, silahkan tambah stok`;
+        const message = `Sisa stok ${stockItem.feed.name} tinggal ${stockItem.stock}kg, silahkan tambah stok`;
 
         const existingNotification = await Notification.findOne({
           where: {
@@ -244,11 +323,48 @@ const notificationController = {
           },
         },
         order: [["date", "DESC"]],
+        include: [
+          {
+            model: FeedStock,
+            as: "feedStock",
+            required: false,
+            include: [
+              {
+                model: Feed,
+                as: "feed",
+                required: false,
+                attributes: ["name"],
+              },
+            ],
+            attributes: ["stock"],
+          },
+        ],
+      });
+
+      const formattedNotifications = notifications.map((notification) => {
+        const notificationData = notification.toJSON();
+        if (
+          notificationData.feed_stock_id &&
+          notificationData.feedStock &&
+          notificationData.feedStock.feed
+        ) {
+          // Konversi stock menjadi integer
+          const stockAsInteger = Math.floor(
+            parseFloat(notificationData.feedStock.stock)
+          );
+          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+        } else if (notificationData.feed_stock_id) {
+          notificationData.message =
+            notificationData.message ||
+            "Stok pakan tidak ditemukan, silahkan periksa";
+        }
+        delete notificationData.feedStock;
+        return notificationData;
       });
 
       return res.status(200).json({
         success: true,
-        data: notifications,
+        data: formattedNotifications,
       });
     } catch (error) {
       console.error("Error fetching feed stock notifications:", {

@@ -1,7 +1,7 @@
 import { fetchAPI } from "../apiClient2";
 
 // Mendapatkan semua notifikasi
-export const getAllNotifications = () => fetchAPI("notifications/");
+export const getFeedNotifications = () => fetchAPI("notification/");
 
 // Mendapatkan notifikasi yang belum dibaca
 export const getUnreadNotifications = () => fetchAPI("notifications/unread");
