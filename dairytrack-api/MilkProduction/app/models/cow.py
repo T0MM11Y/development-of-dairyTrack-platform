@@ -14,26 +14,28 @@ class Cow(db.Model):
     reproductive_status = db.Column(db.String(20))
     gender = db.Column(db.String(10))
     entry_date = db.Column(db.Date)
+    notifications = db.relationship('Notification', back_populates='cow')
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
     # Relationship with RawMilk
     raw_milks = db.relationship('RawMilk', back_populates='cow', cascade='all, delete-orphan')
 
-
-    def to_dict(self):
+    def to_dict(self, include_notifications=True, include_raw_milks=True):
         return {
             'id': self.id,
             'farmer_id': self.farmer_id,
             'name': self.name,
             'breed': self.breed,
-            'birth_date': self.birth_date.strftime('%Y-%m-%d'),
+            'birth_date': self.birth_date.strftime('%Y-%m-%d') if self.birth_date else None,
             'lactation_status': self.lactation_status,
             'lactation_phase': self.lactation_phase,
-            'weight_kg': str(self.weight_kg),
+            'weight_kg': str(self.weight_kg) if self.weight_kg else None,
             'reproductive_status': self.reproductive_status,
             'gender': self.gender,
-            'entry_date': self.entry_date.strftime('%Y-%m-%d')
+            'entry_date': self.entry_date.strftime('%Y-%m-%d') if self.entry_date else None,
+            'notifications': [notification.to_dict() for notification in self.notifications] if include_notifications else [],
+            'raw_milks': [raw_milk.to_dict(include_cow=False) for raw_milk in self.raw_milks] if include_raw_milks else []
         }
 
     def __repr__(self):

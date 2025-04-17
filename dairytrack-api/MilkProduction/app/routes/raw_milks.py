@@ -3,6 +3,7 @@ from app import db
 from app.models import RawMilk
 from datetime import datetime, timedelta
 import pytz
+from app.models import Notification
 
 # Timezone lokal (misalnya, Asia/Jakarta)
 local_tz = pytz.timezone('Asia/Jakarta')
@@ -17,7 +18,11 @@ def get_raw_milks():
     result = []
     for raw_milk in raw_milks:
         raw_milk_dict = raw_milk.to_dict()
-        # Gunakan timeLeft langsung dari to_dict()
+        
+        # Filter data dengan nilai null
+        if None in raw_milk_dict.values():
+            continue  # Lewati data dengan nilai null
+        
         result.append(raw_milk_dict)
     return jsonify(result)
 
@@ -43,13 +48,29 @@ def create_raw_milk():
     # Set expiration time to 8 hours from production time
     expiration_time = production_time + timedelta(hours=8)
     current_time = datetime.now(local_tz)
+
+    # Ambil entri terakhir berdasarkan cow_id dan urutkan berdasarkan waktu produksi
+    last_raw_milk = RawMilk.query.filter_by(cow_id=data.get('cow_id')).order_by(RawMilk.production_time.desc()).first()
+
+    # Default previous_volume adalah 0
+    previous_volume = 0.0
+
+    # Jika ada entri sebelumnya, periksa apakah masih di hari yang sama
+    if last_raw_milk:
+        last_production_date = last_raw_milk.production_time.astimezone(local_tz).date()
+        current_production_date = production_time.astimezone(local_tz).date()
+
+        if last_production_date == current_production_date:
+            previous_volume = last_raw_milk.volume_liters
+
+    # Hitung waktu tersisa
     time_left = max((expiration_time - current_time).total_seconds(), 0)
 
     raw_milk = RawMilk(
         cow_id=data.get('cow_id'),
         production_time=production_time,
         volume_liters=data.get('volume_liters'),
-        previous_volume=float(data.get('previous_volume', 0.0)),
+        previous_volume=previous_volume,  # Gunakan previous_volume yang dihitung
         status=data.get('status', 'fresh'),
         session=data.get('session'),
         daily_total_id=data.get('daily_total_id'),
@@ -186,3 +207,72 @@ def delete_raw_milk(id):
     db.session.delete(raw_milk)
     db.session.commit()
     return jsonify({'message': 'Raw milk production has been deleted!'})
+
+@raw_milks_bp.route('/raw_milks/freshness_notifications', methods=['GET'])
+def get_freshness_notifications():
+    current_time = datetime.now(local_tz)  # Current time with timezone
+    raw_milks = RawMilk.query.all()
+    
+    FRESHNESS_THRESHOLD = timedelta(hours=4)  # 4 hours before expiration
+    notifications = []
+
+    for raw_milk in raw_milks:
+        expiration_time = raw_milk.expiration_time
+        if expiration_time.tzinfo is None:
+            expiration_time = local_tz.localize(expiration_time)
+        
+        time_remaining = expiration_time - current_time
+
+        # Check if the milk is nearing expiration (within 4 hours) and not expired
+        if timedelta(0) < time_remaining <= FRESHNESS_THRESHOLD and not raw_milk.is_expired:
+            # Convert time_remaining to a human-readable format
+            hours, remainder = divmod(time_remaining.seconds, 3600)
+            minutes = remainder // 60
+            human_readable_time = f"{hours} hours {minutes} minutes"
+
+            message = f"Milk nearing expiration: {human_readable_time} remaining until expiration."
+
+            # Check if a notification already exists for this raw milk
+            existing_notification = Notification.query.filter_by(
+                cow_id=raw_milk.cow_id,
+                date=current_time.date(),
+                message=message
+            ).first()
+
+            if existing_notification:
+                existing_notification.message = message
+            else:
+                notification = Notification(
+                    cow_id=raw_milk.cow_id,
+                    date=current_time.date(),
+                    message=message
+                )
+                db.session.add(notification)
+
+            # Ensure raw_milk.created_at is timezone-aware
+            created_at = raw_milk.created_at
+            if created_at.tzinfo is None:
+                created_at = local_tz.localize(created_at)
+
+            # Calculate how long ago the milk record was created
+            time_since_creation = current_time - created_at
+            hours_ago, remainder = divmod(time_since_creation.total_seconds(), 3600)
+            minutes_ago = remainder // 60
+            human_readable_creation_time = f"{int(hours_ago)} hours {int(minutes_ago)} minutes ago"
+
+            notifications.append({
+                'cow_id': raw_milk.cow_id,
+                'id': raw_milk.id,
+                'expiration_time': expiration_time.isoformat(),
+                'time_remaining': human_readable_time,
+                'message': message,
+                'date': human_readable_creation_time,
+                'name': raw_milk.cow.name if raw_milk.cow else None,
+            })
+
+    db.session.commit()
+
+    if not notifications:
+        return jsonify({'message': 'No milk nearing expiration.'}), 200
+
+    return jsonify({'notifications': notifications}), 200

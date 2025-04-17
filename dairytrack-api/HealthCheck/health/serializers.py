@@ -183,6 +183,8 @@ class ReproductionCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="cow.name", read_only=True)
+
     class Meta:
         model = Notification
-        fields = '__all__'
+        fields = ['id', 'cow', 'name', 'message', 'date', 'created_at']
