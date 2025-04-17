@@ -1,7 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const DailyFeedComplete = require("./dailyFeedComplete");
-const Feed = require("./feedModel");
 
 const DailyFeedItems = sequelize.define(
   "daily_feed_items", // Changed to match the table name used in controller
@@ -39,26 +37,5 @@ const DailyFeedItems = sequelize.define(
     timestamps: false,
   }
 );
-
-// Define associations
-DailyFeedComplete.hasMany(DailyFeedItems, {
-  foreignKey: "daily_feed_id",
-  as: "feedItems",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
-DailyFeedItems.belongsTo(DailyFeedComplete, {
-  foreignKey: "daily_feed_id",
-  as: "feedSession", // Could rename this to dailyFeed for clarity
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
-// Association with Feed
-DailyFeedItems.belongsTo(Feed, {
-  foreignKey: "feed_id",
-  as: "feed"
-});
 
 module.exports = DailyFeedItems;

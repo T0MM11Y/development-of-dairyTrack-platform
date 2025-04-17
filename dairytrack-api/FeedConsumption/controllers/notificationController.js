@@ -34,7 +34,7 @@ const notificationController = {
       console.log("Checking associations before query...");
       console.log("Notification associations:", Notification.associations);
       console.log("FeedStock associations:", FeedStock.associations);
-
+  
       const notifications = await Notification.findAll({
         order: [["date", "DESC"]],
         include: [
@@ -54,8 +54,8 @@ const notificationController = {
           },
         ],
       });
-
-      // Map notifications to update message for feed stock notifications
+  
+      // Map notifications to update message and add name for feed stock notifications
       const formattedNotifications = notifications.map((notification) => {
         const notificationData = notification.toJSON();
         if (
@@ -64,21 +64,22 @@ const notificationController = {
           notificationData.feedStock.feed
         ) {
           // Konversi stock menjadi integer
-          const stockAsInteger = Math.floor(
-            parseFloat(notificationData.feedStock.stock)
-          );
-          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+          const stockAsInteger = Math.floor(parseFloat(notificationData.feedStock.stock));
+          const feedName = notificationData.feedStock.feed.name;
+          notificationData.message = `Sisa stok ${feedName} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+          // Tambahkan properti name
+          notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
-            notificationData.message ||
-            "Stok pakan tidak ditemukan, silahkan periksa";
+            notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
+          notificationData.name = "Stok Feed Tidak Diketahui";
         }
         delete notificationData.feedStock;
         return notificationData;
       });
-
+  
       console.log("Formatted Notifications:", formattedNotifications); // Debugging
-
+  
       return res.status(200).json({
         success: true,
         data: formattedNotifications,
@@ -340,7 +341,7 @@ const notificationController = {
           },
         ],
       });
-
+  
       const formattedNotifications = notifications.map((notification) => {
         const notificationData = notification.toJSON();
         if (
@@ -349,19 +350,20 @@ const notificationController = {
           notificationData.feedStock.feed
         ) {
           // Konversi stock menjadi integer
-          const stockAsInteger = Math.floor(
-            parseFloat(notificationData.feedStock.stock)
-          );
-          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+          const stockAsInteger = Math.floor(parseFloat(notificationData.feedStock.stock));
+          const feedName = notificationData.feedStock.feed.name;
+          notificationData.message = `Sisa stok ${feedName} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+          // Tambahkan properti name
+          notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
-            notificationData.message ||
-            "Stok pakan tidak ditemukan, silahkan periksa";
+            notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
+          notificationData.name = "Stok Feed Tidak Diketahui";
         }
         delete notificationData.feedStock;
         return notificationData;
       });
-
+  
       return res.status(200).json({
         success: true,
         data: formattedNotifications,
