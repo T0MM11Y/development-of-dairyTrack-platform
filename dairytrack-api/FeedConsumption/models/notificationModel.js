@@ -1,4 +1,3 @@
-// models/notificationModel.js
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -14,21 +13,26 @@ const Notification = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    notification_date: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
     message: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
     type: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      defaultValue: "warning",
+    },
+    is_read: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    date: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "notifications",
+    tableName: "notification",
     timestamps: false,
   }
 );

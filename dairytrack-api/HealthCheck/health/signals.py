@@ -4,7 +4,8 @@ from .models import HealthCheck, DiseaseHistory, Symptom
 from .models import Notification
 from .models import Reproduction
 from django.utils.timezone import now
-
+from datetime import timedelta
+from threading import Timer  # Untuk delay simple tanpa celery
 # 🔥 Signal: Deteksi abnormal otomatis saat pemeriksaan dibuat/diubah
 @receiver(pre_save, sender=HealthCheck)
 def check_health_status(sender, instance, **kwargs):
@@ -36,7 +37,20 @@ def check_health_status(sender, instance, **kwargs):
             message="⚠️ Pemeriksaan kesehatan mendeteksi: " + " ".join(messages),
             date=now().date()
         )
+@receiver(post_save, sender=HealthCheck)
+def schedule_followup_check(sender, instance, created, **kwargs):
+    if created:
+        # Hanya jika data baru dibuat
+        def check_status_later():
+            refreshed = HealthCheck.objects.filter(id=instance.id).first()
+            if refreshed and refreshed.status != 'handled':
+                Notification.objects.create(
+                    cow=refreshed.cow,
+                    message="🚨 Segera periksa kesehatan sapi! Pemeriksaan belum ditangani lebih dari 1 hari.",
+                    date=now().date()
+                )
 
+        Timer(86400, check_status_later).start()
 # 🔥 Signal: Update status jadi "handled" jika riwayat penyakit ditangani
 @receiver(post_save, sender=DiseaseHistory)
 def update_healthcheck_status(sender, instance, **kwargs):

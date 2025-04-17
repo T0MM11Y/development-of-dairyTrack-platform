@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const sequelize = require("./config/database");
 const initializeDatabase = require("./config/initDatabase");
+const feedStockService = require('./controllers/feedStockMonitoring');
 
 // Import Routes
 const FeedType = require("./routes/feedTypeRoutes");
@@ -13,6 +14,7 @@ const FeedStock = require("./routes/feedStockRoutes");
 const DailyFeedComplete = require("./routes/dailyFeedCompleteRoutes");
 const DailyFeedItems = require("./routes/dailyFeedItemRoutes");
 const DailyFeedNutrients = require("./routes/dailyFeedNutrientsRoutes");
+const Notification = require("./routes/notificationRoutes");
 
 // Inisialisasi database
 initializeDatabase();
@@ -48,6 +50,20 @@ app.use((req, res, next) => {
     next();
 });
 
+const scheduleStockCheck = () => {
+    setInterval(async () => {
+      try {
+        await feedStockService.monitorFeedStockLevels();
+      } catch (error) {
+        console.error('Scheduled feed stock check failed:', error);
+      }
+    }, 60 * 60 * 1000); // Check every hour
+  };
+  
+  // Start the scheduled job
+  scheduleStockCheck();
+  
+
 // Sinkronisasi database
 const syncOption = process.env.DB_SYNC_ALTER === "true" ? { alter: true } : {};
 sequelize.sync(syncOption)
@@ -61,6 +77,7 @@ app.use("/api/feedStock", FeedStock);
 app.use("/api/dailyFeedComplete", DailyFeedComplete);
 app.use("/api/dailyFeedItem", DailyFeedItems);
 app.use("/api/dailyFeedNutrients", DailyFeedNutrients);
+app.use("/api/notification", Notification);
 
 // Middleware untuk menangani endpoint yang tidak ditemukan
 app.use((req, res) => {
