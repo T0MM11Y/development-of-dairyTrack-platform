@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'stock',
     'sales',
     'finance',
+    'notifications',
     'corsheaders',
     'django_filters',
 ]

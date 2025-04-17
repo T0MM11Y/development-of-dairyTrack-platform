@@ -20,7 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path("", include("stock.urls")),
     path("sales/", include("sales.urls")),
-    path("finance/", include("finance.urls"))
+    path("finance/", include("finance.urls")),
+    path("notifications/", include("notifications.urls"))
 ]
 
 # ada error Unknown column 'sales_order.order_no' in 'field list'
