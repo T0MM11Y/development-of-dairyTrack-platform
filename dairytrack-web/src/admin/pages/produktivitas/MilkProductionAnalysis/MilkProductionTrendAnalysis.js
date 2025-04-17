@@ -240,13 +240,14 @@ const MilkProductionAnalysis = () => {
   };
 
   const chartData = {
-    labels: filteredData().map((entry) => {
-      const cowName = entry.cow?.name || "Unknown";
-      const date = entry.date
-        ? format(new Date(entry.date), "dd MMMM yyyy", { locale: id })
-        : "Invalid Date";
-      return `${cowName} - ${date}`;
-    }),
+    labels: filteredData().map(
+      (entry) =>
+        `${entry.cow?.name || "Unknown"} - ${format(
+          new Date(entry.date),
+          "dd MMMM yyyy",
+          { locale: id }
+        )}`
+    ),
     datasets: [
       {
         type: "line",

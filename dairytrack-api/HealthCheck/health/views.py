@@ -80,5 +80,5 @@ class ReproductionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return ReproductionListSerializer
 
 class NotificationListView(generics.ListAPIView):
-    queryset = Notification.objects.all().order_by('-created_at')  # ✅ Urutkan berdasarkan waktu dibuat
+    queryset = Notification.objects.all().order_by('-notification_date')
     serializer_class = NotificationSerializer

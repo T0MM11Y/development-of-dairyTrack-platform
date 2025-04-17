@@ -7,4 +7,3 @@ from .daily_milk_total import DailyMilkTotal
 from .blog import Blog
 from .topicBlog import TopicBlog
 from .gallery import Gallery
-from .notification import Notification

@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("./models/associations");
+require("./models/associations"); // Inisialisasi hubungan antar model
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -24,8 +24,8 @@ app.use(helmet());
 
 // Middleware CORS
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: ["http://localhost:3000", "http://localhost:5173"], 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 }));
@@ -34,25 +34,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware untuk logging request dengan timestamp
-app.use((req, res, next) => {
-    const timestamp = new Date().toLocaleString('id-ID', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
-    next();
-});
-
-// Sinkronisasi database
+// Sinkronisasi database (Dikontrol dari .env)
 const syncOption = process.env.DB_SYNC_ALTER === "true" ? { alter: true } : {};
 sequelize.sync(syncOption)
-    .then(() => console.log("✅ Database ready"))
-    .catch(err => console.error("❌ Database sync error:", err));
+    .then(() => console.log("✅ Database synchronized"))
+    .catch(err => console.error("❌ Error syncing database:", err));
 
 // Routes
 app.use("/api/feedType", FeedType);

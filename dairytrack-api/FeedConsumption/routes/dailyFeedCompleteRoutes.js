@@ -9,4 +9,6 @@ router.get('/search', dailyFeedCompleteController.searchDailyFeeds);
 router.get('/:id', dailyFeedCompleteController.getDailyFeedById);
 router.put('/:id', dailyFeedCompleteController.updateDailyFeed);
 router.delete('/:id', dailyFeedCompleteController.deleteDailyFeed);
+// router.get('/nutrisi', dailyFeedCompleteController.getAllNutritionalInfo);
+// router.get('/nutrisi/:id', dailyFeedCompleteController.getNutritionalInfoById);
 module.exports = router;

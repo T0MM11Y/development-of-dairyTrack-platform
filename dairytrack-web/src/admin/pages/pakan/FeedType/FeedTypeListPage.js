@@ -20,11 +20,11 @@ const FeedTypeListPage = () => {
       if (response.success && response.feedTypes) {
         setFeedTypes(response.feedTypes);
       } else {
-        console.error("Format respons tidak sesuai", response);
+        console.error("Unexpected response format", response);
         setFeedTypes([]);
       }
     } catch (error) {
-      console.error("Gagal mengambil jenis pakan:", error.message);
+      console.error("Failed to fetch feed types:", error.message);
       setFeedTypes([]);
     } finally {
       setLoading(false);
@@ -33,26 +33,26 @@ const FeedTypeListPage = () => {
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Apakah Anda ingin menghapus jenis pakan ini?",
+      title: "Are you sure?",
+      text: "Do you want to delete this feed type?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
+      confirmButtonText: "Yes, delete!",
+      cancelButtonText: "Cancel",
     });
 
     if (result.isConfirmed) {
       try {
         const response = await deleteFeedType(id);
-        console.log("Respon Hapus:", response);
+        console.log("Delete Response:", response);
 
-        Swal.fire("Terhapus!", "Jenis pakan telah dihapus.", "success");
+        Swal.fire("Deleted!", "Feed type has been deleted.", "success");
         setFeedTypes(feedTypes.filter((item) => item.id !== id));
       } catch (error) {
-        console.error("Gagal menghapus jenis pakan:", error.message);
-        Swal.fire("Kesalahan!", "Terjadi kesalahan saat menghapus.", "error");
+        console.error("Failed to delete feed type:", error.message);
+        Swal.fire("Error!", "An error occurred while deleting.", "error");
       }
     }
   };
@@ -83,7 +83,7 @@ const FeedTypeListPage = () => {
   return (
     <div className="p-4 position-relative">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl fw-bold text-dark">Data Jenis Pakan</h2>
+        <h2 className="text-xl fw-bold text-dark">Feed Types Data</h2>
         <button
           onClick={() => setShowCreateModal(true)}
           className="btn btn-info waves-effect waves-light"
@@ -93,17 +93,17 @@ const FeedTypeListPage = () => {
             fontSize: "1rem",
           }}
         >
-          + Tambah Jenis Pakan
+          + Add Feed Type
         </button>
       </div>
 
       {loading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status" />
-          <p className="mt-2">Memuat data jenis pakan...</p>
+          <p className="mt-2">Loading feed types data...</p>
         </div>
       ) : feedTypes.length === 0 ? (
-        <p className="text-muted">Tidak ada data jenis pakan tersedia.</p>
+        <p className="text-muted">No feed types data available.</p>
       ) : (
         <div className="card">
           <div className="card-body">
@@ -112,8 +112,8 @@ const FeedTypeListPage = () => {
                 <thead className="table-light">
                   <tr>
                     <th>No</th>
-                    <th>Nama</th>
-                    <th>Aksi</th>
+                    <th>Name</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -125,15 +125,15 @@ const FeedTypeListPage = () => {
                         <button
                           className="btn btn-warning btn-sm me-2"
                           onClick={() => handleViewFeedType(feed.id)}
-                          aria-label={`Ubah ${feed.name}`}
+                          aria-label={`Edit ${feed.name}`}
                           style={{ borderRadius: "6px" }}
                         >
-                          <i className="ri-edit-line"></i> 
+                          <i className="ri-edit-line"></i>
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(feed.id)}
-                          aria-label={`Hapus ${feed.name}`}
+                          aria-label={`Delete ${feed.name}`}
                           style={{ borderRadius: "6px" }}
                         >
                           <i className="ri-delete-bin-6-line"></i>

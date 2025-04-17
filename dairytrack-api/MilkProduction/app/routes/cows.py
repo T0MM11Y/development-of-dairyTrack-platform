@@ -93,10 +93,3 @@ def delete_cow(id):
     db.session.commit()
 
     return jsonify({'message': f'Cow with name "{cow_name}" and id "{id}" has been successfully deleted!'})
-
-
-@cows_bp.route('/cows/female', methods=['GET'])
-def get_male_cows():
-    # Query untuk mendapatkan semua sapi jantan
-    male_cows = Cow.query.filter_by(gender='female').order_by(Cow.id).all()
-    return jsonify([cow.to_dict() for cow in male_cows])

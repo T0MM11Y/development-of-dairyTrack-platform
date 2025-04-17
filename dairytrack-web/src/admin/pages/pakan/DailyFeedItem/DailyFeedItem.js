@@ -111,39 +111,33 @@ const FeedItemListPage = () => {
     return `${years} tahun ${months} bulan`;
   };
 
-  // Process feed items with date filtering only (for exports)
-  const getDateFilteredFeedItems = () => {
-    return dailyFeeds
-      .filter((dailyFeed) => {
-        const feedDate = new Date(dailyFeed.date);
-        const start = startDate ? new Date(startDate) : null;
-        const end = endDate ? new Date(endDate) : null;
-        return (
-          (!start || feedDate >= start) &&
-          (!end || feedDate <= end)
-        );
-      })
-      .map((dailyFeed) => {
-        const items = feedItems.filter((item) => item.daily_feed_id === dailyFeed.id);
-        const cowName = cowNames[dailyFeed.cow_id] || `Sapi #${dailyFeed.cow_id}`;
-        const cowAge = calculateAge(cowBirthDates[dailyFeed.cow_id]);
-        const cowWeight = cowWeights[dailyFeed.cow_id] || "Tidak Diketahui";
-        return {
-          daily_feed_id: dailyFeed.id,
-          date: dailyFeed.date,
-          session: dailyFeed.session,
-          cow_id: dailyFeed.cow_id,
-          cow: cowName,
-          age: cowAge,
-          weight: cowWeight,
-          weather: dailyFeed.weather || "Tidak Ada",
-          items,
-        };
-      });
-  };
-
-  // Filtered items for display (includes search query)
-  const filteredFeedItems = getDateFilteredFeedItems()
+  const filteredFeedItems = dailyFeeds
+    .filter((dailyFeed) => {
+      const feedDate = new Date(dailyFeed.date);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      return (
+        (!start || feedDate >= start) &&
+        (!end || feedDate <= end)
+      );
+    })
+    .map((dailyFeed) => {
+      const items = feedItems.filter((item) => item.daily_feed_id === dailyFeed.id);
+      const cowName = cowNames[dailyFeed.cow_id] || `Sapi #${dailyFeed.cow_id}`;
+      const cowAge = calculateAge(cowBirthDates[dailyFeed.cow_id]);
+      const cowWeight = cowWeights[dailyFeed.cow_id] || "Tidak Diketahui";
+      return {
+        daily_feed_id: dailyFeed.id,
+        date: dailyFeed.date,
+        session: dailyFeed.session,
+        cow_id: dailyFeed.cow_id,
+        cow: cowName,
+        age: cowAge,
+        weight: cowWeight,
+        weather: dailyFeed.weather || "Tidak Ada",
+        items,
+      };
+    })
     .filter((group) => {
       if (!searchQuery) return true;
       const searchLower = searchQuery.toLowerCase();
@@ -162,10 +156,7 @@ const FeedItemListPage = () => {
     });
 
   const exportToExcel = () => {
-    // Use date filtered items only, ignore search query
-    const dateFilteredItems = getDateFilteredFeedItems();
-    
-    const data = dateFilteredItems.map((group) => ({
+    const data = filteredFeedItems.map((group) => ({
       "Tanggal": group.date,
       "Sapi": group.cow,
       "Usia": group.age,
@@ -187,17 +178,14 @@ const FeedItemListPage = () => {
   };
 
   const exportToPDF = () => {
-    // Use date filtered items only, ignore search query
-    const dateFilteredItems = getDateFilteredFeedItems();
-    
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "landscape" }); // Set orientation to landscape
     doc.text("Daftar Pakan Harian", 14, 10);
     autoTable(doc, {
       startY: 20,
       head: [
         ["Tanggal", "Sapi", "Usia", "Berat (kg)", "Sesi", "Cuaca", "Pakan 1", "Jumlah 1", "Pakan 2", "Jumlah 2", "Pakan 3", "Jumlah 3"],
       ],
-      body: dateFilteredItems.map((group) => [
+      body: filteredFeedItems.map((group) => [
         group.date,
         group.cow,
         group.age,
@@ -308,9 +296,6 @@ const FeedItemListPage = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <small className="text-muted">
-                  Pencarian hanya mempengaruhi tampilan, bukan hasil ekspor
-                </small>
               </div>
             </div>
             <div className="col-md-6">
@@ -339,7 +324,7 @@ const FeedItemListPage = () => {
                 </div>
                 <div className="col-md-2">
                   <div className="mb-3">
-                    <label className="form-label d-none d-md-block"> </label>
+                    <label className="form-label d-none d-md-block"> </label>
                     <button 
                       className="btn btn-primary w-100" 
                       onClick={handleApplyFilters}
@@ -372,20 +357,12 @@ const FeedItemListPage = () => {
         </div>
       ) : filteredFeedItems.length === 0 ? (
         <div className="alert alert-info">
-          <i className="ri-information-line me-2"></i> 
-          {searchQuery 
-            ? "Tidak ada data yang sesuai dengan pencarian Anda."
-            : "Tidak ada data pakan harian tersedia untuk rentang tanggal ini."}
+          <i className="ri-information-line me-2"></i> Tidak ada data pakan harian tersedia untuk rentang tanggal ini.
         </div>
       ) : (
         <div className="card">
           <div className="card-header bg-light">
             <h4 className="card-title mb-0">Data Pakan Harian</h4>
-            {searchQuery && (
-              <div className="mt-2 text-muted">
-                <small>Menampilkan hasil pencarian untuk: <strong>{searchQuery}</strong></small>
-              </div>
-            )}
           </div>
           <div className="card-body">
             {Object.keys(cowNames).length === 0 && (
@@ -402,6 +379,15 @@ const FeedItemListPage = () => {
                     <th className="text-center" style={{ width: "8%" }}>Sesi</th>
                     <th className="text-center" colSpan="3">Pakan</th>
                     <th className="text-center" style={{ width: "12%" }}>Aksi</th>
+                  </tr>
+                  <tr>
+                    <th className="text-center">Tanggal</th>
+                    <th>Sapi</th>
+                    <th className="text-center">Sesi</th>
+                    <th className="text-center">Pakan 1</th>
+                    <th className="text-center">Pakan 2</th>
+                    <th className="text-center">Pakan 3</th>
+                    <th className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -13,35 +13,36 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
     const fetchFeedType = async () => {
       try {
         setLoading(true);
-        console.log("Mengambil data jenis pakan dengan ID:", feedId);
+        console.log("Fetching feed type with ID:", feedId);
 
         if (!feedId) {
-          throw new Error("ID pakan tidak valid");
+          throw new Error("Invalid feed ID provided");
         }
 
         const response = await getFeedTypeById(feedId);
-        console.log("Respons API:", response);
+        console.log("Raw API Response:", response);
 
         if (!isMounted) return;
 
         if (!response) {
-          throw new Error("Tidak ada respons dari API");
+          throw new Error("No response received from API");
         }
 
         if (response.feedType && typeof response.feedType === "object") {
-          console.log("Data Jenis Pakan:", response.feedType);
+          console.log("Feed Type Data:", response.feedType);
           setName(response.feedType.name || "");
         } else {
           throw new Error(
-            response.message || "Jenis pakan tidak ditemukan atau format respons tidak valid"
+            response.message || "Feed type not found or invalid response format"
           );
         }
       } catch (error) {
-        console.error("Kesalahan saat mengambil data:", error.message);
+        console.error("Fetch Error:", error.message);
+        console.error("Full Error:", error);
         if (isMounted) {
           Swal.fire({
-            title: "Terjadi Kesalahan!",
-            text: `Gagal memuat data jenis pakan: ${error.message}`,
+            title: "Error!",
+            text: `Failed to load feed type data: ${error.message}`,
             icon: "error",
             confirmButtonText: "OK",
           }).then(() => {
@@ -67,8 +68,8 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
 
     if (!name.trim()) {
       Swal.fire({
-        title: "Terjadi Kesalahan!",
-        text: "Nama Jenis Pakan wajib diisi!",
+        title: "Error!",
+        text: "Feed type name is required.",
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -76,14 +77,14 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
     }
 
     const confirm = await Swal.fire({
-      title: "Apakah kamu yakin?",
-      text: "Data jenis pakan akan diperbarui.",
+      title: "Are you sure?",
+      text: "The feed type data will be updated.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Update",
-      cancelButtonText: "Batal",
+      confirmButtonText: "Yes, update!",
+      cancelButtonText: "Cancel",
     });
 
     if (!confirm.isConfirmed) return;
@@ -91,12 +92,12 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
     setUpdateLoading(true);
     try {
       const response = await updateFeedType(feedId, { name });
-      console.log("Respons update:", response);
+      console.log("Update Response:", response);
 
       if (response?.success) {
         Swal.fire({
-          title: "Berhasil!",
-          text: "Jenis pakan berhasil diperbarui.",
+          title: "Success!",
+          text: "Feed type updated successfully.",
           icon: "success",
           confirmButtonText: "OK",
         });
@@ -104,17 +105,17 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
         if (onSuccess) {
           onSuccess({ id: feedId, name });
         }
-        onClose();
+        onClose(); // Close the modal after successful update
       } else {
-        throw new Error(response?.message || "Gagal memperbarui jenis pakan.");
+        throw new Error(response?.message || "Failed to update feed type.");
       }
     } catch (error) {
-      console.error("Kesalahan saat update:", error.message);
+      console.error("Update Error:", error.message);
       Swal.fire({
-        title: "Terjadi Kesalahan!",
+        title: "Error!",
         text: error.message.includes("already exists")
-          ? "Jenis pakan dengan nama ini sudah ada!"
-          : `Gagal memperbarui jenis pakan: ${error.message}`,
+          ? "A feed type with this name already exists!"
+          : `Failed to update feed type: ${error.message}`,
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -167,7 +168,7 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
               className="modal-title fw-bold"
               style={{ color: "#17a2b8", fontSize: "1.5rem" }}
             >
-              Ubah Jenis Pakan
+              Edit Feed Type
             </h5>
             <button
               className="btn-close"
@@ -180,15 +181,15 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
             {loading ? (
               <div className="text-center p-4">
                 <div className="spinner-border text-info" role="status">
-                  <span className="visually-hidden">Memuat...</span>
+                  <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">Memuat data...</p>
+                <p className="mt-2">Loading data...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label htmlFor="feedTypeName" className="form-label fw-semibold">
-                    Nama Jenis Pakan
+                    Feed Type Name
                   </label>
                   <input
                     type="text"
@@ -197,7 +198,7 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    placeholder="Contoh: Konsentrat"
+                    placeholder="e.g., Concentrate"
                     style={{
                       borderRadius: "8px",
                       padding: "10px",
@@ -217,7 +218,7 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
                       fontSize: "1rem",
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                   <button
                     type="submit"
@@ -236,10 +237,10 @@ const FeedTypeDetailEditModal = ({ feedId, onClose, onSuccess }) => {
                           role="status"
                           aria-hidden="true"
                         ></span>
-                        Menyimpan...
+                        Saving...
                       </>
                     ) : (
-                      "Simpan Perubahan"
+                      "Save Changes"
                     )}
                   </button>
                 </div>

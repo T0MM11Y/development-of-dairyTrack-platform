@@ -4,7 +4,6 @@ from sqlalchemy import event
 from app.models.raw_milk import RawMilk
 from sqlalchemy import insert
 from sqlalchemy import update
-
 from app.models.cow import Cow  
 
 
@@ -28,7 +27,7 @@ class DailyMilkTotal(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'date': self.date.strftime('%Y-%m-%d') if self.date else None,
+            'date': self.date,
             'total_volume': self.total_volume,
             'total_sessions': self.total_sessions,  
             'cow': {

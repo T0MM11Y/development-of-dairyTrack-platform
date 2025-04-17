@@ -55,32 +55,18 @@ exports.updateFeedType = async (req, res) => {
   try {
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Feed type not found" 
-      });
+      return res.status(404).json({ message: "Feed type not found" });
     }
 
     await feedType.update({ name });
-    res.status(200).json({ 
-      success: true,
-      message: "Feed type updated successfully", 
-      data: feedType 
-    });
+    res
+      .status(200)
+      .json({ message: "Feed type updated successfully", feedType });
   } catch (err) {
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.original?.code === "ER_DUP_ENTRY"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: `Jenis pakan dengan nama "${name}" sudah ada! Silakan masukkan nama yang berbeda.`,
-      });
+    if (err.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({ message: "Feed type name must be unique" });
     }
-    res.status(500).json({ 
-      success: false,
-      message: err.message || "Terjadi kesalahan pada server." 
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 

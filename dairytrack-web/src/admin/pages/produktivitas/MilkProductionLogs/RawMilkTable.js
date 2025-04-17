@@ -19,9 +19,10 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
     }
   };
 
-  const paginatedData = [...rawMilks]
-    .sort((a, b) => new Date(b.production_time) - new Date(a.production_time)) // Sort descending by production_time
-    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedData = rawMilks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   useEffect(() => {
     const fetchExpirationStatus = async () => {

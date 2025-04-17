@@ -9,10 +9,6 @@ import logoDark from "../../assets/client/img/logo/logo.png";
 import logoLight from "../../assets/client/img/logo/logo.png";
 import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
-import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
-import { getFreshnessNotifications } from "../../api/produktivitas/rawMilk";
-import { getAllNotifications } from "../../api/kesehatan/notification"; // pastikan path benar
-
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
@@ -84,15 +80,10 @@ const LanguageDropdown = () => {
     </div>
   );
 };
-
-const Header = ({ onToggleSidebar }) => {
+const Header = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
     useState(false);
-  const [notifications, setNotifications] = useState([]); // State for notifications
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false); // Loading state for notifications
-
-  const notificationDropdownRef = useRef(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Processing");
@@ -100,40 +91,10 @@ const Header = ({ onToggleSidebar }) => {
 
   const navigate = useNavigate();
 
+  const notificationDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
   const notificationButtonRef = useRef(null);
   const userButtonRef = useRef(null);
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setIsLoadingNotifications(true);
-      try {
-        const lowProductionResponse = await getLowProductionNotifications();
-        const freshnessResponse = await getFreshnessNotifications();
-        const signalNotifications = await getAllNotifications();
-        
-        const combinedNotifications = [
-          ...(lowProductionResponse.notifications || []),
-          ...(freshnessResponse.notifications || []),
-          ...(signalNotifications || []), // ✅ tambahkan di sini
-
-        ];
-
-        // Sort notifications by date (newest first)
-        combinedNotifications.sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
-        );
-
-        setNotifications(combinedNotifications);
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error.message);
-      } finally {
-        setIsLoadingNotifications(false);
-      }
-    };
-
-    fetchNotifications();
-  }, []);
 
   useEffect(() => {
     const sessionTimeout = setTimeout(() => {
@@ -224,7 +185,6 @@ const Header = ({ onToggleSidebar }) => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
     if (isNotificationDropdownOpen) setIsNotificationDropdownOpen(false);
   };
-
   const handleLogout = async () => {
     Swal.fire({
       title: "Are you sure?",
@@ -270,166 +230,69 @@ const Header = ({ onToggleSidebar }) => {
     });
   };
   return (
-    <header
-      id="page-topbar"
-      className="header bg-white shadow-sm px-3"
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 1100,
-        width: "100%",
-      }}
-    >
-      <div className="navbar-header d-flex align-items-center justify-content-between">
-        {/* Logo and Sidebar Toggle */}
-        <div className="d-flex align-items-center">
-          <button
-            type="button"
-            className="btn btn-outline-secondary d-md-none me-3"
-            onClick={onToggleSidebar}
-          >
-            <i className="ri-menu-line"></i>
-          </button>
+    <header id="page-topbar" className="header">
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-text">{loadingText}</div>
+        </div>
+      )}
+
+      <div className="navbar-header">
+        <div className="d-flex align-items-start w-100">
+          {/* Logo */}
           <div className="navbar-brand-box">
             <span className="logo-lg">
-              <img src={logoDark} alt="logo-dark" height="50" />
+              <img src={logoDark} alt="logo-dark" height="90" />
             </span>
           </div>
-        </div>
 
-        {/* Main Navigation */}
-        <div className="d-flex align-items-center gap-3">
           {/* Language Dropdown */}
           <LanguageDropdown />
 
-          {/* Fullscreen Toggle */}
-          <button
-            type="button"
-            className="btn header-item noti-icon waves-effect d-none d-lg-inline-block"
-            onClick={toggleFullScreen}
-          >
-            <i
-              className={`ri-${
-                isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-              }`}
-            ></i>
-          </button>
-
-          {/* Notification Dropdown */}
-          <div className="dropdown d-inline-block">
+          {/* Full-screen Toggle */}
+          <div className="dropdown d-none d-lg-inline-block me-4 mt-2">
             <button
               type="button"
-              className="btn header-item noti-icon waves-effect position-relative"
+              className="btn header-item noti-icon waves-effect"
+              onClick={toggleFullScreen}
+            >
+              <i
+                className={`ri-${
+                  isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
+                }`}
+              ></i>
+            </button>
+          </div>
+
+          {/* Notifications dropdown */}
+          <div className="dropdown d-inline-block mt-2">
+            <button
+              type="button"
+              className="btn header-item noti-icon waves-effect"
               id="page-header-notifications-dropdown"
               onClick={toggleNotificationDropdown}
             >
               <i className="ri-notification-3-line"></i>
-              {notifications.length > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {notifications.filter((n) => n.isNew).length || ""}
-                </span>
-              )}
+              <span className="noti-dot"></span>
             </button>
             <div
               className={`dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 ${
                 isNotificationDropdownOpen ? "show" : ""
               }`}
-              aria-labelledby="page-header-notifications-dropdown"
               style={{
                 position: "absolute",
-                right: 0,
-                left: "auto",
-                width: "300px",
-                maxHeight: "calc(100vh - 100px)",
-                overflow: "hidden",
+                inset: "0px auto auto 0px",
+                margin: "0px",
+                transform: "translate(-270px, 70px)",
               }}
+              aria-labelledby="page-header-notifications-dropdown"
             >
-              <div className="p-3 border-bottom">
-                <div className="row align-items-center">
-                  <div className="col">
-                    <h6 className="m-0">Notifications</h6>
-                  </div>
-                  <div className="col-auto">
-                    <a href="#!" className="small">
-                      View All
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div
-                data-simplebar
-                style={{ maxHeight: "250px", overflowY: "auto" }}
-              >
-                {isLoadingNotifications ? (
-                  <div className="text-center p-3">Loading...</div>
-                ) : notifications.length === 0 ? (
-                  <div className="text-center p-3">
-                    No notifications available.
-                  </div>
-                ) : (
-                  notifications.map((notification, index) => (
-                    <a
-                      key={index}
-                      href="#"
-                      className={`text-reset notification-item ${
-                        notification.isNew ? "new-notification" : ""
-                      }`}
-                    >
-                      <div className="d-flex position-relative p-3 border-bottom">
-                        <div className="avatar-xs me-3">
-                          <span
-                            className={`avatar-title ${
-                              notification.type === "freshness"
-                                ? "bg-success"
-                                : "bg-warning"
-                            } rounded-circle font-size-16`}
-                          >
-                            <i
-                              className={
-                                notification.type === "freshness"
-                                  ? "ri-refresh-line"
-                                  : "ri-alert-line"
-                              }
-                            ></i>
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <h6 className="mb-1">
-                            {notification.name || "Notification"}
-                          </h6>
-                          <p className="mb-1 text-muted">
-                            {notification.message}
-                          </p>
-                          <div className="font-size-12 text-muted">
-                            <i className="mdi mdi-clock-outline"></i>{" "}
-                            {notification.date}
-                          </div>
-                        </div>
-                        {notification.isNew && (
-                          <span className="position-absolute top-0 end-0 mt-2 me-2 translate-middle p-1 bg-danger border border-light rounded-circle">
-                            <span className="visually-hidden">New alerts</span>
-                          </span>
-                        )}
-                      </div>
-                    </a>
-                  ))
-                )}
-              </div>
-              <div className="p-2 border-top">
-                <div className="d-grid">
-                  <a
-                    className="btn btn-sm btn-primary font-size-14 text-center"
-                    href="#!"
-                  >
-                    <i className="mdi mdi-arrow-right-circle me-1"></i> View All
-                  </a>
-                </div>
-              </div>
+              {/* Notification content */}
             </div>
           </div>
 
           {/* User Dropdown */}
-          <div className="dropdown d-inline-block user-dropdown">
+          <div className="dropdown d-inline-block user-dropdown me-4 mt-2">
             <button
               ref={userButtonRef}
               type="button"
@@ -455,6 +318,7 @@ const Header = ({ onToggleSidebar }) => {
               <a className="dropdown-item" href="#">
                 <i className="ri-user-line align-middle me-1"></i> Profile
               </a>
+
               <div className="dropdown-divider"></div>
               <button className="dropdown-item" onClick={handleLogout}>
                 <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
