@@ -25,7 +25,7 @@ class RawMilk(db.Model):
     # Relationship with DailyMilkTotal
     daily_total = db.relationship('DailyMilkTotal', back_populates='raw_milks')
 
-    def to_dict(self):
+    def to_dict(self, include_cow=True):
         # Calculate time left until expiration
         current_time = datetime.utcnow()
         if self.expiration_time and self.expiration_time > current_time:
@@ -33,12 +33,12 @@ class RawMilk(db.Model):
             time_left_str = str(time_left).split('.')[0]  # Format without microseconds
         else:
             time_left_str = "Expired"
-
+    
         return {
             'id': self.id,
             'cow_id': self.cow_id,
-            'cow': self.cow.to_dict() if self.cow else None,  # Include cow details
-            'production_time': self.production_time,
+            'cow': self.cow.to_dict(include_raw_milks=False) if include_cow and self.cow else None,
+            'production_time': self.production_time.strftime('%Y-%m-%d %H:%M:%S') if self.production_time else None,
             'expiration_time': self.expiration_time,
             'volume_liters': self.volume_liters,
             'previous_volume': self.previous_volume,
@@ -50,6 +50,7 @@ class RawMilk(db.Model):
             'is_expired': self.is_expired,
             'created_at': self.created_at,
         }
+        
 
     def __repr__(self):
         return f"RawMilk('{self.cow_id}', '{self.production_time}', 'Session {self.session}')"

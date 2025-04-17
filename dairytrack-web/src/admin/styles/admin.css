@@ -37,3 +37,22 @@
     background-color: #fff; /* Warna latar belakang */
   }
   
+  .new-notification .noti-dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: auto;
+}
+
+.bg-success {
+  background-color: #28a745 !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.noti-dot.bg-danger {
+  background-color: #dc3545 !important;
+}
