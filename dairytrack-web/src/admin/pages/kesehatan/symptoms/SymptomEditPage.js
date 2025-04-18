@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSymptomById, updateSymptom } from "../../../../api/kesehatan/symptom";
 import Swal from "sweetalert2"; // pastikan sudah di-import di atas
+import { useTranslation } from "react-i18next";
 
 
 const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
@@ -8,6 +9,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   const selectOptions = {
     eye_condition: [
@@ -127,13 +129,15 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Data Gejala</h4>
+            <h4 className="modal-title text-info fw-bold">{t('symptoms.edit_symptom_data')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             {loading || !form ? (
-              <p className="text-center">Memuat data gejala...</p>
+              <p className="text-center">{t('symptoms.loading_symptoms')}
+...</p>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row">

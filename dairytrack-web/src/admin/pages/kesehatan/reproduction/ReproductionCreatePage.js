@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { createReproduction } from "../../../../api/kesehatan/reproduction";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2"; // pastikan sudah di-import
+import { useTranslation } from "react-i18next";
+
 
 
 const ReproductionCreatePage = ({ onClose, onSaved }) => {
@@ -13,6 +15,8 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
     total_insemination: "",
     successful_pregnancy: "1", // ✅ Default ke 1
   });
+  const { t } = useTranslation();
+
 
   const [cows, setCows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,18 +121,21 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Data Reproduksi</h4>
+            <h4 className="modal-title text-info fw-bold">{t('reproduction.add_title')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <div className="alert alert-danger text-center">{error}</div>}
             {loading ? (
-              <p className="text-center">Memuat data sapi...</p>
+              <p className="text-center">{t('reproduction.loading_cows')}
+...</p>
             ) : (
               <form onSubmit={handleSubmit}>
                 {/* Sapi */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Pilih Sapi</label>
+                  <label className="form-label fw-bold">{t('reproduction.select_cow')}
+                  </label>
                   <select
                     name="cow"
                     value={form.cow}
@@ -137,7 +144,7 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                     required
                     disabled={submitting}
                   >
-                    <option value="">-- Pilih Sapi --</option>
+                    <option value="">-- {t('reproduction.select_cow')} --</option>
                     {cows.map((cow) => (
                       <option key={cow.id} value={cow.id}>
                         {cow.name} ({cow.breed})
@@ -149,7 +156,8 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                 {/* Tanggal-tanggal */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Calving Sekarang</label>
+                    <label className="form-label fw-bold">{t('reproduction.current_calving_date')}
+                    </label>
                     <input
                       type="date"
                       name="calving_date"
@@ -161,7 +169,8 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Calving Sebelumnya</label>
+                    <label className="form-label fw-bold">{t('reproduction.previous_calving_date')}
+                    </label>
                     <input
                       type="date"
                       name="previous_calving_date"
@@ -177,7 +186,8 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                 {/* Inseminasi */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Inseminasi</label>
+                    <label className="form-label fw-bold">{t('reproduction.insemination_date')}
+                    </label>
                     <input
                       type="date"
                       name="insemination_date"
@@ -189,7 +199,8 @@ const ReproductionCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-3 mb-3">
-                    <label className="form-label fw-bold">Jumlah Inseminasi</label>
+                    <label className="form-label fw-bold">{t('reproduction.insemination_count')}
+                    </label>
                     <input
                       type="number"
                       name="total_insemination"

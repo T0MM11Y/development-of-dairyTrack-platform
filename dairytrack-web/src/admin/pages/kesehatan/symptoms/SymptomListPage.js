@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -26,6 +27,7 @@ const SymptomListPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [modalType, setModalType] = useState(null); // "create" | "edit" | null
   const [editId, setEditId] = useState(null);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -227,7 +229,8 @@ const SymptomListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Gejala</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('symptoms.symptom_data')}
+        </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setModalType("create")}
@@ -242,14 +245,16 @@ const SymptomListPage = () => {
             title="Export to Excel"
             style={{ marginRight: "10px" }}
           >
-            <i className="ri-file-excel-2-line"></i> Export to Excel
+            <i className="ri-file-excel-2-line"></i> {t('symptoms.export_excel')}
+
           </button>
           <button
             onClick={exportToPDF}
             className="btn btn-secondary"
             title="Export to PDF"
           >
-            <i className="ri-file-pdf-line"></i> Export to PDF
+            <i className="ri-file-pdf-line"></i> {t('symptoms.export_pdf')}
+
           </button>
         </div>
       </div>
@@ -259,22 +264,28 @@ const SymptomListPage = () => {
       {loading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status" />
-          <p className="mt-2">Memuat data gejala...</p>
+          <p className="mt-2">{t('symptoms.loading_symptoms')}
+          ...</p>
         </div>
       ) : data.length === 0 ? (
-        <p className="text-muted">Belum ada data gejala.</p>
+        <p className="text-muted">{t('symptoms.empty')}
+.</p>
       ) : (
         <div className="card">
           <div className="card-body">
-            <h4 className="card-title">Tabel Gejala</h4>
+            <h4 className="card-title">{t('symptoms.symptom_table')}
+            </h4>
             <div className="table-responsive">
               <table className="table table-striped">
               <thead>
   <tr>
     <th>#</th>
-    <th>Nama Sapi</th>
-    <th>Status Pemeriksaan</th> {/* ✅ ganti dari 'Penanganan' */}
-    <th>Aksi</th>
+    <th>{t('symptoms.cow_name')}
+    </th>
+    <th>{t('symptoms.handling_status')}
+    </th>
+    <th>{t('symptoms.actions')}
+    </th>
   </tr>
 </thead>
 <tbody>

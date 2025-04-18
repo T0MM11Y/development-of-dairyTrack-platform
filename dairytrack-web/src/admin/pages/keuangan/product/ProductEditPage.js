@@ -5,6 +5,8 @@ import {
 } from "../../../../api/keuangan/product";
 import { getProductTypes } from "../../../../api/keuangan/productType";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
   const [form, setForm] = useState(null);
@@ -12,6 +14,7 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,7 +107,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 id="modalTitle" className="modal-title text-info fw-bold">
-              Edit Data Produk
+            {t('product.edit_product_data')}
+
             </h4>
             <button
               className="btn-close"
@@ -118,9 +122,11 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
             {loading || !form ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status">
-                  <span className="visually-hidden">Memuat...</span>
+                  <span className="visually-hidden">{t('product.loading')}
+                  ...</span>
                 </div>
-                <p className="mt-2">Memuat data produk...</p>
+                <p className="mt-2">{t('product.loading_product_data')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -128,7 +134,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
                   {/* Initial Quantity */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Initial Quantity
+                    {t('product.initial_quantity')}
+
                     </label>
                     <input
                       type="number"
@@ -143,7 +150,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
 
                   {/* Quantity */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Quantity</label>
+                    <label className="form-label fw-semibold">{t('product.quantity')}
+                    </label>
                     <input
                       type="number"
                       name="quantity"
@@ -158,7 +166,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
                   {/* Total Milk Used */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Total Milk Used (L)
+                    {t('product.total_milk_used')}
+                    (L)
                     </label>
                     <input
                       type="number"
@@ -174,7 +183,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
 
                   {/* Status */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Status</label>
+                    <label className="form-label fw-semibold">{t('product.status')}
+                    </label>
                     <select
                       name="status"
                       value={form.status || ""}
@@ -183,15 +193,18 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
                       disabled={submitting}
                       required
                     >
-                      <option value="available">Available</option>
-                      <option value="contamination">Contamination</option>
+                      <option value="available">{t('product.available')}
+                      </option>
+                      <option value="contamination">{t('product.contamination')}
+                      </option>
                     </select>
                   </div>
 
                   {/* Product Type */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Product Type
+                    {t('product.product_type')}
+
                     </label>
                     <select
                       name="product_type"
@@ -201,7 +214,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
                       disabled={submitting}
                       required
                     >
-                      <option value="">-- Pilih Tipe Produk --</option>
+                      <option value="">-- {t('product.product_type')}
+                      --</option>
                       {productTypes.map((type) => (
                         <option key={type.id} value={type.id}>
                           {type.product_name}
@@ -213,7 +227,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
                   {/* Production Date */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Production Date
+                    {t('product.production_date')}
+
                     </label>
                     <input
                       type="date"
@@ -228,7 +243,8 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
 
                   {/* Expiry Date */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Expiry Date</label>
+                    <label className="form-label fw-semibold">{t('product.expiry_date')}
+                    </label>
                     <input
                       type="date"
                       name="expiry_at"

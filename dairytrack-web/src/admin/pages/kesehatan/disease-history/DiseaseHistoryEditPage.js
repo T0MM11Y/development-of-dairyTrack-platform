@@ -4,6 +4,7 @@ import {
   updateDiseaseHistory,
 } from "../../../../api/kesehatan/diseaseHistory";
 import Swal from "sweetalert2"; // pastikan di bagian atas file
+import { useTranslation } from "react-i18next";
 
 
 const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
@@ -11,6 +12,7 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
     disease_name: "",
     description: "",
   });
+  const { t } = useTranslation();
 
   const [disease, setDisease] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -85,19 +87,22 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Riwayat Penyakit</h4>
+            <h4 className="modal-title text-info fw-bold">{t('disease_history.edit_disease_history')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             {loading ? (
-              <p className="text-center">Memuat data riwayat penyakit...</p>
+              <p className="text-center">{t('disease_history.loading')}
+...</p>
             ) : (
               <form onSubmit={handleSubmit}>
                 {/* Info sapi */}
                 {disease?.health_check?.cow && (
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Sapi</label>
+                    <label className="form-label fw-bold">{t('disease_history.cow')}
+                    </label>
                     <input
                       type="text"
                       value={`${disease.health_check.cow.name} (${disease.health_check.cow.breed})`}
@@ -111,13 +116,19 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
                 {/* Info pemeriksaan */}
                 {disease?.health_check && (
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Detail Pemeriksaan</label>
+                    <label className="form-label fw-bold">{t('disease_history.health_check_detail_title')}
+                    </label>
                     <div className="p-2 border bg-light rounded small">
-                      <div><strong>Suhu:</strong> {disease.health_check.rectal_temperature} °C</div>
-                      <div><strong>Denyut Jantung:</strong> {disease.health_check.heart_rate}</div>
-                      <div><strong>Napas:</strong> {disease.health_check.respiration_rate}</div>
-                      <div><strong>Ruminasi:</strong> {disease.health_check.rumination}</div>
-                      <div><strong>Tanggal:</strong> {new Date(disease.health_check.checkup_date).toLocaleString("id-ID")}</div>
+                      <div><strong>{t('disease_history.temperature')}
+                      :</strong> {disease.health_check.rectal_temperature} °C</div>
+                      <div><strong>{t('disease_history.heart_rate')}
+                      :</strong> {disease.health_check.heart_rate}</div>
+                      <div><strong>{t('disease_history.respiration')}
+                      :</strong> {disease.health_check.respiration_rate}</div>
+                      <div><strong>{t('disease_history.rumination')}
+                      :</strong> {disease.health_check.rumination}</div>
+                      <div><strong>{t('disease_history.checkup_date')}
+                      :</strong> {new Date(disease.health_check.checkup_date).toLocaleString("id-ID")}</div>
                     </div>
                   </div>
                 )}
@@ -125,7 +136,8 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
                 {/* Info gejala */}
                 {disease?.symptom && (
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Gejala</label>
+                    <label className="form-label fw-bold">{t('disease_history.symptom_title')}
+                    </label>
                     <div className="p-2 bg-light border rounded small">
                       {Object.entries(disease.symptom)
                         .filter(([k, v]) => !["id", "health_check", "created_at"].includes(k) && v)
@@ -140,7 +152,8 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
 
                 {/* Input penyakit */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Nama Penyakit</label>
+                  <label className="form-label fw-bold">{t('disease_history.disease_name')}
+                  </label>
                   <input
                     type="text"
                     name="disease_name"
@@ -154,7 +167,8 @@ const DiseaseHistoryEditPage = ({ historyId, onClose, onSaved }) => {
 
                 {/* Deskripsi */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Deskripsi</label>
+                  <label className="form-label fw-bold">{t('disease_history.description')}
+                  </label>
                   <textarea
                     name="description"
                     value={form.description}

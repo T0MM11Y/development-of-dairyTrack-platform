@@ -4,6 +4,8 @@ import DataTable from "react-data-table-component";
 import SalesCreateModal from "./SalesCreatePage";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
@@ -13,6 +15,7 @@ const Sales = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -215,7 +218,8 @@ const Sales = () => {
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 m-1">Sales</h2>
+        <h2 className="text-xl font-bold text-gray-800 m-1">{t('sales.title')}
+        </h2>
         <button
           onClick={() => setShowCreateModal(true)}
           className="btn btn-info"
@@ -233,7 +237,8 @@ const Sales = () => {
 
       <div className="card">
         <div className="card-body">
-          <h4 className="card-title">Order Data</h4>
+          <h4 className="card-title">{t('sales.order_data')}
+          </h4>
           <DataTable
             columns={columns}
             data={orders}
@@ -245,12 +250,14 @@ const Sales = () => {
                 <div className="spinner-border text-primary" role="status">
                   <span className="sr-only">Loading...</span>
                 </div>
-                <p className="mt-2">Loading order data...</p>
+                <p className="mt-2">{t('sales.loading_orders')}
+                ...</p>
               </div>
             }
             noDataComponent={
               <div className="text-center my-3">
-                <p className="text-gray-500">No order data available.</p>
+                <p className="text-gray-500">{t('sales.no_orders')}
+                .</p>
               </div>
             }
             customStyles={customStyles}
@@ -278,7 +285,8 @@ const Sales = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  Order Details - {selectedOrder.order_no}
+                {t('sales.order_details')}
+                - {selectedOrder.order_no}
                 </h5>
                 <button
                   type="button"
@@ -289,28 +297,36 @@ const Sales = () => {
               <div className="modal-body">
                 <div className="row mb-4">
                   <div className="col-md-6">
-                    <h6 className="text-muted">Customer Information</h6>
+                    <h6 className="text-muted">{t('sales.customer_info')}
+                    </h6>
                     <p>
-                      <strong>Name:</strong> {selectedOrder.customer_name}
+                      <strong>{t('sales.name')}
+                      :</strong> {selectedOrder.customer_name}
                     </p>
                     <p>
-                      <strong>Email:</strong> {selectedOrder.email}
+                      <strong>{t('sales.email')}
+                      :</strong> {selectedOrder.email}
                     </p>
                     <p>
-                      <strong>Phone:</strong> {selectedOrder.phone_number}
+                      <strong>{t('sales.phone')}
+                      :</strong> {selectedOrder.phone_number}
                     </p>
                     <p>
-                      <strong>Location:</strong> {selectedOrder.location}
+                      <strong>{t('sales.location')}
+                      :</strong> {selectedOrder.location}
                     </p>
                   </div>
                   <div className="col-md-6">
-                    <h6 className="text-muted">Order Information</h6>
+                    <h6 className="text-muted">{t('sales.order_info')}
+                    </h6>
                     <p>
-                      <strong>Order Date:</strong>{" "}
+                      <strong>{t('sales.order_date')}
+                      :</strong>{" "}
                       {formatDate(selectedOrder.created_at)}
                     </p>
                     <p>
-                      <strong>Status:</strong>{" "}
+                      <strong>{t('sales.status')}
+                      :</strong>{" "}
                       <span
                         className={`badge ${getStatusBadgeClass(
                           selectedOrder.status
@@ -320,22 +336,28 @@ const Sales = () => {
                       </span>
                     </p>
                     <p>
-                      <strong>Payment Method:</strong>{" "}
+                      <strong>{t('sales.payment_method')}
+                      :</strong>{" "}
                       {selectedOrder.payment_method || "-"}
                     </p>
                   </div>
                 </div>
                 <div className="row">
                   <div className="col-12">
-                    <h6 className="text-muted">Order Items</h6>
+                    <h6 className="text-muted">{t('sales.order_items')}
+                    </h6>
                     <table className="table table-bordered table-sm">
                       <thead>
                         <tr>
                           <th>#</th>
-                          <th>Product</th>
-                          <th>Image</th>
-                          <th>Quantity</th>
-                          <th>Price</th>
+                          <th>{t('sales.product')}
+                          </th>
+                          <th>{t('sales.image')}
+                          </th>
+                          <th>{t('sales.quantity')}
+                          </th>
+                          <th>{t('sales.price')}
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -369,7 +391,8 @@ const Sales = () => {
                       <tfoot>
                         <tr>
                           <td colSpan="4" className="text-end">
-                            <strong>Subtotal:</strong>
+                            <strong>{t('sales.subtotal')}
+                            :</strong>
                           </td>
                           <td>
                             {formatPrice(
@@ -383,13 +406,15 @@ const Sales = () => {
                         </tr>
                         <tr>
                           <td colSpan="4" className="text-end">
-                            <strong>Shipping Cost:</strong>
+                            <strong>{t('sales.shipping_cost')}
+                            :</strong>
                           </td>
                           <td>{formatPrice(selectedOrder.shipping_cost)}</td>
                         </tr>
                         <tr>
                           <td colSpan="4" className="text-end">
-                            <strong>Total:</strong>
+                            <strong>{t('sales.total')}
+                            :</strong>
                           </td>
                           <td>
                             <strong>
@@ -407,14 +432,16 @@ const Sales = () => {
                   to={`/admin/keuangan/sales/edit/${selectedOrder.id}`}
                   className="btn btn-warning"
                 >
-                  Edit Order
+                  {t('sales.edit_order')}
+
                 </Link>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setSelectedOrder(null)}
                 >
-                  Close
+                  {t('sales.close')}
+
                 </button>
               </div>
             </div>

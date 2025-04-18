@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { createProductType } from "../../../../api/keuangan/productType";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const ProductTypeCreateModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -12,6 +14,7 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -86,7 +89,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
-              Tambah Tipe Produk
+            {t('product.add_product_type')}
+
             </h4>
             <button
               className="btn-close"
@@ -98,7 +102,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">Nama Produk</label>
+                <label className="form-label fw-bold">{t('product.product_name')}
+                </label>
                 <input
                   type="text"
                   name="product_name"
@@ -110,7 +115,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Deskripsi Produk</label>
+                <label className="form-label fw-bold">{t('product.product_description')}
+                </label>
                 <textarea
                   name="product_description"
                   value={form.product_description}
@@ -121,7 +127,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
                 ></textarea>
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Gambar Produk</label>
+                <label className="form-label fw-bold">{t('product.product_image')}
+                </label>
                 <input
                   type="file"
                   name="image"
@@ -131,7 +138,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Harga/Satuan</label>
+                <label className="form-label fw-bold">{t('product.price_per_unit')}
+                </label>
                 <input
                   type="number"
                   name="price"
@@ -146,7 +154,8 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
                 </div>
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Satuan</label>
+                <label className="form-label fw-bold">{t('product.unit')}
+                </label>
                 <select
                   name="unit"
                   value={form.unit}
@@ -155,11 +164,16 @@ const ProductTypeCreateModal = ({ onClose, onSaved }) => {
                   required
                   disabled={submitting}
                 >
-                  <option value="">-- Pilih Satuan --</option>
-                  <option value="Bootle">Bootle</option>
-                  <option value="Liter">Liter</option>
-                  <option value="Pcs">Pcs</option>
-                  <option value="Kilogram">Kilogram</option>
+                  <option value="">-- {t('product.select_unit')}
+                  --</option>
+                  <option value="Bootle">{t('product.bottle')}
+                  </option>
+                  <option value="Liter">{t('product.liter')}
+                  </option>
+                  <option value="Pcs">{t('product.pcs')}
+                  </option>
+                  <option value="Kilogram">{t('product.kilogram')}
+                  </option>
                 </select>
               </div>
               <button

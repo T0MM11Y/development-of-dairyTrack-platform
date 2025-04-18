@@ -6,6 +6,8 @@ import {
   getProductStockHistoryExportPdf,
   getProductStockHistoryExportExcel,
 } from "../../../../api/keuangan/product";
+import { useTranslation } from "react-i18next";
+
 
 const ProductHistoryPage = () => {
   const [historyData, setHistoryData] = useState([]);
@@ -21,6 +23,7 @@ const ProductHistoryPage = () => {
   const [quantityPercentage, setQuantityPercentage] = useState(0);
   const [productTypeData, setProductTypeData] = useState([]);
   const [changeTypeData, setChangeTypeData] = useState([]);
+  const { t } = useTranslation();
 
   const fetchData = async (filterParams = {}) => {
     try {
@@ -232,7 +235,8 @@ const ProductHistoryPage = () => {
                   {Math.abs(percentage)}%
                 </span>
                 <span className="text-muted font-size-12">
-                  from previous period
+                {t('product.from_previous_period')}
+
                 </span>
               </div>
             </div>
@@ -373,9 +377,11 @@ const ProductHistoryPage = () => {
       <div className="container-fluid">
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-800 m-1">
-            Product History
+          {t('product.product_history')}
+
           </h2>
-          <p className="text-gray-600">Riwayat perubahan stok produk</p>
+          <p className="text-gray-600">{t('product.product_history_description')}
+          </p>
         </div>
 
         <div className="row">
@@ -387,7 +393,8 @@ const ProductHistoryPage = () => {
                   <div className="row">
                     <div className="col-md-3 mb-3">
                       <div className="form-group">
-                        <label>Tanggal Awal</label>
+                        <label>{t('product.start_date')}
+                        </label>
                         <input
                           type="date"
                           className="form-control"
@@ -398,7 +405,8 @@ const ProductHistoryPage = () => {
                     </div>
                     <div className="col-md-3 mb-3">
                       <div className="form-group">
-                        <label>Tanggal Akhir</label>
+                        <label>{t('product.end_date')}
+                        </label>
                         <input
                           type="date"
                           className="form-control"
@@ -409,19 +417,27 @@ const ProductHistoryPage = () => {
                     </div>
                     <div className="col-md-3 mb-3">
                       <div className="form-group">
-                        <label>Tipe Perubahan</label>
+                        <label>{t('product.change_type')}
+                        </label>
                         <select
                           className="form-select"
                           value={changeType}
                           onChange={(e) => setChangeType(e.target.value)}
                         >
-                          <option value="">Semua</option>
-                          <option value="sold">Terjual</option>
-                          <option value="produced">Diproduksi</option>
-                          <option value="expired">Kadaluarsa</option>
-                          <option value="damaged">Rusak</option>
-                          <option value="contamination">Kontaminasi</option>
-                          <option value="returned">Dikembalikan</option>
+                          <option value="">{t('product.all')}
+                          </option>
+                          <option value="sold">{t('product.sold')}
+                          </option>
+                          <option value="produced">{t('product.produced')}
+                          </option>
+                          <option value="expired">{t('product.expired')}
+                          </option>
+                          <option value="damaged">{t('product.damaged')}
+                          </option>
+                          <option value="contamination">{t('product.contaminated')}
+                          </option>
+                          <option value="returned">{t('product.returned')}
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -479,7 +495,8 @@ const ProductHistoryPage = () => {
             <div className="col-md-4">
               <div className="card" style={{ height: "346px" }}>
                 <div className="card-body">
-                  <h4 className="card-title mb-4">Product Type Distribution</h4>
+                  <h4 className="card-title mb-4">{t('product.product_type_distribution')}
+                  </h4>
                   <div style={{ height: "280px" }}>
                     {productTypeData.length > 0 ? (
                       <ReactApexChart
@@ -489,7 +506,8 @@ const ProductHistoryPage = () => {
                         height="280"
                       />
                     ) : (
-                      <div className="text-center my-5">No data available</div>
+                      <div className="text-center my-5">{t('product.no_data_available')}
+</div>
                     )}
                   </div>
                 </div>
@@ -500,7 +518,8 @@ const ProductHistoryPage = () => {
             <div className="col-md-4">
               <div className="card" style={{ height: "346px" }}>
                 <div className="card-body">
-                  <h4 className="card-title mb-4">Product Type Distribution</h4>
+                  <h4 className="card-title mb-4">{t('product.product_type_distribution')}
+                  </h4>
                   <div style={{ height: "280px" }}>
                     {productTypeData.length > 0 ? (
                       <ReactApexChart
@@ -510,7 +529,8 @@ const ProductHistoryPage = () => {
                         height="280"
                       />
                     ) : (
-                      <div className="text-center my-5">No data available</div>
+                      <div className="text-center my-5">{t('product.no_data_available')}
+</div>
                     )}
                   </div>
                 </div>
@@ -531,7 +551,8 @@ const ProductHistoryPage = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <h5 className="mt-3">Loading product history data...</h5>
+              <h5 className="mt-3">{t('product.loading_product_history')}
+              ...</h5>
             </div>
           </div>
         ) : historyData.length === 0 ? (
@@ -539,7 +560,7 @@ const ProductHistoryPage = () => {
             <div className="card-body text-center p-5">
               <i className="bx bx-info-circle font-size-24 text-muted"></i>
               <h5 className="mt-3">
-                No product history data available. Try adjusting your filters.
+              {t('product.no_product_history')}
               </h5>
             </div>
           </div>
@@ -547,7 +568,8 @@ const ProductHistoryPage = () => {
           <div className="card">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h4 className="card-title mb-0">Product History Data</h4>
+                <h4 className="card-title mb-0">{t('product.product_history_data')}
+                </h4>
                 {Object.keys(filters).length > 0 && (
                   <span className="badge bg-info p-2">
                     Filtered by:{" "}

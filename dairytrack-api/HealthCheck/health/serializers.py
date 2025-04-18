@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import *
+from django.utils.timezone import localtime
+
 
 
 
@@ -37,6 +39,7 @@ class HealthCheckListSerializer(serializers.ModelSerializer):
             'is_followed_up',
             'created_at'
         ]
+        
 class SymptomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Symptom
@@ -188,3 +191,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'cow', 'name', 'message', 'date', 'created_at']
+    def get_created_at(self, obj):
+        # Pastikan waktu dibuat dalam local timezone (WIB dari settings.py)
+        local_created_at = localtime(obj.created_at)
+        return local_created_at.strftime("%Y-%m-%d %H:%M:%S")

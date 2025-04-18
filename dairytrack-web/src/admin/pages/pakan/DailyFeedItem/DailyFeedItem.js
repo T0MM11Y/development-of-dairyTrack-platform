@@ -9,6 +9,8 @@ import FeedItemFormPage from "./CreateDailyFeedItem";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useTranslation } from "react-i18next";
+
 
 const FeedItemListPage = () => {
   const [feedItems, setFeedItems] = useState([]);
@@ -25,6 +27,7 @@ const FeedItemListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -284,13 +287,15 @@ const FeedItemListPage = () => {
   return (
     <div className="p-4 position-relative">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Pakan Harian</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('dailyfeed.daily_feed')}
+        </h2>
         <div>
           <button
             onClick={handleAddClick}
             className="btn btn-info waves-effect waves-light text-white"
           >
-            <i className="ri-add-line me-1"></i> Tambah Pakan Harian
+            <i className="ri-add-line me-1"></i> {t('dailyfeed.add_daily_feed_button')}
+
           </button>
         </div>
       </div>
@@ -300,7 +305,8 @@ const FeedItemListPage = () => {
           <div className="row">
             <div className="col-md-6">
               <div className="mb-3">
-                <label className="form-label">Pencarian</label>
+                <label className="form-label">{t('dailyfeed.search')}
+                </label>
                 <input
                   type="text"
                   className="form-control"
@@ -309,7 +315,8 @@ const FeedItemListPage = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <small className="text-muted">
-                  Pencarian hanya mempengaruhi tampilan, bukan hasil ekspor
+                {t('dailyfeed.search_info')}
+
                 </small>
               </div>
             </div>
@@ -317,7 +324,8 @@ const FeedItemListPage = () => {
               <div className="row">
                 <div className="col-md-5">
                   <div className="mb-3">
-                    <label className="form-label">Tanggal Mulai</label>
+                    <label className="form-label">{t('dailyfeed.start_date')}
+                    </label>
                     <input
                       type="date"
                       className="form-control"
@@ -328,7 +336,8 @@ const FeedItemListPage = () => {
                 </div>
                 <div className="col-md-5">
                   <div className="mb-3">
-                    <label className="form-label">Tanggal Akhir</label>
+                    <label className="form-label">{t('dailyfeed.end_date')}
+                    </label>
                     <input
                       type="date"
                       className="form-control"

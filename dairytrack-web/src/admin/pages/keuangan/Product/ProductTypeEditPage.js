@@ -4,6 +4,8 @@ import {
   updateProductType,
 } from "../../../../api/keuangan/productType";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
 
 const ProductTypeEditPage = () => {
   const { id } = useParams();
@@ -14,6 +16,7 @@ const ProductTypeEditPage = () => {
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [newImage, setNewImage] = useState(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,7 +98,8 @@ const ProductTypeEditPage = () => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Tipe Produk</h4>
+            <h4 className="modal-title text-info fw-bold">{t('product.edit_product_type')}
+            </h4>
             <button
               className="btn-close"
               onClick={() => navigate("/admin/keuangan/type-product")}
@@ -105,14 +109,16 @@ const ProductTypeEditPage = () => {
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             {loading || !form ? (
-              <p className="text-center">Memuat data tipe produk...</p>
+              <p className="text-center">{t('product.loading_product_type')}
+...</p>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   {/* Product Name */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Nama Produk
+                    {t('product.product_name')}
+
                     </label>
                     <input
                       type="text"
@@ -128,7 +134,8 @@ const ProductTypeEditPage = () => {
                   {/* Price */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">
-                      Harga/Satuan
+                    {t('product.price_per_unit')}
+
                     </label>
                     <input
                       type="number"
@@ -146,7 +153,8 @@ const ProductTypeEditPage = () => {
 
                   {/* Unit */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">Satuan</label>
+                    <label className="form-label fw-semibold">{t('product.unit')}
+                    </label>
                     <select
                       name="unit"
                       value={form.unit || ""}
@@ -155,17 +163,23 @@ const ProductTypeEditPage = () => {
                       disabled={submitting}
                       required
                     >
-                      <option value="">-- Pilih Satuan --</option>
-                      <option value="bottle">Botol</option>
-                      <option value="liter">Liter</option>
-                      <option value="pcs">Pcs</option>
-                      <option value="kilogram">Kilogram</option>
+                      <option value="">-- {t('product.select_unit')}
+                      --</option>
+                      <option value="bottle">{t('product.bottle')}
+                      </option>
+                      <option value="liter">{t('product.liter')}
+                      </option>
+                      <option value="pcs">{t('product.pcs')}
+                      </option>
+                      <option value="kilogram">{t('product.kilogram')}
+                      </option>
                     </select>
                   </div>
                   {/* Description */}
                   <div className="col-12 mb-3">
                     <label className="form-label fw-semibold">
-                      Deskripsi Produk
+                    {t('product.product_description')}
+
                     </label>
                     <textarea
                       name="product_description"
@@ -182,7 +196,8 @@ const ProductTypeEditPage = () => {
                   {imagePreview && (
                     <div className="col-12 mb-3">
                       <label className="form-label fw-semibold">
-                        Gambar Saat Ini
+                      {t('product.current_image')}
+
                       </label>
                       <div className="text-center mb-2">
                         <img
@@ -198,7 +213,8 @@ const ProductTypeEditPage = () => {
                   {/* Image Upload */}
                   <div className="col-12 mb-3">
                     <label className="form-label fw-semibold">
-                      Ganti Gambar (Opsional)
+                    {t('product.change_image_optional')}
+
                     </label>
                     <input
                       type="file"
@@ -209,7 +225,8 @@ const ProductTypeEditPage = () => {
                       accept="image/*"
                     />
                     <small className="text-muted">
-                      Biarkan kosong jika tidak ingin mengganti gambar
+                    {t('product.leave_blank')}
+
                     </small>
                   </div>
                 </div>

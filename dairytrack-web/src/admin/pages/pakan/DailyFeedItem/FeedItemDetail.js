@@ -11,6 +11,7 @@ import { getFeedStock } from "../../../../api/pakan/feedstock";
 import { getCows } from "../../../../api/peternakan/cow";
 import { getDailyFeedById } from "../../../../api/pakan/dailyFeed";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   const [dailyFeed, setDailyFeed] = useState(null);
@@ -23,6 +24,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formList, setFormList] = useState([]);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     let isMounted = true;
@@ -435,7 +437,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         <div className="modal-content shadow-lg">
           <div className="modal-header">
             <h5 className="modal-title fw-bold text-info">
-              Detail Pakan Harian
+            {t('dailyfeed.daily_feed_details')}
+
             </h5>
             <button
               className="btn-close"
@@ -451,7 +454,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                 <div className="spinner-border text-info" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">Memuat data...</p>
+                <p className="mt-2">{t('dailyfeed.loading_data')}
+                ...</p>
               </div>
             ) : (
               <>
@@ -459,7 +463,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="form-label text-secondary">
-                        Tanggal
+                      {t('dailyfeed.date')}
+
                       </label>
                       <input
                         type="text"
@@ -472,7 +477,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="form-label text-secondary">
-                        Sesi
+                      {t('dailyfeed.session')}
+
                       </label>
                       <input
                         type="text"
@@ -485,7 +491,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="form-label text-secondary">
-                        Sapi
+                      {t('dailyfeed.cow')}
+
                       </label>
                       <input
                         type="text"
@@ -503,7 +510,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                       <div className="row mb-3" key={item.id || `new-${index}`}>
                         <div className="col-md-6">
                           <label className="form-label fw-bold">
-                            Jenis Pakan
+                          {t('dailyfeed.feed_type')}
+
                           </label>
                           <select
                             name="feed_id"
@@ -524,7 +532,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                         </div>
                         <div className="col-md-4">
                           <label className="form-label fw-bold">
-                            Jumlah (kg)
+                          {t('dailyfeed.quantity')}
+                          (kg)
                           </label>
                           <input
                             type="number"
@@ -540,7 +549,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             item.quantity &&
                             parseFloat(item.quantity) > getFeedStockInfo(parseInt(item.feed_id)) && (
                               <small className="form-text text-danger fw-bold">
-                                Stok tidak mencukupi! Tersedia: {getFeedStockInfo(parseInt(item.feed_id))} kg
+                                {t('dailyfeed.insufficient_stock')}
+                                : {getFeedStockInfo(parseInt(item.feed_id))} kg
                               </small>
                             )}
                         </div>
@@ -550,7 +560,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             className="btn btn-danger me-2"
                             onClick={() => handleRemoveFeedItem(index)}
                           >
-                            Hapus
+                            {t('dailyfeed.delete')}
+
                           </button>
                         </div>
                       </div>
@@ -563,7 +574,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                         onClick={handleAddFeedItem}
                         disabled={formList.length >= 3}
                       >
-                        + Tambah Pakan {formList.length >= 3 ? " (Maksimum)" : ""}
+                        + {t('dailyfeed.add_feed')}
+                        {formList.length >= 3 ? " (Maksimum)" : ""}
                       </button>
                     </div>
                   </>
@@ -571,7 +583,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <>
                     {feedItems.length === 0 ? (
                       <div className="alert alert-info">
-                        <i className="ri-information-line me-2"></i> Tidak ada data pakan untuk sesi ini.
+                        <i className="ri-information-line me-2"></i> {t('dailyfeed.no_feed_data_for_session')}
+
                       </div>
                     ) : (
                       <div className="table-responsive mb-4">
@@ -580,7 +593,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             <tr>
                               <th className="text-center" style={{ width: "5%" }}>No</th>
                               <th style={{ width: "50%" }}>Jenis Pakan</th>
-                              <th className="text-center" style={{ width: "20%" }}>Jumlah (kg)</th>
+                              <th className="text-center" style={{ width: "20%" }}>{t('dailyfeed.quantity')}
+                              (kg)</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -609,7 +623,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                     onClick={onClose}
                     disabled={loading}
                   >
-                    Kembali
+                    {t('dailyfeed.back')}
+
                   </button>
                   
                   {isEditing ? (
@@ -639,7 +654,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                       onClick={toggleEditMode}
                       disabled={loading}
                     >
-                      Edit
+                      {t('dailyfeed.edit')}
+
                     </button>
                   )}
                 </div>

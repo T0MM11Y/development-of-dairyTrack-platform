@@ -1,7 +1,10 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+
 
 const FinanceSummaryCards = ({ currentBalance, totalIncome, totalExpense, loading }) => {
   const formatCurrency = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
+  const { t } = useTranslation();
 
   const Card = ({ title, value, percentage, icon, bgColor }) => (
     <div className="col-xl-4 col-md-6 mb-4">
@@ -35,7 +38,8 @@ const FinanceSummaryCards = ({ currentBalance, totalIncome, totalExpense, loadin
               ></i>
               {Math.abs(percentage)}%
             </span>
-            <span className="text-muted font-size-12">from previous period</span>
+            <span className="text-muted font-size-12">{t('finance.from_previous_period')}
+            </span>
           </div>
         </div>
       </div>

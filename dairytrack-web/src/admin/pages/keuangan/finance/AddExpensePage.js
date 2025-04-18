@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { createExpense } from "../../../../api/keuangan/expense";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const AddExpenseModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -11,6 +13,7 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,7 +74,7 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
-              Tambah Pengeluaran
+            {t('finance.add_expense')}
             </h4>
             <button
               className="btn-close"
@@ -83,7 +86,8 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">Jenis Pengeluaran</label>
+                <label className="form-label fw-bold">{t('finance.expense_type')}
+                </label>
                 <select
                   name="expense_type"
                   value={form.expense_type}
@@ -92,22 +96,32 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
                   required
                   disabled={submitting}
                 >
-                  <option value="">-- Pilih Jenis Pengeluaran --</option>
-                  <option value="material_purchase">Pembelian Bahan</option>
-                  <option value="feed_purchase">Pembelian Pakan</option>
-                  <option value="medicine_purchase">Pembelian Obat</option>
-                  <option value="employee_salary">Gaji Karyawan</option>
-                  <option value="operational">Biaya Operasional</option>
-                  <option value="equipment_purchase">
-                    Pembelian Peralatan
+                  <option value="">-- {t('finance.select_expense_type')}
+                  --</option>
+                  <option value="material_purchase">{t('finance.purchase_material')}
                   </option>
-                  <option value="marketing">Marketing</option>
-                  <option value="other">Lainnya</option>
+                  <option value="feed_purchase">{t('finance.purchase_feed')}
+                  </option>
+                  <option value="medicine_purchase">{t('finance.purchase_medicine')}
+                  </option>
+                  <option value="employee_salary">{t('finance.employee_salary')}
+                  </option>
+                  <option value="operational">{t('finance.operational_cost')}
+                  </option>
+                  <option value="equipment_purchase">
+                  {t('finance.equipment_purchase')}
+
+                  </option>
+                  <option value="marketing">{t('finance.marketing')}
+                  </option>
+                  <option value="other">{t('finance.others')}
+                  </option>
                 </select>
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Jumlah (Rp)</label>
+                <label className="form-label fw-bold">{t('finance.amount')}
+                (Rp)</label>
                 <input
                   type="number"
                   name="amount"
@@ -121,7 +135,8 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Tanggal Transaksi</label>
+                <label className="form-label fw-bold">{t('finance.transaction_date')}
+                </label>
                 <input
                   type="datetime-local"
                   name="transaction_date"
@@ -134,7 +149,8 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Deskripsi</label>
+                <label className="form-label fw-bold">{t('finance.description')}
+                </label>
                 <textarea
                   name="description"
                   value={form.description}

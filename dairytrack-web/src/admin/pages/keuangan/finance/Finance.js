@@ -10,6 +10,8 @@ import RecentTransactions from "./components/RecentTransactions";
 import FilterExportPanel from "./components/FilterExportPanel";
 import AddExpenseModal from "./AddExpensePage";
 import AddIncomeModal from "./AddIncomePage";
+import { useTranslation } from "react-i18next";
+
 
 const Finance = () => {
   // State for data
@@ -18,6 +20,7 @@ const Finance = () => {
   const [expenseData, setExpenseData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   // State for filters
   const [startDate, setStartDate] = useState("");
@@ -330,9 +333,10 @@ const Finance = () => {
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-0">Finance</h2>
+          <h2 className="mb-0">{t('finance.finance_title')}
+          </h2>
           <p className="text-muted">
-            All farm financial records are displayed here.
+          {t('finance.finance_description')}.
           </p>
         </div>
       </div>
@@ -346,7 +350,8 @@ const Finance = () => {
               title="Digunakan untuk menambahkan pemasukan"
               onClick={() => setShowAddIncomeModal(true)}
             >
-              <i className="bx bx-plus me-1"></i> + Add Income
+              <i className="bx bx-plus me-1"></i> + {t('finance.add_income')}
+
             </button>
 
             <button
@@ -355,7 +360,7 @@ const Finance = () => {
               title="Digunakan untuk menambahkan pengeluaran"
               onClick={() => setShowAddExpenseModal(true)}
             >
-              <i className="bx bx-plus me-1"></i> + Add Expense
+              <i className="bx bx-plus me-1"></i> + {t('finance.add_expense')}
             </button>
           </div>
         </div>

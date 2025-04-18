@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { getHealthCheckById, updateHealthCheck } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2"; // Pastikan ini ada di atas
+import { useTranslation } from "react-i18next";
+
 
 
 const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
@@ -10,6 +12,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,7 +78,8 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Pemeriksaan</h4>
+            <h4 className="modal-title text-info fw-bold">{t('healthcheck.edit')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -83,20 +87,23 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
             {loading || !form ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status" />
-                <p className="mt-2">Memuat data pemeriksaan...</p>
+                <p className="mt-2">{t('healthcheck.loading')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   {/* Nama Sapi */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Sapi</label>
+                    <label className="form-label fw-bold">{t('healthcheck.cow')}
+                    </label>
                     <input type="text" className="form-control" value={cowName} disabled readOnly />
                   </div>
 
                   {/* Checkup Date (readonly) */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Pemeriksaan</label>
+                    <label className="form-label fw-bold">{t('healthcheck.checkup_date')}
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -107,7 +114,8 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
 
                   {/* Suhu */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Suhu Rektal (°C)</label>
+                    <label className="form-label fw-bold">{t('healthcheck.rectal_temperature')}
+                    (°C)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -121,7 +129,8 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
 
                   {/* Denyut Jantung */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Denyut Jantung</label>
+                    <label className="form-label fw-bold">{t('healthcheck.heart_rate')}
+                    </label>
                     <input
                       type="number"
                       name="heart_rate"
@@ -134,7 +143,8 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
 
                   {/* Napas */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Frekuensi Napas</label>
+                    <label className="form-label fw-bold">{t('healthcheck.respiration_rate')}
+                    </label>
                     <input
                       type="number"
                       name="respiration_rate"
@@ -147,7 +157,8 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
 
                   {/* Ruminasi */}
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Ruminasi (jam)</label>
+                    <label className="form-label fw-bold">{t('healthcheck.rumination')}
+                    </label>
                     <input
                       type="number"
                       step="0.1"
@@ -162,13 +173,14 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                   {/* Status */}
                  {/* Status (readonly, otomatis dari backend) */}
 <div className="col-md-6 mb-3">
-  <label className="form-label fw-bold">Status</label>
+  <label className="form-label fw-bold">{t('healthcheck.status')}
+  </label>
   <input
     type="text"
     className={`form-control fw-semibold ${
       form.status === "handled" ? "text-success" : "text-warning"
     }`}
-    value={form.status === "handled" ? "Sudah Ditangani" : "Belum Ditangani"}
+    value={form.status === "handled" ? "Sudah ditangani" : "Belum ditangani"}
     readOnly
     disabled
   />
@@ -176,7 +188,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                 </div>
 
                 <button type="submit" className="btn btn-info w-100" disabled={submitting}>
-                  {submitting ? "Memperbarui..." : "Perbarui Data"}
+                  {submitting ? "Updating..." : "Update"}
                 </button>
               </form>
             )}

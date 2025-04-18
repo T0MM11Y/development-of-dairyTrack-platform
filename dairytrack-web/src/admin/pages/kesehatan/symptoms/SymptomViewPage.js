@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { getSymptomById } from "../../../../api/kesehatan/symptom";
+import { useTranslation } from "react-i18next";
 
 const SymptomViewPage = ({ symptomId, onClose }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   const fieldOrder = [
     "eye_condition",

@@ -5,6 +5,8 @@ import {
 } from "../../../../api/kesehatan/reproduction";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
+
 
 
 const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
@@ -15,6 +17,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
     insemination_date: "",
     total_insemination: "",
   });
+  const { t } = useTranslation();
+
 
   const [cowName, setCowName] = useState("-");
   const [submitting, setSubmitting] = useState(false);
@@ -121,7 +125,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
         <div className="modal-dialog modal-lg">
           <div className="modal-content p-4 text-center">
             <div className="spinner-border text-info" role="status" />
-            <p className="mt-2">Memuat data reproduksi...</p>
+            <p className="mt-2">{t('reproduction.loading_reproduction')}
+            ...</p>
           </div>
         </div>
       </div>
@@ -133,7 +138,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Data Reproduksi</h4>
+            <h4 className="modal-title text-info fw-bold">{t('reproduction.edit_reproduction')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -148,7 +154,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
               {/* Tanggal Calving */}
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Calving Sekarang</label>
+                  <label className="form-label fw-bold">{t('reproduction.current_calving_date')}
+                  </label>
                   <input
                     type="date"
                     name="calving_date"
@@ -160,7 +167,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Calving Sebelumnya</label>
+                  <label className="form-label fw-bold">{t('reproduction.previous_calving_date')}
+                  </label>
                   <input
                     type="date"
                     name="previous_calving_date"
@@ -176,7 +184,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
               {/* Inseminasi */}
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Inseminasi</label>
+                  <label className="form-label fw-bold">{t('reproduction.insemination_date')}
+                  </label>
                   <input
                     type="date"
                     name="insemination_date"
@@ -188,7 +197,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Jumlah Inseminasi</label>
+                  <label className="form-label fw-bold">{t('reproduction.insemination_count')}
+                  </label>
                   <input
                     type="number"
                     name="total_insemination"

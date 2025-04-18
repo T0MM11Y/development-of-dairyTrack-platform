@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+
 
 const FilterExportPanel = ({
   startDate,
@@ -14,17 +16,20 @@ const FilterExportPanel = ({
   error,
   loading,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="row mb-4">
       <div className="col-12">
         <div className="card">
           <div className="card-body">
-            <h4 className="card-title mb-4">Filter & Export</h4>
+            <h4 className="card-title mb-4">{t('finance.filter_export')}
+            </h4>
             <form onSubmit={handleFilterSubmit}>
               <div className="row">
                 <div className="col-md-3 mb-3">
                   <div className="form-group">
-                    <label>Start Date</label>
+                    <label>{t('finance.start_date')}
+                    </label>
                     <input
                       type="date"
                       className="form-control"
@@ -36,7 +41,8 @@ const FilterExportPanel = ({
                 </div>
                 <div className="col-md-3 mb-3">
                   <div className="form-group">
-                    <label>End Date</label>
+                    <label>{t('finance.end_date')}
+                    </label>
                     <input
                       type="date"
                       className="form-control"
@@ -48,16 +54,20 @@ const FilterExportPanel = ({
                 </div>
                 <div className="col-md-3 mb-3">
                   <div className="form-group">
-                    <label>Finance Type</label>
+                    <label>{t('finance.finance_type')}
+                    </label>
                     <select
                       className="form-select"
                       value={financeType}
                       onChange={(e) => setFinanceType(e.target.value)}
                       disabled={loading}
                     >
-                      <option value="">All</option>
-                      <option value="income">Income</option>
-                      <option value="expense">Expense</option>
+                      <option value="">{t('finance.all')}
+                      </option>
+                      <option value="income">{t('finance.income')}
+                      </option>
+                      <option value="expense">{t('finance.expense')}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -68,7 +78,8 @@ const FilterExportPanel = ({
                       className="btn btn-primary me-2"
                       disabled={loading}
                     >
-                      <i className="bx bx-filter-alt me-1"></i> Filter
+                      <i className="bx bx-filter-alt me-1"></i> {t('finance.filter')}
+
                     </button>
                     <button
                       type="button"
@@ -76,7 +87,8 @@ const FilterExportPanel = ({
                       onClick={resetFilters}
                       disabled={loading}
                     >
-                      <i className="bx bx-reset me-1"></i> Reset
+                      <i className="bx bx-reset me-1"></i> {t('finance.reset')}
+
                     </button>
                   </div>
                 </div>
@@ -90,14 +102,16 @@ const FilterExportPanel = ({
                   onClick={handleExportExcel}
                   disabled={loading}
                 >
-                  <i className="bx bxs-file-export me-1"></i> Export Excel
+                  <i className="bx bxs-file-export me-1"></i> {t('finance.export_excel')}
+
                 </button>
                 <button
                   className="btn btn-danger"
                   onClick={handleExportPdf}
                   disabled={loading}
                 >
-                  <i className="bx bxs-file-pdf me-1"></i> Export PDF
+                  <i className="bx bxs-file-pdf me-1"></i> {t('finance.export_pdf')}
+
                 </button>
               </div>
             </div>

@@ -9,6 +9,8 @@ import {
 import DiseaseHistoryCreatePage from "./DiseaseHistoryCreatePage";
 import DiseaseHistoryEditPage from "./DiseaseHistoryEditPage";
 import Swal from "sweetalert2"; // pastikan di bagian atas file
+import { useTranslation } from "react-i18next";
+
 
 
 const DiseaseHistoryListPage = () => {
@@ -22,6 +24,7 @@ const DiseaseHistoryListPage = () => {
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     setLoading(true); // ✅ mulai loading
@@ -80,38 +83,51 @@ const DiseaseHistoryListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Riwayat Penyakit</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('disease_history.title')}
+        </h2>
         <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + Tambah
+          + {t('disease_history.add')}
+
         </button>
       </div>
 
       {loading ? (
   <div className="text-center py-5">
     <div className="spinner-border text-info" role="status" />
-    <p className="mt-2 text-muted">Memuat data riwayat penyakit...</p>
+    <p className="mt-2 text-muted">{t('disease_history.loading')}
+    ...</p>
   </div>
 ) : error ? (
   <div className="alert alert-danger">{error}</div>
 ) : data.length === 0 ? (
-  <p className="text-muted">Belum ada data riwayat penyakit.</p>
+  <p className="text-muted">{t('disease_history.empty')}
+.</p>
 ) : (
   <div className="card">
     <div className="card-body">
-      <h4 className="card-title">Data Riwayat Penyakit</h4>
+      <h4 className="card-title">{t('disease_history.data')}
+      </h4>
       <div className="table-responsive">
         <table className="table table-bordered table-striped text-sm">
           <thead className="bg-light">
             <tr>
               <th>#</th>
-              <th>Tanggal</th>
-              <th>Penyakit</th>
-              <th>Sapi</th>
-              <th>Detail Pemeriksaan</th>
-              <th>Gejala</th>
-              <th>Status</th>
-              <th>Deskripsi</th>
-              <th>Aksi</th>
+              <th>{t('disease_history.date')}
+              </th>
+              <th>{t('disease_history.disease')}
+              </th>
+              <th>{t('disease_history.cow')}
+              </th>
+              <th>{t('disease_history.health_check_detail')}
+              </th>
+              <th>{t('disease_history.symptom')}
+              </th>
+              <th>{t('disease_history.status')}
+              </th>
+              <th>{t('disease_history.description')}
+              </th>
+              <th>{t('disease_history.actions')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -131,11 +147,16 @@ const DiseaseHistoryListPage = () => {
                   <td>
                     {check ? (
                       <>
-                        <div><strong>Suhu:</strong> {check.rectal_temperature}°C</div>
-                        <div><strong>Denyut Jantung:</strong> {check.heart_rate}</div>
-                        <div><strong>Napas:</strong> {check.respiration_rate}</div>
-                        <div><strong>Ruminasi:</strong> {check.rumination}</div>
-                        <div><strong>Tgl Periksa:</strong> {new Date(check.checkup_date).toLocaleString("id-ID")}</div>
+                        <div><strong>{t('disease_history.temperature')}
+                        :</strong> {check.rectal_temperature}°C</div>
+                        <div><strong>{t('disease_history.heart_rate')}
+                        :</strong> {check.heart_rate}</div>
+                        <div><strong>{t('disease_history.respiration')}
+                        :</strong> {check.respiration_rate}</div>
+                        <div><strong>{t('disease_history.rumination')}
+                        :</strong> {check.rumination}</div>
+                        <div><strong>{t('disease_history.checkup_date')}
+                        :</strong> {new Date(check.checkup_date).toLocaleString("id-ID")}</div>
                       </>
                     ) : (
                       <span className="text-muted">-</span>
@@ -156,9 +177,11 @@ const DiseaseHistoryListPage = () => {
                   </td>
                   <td>
                     {check?.status === "handled" ? (
-                      <span className="badge bg-success">Sudah Ditangani</span>
+                      <span className="badge bg-success">{t('disease_history.treated')}
+</span>
                     ) : (
-                      <span className="badge bg-warning text-dark">Belum Ditangani</span>
+                      <span className="badge bg-warning text-dark">{t('disease_history.untreated')}
+</span>
                     )}
                   </td>
                   <td>{item.description || "-"}</td>

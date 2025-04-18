@@ -7,6 +7,8 @@ import { getCows } from "../../../../api/peternakan/cow";
 import ReproductionCreatePage from "./ReproductionCreatePage";
 import ReproductionEditPage from "./ReproductionEditPage";
 import Swal from "sweetalert2"; // pastikan ini ada di atas file
+import { useTranslation } from "react-i18next";
+
 
 
 
@@ -17,6 +19,8 @@ const ReproductionListPage = () => {
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
+
 
 
   const fetchData = async () => {
@@ -70,9 +74,10 @@ const ReproductionListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Reproduksi Sapi</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('reproduction.title')}</h2>
         <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + Tambah
+          + {t('reproduction.add')}
+
         </button>
       </div>
 
@@ -82,13 +87,15 @@ const ReproductionListPage = () => {
   <div className="card">
     <div className="card-body text-center py-5">
       <div className="spinner-border text-info" role="status" />
-      <p className="mt-3 text-muted">Memuat data reproduksi sapi...</p>
+      <p className="mt-3 text-muted">{t('reproduction.loading')}
+      </p>
     </div>
   </div>
 ) : error ? (
   <div className="alert alert-danger">{error}</div>
 ) : data.length === 0 ? (
-  <p className="text-muted">Belum ada data reproduksi.</p>
+  <p className="text-muted">{t('reproduction.empty')}
+</p>
 ) : (
         <div className="card">
           <div className="card-body">
@@ -97,12 +104,15 @@ const ReproductionListPage = () => {
                 <thead className="bg-light">
                   <tr>
                     <th>#</th>
-                    <th>Sapi</th>
-                    <th>Interval Kelahiran (hari)</th>
-                    <th>Masa Layanan (hari)</th>
-                    <th>Tingkat Konsepsi (%)</th>
-                    <th>Tanggal Pencatatan</th>
-                    <th>Aksi</th>
+                    <th>{t('reproduction.cow')}
+                    </th>
+                    <th>{t('reproduction.calving_interval')}
+                    </th>
+                    <th>{t('reproduction.service_period')}
+                    </th>
+                    <th>{t('reproduction.conception_rate')}</th>
+                    <th>{t('reproduction.recorded_at')}</th>
+                    <th>{t('reproduction.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>

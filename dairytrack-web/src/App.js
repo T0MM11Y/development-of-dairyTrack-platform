@@ -1,6 +1,8 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
 import React, { useEffect, useState } from "react";
+import './i18n'; // ✅ ini harus ada
+
 
 // Public
 import Login from "./Auth/login";
@@ -160,7 +162,7 @@ const withAdminLayout = (Component) => {
                 width: "100vw",
                 height: "100vh",
                 backgroundColor: "rgba(0,0,0,0.3)",
-                zIndex: 1040,
+                zIndex: 1030,
               }}
             />
           )}

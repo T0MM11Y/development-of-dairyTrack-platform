@@ -7,6 +7,8 @@ import { getFeedStock } from "../../../../api/pakan/feedstock";
 import { getAlldailyFeedItems } from "../../../../api/pakan/dailyFeedItem";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
+
 
 const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
   const [formList, setFormList] = useState([{ feed_id: "", quantity: "" }]);
@@ -21,6 +23,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
   const [feedStocks, setFeedStocks] = useState([]);
   const [cowNames, setCowNames] = useState({});
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -374,7 +377,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content shadow-lg">
           <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">Tambah Pakan Harian</h5>
+            <h5 className="modal-title fw-bold text-info">{t('dailyfeed.add_daily_feed_button')}
+            </h5>
             <button
               className="btn-close"
               onClick={() => onClose?.() || navigate("/admin/item-pakan-harian")}
@@ -389,22 +393,26 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                 <div className="spinner-border text-info" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">Memuat data...</p>
+                <p className="mt-2">{t('dailyfeed.loading_data')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="form-label fw-bold">Sesi Pakan Harian</label>
+                  <label className="form-label fw-bold">{t('dailyfeed.daily_feed_session')}
+                  </label>
                   <select
                     className="form-select"
                     value={selectedDailyFeedId}
                     onChange={(e) => setSelectedDailyFeedId(e.target.value)}
                     required
                   >
-                    <option value="">Pilih Sesi Pakan</option>
+                    <option value="">{t('dailyfeed.select_daily_feed_session')}
+                    </option>
                     {availableDailyFeeds.length === 0 ? (
                       <option value="" disabled>
-                        Tidak ada sesi pakan yang tersedia
+                        {t('dailyfeed.no_session_available')}
+
                       </option>
                     ) : (
                       availableDailyFeeds.map((df) => (
@@ -416,8 +424,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     )}
                   </select>
                   <small className="form-text text-muted">
-                    Hanya menampilkan sesi pakan untuk hari ini dan setelahnya yang belum memiliki 3 jenis
-                    pakan
+                  {t('dailyfeed.session_info')}
+
                   </small>
                 </div>
 
@@ -425,7 +433,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                   <div className="row mb-4">
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">Tanggal</label>
+                        <label className="form-label text-secondary">{t('dailyfeed.date')}
+                        </label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -436,7 +445,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">Sesi</label>
+                        <label className="form-label text-secondary">{t('dailyfeed.session')}
+                        </label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -447,7 +457,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label text-secondary">Sapi</label>
+                        <label className="form-label text-secondary">{t('dailyfeed.cow')}
+                        </label>
                         <input
                           type="text"
                           className="form-control bg-white"
@@ -462,7 +473,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                 {formList.map((item, index) => (
                   <div className="row mb-3" key={index}>
                     <div className="col-md-6">
-                      <label className="form-label fw-bold">Jenis Pakan</label>
+                      <label className="form-label fw-bold">{t('dailyfeed.feed_type')}
+                      </label>
                       <select
                         name="feed_id"
                         className="form-select"
@@ -481,7 +493,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     </div>
 
                     <div className="col-md-4">
-                      <label className="form-label fw-bold">Jumlah (kg)</label>
+                      <label className="form-label fw-bold">{t('dailyfeed.quantity')}
+                      (kg)</label>
                       <input
                         type="number"
                         name="quantity"
@@ -496,7 +509,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                         item.quantity &&
                         parseFloat(item.quantity) > getFeedStockInfo(item.feed_id) && (
                           <small className="form-text text-danger fw-bold">
-                            Stok tidak mencukupi! Tersedia: {getFeedStockInfo(item.feed_id)} kg
+                            {t('dailyfeed.insufficient_stock')}
+                            : {getFeedStockInfo(item.feed_id)} kg
                           </small>
                         )}
                     </div>
@@ -508,7 +522,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                           className="btn btn-danger me-2"
                           onClick={() => handleRemoveFeedItem(index)}
                         >
-                          Hapus
+                          {t('dailyfeed.delete')}
+
                         </button>
                       )}
                     </div>
@@ -522,7 +537,8 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
                     onClick={handleAddFeedItem}
                     disabled={formList.length >= 3}
                   >
-                    + Tambah Pakan {formList.length >= 3 ? " (Maksimum)" : ""}
+                    + {t('dailyfeed.add_feed')}
+                    {formList.length >= 3 ? " (Maksimum)" : ""}
                   </button>
                 </div>
 

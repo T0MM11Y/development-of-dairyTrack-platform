@@ -3,6 +3,7 @@ import { createDailyFeed } from "../../../../api/pakan/dailyFeed";
 import { getFarmers } from "../../../../api/peternakan/farmer";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
   const [farmers, setFarmers] = useState([]);
@@ -18,6 +19,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
   const [error, setError] = useState("");
   const [farmerError, setFarmerError] = useState(false);
   const [cowError, setCowError] = useState(false);
+  const { t } = useTranslation();
 
   const handleClose = () => {
     if (typeof onClose === "function") {
@@ -166,7 +168,8 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
       <div className="modal-content">
         <div className="modal-header">
           <h4 className="modal-title text-info fw-bold">
-            Tambah Data Pakan Harian
+          {t('dailyfeed.add_daily_feed')}
+
           </h4>
           <button
             type="button"
@@ -184,12 +187,14 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
-              <p className="mt-2">Memuat data...</p>
+              <p className="mt-2">{t('dailyfeed.loading_data')}
+              ...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">Petani</label>
+                <label className="form-label fw-bold">{t('dailyfeed.farmer')}
+                </label>
                 <select
                   name="farmerId"
                   value={form.farmerId}
@@ -198,7 +203,8 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   required
                   disabled={farmerError || farmers.length === 0}
                 >
-                  <option value="">Pilih Petani</option>
+                  <option value="">{t('dailyfeed.select_farmer')}
+                  </option>
                   {farmers.map((farmer) => (
                     <option key={farmer.id} value={farmer.id}>
                       {farmer.first_name} {farmer.last_name}
@@ -207,13 +213,15 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                 </select>
                 {farmerError && (
                   <div className="invalid-feedback d-block">
-                    Gagal memuat data petani. Silakan coba lagi.
+                    {t('dailyfeed.failed_load_farmer')}
+
                   </div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Sapi</label>
+                <label className="form-label fw-bold">{t('dailyfeed.cow')}
+                </label>
                 <select
                   name="cowId"
                   value={form.cowId}
@@ -222,7 +230,8 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   required
                   disabled={cowError || cows.length === 0}
                 >
-                  <option value="">Pilih Sapi</option>
+                  <option value="">{t('dailyfeed.select_cow')}
+                  </option>
                   {cows.map((cow) => (
                     <option key={cow.id} value={cow.id}>
                       {cow.name}
@@ -231,13 +240,14 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                 </select>
                 {cowError && (
                   <div className="invalid-feedback d-block">
-                    Gagal memuat data sapi. Silakan coba lagi.
-                  </div>
+{t('dailyfeed.failed_load_cow')}
+</div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Tanggal</label>
+                <label className="form-label fw-bold">{t('dailyfeed.date')}
+                </label>
                 <input
                   type="date"
                   name="feedDate"
@@ -249,7 +259,8 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Sesi</label>
+                <label className="form-label fw-bold">{t('dailyfeed.session')}
+                </label>
                 <select
                   name="session"
                   value={form.session}
@@ -257,10 +268,14 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   className="form-select"
                   required
                 >
-                  <option value="">Pilih Sesi</option>
-                  <option value="Pagi">Pagi</option>
-                  <option value="Siang">Siang</option>
-                  <option value="Sore">Sore</option>
+                  <option value="">{t('dailyfeed.select_session')}
+                  </option>
+                  <option value="Pagi">{t('dailyfeed.morning')}
+                  </option>
+                  <option value="Siang">{t('dailyfeed.afternoon')}
+                  </option>
+                  <option value="Sore">{t('dailyfeed.evening')}
+                  </option>
                 </select>
               </div>
 
@@ -271,7 +286,8 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   onClick={handleClose}
                   disabled={submitting}
                 >
-                  Batal
+                  {t('dailyfeed.cancel')}
+
                 </button>
                 <button
                   type="submit"

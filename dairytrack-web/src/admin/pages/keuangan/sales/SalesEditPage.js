@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getOrderById, updateOrder } from "../../../../api/keuangan/order";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
 
 const OrderEditPage = () => {
   const { id } = useParams();
@@ -15,6 +17,8 @@ const OrderEditPage = () => {
     "Completed",
     "Cancelled",
   ]);
+  const { t } = useTranslation();
+
   const [paymentMethods] = useState([
     { value: "", label: "Select Payment Method" },
     { value: "Cash", label: "Cash" },
@@ -109,7 +113,8 @@ const OrderEditPage = () => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
-              Edit Order {form?.order_no}
+            {t('sales.edit_order')}
+            {form?.order_no}
             </h4>
             <button
               className="btn-close"
@@ -129,15 +134,18 @@ const OrderEditPage = () => {
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">Memuat data order...</p>
+                <p className="mt-2">{t('sales.loading_order_data')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row mb-4">
                   <div className="col-md-6">
-                    <h6 className="fw-bold mb-3">Informasi Pelanggan</h6>
+                    <h6 className="fw-bold mb-3">{t('sales.customer_information')}
+                    </h6>
                     <div className="mb-3">
-                      <label className="form-label">Nama Pelanggan</label>
+                      <label className="form-label">{t('sales.customer_name')}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -146,7 +154,8 @@ const OrderEditPage = () => {
                       />
                     </div>
                     <div className="mb-3">
-                      <label className="form-label">Email</label>
+                      <label className="form-label">{t('sales.customer_email')}
+                      </label>
                       <input
                         type="email"
                         className="form-control"
@@ -155,7 +164,8 @@ const OrderEditPage = () => {
                       />
                     </div>
                     <div className="mb-3">
-                      <label className="form-label">Nomor Telepon</label>
+                      <label className="form-label">{t('sales.customer_phone')}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -164,7 +174,8 @@ const OrderEditPage = () => {
                       />
                     </div>
                     <div className="mb-3">
-                      <label className="form-label">Lokasi</label>
+                      <label className="form-label">{t('sales.customer_location')}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -175,7 +186,8 @@ const OrderEditPage = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <h6 className="fw-bold mb-3">Status dan Pembayaran</h6>
+                    <h6 className="fw-bold mb-3">{t('sales.status_payment')}
+                    </h6>
                     <div className="mb-3">
                       <label className="form-label fw-semibold">
                         Status Order
@@ -198,7 +210,7 @@ const OrderEditPage = () => {
                     {form.status === "Requested" && (
                       <div className="mb-3">
                         <label className="form-label fw-semibold">
-                          Biaya Pengiriman
+                        {t('sales.order_shipping_cost')}
                         </label>
                         <div className="input-group">
                           <span className="input-group-text">Rp</span>
@@ -217,7 +229,8 @@ const OrderEditPage = () => {
 
                     <div className="mb-3">
                       <label className="form-label fw-semibold">
-                        Metode Pembayaran
+                      {t('sales.payment_method')}
+
                       </label>
                       <select
                         name="payment_method"
@@ -235,7 +248,8 @@ const OrderEditPage = () => {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Total Harga</label>
+                      <label className="form-label">{t('sales.total_price')}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -245,7 +259,8 @@ const OrderEditPage = () => {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Tanggal Order</label>
+                      <label className="form-label">{t('sales.order_date')}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -258,16 +273,21 @@ const OrderEditPage = () => {
 
                 <div className="row mb-4">
                   <div className="col-12">
-                    <h6 className="fw-bold mb-3">Order Items</h6>
+                    <h6 className="fw-bold mb-3">{t('sales.order_items_table')}
+                    </h6>
                     <div className="table-responsive">
                       <table className="table table-bordered">
                         <thead className="table-light">
                           <tr>
                             <th>#</th>
-                            <th>Produk</th>
-                            <th>Gambar</th>
-                            <th>Jumlah</th>
-                            <th>Harga</th>
+                            <th>{t('sales.product')}
+                            </th>
+                            <th>{t('sales.image')}
+                            </th>
+                            <th>{t('sales.quantity')}
+                            </th>
+                            <th>{t('sales.price')}
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -303,7 +323,8 @@ const OrderEditPage = () => {
                         <tfoot>
                           <tr>
                             <td colSpan="4" className="text-end fw-bold">
-                              Subtotal:
+                            {t('sales.subtotal')}
+                            :
                             </td>
                             <td>
                               {formatPrice(
@@ -317,13 +338,15 @@ const OrderEditPage = () => {
                           </tr>
                           <tr>
                             <td colSpan="4" className="text-end fw-bold">
-                              Biaya Pengiriman:
+                            {t('sales.order_shipping_cost')}
+                            :
                             </td>
                             <td>{formatPrice(form.shipping_cost)}</td>
                           </tr>
                           <tr>
                             <td colSpan="4" className="text-end fw-bold">
-                              Total:
+                            {t('sales.total')}
+                            :
                             </td>
                             <td className="fw-bold">
                               {formatPrice(form.total_price)}
@@ -342,7 +365,8 @@ const OrderEditPage = () => {
                     onClick={() => navigate("/admin/keuangan/sales")}
                     disabled={submitting}
                   >
-                    Kembali
+                    {t('sales.back')}
+
                   </button>
                   <button
                     type="submit"

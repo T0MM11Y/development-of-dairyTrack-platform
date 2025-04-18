@@ -4,6 +4,7 @@ import { getCows } from "../../../../api/peternakan/cow";
 import HealthCheckCreatePage from "./HealthCheckCreatePage";
 import HealthCheckEditPage from "./HealthCheckEditPage";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 
 const HealthCheckListPage = () => {
@@ -15,6 +16,7 @@ const HealthCheckListPage = () => {
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
 
   const fetchData = async () => {
@@ -75,7 +77,8 @@ const HealthCheckListPage = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl fw-bold text-dark">Data Pemeriksaan Kesehatan</h2>
+        <h2 className="text-xl fw-bold text-dark">{t('healthcheck.data')}
+        </h2>
         <button className="btn btn-info" onClick={() => setModalType("create")}>
           + Tambah
         </button>
@@ -87,30 +90,41 @@ const HealthCheckListPage = () => {
   <div className="card">
     <div className="card-body text-center py-5">
       <div className="spinner-border text-info" role="status" />
-      <p className="mt-3 text-muted">Memuat data pemeriksaan kesehatan...</p>
+      <p className="mt-3 text-muted">{t('healthcheck.loading_healthchecks')}
+      ...</p>
     </div>
   </div>
 ) : error ? (
   <div className="alert alert-danger">{error}</div>
 ) : data.length === 0 ? (
-  <p className="text-muted">Belum ada data pemeriksaan.</p>
+  <p className="text-muted">{t('healthcheck.empty')}
+.</p>
 ) : (
         <div className="card">
           <div className="card-body">
-            <h5 className="card-title">Tabel Pemeriksaan</h5>
+            <h5 className="card-title">{t('healthcheck.table_title')}
+            </h5>
             <div className="table-responsive">
               <table className="table table-striped text-sm mb-0">
                 <thead className="bg-light">
                   <tr>
                     <th>#</th>
-                    <th>Tanggal</th>
-                    <th>Sapi</th>
-                    <th>Suhu</th>
-                    <th>Jantung</th>
-                    <th>Napas</th>
-                    <th>Ruminasi</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
+                    <th>{t('healthcheck.date')}
+                    </th>
+                    <th>{t('healthcheck.cow')}
+                    </th>
+                    <th>{t('healthcheck.rectal_temperature')}
+                    </th>
+                    <th>{t('healthcheck.heart_rate')}
+                    </th>
+                    <th>{t('healthcheck.respiration_rate')}
+                    </th>
+                    <th>{t('healthcheck.rumination')}
+                    </th>
+                    <th>{t('healthcheck.status')}
+                    </th>
+                    <th>{t('healthcheck.actions')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -120,9 +134,12 @@ const HealthCheckListPage = () => {
       <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
       <td>{getCowName(item.cow)}</td>
       <td>{item.rectal_temperature}°C</td>
-      <td>{item.heart_rate} bpm/menit</td>
-      <td>{item.respiration_rate} bpm/menit</td>
-      <td>{item.rumination} kontraksi/menit</td>
+      <td>{item.heart_rate} {t('healthcheck.bpm')}
+      </td>
+      <td>{item.respiration_rate} {t('healthcheck.bpm')}
+      </td>
+      <td>{item.rumination} {t('healthcheck.contraction')}
+      </td>
       <td>
   <span
     className={`badge fw-semibold ${
@@ -136,8 +153,8 @@ const HealthCheckListPage = () => {
     {item.needs_attention === false
       ? "Sehat"
       : item.status === "handled"
-      ? "Sudah Ditangani"
-      : "Belum Ditangani"}
+      ? "Sudah ditangani"
+      : "Belum ditangani"}
   </span>
 </td>
 
@@ -239,7 +256,8 @@ const HealthCheckListPage = () => {
     <div className="modal-dialog">
       <div className="modal-content">
         <div className="modal-header">
-          <h5 className="modal-title text-danger">Konfirmasi Hapus</h5>
+          <h5 className="modal-title text-danger">{t('healthcheck.confirm_delete_title')}
+          </h5>
           <button
             className="btn-close"
             onClick={() => setDeleteId(null)}
@@ -248,9 +266,11 @@ const HealthCheckListPage = () => {
         </div>
         <div className="modal-body">
           <p>
-            Apakah Anda yakin ingin menghapus data pemeriksaan ini?
+          {t('healthcheck.confirm_delete')}
+          ?
             <br />
-            Data yang dihapus tidak dapat dikembalikan.
+            {t('healthcheck.confirm_delete_text')}
+.
           </p>
         </div>
         <div className="modal-footer">
@@ -287,7 +307,8 @@ const HealthCheckListPage = () => {
                   className="spinner-border spinner-border-sm me-2"
                   role="status"
                 />
-                Menghapus...
+                {t('healthcheck.deleting')}
+                ...
               </>
             ) : (
               "Hapus"

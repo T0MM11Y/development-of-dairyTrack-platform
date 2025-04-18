@@ -1,9 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { useTranslation } from "react-i18next";
+
 
 const RecentTransactions = ({ incomeData, expenseData, loading }) => {
   const formatCurrency = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
+  const { t } = useTranslation();
 
   const renderTransactionIcon = (transaction) => {
     const desc = transaction.description?.toLowerCase();
@@ -102,7 +105,8 @@ const RecentTransactions = ({ incomeData, expenseData, loading }) => {
         <div className="card">
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="card-title">Recent Transactions</h5>
+              <h5 className="card-title">{t('finance.recent_transactions')}
+              </h5>
               {/* <Link to="/finance/transactions" className="btn btn-sm btn-primary">
                 View All
               </Link> */}
@@ -119,7 +123,8 @@ const RecentTransactions = ({ incomeData, expenseData, loading }) => {
               progressComponent={
                 <div className="py-4">
                   <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">{t('finance.loading')}
+                    ...</span>
                   </div>
                 </div>
               }

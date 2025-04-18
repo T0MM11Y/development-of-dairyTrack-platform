@@ -6,6 +6,8 @@ import { getFarmers } from "../../../../api/peternakan/farmer";
 import { getCows } from "../../../../api/peternakan/cow";
 import CreateDailyFeedPage from "./CreateDailyFeed";
 import DailyFeedDetailEdit from "./DetailDailyFeed";
+import { useTranslation } from "react-i18next";
+
 
 const DailyFeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
@@ -17,6 +19,7 @@ const DailyFeedListPage = () => {
   const [farmerNames, setFarmerNames] = useState({});
   const [cowNames, setCowNames] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -222,13 +225,15 @@ const DailyFeedListPage = () => {
       )}
 
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Data Pakan Harian</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('dailyfeed.daily_feed_data')}
+        </h2>
         <button
           onClick={() => setShowCreateModal(true)}
           className="btn btn-info waves-effect waves-light text-uppercase"
           style={{ backgroundColor: '#17a2b8', borderColor: '#17a2b8' }}
         >
-          Tambah Pakan
+          {t('dailyfeed.add_feed')}
+
         </button>
       </div>
 
@@ -247,7 +252,8 @@ const DailyFeedListPage = () => {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-2">Memuat data...</p>
+          <p className="mt-2">{t('dailyfeed.loading_data')}
+          ...</p>
         </div>
       ) : filteredFeeds.length === 0 ? (
         <div className="alert alert-info text-center">
@@ -261,7 +267,8 @@ const DailyFeedListPage = () => {
           paginationPerPage={15} // Default to 15 rows per page
           paginationRowsPerPageOptions={[5, 10, 15, 20, 25, 30]} // Options for rows per page
           customStyles={customStyles}
-          noDataComponent={<div className="text-center p-4">Tidak ada data tersedia</div>}
+          noDataComponent={<div className="text-center p-4">{t('dailyfeed.no_data')}
+</div>}
           progressPending={loading}
           progressComponent={<div className="text-center py-4">
             <div className="spinner-border text-primary" role="status">

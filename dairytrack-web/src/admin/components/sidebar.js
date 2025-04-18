@@ -277,7 +277,7 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
         left: 0,
         width: 275,
         background: isDarkMode ? "#1e1e2f" : "#ffffff",
-        zIndex: 1050,
+        zIndex: 1040,
         boxShadow: "0 0 10px rgba(0,0,0,0.2)",
         color: isDarkMode ? "#f0f0f0" : "#333333",
         transition: "all 0.3s ease",

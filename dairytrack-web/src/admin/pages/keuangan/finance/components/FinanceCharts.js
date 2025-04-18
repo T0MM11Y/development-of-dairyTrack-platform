@@ -1,8 +1,11 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
+import { useTranslation } from "react-i18next";
+
 
 const FinanceCharts = ({ monthlyData, incomeByCategory, expenseByCategory, loading }) => {
   const formatCurrency = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
+  const { t } = useTranslation();
 
   const areaChartOptions = {
     series: [
@@ -38,14 +41,16 @@ const FinanceCharts = ({ monthlyData, incomeByCategory, expenseByCategory, loadi
       <div className="col-xl-8">
         <div className="card h-100">
           <div className="card-body">
-            <h5 className="card-title mb-4">Income & Expense</h5>
+            <h5 className="card-title mb-4">{t('finance.income_expense')}
+            </h5>
             {loading ? (
               <div
                 className="d-flex justify-content-center align-items-center"
                 style={{ height: "350px" }}
               >
                 <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
+                  <span className="visually-hidden">{t('finance.loading')}
+                  ...</span>
                 </div>
               </div>
             ) : (
@@ -63,14 +68,16 @@ const FinanceCharts = ({ monthlyData, incomeByCategory, expenseByCategory, loadi
       <div className="col-xl-4">
         <div className="card mb-4">
           <div className="card-body">
-            <h5 className="card-title mb-4">Income by Category</h5>
+            <h5 className="card-title mb-4">{t('finance.income_by_category')}
+            </h5>
             {loading ? (
               <div
                 className="d-flex justify-content-center align-items-center"
                 style={{ height: "200px" }}
               >
                 <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
+                  <span className="visually-hidden">{t('finance.loading')}
+                  ...</span>
                 </div>
               </div>
             ) : (
@@ -91,14 +98,16 @@ const FinanceCharts = ({ monthlyData, incomeByCategory, expenseByCategory, loadi
         </div>
         <div className="card">
           <div className="card-body">
-            <h5 className="card-title mb-4">Expense by Category</h5>
+            <h5 className="card-title mb-4">{t('finance.expense_by_category')}
+            </h5>
             {loading ? (
               <div
                 className="d-flex justify-content-center align-items-center"
                 style={{ height: "200px" }}
               >
                 <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
+                  <span className="visually-hidden">{t('finance.loading')}
+                  ...</span>
                 </div>
               </div>
             ) : (

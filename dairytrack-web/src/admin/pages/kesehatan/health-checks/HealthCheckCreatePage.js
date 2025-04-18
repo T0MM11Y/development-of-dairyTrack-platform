@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { createHealthCheck } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2"; // Pastikan sudah import
+import { useTranslation } from "react-i18next";
+
 
 const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   const [cows, setCows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     cow_id: "", // sesuai field di backend
@@ -88,7 +91,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Pemeriksaan</h4>
+            <h4 className="modal-title text-info fw-bold">{t('healthcheck.add')}
+            </h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -96,12 +100,14 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status" />
-                <p className="mt-2">Memuat data sapi...</p>
+                <p className="mt-2">{t('healthcheck.loading_cows')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Sapi</label>
+                  <label className="form-label fw-bold">{t('healthcheck.cow')}
+                  </label>
                   <select
   name="cow_id"
   value={form.cow_id}
@@ -109,7 +115,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   className="form-select"
   required
 >
-  <option value="">-- Pilih Sapi --</option>
+  <option value="">-- {t('healthcheck.select_cow')}
+  --</option>
   {cows.map((cow) => (
     <option key={cow.id} value={cow.id}>
       {cow.name} ({cow.breed})
@@ -121,7 +128,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Suhu Rektal (°C)</label>
+                    <label className="form-label fw-bold">{t('healthcheck.rectal_temperature')}
+                    (°C)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -133,7 +141,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Denyut Jantung</label>
+                    <label className="form-label fw-bold">{t('healthcheck.heart_rate')}
+                    </label>
                     <input
                       type="number"
                       name="heart_rate"
@@ -147,7 +156,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Frekuensi Napas</label>
+                    <label className="form-label fw-bold">{t('healthcheck.respiration_rate')}
+                    </label>
                     <input
                       type="number"
                       name="respiration_rate"
@@ -158,7 +168,8 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Ruminasi (menit)</label>
+                    <label className="form-label fw-bold">{t('healthcheck.rumination')}
+                    </label>
                     <input
                       type="number"
                       step="0.1"

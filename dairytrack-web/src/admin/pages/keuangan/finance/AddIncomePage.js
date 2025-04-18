@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { createIncome } from "../../../../api/keuangan/income";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const AddIncomeModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -11,6 +13,7 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,7 +73,8 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
       >
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Pemasukan</h4>
+            <h4 className="modal-title text-info fw-bold">{t('finance.add_income')}
+            </h4>
             <button
               className="btn-close"
               onClick={onClose}
@@ -81,7 +85,8 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">Jenis Pemasukan</label>
+                <label className="form-label fw-bold">{t('finance.income_type')}
+                </label>
                 <select
                   name="income_type"
                   value={form.income_type}
@@ -90,15 +95,20 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
                   required
                   disabled={submitting}
                 >
-                  <option value="">-- Pilih Jenis Pemasukan --</option>
-                  <option value="investment">Investasi</option>
-                  <option value="sales">Penjualan</option>
-                  <option value="other">Lainnya</option>
+                  <option value="">-- {t('finance.select_income_type')}
+                  --</option>
+                  <option value="investment">{t('finance.investment')}
+                  </option>
+                  <option value="sales">{t('finance.sales')}
+                  </option>
+                  <option value="other">{t('finance.others')}
+                  </option>
                 </select>
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Jumlah (Rp)</label>
+                <label className="form-label fw-bold">{t('finance.amount')}
+                (Rp)</label>
                 <input
                   type="number"
                   name="amount"
@@ -112,7 +122,8 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Tanggal Transaksi</label>
+                <label className="form-label fw-bold">{t('finance.transaction_date')}
+                </label>
                 <input
                   type="datetime-local"
                   name="transaction_date"
@@ -125,7 +136,8 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Deskripsi</label>
+                <label className="form-label fw-bold">{t('finance.description')}
+                </label>
                 <textarea
                   name="description"
                   value={form.description}

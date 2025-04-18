@@ -7,6 +7,8 @@ import DataTable from "react-data-table-component";
 import ProductStockCreateModal from "./ProductTypeCreatePage";
 import ProductEditPage from "./ProductEditPage";
 import { showAlert, showConfirmAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const ProductStockListPage = () => {
   const [data, setData] = useState([]);
@@ -16,6 +18,7 @@ const ProductStockListPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(null);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     try {
@@ -252,12 +255,14 @@ const ProductStockListPage = () => {
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 m-1">Product Stock</h2>
+        <h2 className="text-xl font-bold text-gray-800 m-1">{t('product.product_stock')}
+        </h2>
         <button
           className="btn btn-info"
           onClick={() => setShowCreateModal(true)}
         >
-          + Product Stock
+          + {t('product.product_stock')}
+
         </button>
       </div>
 
@@ -279,13 +284,15 @@ const ProductStockListPage = () => {
                 <div className="spinner-border text-primary" role="status">
                   <span className="sr-only">Loading...</span>
                 </div>
-                <p className="mt-2">Loading product stock data...</p>
+                <p className="mt-2">{t('product.loading_product_stock')}
+                ...</p>
               </div>
             }
             progressPending={loading}
             noDataComponent={
               <div className="text-center my-3">
-                <p className="text-gray-500">No product stock data available.</p>
+                <p className="text-gray-500">{t('product.no_product_stock')}
+                .</p>
               </div>
             }
             customStyles={customStyles}

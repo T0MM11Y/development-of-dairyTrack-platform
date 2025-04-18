@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { createOrder } from "../../../../api/keuangan/order";
 import { getProductStocks } from "../../../../api/keuangan/product";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
+
 
 const SalesCreateModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
@@ -17,6 +19,7 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [newItem, setNewItem] = useState({ product_type: "", quantity: "" });
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadAvailableStock = async () => {
@@ -218,7 +221,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
       >
         <div className="modal-content Бордер">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Buat Pesanan</h4>
+            <h4 className="modal-title text-info fw-bold">{t('sales.create_order')}
+            </h4>
             <button
               className="btn-close"
               onClick={onClose}
@@ -229,7 +233,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">Nama Pelanggan</label>
+                <label className="form-label fw-bold">{t('sales.customer_name')}
+                </label>
                 <input
                   type="text"
                   name="customer_name"
@@ -253,7 +258,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Nomor Telepon</label>
+                <label className="form-label fw-bold">{t('sales.customer_phone')}
+                </label>
                 <input
                   type="tel"
                   name="phone_number"
@@ -265,7 +271,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Lokasi</label>
+                <label className="form-label fw-bold">{t('sales.customer_location')}
+                </label>
                 <input
                   type="text"
                   name="location"
@@ -277,7 +284,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Biaya Pengiriman</label>
+                <label className="form-label fw-bold">{t('sales.order_shipping_cost')}
+                </label>
                 <input
                   type="number"
                   name="shipping_cost"
@@ -289,7 +297,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Item Pesanan</label>
+                <label className="form-label fw-bold">{t('sales.order_item')}
+                </label>
                 <div className="row mb-2">
                   <div className="col-md-6">
                     <select
@@ -299,7 +308,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                       className="form-control"
                       disabled={submitting}
                     >
-                      <option value="">-- Pilih Produk --</option>
+                      <option value="">-- {t('sales.select_product')}
+                      --</option>
                       {availableProducts.map((product) => (
                         <option
                           key={product.product_type}
@@ -329,7 +339,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                       onClick={addOrderItem}
                       disabled={submitting}
                     >
-                      Tambah
+                      {t('sales.add')}
+
                     </button>
                   </div>
                 </div>
@@ -388,7 +399,8 @@ const SalesCreateModal = ({ onClose, onSaved }) => {
                               onClick={() => removeOrderItem(index)}
                               disabled={submitting}
                             >
-                              Hapus
+                              {t('sales.delete')}
+
                             </button>
                           </li>
                         );

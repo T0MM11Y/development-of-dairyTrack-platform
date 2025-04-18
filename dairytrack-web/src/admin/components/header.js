@@ -17,26 +17,32 @@ import { getFeedNotifications } from "../../api/pakan/notification";
 import avatar1 from "../../assets/admin/images/users/toon_9.png";
 
 const LanguageDropdown = () => {
-  const { t, i18n } = useTranslation();
-  const [currentLanguage, setCurrentLanguage] = useState("English");
-  const [currentFlag, setCurrentFlag] = useState(englishFlag);
+  const { i18n } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleLanguageChange = (language) => {
-    if (language === "English") {
-      setCurrentLanguage("English");
-      setCurrentFlag(englishFlag);
-      i18n.changeLanguage("en");
-    } else if (language === "Indo") {
-      setCurrentLanguage("Indo");
-      setCurrentFlag(indoFlag);
-      i18n.changeLanguage("id");
-    }
-    setIsDropdownOpen(false);
+  // Simpan bahasa dan flag berdasarkan kode bahasa
+  const languages = {
+    en: {
+      name: "English",
+      flag: englishFlag,
+    },
+    id: {
+      name: "Indo",
+      flag: indoFlag,
+    },
   };
+
+  const currentLangCode = i18n.language || "en"; // ambil kode bahasa aktif
+  const currentLanguage = languages[currentLangCode]?.name || "English";
+  const currentFlag = languages[currentLangCode]?.flag || englishFlag;
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleLanguageChange = (langCode) => {
+    i18n.changeLanguage(langCode); // langsung ganti bahasa
+    setIsDropdownOpen(false);      // tutup dropdown setelah pilih
   };
 
   return (
@@ -48,37 +54,30 @@ const LanguageDropdown = () => {
         aria-haspopup="true"
         aria-expanded={isDropdownOpen}
       >
-        <img className="" src={currentFlag} alt="Header Language" height="16" />
+        <img src={currentFlag} alt="Flag" height="16" />
         <span className="align-middle ms-1">{currentLanguage}</span>
         <i className="mdi mdi-chevron-down ms-1"></i>
       </button>
+
       {isDropdownOpen && (
         <div className="dropdown-menu dropdown-menu-end show">
-          {currentLanguage === "English" && (
-            <a
-              href="#"
-              className="dropdown-item notify-item"
-              onClick={() => handleLanguageChange("Indo")}
-            >
-              <img src={indoFlag} alt="Indo" className="me-1" height="12" />
-              <span className="align-middle">Indo</span>
-            </a>
-          )}
-          {currentLanguage === "Indo" && (
-            <a
-              href="#"
-              className="dropdown-item notify-item"
-              onClick={() => handleLanguageChange("English")}
-            >
-              <img
-                src={englishFlag}
-                alt="English"
-                className="me-1"
-                height="12"
-              />
-              <span className="align-middle">English</span>
-            </a>
-          )}
+          {/* Tampilkan opsi selain yang sekarang aktif */}
+          {Object.entries(languages).map(([code, lang]) => (
+            code !== currentLangCode && (
+              <a
+                href="#"
+                key={code}
+                className="dropdown-item notify-item"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLanguageChange(code);
+                }}
+              >
+                <img src={lang.flag} alt={lang.name} className="me-1" height="12" />
+                <span className="align-middle">{lang.name}</span>
+              </a>
+            )
+          ))}
         </div>
       )}
     </div>
@@ -280,7 +279,7 @@ const Header = ({ onToggleSidebar }) => {
       style={{
         position: "sticky",
         top: 0,
-        zIndex: 1100,
+        zIndex: 1050,
         width: "100%",
       }}
     >

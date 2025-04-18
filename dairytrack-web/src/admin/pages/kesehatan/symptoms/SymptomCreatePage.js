@@ -3,6 +3,8 @@ import { createSymptom } from "../../../../api/kesehatan/symptom";
 import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2"; // pastikan sudah di-import
+import { useTranslation } from "react-i18next";
+
 
 const SymptomCreatePage = ({ onClose, onSaved }) => {
   const [healthChecks, setHealthChecks] = useState([]);
@@ -19,6 +21,8 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
     weight_condition: "Normal",
     reproductive_condition: "Normal",
   });
+  const { t } = useTranslation();
+
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -149,7 +153,8 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Data Gejala</h4>
+            <h4 className="modal-title text-info fw-bold">{t('symptoms.add_symptom_data')}
+            </h4>
             <button
               className="btn-close"
               onClick={onClose}
@@ -159,12 +164,14 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             {loading ? (
-              <p className="text-center">Memuat data pemeriksaan...</p>
+              <p className="text-center">{t('symptoms.loading_healthchecks')}
+...</p>
             ) : (
               <form onSubmit={handleSubmit}>
                 {/* Pemeriksaan */}
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Pemeriksaan</label>
+                  <label className="form-label fw-bold">{t('symptoms.healthcheck')}
+                  </label>
                   <select
                     name="health_check"
                     value={form.health_check}
@@ -172,7 +179,8 @@ const SymptomCreatePage = ({ onClose, onSaved }) => {
                     className="form-select"
                     required
                   >
-                 <option value="">-- Pilih Pemeriksaan --</option>
+                 <option value="">-- {t('symptoms.select_healthcheck')}
+                 --</option>
 {healthChecks
   .filter((hc) => hc.needs_attention && hc.status !== "handled") // 🔥 hanya yang butuh perhatian & belum ditangani
   .map((hc) => {

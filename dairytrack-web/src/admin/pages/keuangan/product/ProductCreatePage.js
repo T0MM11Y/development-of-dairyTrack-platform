@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createProductStock } from "../../../../api/keuangan/product";
 import { getProductTypes } from "../../../../api/keuangan/productType";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import { useTranslation } from "react-i18next";
 
 const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
   const [productTypes, setProductTypes] = useState([]);
@@ -15,6 +16,7 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchProductTypes = async () => {
@@ -118,7 +120,8 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 id="modalTitle" className="modal-title text-info fw-bold">
-              Tambah Stok Produk
+            {t('product.add_stock')}
+
             </h4>
             <button
               className="btn-close"
@@ -132,14 +135,17 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status">
-                  <span className="visually-hidden">Memuat...</span>
+                  <span className="visually-hidden">{t('product.loading')}
+                  ...</span>
                 </div>
-                <p className="mt-2">Memuat data produk...</p>
+                <p className="mt-2">{t('product.loading_product_data')}
+                ...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Tipe Produk</label>
+                  <label className="form-label fw-bold">{t('product.product_type')}
+                  </label>
                   <select
                     name="product_type"
                     value={form.product_type}
@@ -148,7 +154,8 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
                     required
                     disabled={submitting}
                   >
-                    <option value="">-- Pilih Tipe Produk --</option>
+                    <option value="">-- {t('product.select_product_type')}
+                    --</option>
                     {productTypes.map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.product_name}
@@ -157,7 +164,8 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
                   </select>
                 </div>
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Jumlah Awal</label>
+                  <label className="form-label fw-bold">{t('product.initial_quantity')}
+                  </label>
                   <input
                     type="number"
                     name="initial_quantity"
@@ -171,7 +179,8 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-bold">
-                    Tanggal & Waktu Produksi
+                  {t('product.production_datetime')}
+
                   </label>
                   <input
                     type="datetime-local"
@@ -185,7 +194,7 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-bold">
-                    Tanggal & Waktu Kedaluwarsa
+                  {t('product.expiry_datetime')}
                   </label>
                   <input
                     type="datetime-local"
@@ -199,7 +208,8 @@ const ProductStockCreateModal = ({ onClose, onProductAdded }) => {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-bold">
-                    Total Susu yang Digunakan (L)
+                  {t('product.total_milk_used')}
+                  (L)
                   </label>
                   <input
                     type="number"
