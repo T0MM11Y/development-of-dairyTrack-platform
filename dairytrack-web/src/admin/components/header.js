@@ -329,8 +329,26 @@ const Header = ({ onToggleSidebar }) => {
             >
               <i className="ri-notification-3-line"></i>
               {notifications.length > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {notifications.filter((n) => n.isNew).length || ""}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "0px", // Adjusted to move badge down (closer to icon)
+                    right: "0px", // Adjusted to move badge left (closer to icon)
+                    backgroundColor: "#dc3545", // Red background
+                    color: "white", // White text
+                    borderRadius: "50%",
+                    width: "20px",
+                    height: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    lineHeight: "1",
+                    border: "1px solid #fff", // Optional: white border for contrast
+                  }}
+                >
+                  {notifications.length}
                 </span>
               )}
             </button>
