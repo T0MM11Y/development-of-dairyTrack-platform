@@ -332,8 +332,8 @@ const Header = ({ onToggleSidebar }) => {
                 <span
                   style={{
                     position: "absolute",
-                    top: "0px", // Adjusted to move badge down (closer to icon)
-                    right: "0px", // Adjusted to move badge left (closer to icon)
+                    top: "2px", // Adjusted to move badge slightly further down
+                    right: "0px", // Unchanged to keep horizontal position
                     backgroundColor: "#dc3545", // Red background
                     color: "white", // White text
                     borderRadius: "50%",
