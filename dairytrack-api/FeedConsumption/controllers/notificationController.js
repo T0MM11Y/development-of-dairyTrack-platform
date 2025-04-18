@@ -4,16 +4,11 @@ const Feed = require("../models/feedModel");
 const { Op } = require("sequelize");
 
 // Utility function to create a feed stock notification
-const createFeedStockNotification = async (
-  feedStockId,
-  message,
-  type = "warning"
-) => {
+const createFeedStockNotification = async (feedStockId, message) => {
   try {
     return await Notification.create({
       feed_stock_id: feedStockId,
       message,
-      type,
       date: new Date(),
     });
   } catch (error) {
@@ -97,124 +92,6 @@ const notificationController = {
     }
   },
 
-  // Get unread notifications
-  getUnreadNotifications: async (req, res) => {
-    try {
-      const notifications = await Notification.findAll({
-        where: { is_read: false },
-        order: [["date", "DESC"]],
-        include: [
-          {
-            model: FeedStock,
-            as: "feedStock",
-            required: false,
-            include: [
-              {
-                model: Feed,
-                as: "feed",
-                required: false,
-                attributes: ["name"],
-              },
-            ],
-            attributes: ["stock"],
-          },
-        ],
-      });
-
-      const formattedNotifications = notifications.map((notification) => {
-        const notificationData = notification.toJSON();
-        if (
-          notificationData.feed_stock_id &&
-          notificationData.feedStock &&
-          notificationData.feedStock.feed
-        ) {
-          notificationData.message = `Sisa stok ${notificationData.feedStock.feed.name} tinggal ${notificationData.feedStock.stock}kg, silahkan tambah stok`;
-        } else if (notificationData.feed_stock_id) {
-          notificationData.message =
-            notificationData.message ||
-            "Stok pakan tidak ditemukan, silahkan periksa";
-        }
-        delete notificationData.feedStock;
-        return notificationData;
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: formattedNotifications,
-      });
-    } catch (error) {
-      console.error("Error fetching unread notifications:", {
-        error: error.message,
-        stack: error.stack,
-      });
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch unread notifications",
-        error: error.message,
-      });
-    }
-  },
-
-  // Mark notification as read
-  markAsRead: async (req, res) => {
-    const { id } = req.params;
-
-    try {
-      const notification = await Notification.findByPk(id);
-
-      if (!notification) {
-        return res.status(404).json({
-          success: false,
-          message: `Notification with ID ${id} not found`,
-        });
-      }
-
-      notification.is_read = true;
-      await notification.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Notification marked as read",
-        data: notification,
-      });
-    } catch (error) {
-      console.error("Error marking notification as read:", {
-        error: error.message,
-        stack: error.stack,
-      });
-      return res.status(500).json({
-        success: false,
-        message: "Failed to mark notification as read",
-        error: error.message,
-      });
-    }
-  },
-
-  // Mark all notifications as read
-  markAllAsRead: async (req, res) => {
-    try {
-      await Notification.update(
-        { is_read: true },
-        { where: { is_read: false } }
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "All notifications marked as read",
-      });
-    } catch (error) {
-      console.error("Error marking all notifications as read:", {
-        error: error.message,
-        stack: error.stack,
-      });
-      return res.status(500).json({
-        success: false,
-        message: "Failed to mark all notifications as read",
-        error: error.message,
-      });
-    }
-  },
-
   // Delete notification
   deleteNotification: async (req, res) => {
     const { id } = req.params;
@@ -283,7 +160,7 @@ const notificationController = {
         const existingNotification = await Notification.findOne({
           where: {
             feed_stock_id: stockItem.id,
-            is_read: false,
+            message, // Check for identical message to avoid duplicates
           },
         });
 

@@ -17,22 +17,13 @@ const Notification = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    type: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      defaultValue: "warning",
-    },
-    is_read: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
     date: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "notification",
+    tableName: "notifications",
     timestamps: false,
   }
 );

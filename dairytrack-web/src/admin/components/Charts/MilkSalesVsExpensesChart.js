@@ -1,7 +1,8 @@
+import React from "react";
 import ReactApexChart from "react-apexcharts";
 
-const ColumnChart = () => {
-  const options = {
+const MilkSalesVsExpensesChart = () => {
+  const columnChartOptions = {
     series: [
       {
         name: "Milk Sales",
@@ -9,9 +10,7 @@ const ColumnChart = () => {
       },
       {
         name: "Expenses",
-        data: [
-          76000, 85000, 101000, 98000, 87000, 105000, 91000, 114000, 94000,
-        ],
+        data: [76000, 85000, 101000, 98000, 87000, 105000, 91000, 114000, 94000],
       },
     ],
     chart: { type: "bar", height: 350 },
@@ -21,17 +20,7 @@ const ColumnChart = () => {
     dataLabels: { enabled: false },
     stroke: { show: true, width: 2, colors: ["transparent"] },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-      ],
+      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"],
     },
     yaxis: { title: { text: "$ (dollars)" } },
     fill: { opacity: 1 },
@@ -39,13 +28,18 @@ const ColumnChart = () => {
   };
 
   return (
-    <ReactApexChart
-      options={options}
-      series={options.series}
-      type="bar"
-      height={350}
-    />
+    <div className="card">
+      <div className="card-body">
+        <h4 className="card-title mb-4">Milk Sales vs Expenses</h4>
+        <ReactApexChart
+          options={columnChartOptions}
+          series={columnChartOptions.series}
+          type="bar"
+          height={350}
+        />
+      </div>
+    </div>
   );
 };
 
-export default ColumnChart;
+export default MilkSalesVsExpensesChart;
