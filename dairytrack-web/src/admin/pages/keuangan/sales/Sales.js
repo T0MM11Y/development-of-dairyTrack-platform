@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { getOrders, deleteOrder } from "../../../../api/keuangan/order";
+import DataTable from "react-data-table-component";
+import SalesCreateModal from "./SalesCreatePage";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 import { Link } from "react-router-dom";
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -27,15 +31,37 @@ const Sales = () => {
   const handleDelete = async () => {
     if (!deleteId) return;
 
-    setSubmitting(true);
-    try {
-      await deleteOrder(deleteId);
-      fetchData();
+    const result = await showAlert({
+      type: "warning",
+      title: "Konfirmasi Hapus",
+      text: "Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat dibatalkan.",
+      showCancelButton: true,
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
+      setSubmitting(true);
+      try {
+        await deleteOrder(deleteId);
+        await showAlert({
+          type: "success",
+          title: "Berhasil",
+          text: "Pesanan berhasil dihapus.",
+        });
+        fetchData();
+        setDeleteId(null);
+      } catch (err) {
+        await showAlert({
+          type: "error",
+          title: "Gagal Menghapus",
+          text: "Gagal menghapus pesanan: " + err.message,
+        });
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
       setDeleteId(null);
-    } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -43,9 +69,20 @@ const Sales = () => {
     setSelectedOrder(order);
   };
 
+  const handleCreateSaved = () => {
+    fetchData();
+    setShowCreateModal(false);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (deleteId) {
+      handleDelete();
+    }
+  }, [deleteId]);
 
   const formatDate = (dateString) => {
     try {
@@ -85,13 +122,107 @@ const Sales = () => {
     }
   };
 
+  const columns = [
+    {
+      name: "#",
+      selector: (row, index) => index + 1,
+      width: "60px",
+    },
+    {
+      name: "Order No",
+      selector: (row) => row.order_no,
+      sortable: true,
+    },
+    {
+      name: "Customer Name",
+      selector: (row) => row.customer_name,
+      sortable: true,
+    },
+    {
+      name: "Location",
+      selector: (row) => row.location,
+      sortable: true,
+    },
+    {
+      name: "Total Price",
+      selector: (row) => parseFloat(row.total_price),
+      cell: (row) => formatPrice(row.total_price),
+      sortable: true,
+      right: true,
+    },
+    {
+      name: "Status",
+      selector: (row) => row.status,
+      cell: (row) => (
+        <span className={`badge ${getStatusBadgeClass(row.status)}`}>
+          {row.status}
+        </span>
+      ),
+      sortable: true,
+    },
+    {
+      name: "Payment Method",
+      selector: (row) => row.payment_method || "-",
+      sortable: true,
+    },
+    {
+      name: "Order Date",
+      selector: (row) => row.created_at,
+      cell: (row) => formatDate(row.created_at),
+      sortable: true,
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <>
+          <button
+            onClick={() => openOrderDetail(row)}
+            className="btn btn-info btn-sm me-2"
+            title="View Details"
+          >
+            <i className="ri-eye-line"></i>
+          </button>
+          <button
+            onClick={() => setDeleteId(row.id)}
+            className="btn btn-danger btn-sm"
+            title="Delete Order"
+            disabled={submitting}
+          >
+            <i className="ri-delete-bin-6-line"></i>
+          </button>
+        </>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
+  ];
+
+  const customStyles = {
+    headCells: {
+      style: {
+        fontWeight: "bold",
+        fontSize: "14px",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "55px",
+      },
+    },
+  };
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 m-1">Sales</h2>
-        <Link to="/admin/keuangan/sales/create" className="btn btn-info">
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn btn-info"
+          disabled={submitting}
+        >
           + Order
-        </Link>
+        </button>
       </div>
 
       {error && (
@@ -100,81 +231,42 @@ const Sales = () => {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-          <p className="mt-2">Loading order data...</p>
-        </div>
-      ) : orders.length === 0 ? (
-        <p className="text-gray-500">No order data available.</p>
-      ) : (
-        <div className="col-lg-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="card-title">Order Data</h4>
-              <div className="table-responsive">
-                <table className="table table-striped mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Order No</th>
-                      <th>Customer Name</th>
-                      <th>Location</th>
-                      <th>Total Price</th>
-                      <th>Status</th>
-                      <th>Payment Method</th>
-                      <th>Order Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order, index) => (
-                      <tr key={order.id}>
-                        <th scope="row">{index + 1}</th>
-                        <td>{order.order_no}</td>
-                        <td>{order.customer_name}</td>
-                        <td>{order.location}</td>
-                        <td>{formatPrice(order.total_price)}</td>
-                        <td>
-                          <span
-                            className={`badge ${getStatusBadgeClass(
-                              order.status
-                            )}`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td>{order.payment_method || "-"}</td>
-                        <td>{formatDate(order.created_at)}</td>
-                        <td>
-                          <button
-                            onClick={() => openOrderDetail(order)}
-                            className="btn btn-info me-2"
-                            title="View Details"
-                          >
-                            <i className="ri-eye-line"></i>
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(order.id)}
-                            className="btn btn-danger"
-                            title="Delete Order"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      <div className="card">
+        <div className="card-body">
+          <h4 className="card-title">Order Data</h4>
+          <DataTable
+            columns={columns}
+            data={orders}
+            pagination
+            persistTableHead
+            progressPending={loading}
+            progressPendingIndicator={
+              <div className="text-center my-3">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Loading order data...</p>
               </div>
-            </div>
-          </div>
+            }
+            noDataComponent={
+              <div className="text-center my-3">
+                <p className="text-gray-500">No order data available.</p>
+              </div>
+            }
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+          />
         </div>
+      </div>
+
+      {showCreateModal && (
+        <SalesCreateModal
+          onClose={() => setShowCreateModal(false)}
+          onSaved={handleCreateSaved}
+        />
       )}
 
-      {/* Order Detail Modal */}
       {selectedOrder && (
         <div
           className="modal fade show d-block"
@@ -233,7 +325,6 @@ const Sales = () => {
                     </p>
                   </div>
                 </div>
-
                 <div className="row">
                   <div className="col-12">
                     <h6 className="text-muted">Order Items</h6>
@@ -251,7 +342,9 @@ const Sales = () => {
                         {selectedOrder.order_items.map((item, index) => (
                           <tr key={item.id}>
                             <td>{index + 1}</td>
-                            <td>{item.product_type_detail?.product_name || "-"}</td>
+                            <td>
+                              {item.product_type_detail?.product_name || "-"}
+                            </td>
                             <td>
                               {item.product_type_detail?.image ? (
                                 <img
@@ -322,68 +415,6 @@ const Sales = () => {
                   onClick={() => setSelectedOrder(null)}
                 >
                   Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteId && (
-        <div
-          className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-          tabIndex="-1"
-          role="dialog"
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">Delete Confirmation</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <p>
-                  Are you sure you want to delete this order?
-                  <br />
-                  This action cannot be undone.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setDeleteId(null)}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
                 </button>
               </div>
             </div>

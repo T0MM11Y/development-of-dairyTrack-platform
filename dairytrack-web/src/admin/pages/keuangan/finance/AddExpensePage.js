@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { createExpense } from "../../../../api/keuangan/expense";
-import { useNavigate } from "react-router-dom";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 
-const AddExpensePage = () => {
-  const navigate = useNavigate();
+const AddExpenseModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     expense_type: "",
     amount: "",
@@ -27,42 +26,30 @@ const AddExpensePage = () => {
       amount: Number(form.amount),
       description: form.description,
       transaction_date: new Date(form.transaction_date).toISOString(),
+      transaction_type: "expense",
     };
-
-    console.log("Data yang dikirim:", JSON.stringify(formData, null, 2));
 
     try {
       await createExpense(formData);
-      navigate("/admin/keuangan/finance");
+      await showAlert({
+        type: "success",
+        title: "Berhasil",
+        text: "Pengeluaran berhasil disimpan.",
+      });
+
+      if (onSaved) onSaved(formData);
+      onClose();
     } catch (err) {
-      console.error("Gagal menyimpan data pengeluaran:", err);
-
-      // Menampilkan detail error response
-      if (err.response) {
-        console.error("Status:", err.response.status);
-        console.error("Headers:", err.response.headers);
-        console.error(
-          "Response data:",
-          JSON.stringify(err.response.data, null, 2)
-        );
-
-        // Jika server mengembalikan pesan error spesifik
-        if (err.response.data && err.response.data.message) {
-          setError("Server error: " + err.response.data.message);
-        } else {
-          setError("Gagal menyimpan data pengeluaran: " + err.response.status);
-        }
-      } else if (err.request) {
-        // Request dibuat tapi tidak ada response
-        console.error("Request sent but no response:", err.request);
-        setError(
-          "Tidak ada respons dari server. Periksa koneksi internet Anda."
-        );
-      } else {
-        // Error pada setup request
-        console.error("Error setup request:", err.message);
-        setError("Gagal menyiapkan request: " + err.message);
+      let message = "Gagal menyimpan pengeluaran.";
+      if (err.response && err.response.data) {
+        message = err.response.data.message || message;
       }
+      setError(message);
+      await showAlert({
+        type: "error",
+        title: "Gagal Menyimpan",
+        text: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +64,10 @@ const AddExpensePage = () => {
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div
+        className="modal-dialog modal-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
@@ -85,14 +75,13 @@ const AddExpensePage = () => {
             </h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/keuangan/finance")}
+              onClick={onClose}
               disabled={submitting}
             ></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
-              {/* Expense Type */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Jenis Pengeluaran</label>
                 <select
@@ -101,6 +90,7 @@ const AddExpensePage = () => {
                   onChange={handleChange}
                   className="form-select"
                   required
+                  disabled={submitting}
                 >
                   <option value="">-- Pilih Jenis Pengeluaran --</option>
                   <option value="material_purchase">Pembelian Bahan</option>
@@ -116,7 +106,6 @@ const AddExpensePage = () => {
                 </select>
               </div>
 
-              {/* Amount */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Jumlah (Rp)</label>
                 <input
@@ -127,10 +116,10 @@ const AddExpensePage = () => {
                   className="form-control"
                   placeholder="Masukkan jumlah pengeluaran"
                   required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Transaction Date */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Tanggal Transaksi</label>
                 <input
@@ -140,10 +129,10 @@ const AddExpensePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Description */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Deskripsi</label>
                 <textarea
@@ -153,10 +142,10 @@ const AddExpensePage = () => {
                   className="form-control"
                   placeholder="Masukkan deskripsi pengeluaran (opsional)"
                   rows="3"
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 className="btn btn-info w-100"
@@ -172,4 +161,4 @@ const AddExpensePage = () => {
   );
 };
 
-export default AddExpensePage;
+export default AddExpenseModal;

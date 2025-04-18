@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { createIncome } from "../../../../api/keuangan/income";
-import { useNavigate } from "react-router-dom";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 
-const AddIncomePage = () => {
-  const navigate = useNavigate();
+const AddIncomeModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     income_type: "",
     amount: "",
     description: "",
     transaction_date: "",
   });
-
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,19 +26,30 @@ const AddIncomePage = () => {
       amount: Number(form.amount),
       description: form.description,
       transaction_date: new Date(form.transaction_date).toISOString(),
+      transaction_type: "income", // Tambahkan untuk konsistensi dengan getFinances
     };
-
-    console.log("Data yang dikirim:", JSON.stringify(formData, null, 2));
 
     try {
       await createIncome(formData);
-      navigate("/admin/keuangan/finance");
+      await showAlert({
+        type: "success",
+        title: "Berhasil",
+        text: "Pemasukan berhasil disimpan.",
+      });
+
+      if (onSaved) onSaved(formData); // Kirim data baru ke parent
+      onClose(); // Tutup modal
     } catch (err) {
-      console.error("Gagal menyimpan data pemasukan:", err);
-      if (err.response) {
-        console.error("Response data:", err.response.data);
+      let message = "Gagal menyimpan pemasukan.";
+      if (err.response && err.response.data) {
+        message = err.response.data.message || message;
       }
-      setError("Gagal menyimpan data pemasukan: " + err.message);
+      setError(message);
+      await showAlert({
+        type: "error",
+        title: "Gagal Menyimpan",
+        text: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -55,20 +64,22 @@ const AddIncomePage = () => {
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div
+        className="modal-dialog modal-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Tambah Pemasukan</h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/keuangan/finance")}
+              onClick={onClose}
               disabled={submitting}
             ></button>
           </div>
           <div className="modal-body">
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
-              {/* Income Type */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Jenis Pemasukan</label>
                 <select
@@ -77,6 +88,7 @@ const AddIncomePage = () => {
                   onChange={handleChange}
                   className="form-select"
                   required
+                  disabled={submitting}
                 >
                   <option value="">-- Pilih Jenis Pemasukan --</option>
                   <option value="investment">Investasi</option>
@@ -85,7 +97,6 @@ const AddIncomePage = () => {
                 </select>
               </div>
 
-              {/* Amount */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Jumlah (Rp)</label>
                 <input
@@ -96,10 +107,10 @@ const AddIncomePage = () => {
                   className="form-control"
                   placeholder="Masukkan jumlah pemasukan"
                   required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Transaction Date */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Tanggal Transaksi</label>
                 <input
@@ -109,10 +120,10 @@ const AddIncomePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Description */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Deskripsi</label>
                 <textarea
@@ -122,10 +133,10 @@ const AddIncomePage = () => {
                   className="form-control"
                   placeholder="Masukkan deskripsi pemasukan (opsional)"
                   rows="3"
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 className="btn btn-info w-100"
@@ -141,4 +152,4 @@ const AddIncomePage = () => {
   );
 };
 
-export default AddIncomePage;
+export default AddIncomeModal;

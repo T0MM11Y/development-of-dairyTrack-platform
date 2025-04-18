@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Laporan Keuangan</h2>
+    {% if start_date and end_date %}
+    <p>Periode: {{ start_date }} - {{ end_date }}</p>
+    {% else %}
+    <p>Semua data</p>
+    {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Tanggal</th>
+                <th>Jenis Transaksi</th>
+                <th>Deskripsi</th>
+                <th>Jumlah</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in finances %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.transaction_date|date:"d M Y H:i" }}</td>
+                <td>{{ item.transaction_type }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

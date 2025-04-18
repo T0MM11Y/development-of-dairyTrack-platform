@@ -4,6 +4,7 @@ import {
   updateProductStock,
 } from "../../../../api/keuangan/product";
 import { getProductTypes } from "../../../../api/keuangan/productType";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 
 const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
   const [form, setForm] = useState(null);
@@ -18,7 +19,7 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
         const res = await getProductStockById(productId);
         setForm({
           ...res,
-          production_at: res.production_at.split("T")[0], // Format untuk input date
+          production_at: res.production_at.split("T")[0],
           expiry_at: res.expiry_at.split("T")[0],
         });
 
@@ -53,149 +54,205 @@ const ProductEditPage = ({ productId, onProductUpdated, onClose }) => {
         expiry_at: new Date(form.expiry_at).toISOString(),
       };
       await updateProductStock(productId, updatedData);
+      await showAlert({
+        type: "success",
+        title: "Berhasil",
+        text: "Stok produk berhasil diperbarui.",
+      });
       onProductUpdated();
     } catch (err) {
       console.error("Error updating product:", err);
-      setError("Gagal memperbarui data produk.");
+      let message = "Gagal memperbarui data produk.";
+      if (err.response && err.response.data && err.response.data.error) {
+        message = err.response.data.error.replace(/^\['|'\]$/g, "");
+      } else {
+        message = err.message;
+      }
+      setError(message);
+      await showAlert({
+        type: "error",
+        title: "Gagal Memperbarui",
+        text: message,
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <>
-      <div className="modal-header">
-        <h4 className="modal-title text-info fw-bold">Edit Data Produk</h4>
-        <button
-          className="btn-close"
-          onClick={onClose}
-          disabled={submitting}
-        ></button>
-      </div>
-      <div className="modal-body">
-        {error && <p className="text-danger text-center">{error}</p>}
-        {loading || !form ? (
-          <p className="text-center">Memuat data produk...</p>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="row">
-              {/* Initial Quantity */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
-                  Initial Quantity
-                </label>
-                <input
-                  type="number"
-                  name="initial_quantity"
-                  value={form.initial_quantity || ""}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-
-              {/* Quantity */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Quantity</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={form.quantity || ""}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-
-              {/* Total Milk Used */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
-                  Total Milk Used
-                </label>
-                <input
-                  type="number"
-                  name="total_milk_used"
-                  value={form.total_milk_used || ""}
-                  onChange={handleChange}
-                  className="form-control"
-                  step="0.01"
-                  disabled={submitting}
-                />
-              </div>
-
-              {/* Status */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Status</label>
-                <select
-                  name="status"
-                  value={form.status || ""}
-                  onChange={handleChange}
-                  className="form-select"
-                  disabled={submitting}
-                >
-                  <option value="available">Available</option>
-                  <option value="contamination">Contamination</option>
-                </select>
-              </div>
-
-              {/* Product Type */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Product Type</label>
-                <select
-                  name="product_type"
-                  value={form.product_type || ""}
-                  onChange={handleChange}
-                  className="form-select"
-                  disabled={submitting}
-                >
-                  <option value="">-- Pilih Tipe Produk --</option>
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.product_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Production Date */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
-                  Production Date
-                </label>
-                <input
-                  type="date"
-                  name="production_at"
-                  value={form.production_at || ""}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-
-              {/* Expiry Date */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">Expiry Date</label>
-                <input
-                  type="date"
-                  name="expiry_at"
-                  value={form.expiry_at || ""}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-            </div>
+    <div
+      className="modal show d-block"
+      style={{
+        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1050,
+      }}
+      onClick={onClose}
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="modalTitle"
+    >
+      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h4 id="modalTitle" className="modal-title text-info fw-bold">
+              Edit Data Produk
+            </h4>
             <button
-              type="submit"
-              className="btn btn-info w-100 fw-semibold"
+              className="btn-close"
+              onClick={onClose}
               disabled={submitting}
-            >
-              {submitting ? "Memperbarui..." : "Perbarui Data"}
-            </button>
-          </form>
-        )}
+              aria-label="Close"
+            ></button>
+          </div>
+          <div className="modal-body">
+            {error && <p className="text-danger text-center">{error}</p>}
+            {loading || !form ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-info" role="status">
+                  <span className="visually-hidden">Memuat...</span>
+                </div>
+                <p className="mt-2">Memuat data produk...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  {/* Initial Quantity */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">
+                      Initial Quantity
+                    </label>
+                    <input
+                      type="number"
+                      name="initial_quantity"
+                      value={form.initial_quantity || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">Quantity</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={form.quantity || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Total Milk Used */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">
+                      Total Milk Used (L)
+                    </label>
+                    <input
+                      type="number"
+                      name="total_milk_used"
+                      value={form.total_milk_used || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      step="0.01"
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">Status</label>
+                    <select
+                      name="status"
+                      value={form.status || ""}
+                      onChange={handleChange}
+                      className="form-select"
+                      disabled={submitting}
+                      required
+                    >
+                      <option value="available">Available</option>
+                      <option value="contamination">Contamination</option>
+                    </select>
+                  </div>
+
+                  {/* Product Type */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">
+                      Product Type
+                    </label>
+                    <select
+                      name="product_type"
+                      value={form.product_type || ""}
+                      onChange={handleChange}
+                      className="form-select"
+                      disabled={submitting}
+                      required
+                    >
+                      <option value="">-- Pilih Tipe Produk --</option>
+                      {productTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.product_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Production Date */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">
+                      Production Date
+                    </label>
+                    <input
+                      type="date"
+                      name="production_at"
+                      value={form.production_at || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-semibold">Expiry Date</label>
+                    <input
+                      type="date"
+                      name="expiry_at"
+                      value={form.expiry_at || ""}
+                      onChange={handleChange}
+                      className="form-control"
+                      disabled={submitting}
+                      required
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="btn btn-info w-100 fw-semibold"
+                  disabled={submitting}
+                >
+                  {submitting ? "Memperbarui..." : "Perbarui Data"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

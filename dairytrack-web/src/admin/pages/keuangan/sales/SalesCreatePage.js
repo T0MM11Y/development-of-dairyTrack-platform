@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { createOrder } from "../../../../api/keuangan/order";
 import { getProductStocks } from "../../../../api/keuangan/product";
-import { useNavigate } from "react-router-dom";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 
-const SalesCreatePage = () => {
-  const navigate = useNavigate();
+const SalesCreateModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     customer_name: "",
     email: "",
@@ -19,12 +18,10 @@ const SalesCreatePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [newItem, setNewItem] = useState({ product_type: "", quantity: "" });
 
-  // Fetch available products on mount
   useEffect(() => {
     const loadAvailableStock = async () => {
       try {
         const response = await getProductStocks();
-        // Kelompokkan berdasarkan product_type dan ambil data yang diperlukan
         const groupedProducts = response.reduce((acc, product) => {
           if (product.status === "available") {
             const type = product.product_type;
@@ -81,17 +78,14 @@ const SalesCreatePage = () => {
       return;
     }
 
-    // Cek apakah produk dengan product_type yang sama sudah ada
     const existingItemIndex = form.order_items.findIndex(
       (item) => item.product_type === parseInt(newItem.product_type)
     );
 
     if (existingItemIndex !== -1) {
-      // Jika sudah ada, tambahkan quantity-nya
       const updatedItems = [...form.order_items];
       const newQuantity = updatedItems[existingItemIndex].quantity + requestedQuantity;
       
-      // Validasi stok lagi setelah penggabungan
       if (selectedProduct.total_quantity < newQuantity) {
         setError(
           `Stok ${selectedProduct.product_name} tidak cukup. Tersedia: ${selectedProduct.total_quantity}`
@@ -106,7 +100,6 @@ const SalesCreatePage = () => {
         order_items: updatedItems,
       }));
     } else {
-      // Jika belum ada, tambahkan sebagai item baru
       setForm((prev) => ({
         ...prev,
         order_items: [
@@ -129,8 +122,7 @@ const SalesCreatePage = () => {
       order_items: prev.order_items.filter((_, i) => i !== index),
     }));
   };
-  
-  // Fungsi untuk menambah jumlah item
+
   const incrementItemQuantity = (index) => {
     const updatedItems = [...form.order_items];
     const currentItem = updatedItems[index];
@@ -138,7 +130,6 @@ const SalesCreatePage = () => {
       (p) => p.product_type === currentItem.product_type
     );
     
-    // Cek apakah masih ada stok tersedia
     if (currentItem.quantity + 1 > selectedProduct.total_quantity) {
       setError(
         `Stok ${selectedProduct.product_name} tidak cukup. Tersedia: ${selectedProduct.total_quantity}`
@@ -154,14 +145,12 @@ const SalesCreatePage = () => {
     }));
     setError("");
   };
-  
-  // Fungsi untuk mengurangi jumlah item
+
   const decrementItemQuantity = (index) => {
     const updatedItems = [...form.order_items];
     const currentItem = updatedItems[index];
     
     if (currentItem.quantity <= 1) {
-      // Jika quantity hanya 1, hapus item
       removeOrderItem(index);
       return;
     }
@@ -191,9 +180,24 @@ const SalesCreatePage = () => {
 
     try {
       await createOrder(payload);
-      navigate("/admin/keuangan/sales");
+      await showAlert({
+        type: "success",
+        title: "Berhasil",
+        text: "Pesanan berhasil dibuat.",
+      });
+      if (onSaved) onSaved();
+      onClose();
     } catch (err) {
-      setError("Gagal membuat pesanan: " + err.message);
+      let message = "Gagal membuat pesanan.";
+      if (err.response && err.response.data) {
+        message = err.response.data.message || message;
+      }
+      setError(message);
+      await showAlert({
+        type: "error",
+        title: "Gagal Menyimpan",
+        text: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -208,13 +212,16 @@ const SalesCreatePage = () => {
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
+      <div
+        className="modal-dialog modal-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content Бордер">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">Buat Pesanan</h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/keuangan/sales")}
+              onClick={onClose}
               disabled={submitting}
             ></button>
           </div>
@@ -230,6 +237,7 @@ const SalesCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -241,6 +249,7 @@ const SalesCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -252,6 +261,7 @@ const SalesCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -263,6 +273,7 @@ const SalesCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -274,10 +285,9 @@ const SalesCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   placeholder="Kosongkan jika tidak ada"
+                  disabled={submitting}
                 />
               </div>
-
-              {/* Order Items Section */}
               <div className="mb-3">
                 <label className="form-label fw-bold">Item Pesanan</label>
                 <div className="row mb-2">
@@ -287,6 +297,7 @@ const SalesCreatePage = () => {
                       value={newItem.product_type}
                       onChange={handleItemChange}
                       className="form-control"
+                      disabled={submitting}
                     >
                       <option value="">-- Pilih Produk --</option>
                       {availableProducts.map((product) => (
@@ -308,6 +319,7 @@ const SalesCreatePage = () => {
                       className="form-control"
                       placeholder="Jumlah"
                       min="1"
+                      disabled={submitting}
                     />
                   </div>
                   <div className="col-md-2">
@@ -315,13 +327,12 @@ const SalesCreatePage = () => {
                       type="button"
                       className="btn btn-primary w-100"
                       onClick={addOrderItem}
+                      disabled={submitting}
                     >
                       Tambah
                     </button>
                   </div>
                 </div>
-
-                {/* List of added items */}
                 {form.order_items.length > 0 && (
                   <div className="mt-3">
                     <h6>Daftar Item:</h6>
@@ -346,36 +357,36 @@ const SalesCreatePage = () => {
                                 borderRadius: "5px",
                               }}
                               onError={(e) => {
-                                e.target.src = "/path/to/fallback-image.jpg"; // Gambar fallback jika gagal
+                                e.target.src = "/path/to/fallback-image.jpg";
                               }}
                             />
                             <div className="flex-grow-1">
                               {product?.product_name}
                             </div>
-                            
-                            {/* Control quantity buttons */}
                             <div className="d-flex align-items-center me-3">
-                              <button 
+                              <button
                                 type="button"
                                 className="btn btn-outline-secondary btn-sm"
                                 onClick={() => decrementItemQuantity(index)}
+                                disabled={submitting}
                               >
                                 -
                               </button>
                               <span className="mx-2">{item.quantity}</span>
-                              <button 
+                              <button
                                 type="button"
                                 className="btn btn-outline-secondary btn-sm"
                                 onClick={() => incrementItemQuantity(index)}
+                                disabled={submitting}
                               >
                                 +
                               </button>
                             </div>
-                            
                             <button
                               type="button"
                               className="btn btn-danger btn-sm"
                               onClick={() => removeOrderItem(index)}
+                              disabled={submitting}
                             >
                               Hapus
                             </button>
@@ -386,7 +397,6 @@ const SalesCreatePage = () => {
                   </div>
                 )}
               </div>
-
               <button
                 type="submit"
                 className="btn btn-info w-100"
@@ -402,4 +412,4 @@ const SalesCreatePage = () => {
   );
 };
 
-export default SalesCreatePage;
+export default SalesCreateModal;
