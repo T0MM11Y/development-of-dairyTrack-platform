@@ -93,6 +93,7 @@ import DashboardKesehatanPage from "./admin/pages/kesehatan/DashboardKesehatanPa
 import "./assets/admin/css/icons.min.css";
 import "./assets/admin/css/app.css";
 import "./assets/admin/css/bootstrap.min.css";
+// import "./assets/admin/css/modal.css";
 
 import "simplebar-react/dist/simplebar.min.css";
 
@@ -170,7 +171,7 @@ const withAdminLayout = (Component) => {
             style={{
               marginLeft: !isMobile ? (isCollapsed ? 80 : 275) : 0,
               padding: "20px",
-              paddingTop: isMobile ?  "15px" : "25px",  // ✅ offset tinggi header
+              paddingTop: isMobile ? "15px" : "25px", // ✅ offset tinggi header
               overflowY: "auto",
               transition: "margin-left 0.3s ease-in-out",
             }}
@@ -184,9 +185,6 @@ const withAdminLayout = (Component) => {
       </div>
     );
   };
-
-
-
 
   return <AdminLayout />;
 };

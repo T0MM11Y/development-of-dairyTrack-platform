@@ -36,7 +36,7 @@ class RawMilk(models.Model):
 
 # Model Tipe Produk
 class ProductType(models.Model):
-    
+
     class Meta:
         db_table = "product_type"
 

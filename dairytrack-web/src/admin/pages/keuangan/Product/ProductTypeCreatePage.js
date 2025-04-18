@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { createProductType } from "../../../../api/keuangan/productType";
-import { useNavigate } from "react-router-dom";
+import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 
-const ProductTypeCreatePage = () => {
-  const navigate = useNavigate();
+const ProductTypeCreateModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     product_name: "",
     product_description: "",
@@ -33,20 +32,30 @@ const ProductTypeCreatePage = () => {
     if (form.image) {
       formData.append("image", form.image);
     }
-    formData.append("price", Number(form.price)); // Pastikan price dalam bentuk angka
+    formData.append("price", Number(form.price));
     formData.append("unit", form.unit);
-
-    // Debugging: Tampilkan data yang dikirim
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
 
     try {
       await createProductType(formData);
-      navigate("/admin/keuangan/type-product");
+      await showAlert({
+        type: "success",
+        title: "Berhasil",
+        text: "Tipe produk berhasil disimpan.",
+      });
+
+      if (onSaved) onSaved(formData);
+      onClose();
     } catch (err) {
-      console.error("Gagal menyimpan tipe produk:", err);
-      setError("Gagal menyimpan tipe produk: " + err.message);
+      let message = "Gagal menyimpan tipe produk.";
+      if (err.response && err.response.data) {
+        message = err.response.data.message || message;
+      }
+      setError(message);
+      await showAlert({
+        type: "error",
+        title: "Gagal Menyimpan",
+        text: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -70,7 +79,10 @@ const ProductTypeCreatePage = () => {
         paddingTop: "3rem",
       }}
     >
-      <div className="modal-dialog modal-lg">
+      <div
+        className="modal-dialog modal-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
@@ -78,7 +90,7 @@ const ProductTypeCreatePage = () => {
             </h4>
             <button
               className="btn-close"
-              onClick={() => navigate("/admin/keuangan/type-product")}
+              onClick={onClose}
               disabled={submitting}
             ></button>
           </div>
@@ -94,6 +106,7 @@ const ProductTypeCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -104,6 +117,7 @@ const ProductTypeCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 ></textarea>
               </div>
               <div className="mb-3">
@@ -113,6 +127,7 @@ const ProductTypeCreatePage = () => {
                   name="image"
                   onChange={handleFileChange}
                   className="form-control"
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -124,6 +139,7 @@ const ProductTypeCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 />
                 <div className="form-text text-muted mt-1">
                   Total: {formatRupiah(form.price)}
@@ -137,6 +153,7 @@ const ProductTypeCreatePage = () => {
                   onChange={handleChange}
                   className="form-control"
                   required
+                  disabled={submitting}
                 >
                   <option value="">-- Pilih Satuan --</option>
                   <option value="Bootle">Bootle</option>
@@ -160,4 +177,4 @@ const ProductTypeCreatePage = () => {
   );
 };
 
-export default ProductTypeCreatePage;
+export default ProductTypeCreateModal;

@@ -7,6 +7,7 @@ from .views import (
     SalesTransactionListCreateView, SalesTransactionDetailView,
     FinanceListView
 )
+from . import views_export
 
 urlpatterns = [
     path('expenses/', ExpenseListCreateView.as_view(), name='expense-list'),
@@ -19,6 +20,9 @@ urlpatterns = [
     path('sales-transactions/<int:pk>/', SalesTransactionDetailView.as_view(), name='sales-transaction-detail'),
 
     path('finance/', FinanceListView.as_view(), name='finance-list'),
+
+    path('export/pdf/', views_export.export_finance_pdf, name='export_finance_pdf'),
+    path('export/excel/', views_export.export_finance_excel, name='export_finance_excel'),
 ]
 
     # Menyajikan file media hanya dalam mode DEBUG

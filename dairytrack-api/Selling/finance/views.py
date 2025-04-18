@@ -2,6 +2,9 @@ from rest_framework import generics
 from .models import Expense, Income, Finance
 from .serializers import ExpenseSerializer, IncomeSerializer, FinanceSerializer, SalesTransactionSerializer
 from sales.models import SalesTransaction
+from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
+from rest_framework import filters
+from .filters import FinanceFilter
 
 # ✅ Expense View (Otomatis catat ke Finance)
 class ExpenseListCreateView(generics.ListCreateAPIView):
@@ -34,3 +37,8 @@ class SalesTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
 class FinanceListView(generics.ListAPIView):
     queryset = Finance.objects.all()
     serializer_class = FinanceSerializer
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = FinanceFilter
+    ordering_fields = ['transaction_date', 'amount']
+    ordering = ['-transaction_date']

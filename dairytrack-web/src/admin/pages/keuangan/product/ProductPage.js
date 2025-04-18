@@ -4,8 +4,12 @@ import {
   getProductStocks,
 } from "../../../../api/keuangan/product";
 import DataTable from "react-data-table-component";
-import ProductStockCreatePage from "./ProductCreatePage";
+import ProductStockCreateModal from "./ProductCreatePage";
 import ProductEditPage from "./ProductEditPage";
+import {
+  showAlert,
+  showConfirmAlert,
+} from "../../../../admin/pages/keuangan/utils/alert";
 
 const ProductStockListPage = () => {
   const [data, setData] = useState([]);
@@ -14,7 +18,7 @@ const ProductStockListPage = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(null); // State untuk modal edit (simpan ID produk)
+  const [showEditModal, setShowEditModal] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -93,17 +97,59 @@ const ProductStockListPage = () => {
     return "bg-success";
   };
 
+  const handleProductAdded = () => {
+    fetchData();
+    setShowCreateModal(false);
+    showAlert({
+      type: "success",
+      title: "Berhasil",
+      text: "Stok produk berhasil ditambahkan.",
+    });
+  };
+
+  const handleProductUpdated = () => {
+    fetchData();
+    setShowEditModal(null);
+    showAlert({
+      type: "success",
+      title: "Berhasil",
+      text: "Stok produk berhasil diperbarui.",
+    });
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
-    setSubmitting(true);
-    try {
-      await deleteProductStock(deleteId);
-      fetchData();
+
+    const result = await showConfirmAlert({
+      title: "Konfirmasi Hapus",
+      text: "Apakah Anda yakin ingin menghapus stok produk ini? Tindakan ini tidak dapat dibatalkan.",
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
+      setSubmitting(true);
+      try {
+        await deleteProductStock(deleteId);
+        fetchData();
+        await showAlert({
+          type: "success",
+          title: "Berhasil",
+          text: "Stok produk berhasil dihapus.",
+        });
+      } catch (err) {
+        console.error("Gagal menghapus data:", err.message);
+        await showAlert({
+          type: "error",
+          title: "Gagal Menghapus",
+          text: "Gagal menghapus stok produk: " + err.message,
+        });
+      } finally {
+        setSubmitting(false);
+        setDeleteId(null);
+      }
+    } else {
       setDeleteId(null);
-    } catch (err) {
-      alert("Gagal menghapus data: " + err.message);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -132,7 +178,10 @@ const ProductStockListPage = () => {
       name: "Status",
       cell: (row) => (
         <span
-          className={`badge ${getStatusBadgeClass(row.status, row.timeRemaining)}`}
+          className={`badge ${getStatusBadgeClass(
+            row.status,
+            row.timeRemaining
+          )}`}
         >
           {row.status === "available"
             ? `${row.status} (${formatTimeRemaining(row.timeRemaining)})`
@@ -172,6 +221,7 @@ const ProductStockListPage = () => {
           <button
             onClick={() => setDeleteId(row.id)}
             className="btn btn-danger btn-sm"
+            disabled={submitting}
           >
             <i className="ri-delete-bin-6-line"></i>
           </button>
@@ -241,7 +291,9 @@ const ProductStockListPage = () => {
             progressPending={loading}
             noDataComponent={
               <div className="text-center my-3">
-                <p className="text-gray-500">No product stock data available.</p>
+                <p className="text-gray-500">
+                  No product stock data available.
+                </p>
               </div>
             }
             customStyles={customStyles}
@@ -257,26 +309,42 @@ const ProductStockListPage = () => {
           className="modal fade show d-block"
           style={{
             background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1050,
           }}
           tabIndex="-1"
           role="dialog"
+          aria-modal="true"
+          aria-labelledby="deleteModalTitle"
+          onClick={() => setDeleteId(null)}
         >
-          <div className="modal-dialog">
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title text-danger">Delete Confirmation</h5>
+                <h5 id="deleteModalTitle" className="modal-title text-danger">
+                  Konfirmasi Hapus
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
+                  aria-label="Close"
                 ></button>
               </div>
               <div className="modal-body">
                 <p>
-                  Are you sure you want to delete this product stock?
+                  Apakah Anda yakin ingin menghapus stok produk ini?
                   <br />
-                  This action cannot be undone.
+                  Tindakan ini tidak dapat dibatalkan.
                 </p>
               </div>
               <div className="modal-footer">
@@ -286,7 +354,7 @@ const ProductStockListPage = () => {
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   type="button"
@@ -301,10 +369,10 @@ const ProductStockListPage = () => {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      Deleting...
+                      Menghapus...
                     </>
                   ) : (
-                    "Delete"
+                    "Hapus"
                   )}
                 </button>
               </div>
@@ -315,59 +383,19 @@ const ProductStockListPage = () => {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div
-          className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-          tabIndex="-1"
-          role="dialog"
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            className="modal-dialog modal-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content">
-              <ProductStockCreatePage
-                onProductAdded={() => {
-                  fetchData();
-                  setShowCreateModal(false);
-                }}
-                onClose={() => setShowCreateModal(false)}
-              />
-            </div>
-          </div>
-        </div>
+        <ProductStockCreateModal
+          onClose={() => setShowCreateModal(false)}
+          onProductAdded={handleProductAdded}
+        />
       )}
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div
-          className="modal fade show d-block"
-          style={{
-            background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-          }}
-          tabIndex="-1"
-          role="dialog"
-          onClick={() => setShowEditModal(null)}
-        >
-          <div
-            className="modal-dialog modal-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content">
-              <ProductEditPage
-                productId={showEditModal}
-                onProductUpdated={() => {
-                  fetchData();
-                  setShowEditModal(null);
-                }}
-                onClose={() => setShowEditModal(null)}
-              />
-            </div>
-          </div>
-        </div>
+        <ProductEditPage
+          productId={showEditModal}
+          onProductUpdated={handleProductUpdated}
+          onClose={() => setShowEditModal(null)}
+        />
       )}
     </div>
   );
