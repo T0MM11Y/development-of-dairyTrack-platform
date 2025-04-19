@@ -1,60 +1,32 @@
 import 'package:dairy_track/config/configApi5000.dart';
+import 'package:dairy_track/model/peternakan/farmer.dart';
 
 // GET semua data peternak
-Future<List<dynamic>> getFarmers() async {
+Future<List<Peternak>> getFarmers() async {
   final response = await fetchAPI("farmers");
-  if (response['status'] == 200) {
-    return response['data'];
+  if (response is List<dynamic>) {
+    // Jika response adalah List langsung
+    return response.map((json) => Peternak.fromJson(json)).toList();
+  } else if (response is Map && response['status'] == 200) {
+    // Jika response adalah Map dengan data di dalamnya
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => Peternak.fromJson(json)).toList();
   } else {
-    throw Exception(response['message']);
+    throw Exception(response['message'] ?? 'Unexpected response format');
   }
 }
 
-// GET satu peternak by ID
-Future<Map<String, dynamic>> getFarmerById(String id) async {
-  final response = await fetchAPI("farmers/$id");
-  if (response['status'] == 200) {
-    return response['data'];
-  } else {
-    throw Exception(response['message']);
-  }
-}
-
-// CREATE peternak baru
-Future<Map<String, dynamic>> createFarmer(Map<String, dynamic> data) async {
+Future<bool> addFarmers(Peternak peternak) async {
   final response = await fetchAPI(
     "farmers",
     method: "POST",
-    data: data,
-    isFormData: true,
+    data: peternak.toJson(),
   );
-  if (response['status'] == 201) {
-    return response['data'];
+  if (response is Map && response['status'] == 201) {
+    // Jika data berhasil ditambahkan
+    return true;
   } else {
-    throw Exception(response['message']);
-  }
-}
-
-// UPDATE peternak
-Future<Map<String, dynamic>> updateFarmer(
-    String id, Map<String, dynamic> data) async {
-  final response = await fetchAPI(
-    "farmers/$id",
-    method: "PUT",
-    data: data,
-    isFormData: true,
-  );
-  if (response['status'] == 200) {
-    return response['data'];
-  } else {
-    throw Exception(response['message']);
-  }
-}
-
-// DELETE peternak
-Future<void> deleteFarmer(String id) async {
-  final response = await fetchAPI("farmers/$id", method: "DELETE");
-  if (response['status'] != 204) {
-    throw Exception(response['message']);
+    // Jika terjadi kesalahan
+    throw Exception(response['message'] ?? 'Failed to add farmer');
   }
 }

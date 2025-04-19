@@ -9,7 +9,6 @@ def schedule_notifications():
         get_low_production_notifications()
         
 
-
 if __name__ == '__main__':
     # Create tables if they do not exist
     with app.app_context():
@@ -21,6 +20,9 @@ if __name__ == '__main__':
     scheduler.start()
 
     try:
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, host='0.0.0.0', port=5000)  # Running on port 8080
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
+
+
+#flask run --port=5000 --host=0.0.0.0

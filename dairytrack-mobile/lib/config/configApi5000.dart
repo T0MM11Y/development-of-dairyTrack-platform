@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 //ipv4CMDmu
-const String BASE_URL = "http://192.168.1.1:5000/api";
+const String BASE_URL = "http://192.168.182.47:5000/api";
 
-Future<Map<String, dynamic>> fetchAPI(
+Future<dynamic> fetchAPI(
   String endpoint, {
   String method = "GET",
   Map<String, dynamic>? data,
@@ -70,8 +70,7 @@ Future<Map<String, dynamic>> fetchAPI(
         final errorData = jsonDecode(response.body);
         return {
           'status': response.statusCode,
-          'message': errorData['detail'] ??
-              'Something went wrong, please try again later.',
+          'message': errorData['detail'] ?? 'Something went wrong.',
         };
       } else {
         return {
@@ -85,6 +84,7 @@ Future<Map<String, dynamic>> fetchAPI(
       return {'status': 204, 'message': 'No Content'};
     }
 
+    // Return parsed JSON (can be Map or List)
     return jsonDecode(response.body);
   } on SocketException {
     return {

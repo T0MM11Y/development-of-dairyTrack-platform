@@ -6,16 +6,19 @@ from app.models import Farmer
 # Blueprint untuk Farmer
 farmers_bp = Blueprint('farmers', __name__)
 
+# Endpoint untuk mendapatkan semua data petani
 @farmers_bp.route('/farmers', methods=['GET'])
 def get_farmers():
     farmers = Farmer.query.order_by(Farmer.id).all()
     return jsonify([farmer.to_dict() for farmer in farmers])
 
+# Endpoint untuk mendapatkan data petani berdasarkan ID
 @farmers_bp.route('/farmers/<int:id>', methods=['GET'])
 def get_farmer(id):
     farmer = Farmer.query.get_or_404(id)
     return jsonify(farmer.to_dict())
 
+# Endpoint untuk membuat data petani baru
 @farmers_bp.route('/farmers', methods=['POST'])
 def create_farmer():
     data = request.get_json()
@@ -44,6 +47,7 @@ def create_farmer():
     db.session.commit()
     return jsonify({'message': 'Farmer created successfully', 'data': new_farmer.to_dict()}), 201
 
+# Endpoint untuk memperbarui data petani berdasarkan ID
 @farmers_bp.route('/farmers/<int:id>', methods=['PUT'])
 def update_farmer(id):
     farmer = Farmer.query.get_or_404(id)
@@ -66,6 +70,7 @@ def update_farmer(id):
     db.session.commit()
     return jsonify(farmer.to_dict())
 
+# Endpoint untuk menghapus data petani berdasarkan ID
 @farmers_bp.route('/farmers/<int:id>', methods=['DELETE'])
 def delete_farmer(id):
     farmer = Farmer.query.get_or_404(id)

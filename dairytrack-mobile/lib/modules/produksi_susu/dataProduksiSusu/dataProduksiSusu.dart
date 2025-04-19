@@ -38,11 +38,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 600) {
-            return _buildWebView();
-          } else {
-            return _buildMobileView();
-          }
+          return _buildMobileView();
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -50,114 +46,6 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         backgroundColor: Colors.blue[700],
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _buildWebView() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.picture_as_pdf),
-                    label: Text('Export to PDF'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.table_chart),
-                    label: Text('Export to Excel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Card(
-              margin: const EdgeInsets.all(16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: DataTable(
-                headingRowColor: MaterialStateProperty.all(Colors.blue[50]),
-                columns: const [
-                  DataColumn(
-                      label: Text('#',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Nama Sapi',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Waktu Produksi',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Volume (Liter)',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Fase Laktasi',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Status',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(
-                      label: Text('Aksi',
-                          style: TextStyle(fontWeight: FontWeight.bold))),
-                ],
-                rows: data.asMap().entries.map((entry) {
-                  final index = entry.key + 1;
-                  final milk = entry.value;
-                  return DataRow(cells: [
-                    DataCell(Text(index.toString())),
-                    DataCell(Text(milk['cow_name'] ?? 'Unknown')),
-                    DataCell(Text(milk['production_time'] != null
-                        ? DateFormat('dd MMM yyyy, HH:mm')
-                            .format(DateTime.parse(milk['production_time']))
-                        : 'N/A')),
-                    DataCell(Text('${milk['volume_liters']}')),
-                    DataCell(Text(milk['lactation_phase'] ?? 'N/A')),
-                    DataCell(Text(milk['lactation_status'] ?? 'N/A')),
-                    DataCell(
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {},
-                            tooltip: 'Edit',
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {},
-                            tooltip: 'Hapus',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ]);
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

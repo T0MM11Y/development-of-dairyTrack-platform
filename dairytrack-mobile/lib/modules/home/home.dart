@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildDrawerItem(
             icon: Icons.home,
             title: 'Peternakan',
-            onTap: () => _navigateTo(context, '/farm'),
+            onTap: () => _navigateTo(context, '/peternakan'),
           ),
           _buildDrawerItem(
             icon: Icons.local_drink,
@@ -102,12 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildDrawerItem(
             icon: Icons.grass,
             title: 'Pakan Sapi',
-            onTap: () => _navigateTo(context, '/cattle-feed'),
+            onTap: () => _navigateTo(context, '/pakan'),
           ),
           _buildDrawerItem(
             icon: Icons.shopping_cart,
             title: 'Penjualan',
-            onTap: () => _navigateTo(context, '/sales'),
+            onTap: () => _navigateTo(context, '/penjualan'),
           ),
           const Divider(),
           _buildDrawerItem(
