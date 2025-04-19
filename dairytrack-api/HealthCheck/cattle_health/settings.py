@@ -25,8 +25,13 @@ SECRET_KEY = 'django-insecure-sv664a@*3g8g7xi-wy1nchc*aog0)4v7grp!pji0^*20fvbr2#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '172.20.10.2',  # ✅ Tambahkan IP kamu di sini (IP laptop / device / emulator)
+        '*',   # ✅ ini biar semua host diterima sementara
 
+]
 
 # Application definition
 

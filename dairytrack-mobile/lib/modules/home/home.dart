@@ -109,6 +109,11 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Penjualan',
             onTap: () => _navigateTo(context, '/penjualan'),
           ),
+          _buildDrawerItem(
+            icon: Icons.medical_services, // Ikon untuk kesehatan
+            title: 'Pemeriksaan Kesehatan',
+            onTap: () => _navigateTo(context, '/pemeriksaan-kesehatan'),
+          ),
           const Divider(),
           _buildDrawerItem(
             icon: Icons.logout,

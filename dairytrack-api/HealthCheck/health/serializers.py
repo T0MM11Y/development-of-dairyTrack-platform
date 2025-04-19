@@ -40,10 +40,6 @@ class HealthCheckListSerializer(serializers.ModelSerializer):
             'created_at'
         ]
         
-class SymptomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Symptom
-        fields = '__all__'
 class HealthCheckEditSerializer(serializers.ModelSerializer):
     cow = CowSimpleSerializer(read_only=True)  # tampilkan data sapi
     status = serializers.CharField(read_only=True)  # tampilkan, tapi tidak bisa diedit
@@ -64,7 +60,10 @@ class HealthCheckEditSerializer(serializers.ModelSerializer):
             'created_at'
         ]
         read_only_fields = ['cow', 'status', 'checkup_date', 'needs_attention', 'is_followed_up', 'created_at']
-
+class SymptomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Symptom
+        fields = '__all__'
 class DiseaseHistoryListSerializer(serializers.ModelSerializer):
     health_check = HealthCheckListSerializer()
     symptom = SymptomSerializer()
