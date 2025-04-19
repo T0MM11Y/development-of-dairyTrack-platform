@@ -125,22 +125,23 @@ class _AddGejalaState extends State<AddGejala> {
 
     try {
       await createSymptom({
-        "health_check": selectedHealthCheckId,
-        "eye_condition": eyeCondition,
-        "mouth_condition": mouthCondition,
-        "nose_condition": noseCondition,
-        "anus_condition": anusCondition,
-        "leg_condition": legCondition,
-        "skin_condition": skinCondition,
-        "behavior": behavior,
-        "weight_condition": weightCondition,
-        "reproductive_condition": reproductiveCondition,
-      });
+  "health_check": selectedHealthCheckId,
+  "eye_condition": eyeCondition ?? "Normal", // ✅ Default Normal
+  "mouth_condition": mouthCondition ?? "Normal",
+  "nose_condition": noseCondition ?? "Normal",
+  "anus_condition": anusCondition ?? "Normal",
+  "leg_condition": legCondition ?? "Normal",
+  "skin_condition": skinCondition ?? "Normal",
+  "behavior": behavior ?? "Normal",
+  "weight_condition": weightCondition ?? "Normal",
+  "reproductive_condition": reproductiveCondition ?? "Normal",
+});
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gejala berhasil ditambahkan')),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menyimpan: $e')),

@@ -44,37 +44,38 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
   }
 
   Future<void> handleSubmit() async {
-    if (!_formKey.currentState!.validate() || selectedCowId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
-      );
-      return;
-    }
-
-    setState(() => isSubmitting = true);
-
-    try {
-      await createHealthCheck({
-        'cow': int.parse(selectedCowId!),
-        'rectal_temperature': rectalTemperature,
-        'heart_rate': heartRate,
-        'respiration_rate': respirationRate,
-        'rumination': rumination,
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data pemeriksaan berhasil disimpan')),
-      );
-
-      Navigator.of(context).pop(); // Kembali setelah sukses
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
-      );
-    } finally {
-      setState(() => isSubmitting = false);
-    }
+  if (!_formKey.currentState!.validate() || selectedCowId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
+    );
+    return;
   }
+
+  setState(() => isSubmitting = true);
+
+  try {
+    await createHealthCheck({
+      'cow_id': int.parse(selectedCowId!), // ✅ WAJIB pakai cow_id
+      'rectal_temperature': rectalTemperature ?? 0.0,
+      'heart_rate': heartRate ?? 0,
+      'respiration_rate': respirationRate ?? 0,
+      'rumination': rumination ?? 0.0,
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data pemeriksaan berhasil disimpan')),
+    );
+
+    Navigator.of(context).pop(true); // ✅ Kirim true supaya page sebelumnya bisa reload!
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
+    );
+  } finally {
+    setState(() => isSubmitting = false);
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

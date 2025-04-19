@@ -65,31 +65,32 @@ class _EditPemeriksaanState extends State<EditPemeriksaan> {
 }
 
 
-  Future<void> submitForm() async {
-    if (form == null) return;
+ Future<void> submitForm() async {
+  if (form == null) return;
 
-    setState(() {
-      isSubmitting = true;
-    });
+  setState(() => isSubmitting = true);
 
-    try {
-      await updateHealthCheck(widget.healthCheckId, form!.toJson());
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data pemeriksaan berhasil diperbarui')),
-      );
-
-      widget.onSaved();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memperbarui data pemeriksaan')),
-      );
-    } finally {
-      setState(() {
-        isSubmitting = false;
-      });
-    }
+  bool success = false;
+  try {
+    success = await updateHealthCheck(widget.healthCheckId, form!.toJson());
+  } catch (e) {
+    success = false;
+  } finally {
+    setState(() => isSubmitting = false);
   }
+
+  if (success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Data pemeriksaan berhasil diperbarui')),
+    );
+    widget.onSaved(); // ✅ balik dan reload
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❌ Gagal memperbarui data pemeriksaan')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

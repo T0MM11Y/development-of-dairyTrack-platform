@@ -106,7 +106,7 @@ class _AddReproduksiState extends State<AddReproduksi> {
         widget.onSaved!();
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal menyimpan data reproduksi')),

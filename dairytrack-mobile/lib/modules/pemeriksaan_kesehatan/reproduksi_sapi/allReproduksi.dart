@@ -53,39 +53,65 @@ class _AllReproduksiState extends State<AllReproduksi> {
   }
 
   Future<void> confirmDelete(int reproductionId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Konfirmasi Hapus'),
-        content: const Text('Yakin ingin menghapus data reproduksi ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
+  bool isDeleting = false;
 
-    if (confirm == true) {
-      try {
-        await deleteReproduction(reproductionId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data reproduksi berhasil dihapus')),
-        );
-        setState(() {}); // ✅ Refresh tampilan
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menghapus data reproduksi')),
-        );
-      }
+  await showDialog(
+    context: context,
+    barrierDismissible: !isDeleting, // Tidak bisa ditutup saat proses hapus
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Konfirmasi Hapus'),
+            content: const Text('Yakin ingin menghapus data reproduksi ini?'),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.of(context).pop(false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        setStateDialog(() => isDeleting = true);
+                        try {
+                          await deleteReproduction(reproductionId);
+                          Navigator.of(context).pop(true); // ✅ Berhasil hapus
+                        } catch (e) {
+                          Navigator.of(context).pop(false); // ✅ Gagal hapus
+                        }
+                      },
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Hapus'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  ).then((confirmed) {
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Data reproduksi berhasil dihapus')),
+      );
+      fetchAllData(); // ✅ Refresh list setelah berhasil hapus
+    } else if (confirmed == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal menghapus data reproduksi')),
+      );
     }
-  }
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,23 +153,24 @@ class _AllReproduksiState extends State<AllReproduksi> {
                                     ),
                                     Row(
                                       children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.orange),
-                                          tooltip: 'Edit',
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) => EditReproduksi(
-                                                reproductionId: item.id,
-                                                onClose: () => Navigator.of(context).pop(),
-                                                onSaved: () {
-                                                  Navigator.of(context).pop();
-                                                  setState(() {}); // ✅ Refresh tampilan
-                                                },
-                                              ),
-                                            );
-                                          },
-                                        ),
+                                       IconButton(
+  icon: const Icon(Icons.edit, color: Colors.orange),
+  tooltip: 'Edit',
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (_) => EditReproduksi(
+        reproductionId: item.id,
+        onClose: () => Navigator.of(context).pop(),
+        onSaved: () {
+          Navigator.of(context).pop();
+          fetchAllData(); // ✅ HARUS ini supaya reload data terbaru
+        },
+      ),
+    );
+  },
+),
+
                                         IconButton(
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           tooltip: 'Delete',
@@ -180,12 +207,15 @@ class _AllReproduksiState extends State<AllReproduksi> {
                       },
                     ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-reproduksi');
-        },
-        backgroundColor: Colors.blue[700],
-        child: const Icon(Icons.add),
-      ),
+  onPressed: () async {
+    final result = await Navigator.pushNamed(context, '/add-reproduksi');
+    if (result == true) {
+      fetchAllData(); // ✅ Reload data kalau berhasil tambah
+    }
+  },
+  backgroundColor: Colors.blue[700],
+  child: const Icon(Icons.add),
+),
     );
   }
 }

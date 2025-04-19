@@ -16,53 +16,67 @@ Future<List<Symptom>> getSymptoms() async {
 
 // POST untuk tambah gejala
 Future<bool> createSymptom(Map<String, dynamic> symptomData) async {
-  final response = await fetchAPI(
-    "symptoms",
+  await fetchAPI(
+    "symptoms/",
     method: "POST",
     data: symptomData,
   );
-  if (response is Map && response['status'] == 201) {
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to create symptom');
-  }
+  return true;
 }
+
+
 
 // DELETE untuk hapus gejala
 Future<bool> deleteSymptom(int id) async {
   final response = await fetchAPI(
-    "symptoms/$id",
+    "symptoms/$id/",
     method: "DELETE",
   );
-  if (response is Map && response['status'] == 200) {
+
+  // ✅ Kalau DELETE berhasil (response == true dari fetchAPI)
+  if (response == true) {
     return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to delete symptom');
   }
+
+  // ✅ Kalau API malah kasih JSON, cek status
+  if (response is Map<String, dynamic> &&
+      (response['status'] == 200 || response['status'] == 204)) {
+    return true;
+  }
+
+  // ❌ Kalau tidak berhasil
+  throw Exception(response is Map
+      ? response['message'] ?? 'Failed to delete symptom'
+      : 'Failed to delete symptom');
 }
+
+
 
 // ✅ GET detail gejala berdasarkan ID
 Future<Symptom> getSymptomById(int id) async {
-  final response = await fetchAPI("symptoms/$id/"); // <-- tambahkan slash di akhir
+  final response = await fetchAPI('symptoms/$id/'); // ✅ Slash di belakang
 
-  if (response is Map && response['status'] == 200) {
-    return Symptom.fromJson(response['data']);
+  if (response is Map<String, dynamic>) {
+    return Symptom.fromJson(response); // ✅ langsung parse tanpa cek 'data'
   } else {
-    throw Exception(response['message'] ?? 'Failed to fetch symptom');
+    throw Exception('Gagal mengambil data symptom');
   }
 }
+
 
 
 // UPDATE gejala berdasarkan ID
 Future<bool> updateSymptom(int id, Map<String, dynamic> symptomData) async {
   final response = await fetchAPI(
-    "symptoms/$id",
+    "symptoms/$id/",
     method: "PUT",
     data: symptomData,
   );
-  if (response is Map && response['status'] == 200) {
-    return true;
+
+  if (response is Map) {
+    return true; // ✅ Langsung return true karena 200 sudah pasti OK
   } else {
-    throw Exception(response['message'] ?? 'Failed to update symptom');
+    throw Exception('Gagal memperbarui data gejala');
   }
 }
+

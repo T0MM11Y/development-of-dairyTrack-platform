@@ -18,47 +18,46 @@ Future<List<HealthCheck>> getHealthChecks() async {
 
 // POST untuk menambahkan data pemeriksaan penyakit sapi
 Future<bool> createHealthCheck(Map<String, dynamic> healthCheckData) async {
-  final response = await fetchAPI(
-    "health-checks",
+  await fetchAPI(
+    "health-checks/",
     method: "POST",
     data: healthCheckData,
   );
-  if (response is Map && response['status'] == 201) {
-    // Jika sukses create
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to create health check');
-  }
+  return true;
 }
 
+
 // PUT untuk update data pemeriksaan penyakit sapi
+// UPDATE pemeriksaan kesehatan berdasarkan ID
 Future<bool> updateHealthCheck(int id, Map<String, dynamic> healthCheckData) async {
   final response = await fetchAPI(
-    "health-checks/$id",
+    "health-checks/$id/",
     method: "PUT",
     data: healthCheckData,
   );
-  if (response is Map && response['status'] == 200) {
-    // Jika sukses update
-    return true;
+
+  if (response is Map) {
+    return true; // ✅ Langsung return true karena kalau Map berarti sukses
   } else {
-    throw Exception(response['message'] ?? 'Failed to update health check');
+    throw Exception('Gagal memperbarui data pemeriksaan');
   }
 }
 
 // DELETE untuk menghapus data pemeriksaan penyakit sapi
 Future<bool> deleteHealthCheck(int id) async {
   final response = await fetchAPI(
-    "health-checks/$id",
+    "health-checks/$id/",
     method: "DELETE",
   );
-  if (response is Map && response['status'] == 200) {
-    // Jika sukses delete
+
+  if (response == true || (response is Map && (response['status'] == 200 || response['status'] == 204))) {
+    // ✅ Kalau null/true (karena 204 no content) atau status 200/204
     return true;
   } else {
-    throw Exception(response['message'] ?? 'Failed to delete health check');
+    throw Exception(response is Map ? response['message'] ?? 'Failed to delete health check' : 'Failed to delete health check');
   }
 }
+
 Future<HealthCheck> getHealthCheckById(int id) async {
   final response = await fetchAPI('health-checks/$id/'); // ✅ Slash di belakang sudah betul
 

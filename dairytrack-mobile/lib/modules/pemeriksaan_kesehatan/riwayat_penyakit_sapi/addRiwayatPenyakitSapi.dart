@@ -74,7 +74,7 @@ class _AddRiwayatPenyakitSapiState extends State<AddRiwayatPenyakitSapi> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Data riwayat penyakit berhasil disimpan')),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal menyimpan data riwayat penyakit')),

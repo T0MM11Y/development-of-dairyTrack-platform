@@ -67,6 +67,26 @@ class _EditReproduksiState extends State<EditReproduksi> {
     }
   }
 
+  Future<void> selectDate(BuildContext context, TextEditingController controller) async {
+    DateTime initialDate = DateTime.now();
+    if (controller.text.isNotEmpty) {
+      try {
+        initialDate = DateTime.parse(controller.text);
+      } catch (_) {}
+    }
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      controller.text = picked.toIso8601String().split('T').first; // yyyy-MM-dd
+    }
+  }
+
   Future<void> submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -105,8 +125,9 @@ class _EditReproduksiState extends State<EditReproduksi> {
 
     setState(() => isSubmitting = true);
 
+    bool success = false;
     try {
-      await updateReproduction(widget.reproductionId, {
+      success = await updateReproduction(widget.reproductionId, {
         'cow': reproduction!.cowId,
         'calving_date': calvingDateController.text,
         'previous_calving_date': previousCalvingDateController.text,
@@ -114,18 +135,21 @@ class _EditReproduksiState extends State<EditReproduksi> {
         'total_insemination': totalInsemination,
         'successful_pregnancy': 1,
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data reproduksi berhasil diperbarui.')),
-      );
-
-      widget.onSaved();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memperbarui data reproduksi.')),
-      );
+    } catch (_) {
+      success = false;
     } finally {
       setState(() => isSubmitting = false);
+    }
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Data reproduksi berhasil diperbarui.')),
+      );
+      widget.onSaved(); // Reload & back
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal memperbarui data reproduksi.')),
+      );
     }
   }
 
@@ -135,7 +159,7 @@ class _EditReproduksiState extends State<EditReproduksi> {
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         padding: const EdgeInsets.all(20),
-        constraints: const BoxConstraints(maxHeight: 600),
+        constraints: const BoxConstraints(maxHeight: 650),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : error != null
@@ -171,30 +195,42 @@ class _EditReproduksiState extends State<EditReproduksi> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                TextFormField(
+                                TextField(
                                   controller: calvingDateController,
-                                  decoration: const InputDecoration(labelText: 'Tanggal Calving (Sekarang)'),
-                                  keyboardType: TextInputType.datetime,
-                                  validator: (value) => value!.isEmpty ? 'Tanggal tidak boleh kosong' : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tanggal Calving (Sekarang)',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  readOnly: true,
+                                  onTap: () => selectDate(context, calvingDateController),
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
+                                const SizedBox(height: 16),
+                                TextField(
                                   controller: previousCalvingDateController,
-                                  decoration: const InputDecoration(labelText: 'Tanggal Calving Sebelumnya'),
-                                  keyboardType: TextInputType.datetime,
-                                  validator: (value) => value!.isEmpty ? 'Tanggal tidak boleh kosong' : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tanggal Calving Sebelumnya',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  readOnly: true,
+                                  onTap: () => selectDate(context, previousCalvingDateController),
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
+                                const SizedBox(height: 16),
+                                TextField(
                                   controller: inseminationDateController,
-                                  decoration: const InputDecoration(labelText: 'Tanggal Inseminasi'),
-                                  keyboardType: TextInputType.datetime,
-                                  validator: (value) => value!.isEmpty ? 'Tanggal tidak boleh kosong' : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Tanggal Inseminasi',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  readOnly: true,
+                                  onTap: () => selectDate(context, inseminationDateController),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 16),
                                 TextFormField(
                                   controller: totalInseminationController,
-                                  decoration: const InputDecoration(labelText: 'Total Inseminasi'),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Total Inseminasi',
+                                    border: OutlineInputBorder(),
+                                  ),
                                   keyboardType: TextInputType.number,
                                   validator: (value) => value!.isEmpty ? 'Jumlah tidak boleh kosong' : null,
                                 ),
@@ -202,7 +238,7 @@ class _EditReproduksiState extends State<EditReproduksi> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -210,7 +246,9 @@ class _EditReproduksiState extends State<EditReproduksi> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                             ),
-                            child: Text(isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'),
+                            child: isSubmitting
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],

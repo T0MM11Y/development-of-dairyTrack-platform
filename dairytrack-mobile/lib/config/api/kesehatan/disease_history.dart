@@ -26,43 +26,45 @@ Future<DiseaseHistory> getDiseaseHistoryById(int id) async {
 
 
 
-// Tambah riwayat penyakit
+// ✅ Tambah riwayat penyakit
 Future<bool> createDiseaseHistory(Map<String, dynamic> data) async {
-  final response = await fetchAPI(
+  await fetchAPI(
     "disease-history/",
     method: "POST",
     data: data,
   );
-  if (response is Map && response['status'] == 201) {
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to create disease history');
-  }
+  return true; // ✅ Langsung return true, ga perlu cek manual response
 }
 
-// Update riwayat penyakit
+
+// UPDATE riwayat penyakit berdasarkan ID
 Future<bool> updateDiseaseHistory(int id, Map<String, dynamic> data) async {
   final response = await fetchAPI(
     "disease-history/$id/",
     method: "PUT",
     data: data,
   );
-  if (response is Map && response['status'] == 200) {
-    return true;
+
+  if (response is Map) {
+    return true; // ✅ Langsung return true kalau sukses
   } else {
-    throw Exception(response['message'] ?? 'Failed to update disease history');
+    throw Exception('Gagal memperbarui data riwayat penyakit');
   }
 }
 
-// Hapus riwayat penyakit
+
+// ✅ Hapus riwayat penyakit
 Future<bool> deleteDiseaseHistory(int id) async {
   final response = await fetchAPI(
     "disease-history/$id/",
     method: "DELETE",
   );
-  if (response is Map && response['status'] == 200) {
+
+  if (response == true || (response is Map && (response['status'] == 200 || response['status'] == 204))) {
+    // ✅ Kalau null/true (karena 204 No Content) atau Map status 200/204
     return true;
   } else {
-    throw Exception(response['message'] ?? 'Failed to delete disease history');
+    throw Exception(response is Map ? response['message'] ?? 'Failed to delete disease history' : 'Failed to delete disease history');
   }
 }
+

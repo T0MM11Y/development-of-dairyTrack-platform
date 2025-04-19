@@ -86,35 +86,40 @@ if (sym != null) {
     }
   }
 
-  Future<void> handleSubmit() async {
-    if (diseaseNameController.text.trim().isEmpty || descriptionController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua field harus diisi')),
-      );
-      return;
-    }
-
-    setState(() => isSubmitting = true);
-
-    try {
-      await updateDiseaseHistory(widget.diseaseHistoryId, {
-        'disease_name': diseaseNameController.text.trim(),
-        'description': descriptionController.text.trim(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data riwayat penyakit berhasil diperbarui')),
-      );
-
-      widget.onSaved();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memperbarui data riwayat penyakit')),
-      );
-    } finally {
-      setState(() => isSubmitting = false);
-    }
+ Future<void> handleSubmit() async {
+  if (diseaseNameController.text.trim().isEmpty || descriptionController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❗ Semua field harus diisi')),
+    );
+    return;
   }
+
+  setState(() => isSubmitting = true);
+
+  bool success = false;
+  try {
+    success = await updateDiseaseHistory(widget.diseaseHistoryId, {
+      'disease_name': diseaseNameController.text.trim(),
+      'description': descriptionController.text.trim(),
+    });
+  } catch (e) {
+    success = false;
+  } finally {
+    setState(() => isSubmitting = false);
+  }
+
+  if (success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Data riwayat penyakit berhasil diperbarui')),
+    );
+    widget.onSaved(); // ✅ reload setelah sukses
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❌ Gagal memperbarui data riwayat penyakit')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

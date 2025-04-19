@@ -58,39 +58,65 @@ class _AllPemeriksaanPenyakitSapiState extends State<AllPemeriksaanPenyakitSapi>
   }
 
   Future<void> confirmDelete(int healthCheckId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Konfirmasi Hapus'),
-        content: const Text('Yakin ingin menghapus data pemeriksaan ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
+  bool isDeleting = false;
 
-    if (confirm == true) {
-      try {
-        await deleteHealthCheck(healthCheckId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data pemeriksaan berhasil dihapus')),
-        );
-        fetchAllData();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menghapus data pemeriksaan')),
-        );
-      }
+  await showDialog(
+    context: context,
+    barrierDismissible: !isDeleting, // Tidak bisa dismiss saat loading
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Konfirmasi Hapus'),
+            content: const Text('Yakin ingin menghapus data pemeriksaan ini?'),
+            actions: [
+              TextButton(
+                onPressed: isDeleting ? null : () => Navigator.of(context).pop(false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: isDeleting
+                    ? null
+                    : () async {
+                        setStateDialog(() => isDeleting = true);
+                        try {
+                          await deleteHealthCheck(healthCheckId);
+                          Navigator.of(context).pop(true); // ✅ Tutup dialog sukses
+                        } catch (e) {
+                          Navigator.of(context).pop(false); // ✅ Tutup dialog gagal
+                        }
+                      },
+                child: isDeleting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Hapus'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  ).then((confirmed) {
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Data pemeriksaan berhasil dihapus')),
+      );
+      fetchAllData(); // ✅ Refresh list setelah berhasil
+    } else if (confirmed == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal menghapus data pemeriksaan')),
+      );
     }
-  }
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,21 +160,73 @@ class _AllPemeriksaanPenyakitSapiState extends State<AllPemeriksaanPenyakitSapi>
                                     Row(
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.orange),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) => EditPemeriksaan(
-                                                healthCheckId: check.id,
-                                                onClose: () => Navigator.of(context).pop(),
-                                                onSaved: () {
-                                                  Navigator.of(context).pop();
-                                                  fetchAllData();
-                                                },
-                                              ),
-                                            );
-                                          },
-                                        ),
+  icon: const Icon(Icons.edit, color: Colors.orange),
+  onPressed: () {
+    if (check.needsAttention == false) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Tidak Bisa Diedit'),
+          content: const Text('Data ini menunjukkan kondisi sehat dan tidak perlu diedit.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+    } else if (check.status == 'handled') {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Tidak Bisa Diedit'),
+          content: const Text('Data ini sudah ditangani dan tidak bisa diedit.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Edit Pemeriksaan?'),
+          content: const Text('Anda akan membuka form edit data pemeriksaan.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup konfirmasi dulu
+                // Baru buka form edit
+                showDialog(
+                  context: context,
+                  builder: (_) => EditPemeriksaan(
+                    healthCheckId: check.id,
+                    onClose: () => Navigator.of(context).pop(),
+                    onSaved: () {
+                      Navigator.of(context).pop();
+                      fetchAllData();
+                    },
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text('Ya, Edit'),
+            ),
+          ],
+        ),
+      );
+    }
+  },
+),
+
                                         IconButton(
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           onPressed: () => confirmDelete(check.id),
@@ -199,12 +277,15 @@ class _AllPemeriksaanPenyakitSapiState extends State<AllPemeriksaanPenyakitSapi>
                       },
                     ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-pemeriksaan-penyakit-sapi');
-        },
-        backgroundColor: Colors.blue[700],
-        child: const Icon(Icons.add),
-      ),
+  onPressed: () async {
+    final result = await Navigator.pushNamed(context, '/add-pemeriksaan-penyakit-sapi');
+    if (result == true) {
+      fetchAllData(); // ✅ Refresh list kalau sukses tambah
+    }
+  },
+  backgroundColor: Colors.blue[700],
+  child: const Icon(Icons.add),
+),
     );
   }
 }

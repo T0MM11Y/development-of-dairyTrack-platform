@@ -28,41 +28,43 @@ Future<Reproduction> getReproductionById(int id) async {
 
 // ✅ Tambah data reproduksi
 Future<bool> createReproduction(Map<String, dynamic> data) async {
-  final response = await fetchAPI(
-    "rreproduction",
+  await fetchAPI(
+    "reproduction/", // ✅ perbaiki typo dan tambahkan slash
     method: "POST",
     data: data,
   );
-  if (response is Map && response['status'] == 201) {
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to create reproduction');
-  }
+  return true; // ✅ langsung return true
 }
 
-// ✅ Update data reproduksi
+
+// ✅ Update data reproduksi berdasarkan ID
 Future<bool> updateReproduction(int id, Map<String, dynamic> data) async {
   final response = await fetchAPI(
-    "reproduction/$id",
+    "reproduction/$id/",
     method: "PUT",
     data: data,
   );
-  if (response is Map && response['status'] == 200) {
-    return true;
+
+  if (response is Map) {
+    return true; // ✅ Langsung return true kalau berhasil
   } else {
-    throw Exception(response['message'] ?? 'Failed to update reproduction');
+    throw Exception('Gagal memperbarui data reproduksi');
   }
 }
+
 
 // ✅ Hapus data reproduksi
 Future<bool> deleteReproduction(int id) async {
   final response = await fetchAPI(
-    "reproduction/$id",
+    "reproduction/$id/",
     method: "DELETE",
   );
-  if (response is Map && response['status'] == 200) {
+
+  if (response == true || (response is Map && (response['status'] == 200 || response['status'] == 204))) {
+    // ✅ Kalau null/true (karena 204 No Content) atau Map status 200/204
     return true;
   } else {
-    throw Exception(response['message'] ?? 'Failed to delete reproduction');
+    throw Exception(response is Map ? response['message'] ?? 'Failed to delete reproduction' : 'Failed to delete reproduction');
   }
 }
+

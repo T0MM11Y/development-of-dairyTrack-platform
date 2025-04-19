@@ -64,48 +64,91 @@ class _AllGejalaState extends State<AllGejala> {
     }
   }
 
-  String getHandlingStatus(int healthCheckId) {
+  String getStatusText(int healthCheckId) {
     try {
       final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
-      return hc.status == 'handled' ? 'Sudah Ditangani' : 'Belum Ditangani';
+      if (hc.needsAttention == false) {
+        return 'Sehat';
+      } else if (hc.status == 'handled') {
+        return 'Sudah Ditangani';
+      } else {
+        return 'Belum Ditangani';
+      }
     } catch (e) {
       return 'Belum Ditangani';
     }
   }
 
-  Future<void> confirmDelete(int symptomId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Konfirmasi Hapus'),
-        content: const Text('Yakin ingin menghapus data gejala ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
+  Color getStatusColor(int healthCheckId) {
+    try {
+      final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
+      if (hc.needsAttention == false) {
+        return Colors.blue;
+      } else if (hc.status == 'handled') {
+        return Colors.green;
+      } else {
+        return Colors.orange;
+      }
+    } catch (e) {
+      return Colors.orange;
+    }
+  }
 
-    if (confirm == true) {
-      try {
-        await deleteSymptom(symptomId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Data gejala berhasil dihapus')),
+  Future<void> confirmDelete(int symptomId) async {
+    bool isDeleting = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: !isDeleting,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Konfirmasi Hapus'),
+              content: const Text('Yakin ingin menghapus data gejala ini?'),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setStateDialog(() => isDeleting = true);
+                          try {
+                            await deleteSymptom(symptomId);
+                            Navigator.of(context).pop(true);
+                          } catch (e) {
+                            Navigator.of(context).pop(false);
+                          }
+                        },
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Hapus'),
+                ),
+              ],
+            );
+          },
         );
-        fetchAllData(); // Refresh semua data setelah hapus
-      } catch (e) {
+      },
+    ).then((confirmed) {
+      if (confirmed == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menghapus data gejala')),
+          const SnackBar(content: Text('✅ Data gejala berhasil dihapus')),
+        );
+        fetchAllData();
+      } else if (confirmed == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ Gagal menghapus data gejala')),
         );
       }
-    }
+    });
   }
 
   @override
@@ -132,11 +175,24 @@ class _AllGejalaState extends State<AllGejala> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
                             title: Text(getCowName(symptom.healthCheckId)),
-                            subtitle: Text(getHandlingStatus(symptom.healthCheckId)),
+                            subtitle: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: getStatusColor(symptom.healthCheckId),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    getStatusText(symptom.healthCheckId),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Tombol View
                                 IconButton(
                                   icon: const Icon(Icons.visibility),
                                   color: Colors.grey,
@@ -145,14 +201,11 @@ class _AllGejalaState extends State<AllGejala> {
                                       context: context,
                                       builder: (_) => viewGejala(
                                         symptomId: symptom.id,
-                                        onClose: () {
-                                          Navigator.of(context).pop();
-                                        },
+                                        onClose: () => Navigator.of(context).pop(),
                                       ),
                                     );
                                   },
                                 ),
-                                // Tombol Edit
                                 IconButton(
                                   icon: const Icon(Icons.edit),
                                   color: Colors.orange,
@@ -161,18 +214,15 @@ class _AllGejalaState extends State<AllGejala> {
                                       context: context,
                                       builder: (_) => EditGejala(
                                         symptomId: symptom.id,
-                                        onClose: () {
-                                          Navigator.of(context).pop();
-                                        },
+                                        onClose: () => Navigator.of(context).pop(),
                                         onSaved: () {
                                           Navigator.of(context).pop();
-                                          fetchAllData(); // Refresh semua data setelah edit
+                                          fetchAllData();
                                         },
                                       ),
                                     );
                                   },
                                 ),
-                                // Tombol Hapus
                                 IconButton(
                                   icon: const Icon(Icons.delete),
                                   color: Colors.red,
@@ -187,8 +237,11 @@ class _AllGejalaState extends State<AllGejala> {
                       },
                     ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add-gejala');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/add-gejala');
+          if (result == true) {
+            fetchAllData();
+          }
         },
         backgroundColor: Colors.blue[700],
         child: const Icon(Icons.add),
