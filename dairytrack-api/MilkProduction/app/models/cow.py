@@ -17,7 +17,6 @@ class Cow(db.Model):
     notifications = db.relationship('Notification', back_populates='cow')
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
     # Relationship with RawMilk
     raw_milks = db.relationship('RawMilk', back_populates='cow', cascade='all, delete-orphan')
 

@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { getFarmers, deleteFarmer } from "../../../../api/peternakan/farmer";
+import Swal from "sweetalert2";
+import { format } from "date-fns";
+import { id } from "date-fns/locale"; // Untuk bahasa Indonesia
+import {
+  getFarmers,
+  deleteFarmer,
+  exportFarmersPDF,
+  exportFarmersExcel,
+} from "../../../../api/peternakan/farmer"; // Tambahkan import untuk fungsi ekspor
 import FarmerCreatePage from "./FarmerCreatePage";
 import FarmerEditPage from "./FarmerEditPage";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import "jspdf-autotable";
 
 const FarmerListPage = () => {
   const [farmers, setFarmers] = useState([]);
@@ -19,134 +24,9 @@ const FarmerListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
   const [selectedJoinDate, setSelectedJoinDate] = useState(null);
+  const itemsPerPage = 8; // Jumlah item per halaman
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const data = await getFarmers();
-      setFarmers(data);
-    } catch (error) {
-      console.error("Failed to fetch farmers:", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteFarmerId) return;
-
-    setSubmitting(true);
-    try {
-      await deleteFarmer(deleteFarmerId);
-      fetchData();
-      setModalType(null);
-    } catch (error) {
-      console.error("Failed to delete farmer:", error.message);
-      alert("Failed to delete farmer: " + error.message);
-    } finally {
-      setSubmitting(false);
-      setDeleteFarmerId(null);
-    }
-  };
-
-  const handleExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(farmers);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Farmers");
-
-    // AutoFit column width
-    const columnWidths = Object.keys(farmers[0] || {}).map((key) => ({
-      wch: Math.max(10, key.length + 2),
-    }));
-    worksheet["!cols"] = columnWidths;
-
-    XLSX.writeFile(workbook, "FarmersData.xlsx");
-  };
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    const marginLeft = 14;
-    const startY = 25;
-    let currentY = startY;
-
-    // Judul dokumen
-    doc.setFontSize(16);
-    doc.text("Farmers Data", marginLeft, currentY);
-    currentY += 10; // Tambah jarak setelah judul
-
-    // Header tabel
-    const tableColumn = [
-      "#",
-      "Full Name",
-      "Birth Date",
-      "Contact",
-      "Gender",
-      "Join Date",
-    ];
-
-    // Lebar kolom
-    const columnWidths = [10, 60, 25, 30, 20, 30];
-
-    // Render header tabel
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    let currentX = marginLeft;
-    tableColumn.forEach((col, index) => {
-      doc.text(col, currentX, currentY);
-      currentX += columnWidths[index];
-    });
-    currentY += 6; // Tambah jarak setelah header
-
-    // Render data tabel
-    doc.setFont("helvetica", "normal");
-
-    farmers.forEach((farmer, rowIndex) => {
-      if (currentY > 270) {
-        doc.addPage(); // Tambah halaman baru jika sudah penuh
-        currentY = startY;
-      }
-
-      currentX = marginLeft;
-      const rowData = [
-        rowIndex + 1,
-        `${farmer.first_name} ${farmer.last_name}`, // Gabungkan first_name dan last_name
-        farmer.birth_date,
-        farmer.contact,
-        farmer.gender,
-        farmer.join_date,
-      ];
-
-      rowData.forEach((cell, cellIndex) => {
-        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]); // Membungkus teks panjang
-        doc.text(text, currentX, currentY);
-        currentX += columnWidths[cellIndex];
-      });
-
-      currentY += 6; // Pindah ke baris berikutnya
-    });
-
-    // Simpan file PDF
-    doc.save("FarmersData.pdf");
-  };
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setModalType(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  const getSelectedFarmer = () => {
-    return farmers.find((farmer) => farmer.id === deleteFarmerId);
-  };
   const filteredFarmers = farmers.filter((farmer) => {
     const searchLower = searchQuery.toLowerCase();
     const genderMatch =
@@ -165,11 +45,328 @@ const FarmerListPage = () => {
     return genderMatch && joinDateMatch && searchMatch;
   });
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredFarmers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredFarmers.length / itemsPerPage);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await getFarmers();
+      setFarmers(data);
+    } catch (error) {
+      console.error("Failed to fetch farmers:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteFarmerId) return;
+
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to delete this farmer? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await deleteFarmer(deleteFarmerId);
+      fetchData();
+      setModalType(null);
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Farmer has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to delete farmer:", error.message);
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Failed to delete farmer: " + error.message,
+      });
+    } finally {
+      setSubmitting(false);
+      setDeleteFarmerId(null);
+    }
+  };
+  const handleExportExcel = async () => {
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to export the Excel file?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, export it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
+    let success = false;
+
+    try {
+      const response = await exportFarmersExcel();
+
+      if (!response.ok) {
+        throw new Error(`Failed to export Excel: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "FarmersData.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      success = true;
+    } catch (error) {
+      console.error("Failed to export Excel:", error.message);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to export Excel: " + error.message,
+        icon: "error",
+      });
+    }
+
+    // Always show success message
+    if (success) {
+      await Swal.fire({
+        title: "Success!",
+        text: "Excel file has been exported successfully.",
+        icon: "success",
+      });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to export the PDF file?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, export it!",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
+    let success = false;
+
+    try {
+      const response = await exportFarmersPDF();
+
+      if (!response || !response.ok) {
+        throw new Error(
+          `Failed to export PDF: ${response?.statusText || "Unknown error"}`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "FarmersData.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      success = true;
+    } catch (error) {
+      console.error("PDF export error:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to export PDF: " + error.message,
+        icon: "error",
+      });
+    }
+
+    // Always show success message
+    if (success) {
+      await Swal.fire({
+        title: "Success!",
+        text: "PDF file has been exported successfully.",
+        icon: "success",
+      });
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setModalType(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const clearFilters = () => {
+    setSearchQuery(""); // Reset pencarian
+    setSelectedGender(""); // Reset filter gender
+    setSelectedJoinDate(null); // Reset filter tanggal bergabung
+    setCurrentPage(1); // Kembali ke halaman pertama
+  };
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchData(); // Panggil fungsi fetchData untuk merefresh data
+    setTimeout(() => setIsRefreshing(false), 1000); // Hentikan animasi setelah 1 detik
+  };
+  const getSelectedFarmer = () => {
+    return farmers.find((farmer) => farmer.id === deleteFarmerId);
+  };
+
+  const paginate = (pageNumber) => {
+    if (pageNumber > 0 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (currentPage > 1) {
+      pages.push(
+        <button
+          key="first"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </button>
+      );
+      pages.push(
+        <button
+          key="prev"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+      );
+    }
+
+    if (startPage > 1) {
+      pages.push(
+        <span key="start-ellipsis" className="mx-1">
+          ...
+        </span>
+      );
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          className={`btn btn-sm mx-1 ${
+            currentPage === i ? "btn-primary" : "btn-outline-primary"
+          }`}
+          onClick={() => paginate(i)}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      pages.push(
+        <span key="end-ellipsis" className="mx-1">
+          ...
+        </span>
+      );
+    }
+
+    if (currentPage < totalPages) {
+      pages.push(
+        <button
+          key="next"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      );
+      pages.push(
+        <button
+          key="last"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(totalPages)}
+          disabled={currentPage === totalPages}
+        >
+          Last
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
   return (
     <div className="p-4">
       <div className="d-flex flex-column mb-4">
-        <h2 className="text-primary mb-3">
-          <i className="bi bi-people"></i> Farmer Data
+        <h2 className="text-primary mb-3 d-flex align-items-center justify-content-between">
+          <span className="d-flex align-items-center">
+            <i className="bi bi-people me-2"></i> Farmer Data
+          </span>
+          <button
+            className="btn btn-outline-primary waves-effect waves-light"
+            onClick={() => {
+              clearFilters(); // Fungsi untuk menghapus semua filter
+              handleRefresh(); // Fungsi untuk merefresh data
+            }}
+            title="Refresh Table"
+            style={{
+              padding: "7px",
+              borderRadius: "50%",
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#007bff")}
+            onMouseLeave={(e) =>
+              (e.target.style.backgroundColor = "transparent")
+            }
+          >
+            <i
+              className="bi bi-arrow-clockwise"
+              style={{
+                transition: "transform 0.5s ease",
+                transform: isRefreshing ? "rotate(360deg)" : "rotate(0deg)",
+              }}
+            ></i>
+          </button>
         </h2>
       </div>
 
@@ -182,7 +379,10 @@ const FarmerListPage = () => {
             <select
               className="form-select"
               value={selectedGender}
-              onChange={(e) => setSelectedGender(e.target.value)}
+              onChange={(e) => {
+                setSelectedGender(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               <option value="">All Genders</option>
               <option value="Male">Male</option>
@@ -198,12 +398,15 @@ const FarmerListPage = () => {
               </span>
               <ReactDatePicker
                 selected={selectedJoinDate}
-                onChange={(date) => setSelectedJoinDate(date)}
+                onChange={(date) => {
+                  setSelectedJoinDate(date);
+                  setCurrentPage(1);
+                }}
                 placeholderText="Select Date"
                 className="form-control"
-                todayButton="Today" // Tambahkan tombol "Today"
-                isClearable // Aktifkan tombol "Clear"
-                dateFormat="yyyy-MM-dd" // Format tanggal
+                todayButton="Today"
+                isClearable
+                dateFormat="yyyy-MM-dd"
               />
             </div>
           </div>
@@ -219,7 +422,10 @@ const FarmerListPage = () => {
                 placeholder="Search..."
                 className="form-control"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
           </div>
@@ -284,19 +490,35 @@ const FarmerListPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredFarmers.map((farmer, index) => (
+                    {currentItems.map((farmer, index) => (
                       <tr key={farmer.id}>
-                        <th scope="row">{index + 1}</th>
+                        <th scope="row">{indexOfFirstItem + index + 1}</th>
                         <td>{farmer.email}</td>
                         <td>{farmer.first_name}</td>
                         <td>{farmer.last_name}</td>
-                        <td>{farmer.birth_date}</td>
+                        <td>
+                          {farmer.birth_date
+                            ? format(
+                                new Date(farmer.birth_date),
+                                "dd MMMM yyyy",
+                                { locale: id }
+                              )
+                            : "-"}
+                        </td>
                         <td>{farmer.contact}</td>
                         <td>{farmer.religion}</td>
                         <td>{farmer.address}</td>
                         <td>{farmer.gender}</td>
                         <td>{farmer.total_cattle}</td>
-                        <td>{farmer.join_date}</td>
+                        <td>
+                          {farmer.join_date
+                            ? format(
+                                new Date(farmer.join_date),
+                                "dd MMMM yyyy",
+                                { locale: id }
+                              )
+                            : "-"}
+                        </td>
                         <td>
                           {farmer.status === "Active" ? (
                             <span className="badge bg-success">Active</span>
@@ -328,6 +550,15 @@ const FarmerListPage = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination */}
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <p className="mb-0">
+                    Showing {indexOfFirstItem + 1} to{" "}
+                    {Math.min(indexOfLastItem, filteredFarmers.length)} of{" "}
+                    {filteredFarmers.length} Farmer
+                  </p>
+                  <nav>{renderPagination()}</nav>
+                </div>
               </div>
             </div>
           </div>

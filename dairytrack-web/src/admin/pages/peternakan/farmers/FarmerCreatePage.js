@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFarmer } from "../../../../api/peternakan/farmer";
+import Swal from "sweetalert2"; // Pastikan SweetAlert sudah diimpor
 import "../../../../assets/admin/css/icons.min.css";
 
 const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
@@ -49,6 +50,11 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
     try {
       console.log("Submitting farmer data:", form);
       await createFarmer(form);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data peternak berhasil dibuat.",
+      });
       if (onFarmerAdded) onFarmerAdded();
       onClose();
     } catch (err) {
@@ -92,6 +98,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     required
                     className="form-control"
                     placeholder="Masukkan email"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -104,6 +111,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     required
                     className="form-control"
                     placeholder="Masukkan nama depan"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
               </div>
@@ -118,6 +126,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     required
                     className="form-control"
                     placeholder="Masukkan nama belakang"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -129,6 +138,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     onChange={handleChange}
                     required
                     className="form-control"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
               </div>
@@ -143,6 +153,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     required
                     className="form-control"
                     placeholder="Masukkan nomor kontak"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -152,6 +163,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     value={form.religion}
                     onChange={handleChange}
                     className="form-select"
+                    disabled={submitting} // Disable saat submitting
                   >
                     <option value="">Pilih Agama</option>
                     <option value="Islam">Islam</option>
@@ -173,6 +185,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     required
                     className="form-control"
                     placeholder="Masukkan alamat"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -182,6 +195,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     value={form.gender}
                     onChange={handleChange}
                     className="form-select"
+                    disabled={submitting} // Disable saat submitting
                   >
                     <option value="Male">Laki-laki</option>
                     <option value="Female">Perempuan</option>
@@ -199,7 +213,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     className="form-control"
                     placeholder="Masukkan jumlah ternak"
                     min="0"
-                    disabled // Menonaktifkan input
+                    disabled // Tetap dinonaktifkan
                   />
                 </div>
                 <div className="col-md-6 mb-3">
@@ -213,6 +227,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                     onChange={handleChange}
                     required
                     className="form-control"
+                    disabled={submitting} // Disable saat submitting
                   />
                 </div>
               </div>
@@ -223,9 +238,10 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                   value={form.status}
                   onChange={handleChange}
                   className="form-select"
+                  disabled={submitting} // Disable saat submitting
                 >
-                  <option value="Active">Aktif</option>
-                  <option value="Inactive">Tidak Aktif</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Tidak Active</option>
                 </select>
               </div>
               <div className="mb-3">
@@ -245,6 +261,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
                       padding: "5px",
                       transition: "0.3s ease-in-out",
                     }}
+                    disabled={submitting} // Disable saat submitting
                   />
                   <span
                     className="input-group-text"
@@ -265,7 +282,7 @@ const FarmerCreatePage = ({ onFarmerAdded, onClose }) => {
               <button
                 type="submit"
                 className="btn btn-info w-100"
-                disabled={submitting}
+                disabled={submitting} // Disable tombol submit saat submitting
               >
                 {submitting ? "Menyimpan..." : "Simpan"}
               </button>

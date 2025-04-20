@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createSupervisor } from "../../../../api/peternakan/supervisor";
+import Swal from "sweetalert2";
 
 const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
   const [form, setForm] = useState({
@@ -8,6 +9,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
     last_name: "",
     contact: "",
     password: "",
+    gender: "", // Tambahkan gender ke state form
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +27,11 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
     // Validasi form
     if (!validateForm()) {
       setError("Semua field wajib diisi!");
+      Swal.fire({
+        title: "Error!",
+        text: "Semua field wajib diisi!",
+        icon: "error",
+      });
       return;
     }
 
@@ -34,12 +41,24 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
       await createSupervisor(form);
       if (onSupervisorAdded) onSupervisorAdded();
       onClose();
+
+      Swal.fire({
+        title: "Success!",
+        text: "Supervisor berhasil ditambahkan.",
+        icon: "success",
+      });
     } catch (err) {
       console.error("Failed to create supervisor:", err);
-      setError(
+      const errorMessage =
         err.response?.data?.message ||
-          "Gagal membuat data supervisor. Coba lagi!"
-      );
+        "Gagal membuat data supervisor. Coba lagi!";
+      setError(errorMessage);
+
+      Swal.fire({
+        title: "Error!",
+        text: errorMessage,
+        icon: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -52,6 +71,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
       "last_name",
       "contact",
       "password",
+      "gender", // Tambahkan gender ke validasi
     ];
     for (const field of requiredFields) {
       if (!form[field] || form[field].toString().trim() === "") {
@@ -91,6 +111,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
                   required
                   className="form-control"
                   placeholder="Masukkan email supervisor"
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -103,6 +124,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
                   required
                   className="form-control"
                   placeholder="Masukkan nama depan"
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -115,6 +137,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
                   required
                   className="form-control"
                   placeholder="Masukkan nama belakang"
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-3">
@@ -127,7 +150,23 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
                   required
                   className="form-control"
                   placeholder="Masukkan nomor kontak"
+                  disabled={submitting}
                 />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-bold">Jenis Kelamin</label>
+                <select
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                  disabled={submitting}
+                >
+                  <option value="">Pilih Jenis Kelamin</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
               <div className="mb-3">
                 <label className="form-label fw-bold">Password</label>
@@ -146,6 +185,7 @@ const SupervisorCreatePage = ({ onSupervisorAdded, onClose }) => {
                       padding: "5px",
                       transition: "0.3s ease-in-out",
                     }}
+                    disabled={submitting}
                   />
                   <span
                     className="input-group-text"

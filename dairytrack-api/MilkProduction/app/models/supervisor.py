@@ -11,6 +11,7 @@ class Supervisor(db.Model):
     last_name = db.Column(db.String(50))
     contact = db.Column(db.String(15))
     role = db.Column(db.String(20), default='supervisor')
+    gender = db.Column(db.String(20))
     password = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
@@ -22,6 +23,7 @@ class Supervisor(db.Model):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'contact': self.contact,
+            'gender': self.gender,
             'role': self.role,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }

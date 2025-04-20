@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCowById, updateCow } from "../../../../api/peternakan/cow";
 import { getFarmers } from "../../../../api/peternakan/farmer";
+import Swal from "sweetalert2";
 
 const CowEditPage = ({ cowId, onClose, onCowUpdated }) => {
   const [form, setForm] = useState(null);
@@ -32,10 +33,31 @@ const CowEditPage = ({ cowId, onClose, onCowUpdated }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === "checkbox" ? checked : value;
+
     if (name === "weight_kg") {
       finalValue = value ? Math.max(0, parseFloat(value)) : "";
     }
-    setForm({ ...form, [name]: finalValue });
+
+    // Handle lactation_status checkbox
+    if (name === "lactation_status") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        lactation_status: checked,
+        lactation_phase: checked ? prevForm.lactation_phase : "Dry", // Set to Dry when unchecked
+      }));
+      return;
+    }
+
+    // Handle lactation_phase dropdown
+    if (name === "lactation_phase") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        lactation_phase: value,
+      }));
+      return;
+    }
+
+    setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
 
   const handleSubmit = async (e) => {
@@ -43,11 +65,21 @@ const CowEditPage = ({ cowId, onClose, onCowUpdated }) => {
     setSubmitting(true);
     try {
       await updateCow(cowId, form);
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data sapi berhasil diperbarui.",
+      });
       onCowUpdated();
       onClose();
     } catch (err) {
       console.error("Failed to update cow:", err);
       setError("Gagal memperbarui data sapi. Coba lagi!");
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal!",
+        text: "Gagal memperbarui data sapi. Coba lagi!",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -171,12 +203,21 @@ const CowEditPage = ({ cowId, onClose, onCowUpdated }) => {
                       value={form.lactation_phase}
                       onChange={handleChange}
                       className="form-select"
-                      disabled={submitting}
+                      disabled={!form.lactation_status} // Disable if lactation_status is unchecked
                     >
-                      <option value="Early">Early</option>
-                      <option value="Mid">Mid</option>
-                      <option value="Late">Late</option>
-                      <option value="Dry">Dry</option>
+                      {form.lactation_status
+                        ? // Jika laktasi aktif, tampilkan opsi tanpa "Dry"
+                          ["Early", "Mid", "Late"].map((phase) => (
+                            <option key={phase} value={phase}>
+                              {phase}
+                            </option>
+                          ))
+                        : // Jika laktasi tidak aktif, tampilkan semua opsi
+                          ["Early", "Mid", "Late", "Dry"].map((phase) => (
+                            <option key={phase} value={phase}>
+                              {phase}
+                            </option>
+                          ))}
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">

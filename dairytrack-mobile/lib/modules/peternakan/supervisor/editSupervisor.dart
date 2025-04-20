@@ -1,32 +1,37 @@
-import 'package:dairy_track/config/api/peternakan/farmer.dart';
+import 'package:dairy_track/config/configApi5000.dart';
+import 'package:dairy_track/modules/peternakan/supervisor/allSupervisor.dart';
 import 'package:flutter/material.dart';
-import 'package:dairy_track/model/peternakan/farmer.dart';
-import 'package:http/http.dart';
+import 'package:dairy_track/config/api/peternakan/supervisor.dart';
+import 'package:dairy_track/model/peternakan/supervisor.dart';
 
-class AddPeternak extends StatefulWidget {
+class EditSupervisor extends StatefulWidget {
+  final Supervisor supervisor;
+  final int id;
+
+  EditSupervisor({required this.supervisor, required this.id})
+      : super(key: ValueKey(id));
+
   @override
-  _AddPeternakState createState() => _AddPeternakState();
+  _EditSupervisorState createState() => _EditSupervisorState();
 }
 
-Future<void> addFarmer(BuildContext context, Peternak peternak) async {
-  // Tampilkan indikator loading
+Future<void> updateSupervisorUI(
+    BuildContext context, Supervisor supervisor, int id) async {
   showDialog(
     context: context,
-    barrierDismissible: false, // Mencegah dialog ditutup secara manual
+    barrierDismissible: false,
     builder: (context) => Center(
       child: CircularProgressIndicator(),
     ),
   );
 
   try {
-    // Panggil API dari addFarmers
-    final success = await addFarmers(peternak);
+    // Panggil fungsi updateSupervisor dari API
+    final success = await updateSupervisor(supervisor, id);
 
-    // Tutup indikator loading setelah respons diterima
     Navigator.of(context).pop();
 
     if (success) {
-      // Respons sukses
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -38,14 +43,14 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
             ],
           ),
           content: Text(
-            'Data peternak berhasil ditambahkan.',
+            'Data supervisor berhasil diperbarui.',
             style: TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                Navigator.pushReplacementNamed(context, '/all-peternak');
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/all-supervisor');
               },
               child: Text(
                 'OK',
@@ -56,7 +61,6 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
         ),
       );
     } else {
-      // Respons gagal
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -68,13 +72,13 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
             ],
           ),
           content: Text(
-            'Maaf, terjadi kesalahan saat menambahkan data peternak. Silakan coba lagi.',
+            'Terjadi kesalahan saat memperbarui data supervisor. Silakan coba lagi.',
             style: TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
+                Navigator.of(context).pop();
               },
               child: Text(
                 'OK',
@@ -86,10 +90,8 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
       );
     }
   } catch (e) {
-    // Tutup indikator loading jika terjadi error
     Navigator.of(context).pop();
 
-    // Tampilkan dialog error
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -107,7 +109,7 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Tutup dialog
+              Navigator.of(context).pop();
             },
             child: Text(
               'OK',
@@ -120,27 +122,32 @@ Future<void> addFarmer(BuildContext context, Peternak peternak) async {
   }
 }
 
-class _AddPeternakState extends State<AddPeternak> {
+class _EditSupervisorState extends State<EditSupervisor> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();
-  final TextEditingController _totalCattleController =
-      TextEditingController(text: '0');
-  final TextEditingController _passwordController = TextEditingController();
-
+  late TextEditingController _emailController;
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _contactController;
   String? selectedGender;
-  String? selectedReligion;
-  DateTime? selectedDateOfBirth;
-  DateTime? selectedjoin_date;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _emailController = TextEditingController(text: widget.supervisor.email);
+    _firstNameController =
+        TextEditingController(text: widget.supervisor.firstName);
+    _lastNameController =
+        TextEditingController(text: widget.supervisor.lastName);
+    _contactController = TextEditingController(text: widget.supervisor.contact);
+    selectedGender = widget.supervisor.gender;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Peternak Baru',
+        title: const Text('Edit Data Supervisor',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 93, 144, 231),
@@ -153,7 +160,7 @@ class _AddPeternakState extends State<AddPeternak> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE8F5E9), // Light green
+              Color(0xFFE8F5E9),
               Colors.white,
             ],
           ),
@@ -182,21 +189,6 @@ class _AddPeternakState extends State<AddPeternak> {
                         hint: 'Masukkan nama belakang',
                         icon: Icons.person_outline,
                       ),
-                    ],
-                  ),
-                ),
-                _buildCard(
-                  child: Column(
-                    children: [
-                      _buildDatePickerField(
-                        label: 'Tanggal Lahir',
-                        selectedDate: selectedDateOfBirth,
-                        onDateSelected: (date) {
-                          setState(() {
-                            selectedDateOfBirth = date;
-                          });
-                        },
-                      ),
                       SizedBox(height: 12),
                       _buildDropdownField(
                         label: 'Jenis Kelamin',
@@ -206,24 +198,6 @@ class _AddPeternakState extends State<AddPeternak> {
                         onChanged: (value) {
                           setState(() {
                             selectedGender = value;
-                          });
-                        },
-                      ),
-                      SizedBox(height: 12),
-                      _buildDropdownField(
-                        label: 'Agama',
-                        icon: Icons.account_balance,
-                        items: [
-                          'Islam',
-                          'Kristen',
-                          'Hindu',
-                          'Buddha',
-                          'Katolik'
-                        ],
-                        selectedValue: selectedReligion,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedReligion = value;
                           });
                         },
                       ),
@@ -250,51 +224,7 @@ class _AddPeternakState extends State<AddPeternak> {
                         icon: Icons.phone,
                         keyboardType: TextInputType.phone,
                       ),
-                      SizedBox(height: 12),
-                      _buildTextFormField(
-                        controller: _addressController,
-                        label: 'Alamat',
-                        hint: 'Masukkan alamat lengkap',
-                        icon: Icons.home,
-                        maxLines: 2,
-                      ),
                     ],
-                  ),
-                ),
-                _buildSectionHeader('Informasi Peternakan'),
-                _buildCard(
-                  child: Column(
-                    children: [
-                      _buildTextFormField(
-                        controller: _totalCattleController,
-                        label: 'Jumlah Ternak',
-                        hint: '0',
-                        icon: Icons.pets,
-                        keyboardType: TextInputType.number,
-                        isRequired: false,
-                        readOnly: true, // Field is disabled
-                      ),
-                      SizedBox(height: 12),
-                      _buildDatePickerField(
-                        label: 'Tanggal Bergabung',
-                        selectedDate: selectedjoin_date,
-                        onDateSelected: (date) {
-                          setState(() {
-                            selectedjoin_date = date;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                _buildSectionHeader('Keamanan'),
-                _buildCard(
-                  child: _buildTextFormField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    hint: 'Buat password',
-                    icon: Icons.lock,
-                    obscureText: true,
                   ),
                 ),
                 SizedBox(height: 24),
@@ -343,7 +273,6 @@ class _AddPeternakState extends State<AddPeternak> {
     bool isRequired = false,
     TextInputType? keyboardType,
     bool obscureText = false,
-    bool readOnly = false, // Add readOnly parameter with a default value
     int maxLines = 1,
   }) {
     return TextFormField(
@@ -362,14 +291,11 @@ class _AddPeternakState extends State<AddPeternak> {
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         filled: true,
-        fillColor: readOnly
-            ? Colors.grey.shade300
-            : Colors.grey.shade50, // Set background color
+        fillColor: Colors.grey.shade50,
       ),
       keyboardType: keyboardType ?? TextInputType.text,
       obscureText: obscureText,
       maxLines: maxLines,
-      readOnly: readOnly, // Pass the readOnly parameter to TextFormField
       validator: isRequired
           ? (value) {
               if (value == null || value.isEmpty) {
@@ -417,65 +343,6 @@ class _AddPeternakState extends State<AddPeternak> {
     );
   }
 
-  Widget _buildDatePickerField({
-    required String label,
-    required DateTime? selectedDate,
-    required Function(DateTime) onDateSelected,
-  }) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: 'Pilih tanggal',
-        prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF5D90E7)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Color(0xFF5D90E7), width: 2.0),
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      readOnly: true,
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                colorScheme: ColorScheme.light(
-                  primary: Color(0xFF5D90E7), // header background color
-                  onPrimary: Colors.white, // header text color
-                  onSurface: Colors.black, // body text color
-                ),
-                textButtonTheme: TextButtonThemeData(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Color(0xFF5D90E7), // button text color
-                  ),
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (date != null) {
-          onDateSelected(date);
-        }
-      },
-      controller: TextEditingController(
-        text: selectedDate == null
-            ? ''
-            : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
-      ),
-    );
-  }
-
   Widget _buildSubmitButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -489,30 +356,53 @@ class _AddPeternakState extends State<AddPeternak> {
       ),
       onPressed: () async {
         if (_formKey.currentState!.validate()) {
-          final peternak = Peternak(
+          // Buat objek Supervisor dengan data terbaru
+          final supervisor = Supervisor(
+            id: widget.supervisor.id,
             firstName: _firstNameController.text,
             lastName: _lastNameController.text,
-            address: _addressController.text,
             contact: _contactController.text,
             email: _emailController.text,
             gender: selectedGender ?? '',
-            religion: selectedReligion ?? '',
-            role: 'farmer',
-            status: 'Active',
-            totalCattle: int.tryParse(_totalCattleController.text) ?? 0,
-            birthDate: selectedDateOfBirth ?? DateTime.now(),
-            join_date: selectedjoin_date ?? DateTime.now(),
-            password: _passwordController.text,
-            createdAt: DateTime.now(),
+            createdAt: widget.supervisor.createdAt,
             updatedAt: DateTime.now(),
           );
 
-          // Panggil fungsi addFarmer
-          await addFarmer(context, peternak);
+          // Panggil fungsi updateSupervisor dengan parameter yang benar
+          final success = await updateSupervisor(supervisor, widget.id);
+          if (success) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Berhasil'),
+                  content: Text('Supervisor berhasil diperbarui.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Tutup dialog
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AllSupervisor(),
+                          ),
+                        ); // Arahkan ke halaman AllSupervisor
+                      },
+                      child: Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal memperbarui supervisor')),
+            );
+          }
         }
       },
       child: Text(
-        'Simpan Data Peternak',
+        'Simpan Perubahan',
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,

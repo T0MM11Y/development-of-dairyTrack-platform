@@ -1,5 +1,6 @@
 class Peternak {
-  final int id;
+  int? id; // Password menjadi opsional
+
   final String firstName;
   final String lastName;
   final String address;
@@ -9,14 +10,16 @@ class Peternak {
   final String religion;
   final String role;
   final String status;
-  final int totalCattle;
+  int totalCattle = 0; // Total cattle default 0
   final DateTime birthDate;
-  final DateTime joinDate;
+  final DateTime join_date;
+  final String? password; // Password menjadi opsional
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Peternak({
-    required this.id,
+    this.id, // Tidak lagi required
+
     required this.firstName,
     required this.lastName,
     required this.address,
@@ -26,36 +29,48 @@ class Peternak {
     required this.religion,
     required this.role,
     required this.status,
-    required this.totalCattle,
+    this.totalCattle = 0,
     required this.birthDate,
-    required this.joinDate,
+    this.password, // Tidak lagi required
+    required this.join_date,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory Peternak.fromJson(Map<String, dynamic> json) {
     return Peternak(
-      id: json['id'],
-      firstName: json['first_name'],
-      lastName: json['last_name'],
-      address: json['address'],
-      contact: json['contact'],
-      email: json['email'],
-      gender: json['gender'],
-      religion: json['religion'],
-      role: json['role'],
-      status: json['status'],
-      totalCattle: json['total_cattle'],
-      birthDate: DateTime.parse(json['birth_date']),
-      joinDate: DateTime.parse(json['join_date']),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'], // Bisa null
+
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      address: json['address'] ?? '',
+      contact: json['contact'] ?? '',
+      email: json['email'] ?? '',
+      gender: json['gender'] ?? '',
+      religion: json['religion'] ?? '',
+      role: json['role'] ?? '',
+      status: json['status'] ?? '',
+      totalCattle:
+          json['total_cattle'] != null ? json['total_cattle'] as int : 0,
+      birthDate: json['birth_date'] != null
+          ? DateTime.parse(json['birth_date'])
+          : DateTime.now(),
+      password: json['password'], // Bisa null
+      join_date: json['join_date'] != null
+          ? DateTime.parse(json['join_date'])
+          : DateTime.now(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id, // Hanya tambahkan jika tidak null
       'first_name': firstName,
       'last_name': lastName,
       'address': address,
@@ -65,9 +80,11 @@ class Peternak {
       'religion': religion,
       'role': role,
       'status': status,
-      'total_cattle': totalCattle,
+      'total_cattle': totalCattle > 0 ? totalCattle : null,
       'birth_date': birthDate.toIso8601String(),
-      'join_date': joinDate.toIso8601String(),
+      if (password != null)
+        'password': password, // Hanya tambahkan jika tidak null
+      'join_date': join_date.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

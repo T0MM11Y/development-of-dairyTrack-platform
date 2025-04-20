@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createCow } from "../../../../api/peternakan/cow";
-import { useNavigate } from "react-router-dom";
 import { getFarmers } from "../../../../api/peternakan/farmer";
+import Swal from "sweetalert2";
 
 const CowCreatePage = ({ onCowAdded, onClose }) => {
   const [form, setForm] = useState({
@@ -77,7 +77,6 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
 
     setForm((prevForm) => ({ ...prevForm, [name]: finalValue }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); // Reset error message
@@ -93,6 +92,11 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
       const cowData = { ...form, farmer_id: Number(form.farmer) };
       console.log("Submitting cow data:", cowData);
       await createCow(cowData);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data sapi berhasil dibuat.",
+      });
       if (onCowAdded) onCowAdded();
       onClose();
     } catch (err) {
@@ -245,11 +249,19 @@ const CowCreatePage = ({ onCowAdded, onClose }) => {
                         form.gender === "Male" || !form.lactation_status
                       } // Disable if gender is Male or lactation_status is unchecked
                     >
-                      <option value="Early">Early</option>
-                      <option value="Mid">Mid</option>
-                      <option value="Late">Late</option>
-                      <option value="Dry">Dry</option>
-                      <option value="-">-</option>
+                      {form.lactation_status
+                        ? // Jika laktasi aktif, tampilkan opsi tanpa "Dry" dan "-"
+                          ["Early", "Mid", "Late"].map((phase) => (
+                            <option key={phase} value={phase}>
+                              {phase}
+                            </option>
+                          ))
+                        : // Jika laktasi tidak aktif, tampilkan semua opsi
+                          ["Early", "Mid", "Late", "Dry", "-"].map((phase) => (
+                            <option key={phase} value={phase}>
+                              {phase}
+                            </option>
+                          ))}
                     </select>
                   </div>
                   <div className="col-md-6 mb-3">

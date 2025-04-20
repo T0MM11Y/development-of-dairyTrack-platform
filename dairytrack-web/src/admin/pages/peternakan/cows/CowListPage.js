@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
-import { getCows, deleteCow } from "../../../../api/peternakan/cow";
+import Swal from "sweetalert2";
+
+import {
+  getCows,
+  deleteCow,
+  exportCowsPDF,
+  exportCowsExcel,
+} from "../../../../api/peternakan/cow";
 import CowCreatePage from "./CowCreatePage";
 import CowEditPage from "./CowEditPage";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import jsPDF from "jspdf";
 import "jspdf-autotable";
-import * as XLSX from "xlsx";
 
 const CowListPage = () => {
   const [cows, setCows] = useState([]);
@@ -15,11 +20,31 @@ const CowListPage = () => {
   const [editCowId, setEditCowId] = useState(null);
   const [deleteCowId, setDeleteCowId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
   const [selectedEntryDate, setSelectedEntryDate] = useState(null);
+  // Pagination states
+  const itemsPerPage = 8; // Number of items per page
+  const [currentPage, setCurrentPage] = useState(1);
 
+  const filteredCows = cows.filter((cow) => {
+    const searchLower = searchQuery.toLowerCase();
+    const genderMatch =
+      !selectedGender ||
+      cow.gender?.toLowerCase() === selectedGender.toLowerCase();
+    const entryDateMatch =
+      !selectedEntryDate ||
+      new Date(cow.entry_date).toDateString() ===
+        selectedEntryDate.toDateString();
+    const searchMatch =
+      cow.name?.toLowerCase().includes(searchLower) ||
+      cow.breed?.toLowerCase().includes(searchLower) ||
+      cow.reproductive_status?.toLowerCase().includes(searchLower);
+
+    return genderMatch && entryDateMatch && searchMatch;
+  });
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -49,72 +74,226 @@ const CowListPage = () => {
     }
   };
 
-  const handleExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(cows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Cows");
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredCows.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredCows.length / itemsPerPage);
 
-    // AutoFit column width
-    const columnWidths = Object.keys(cows[0] || {}).map((key) => ({
-      wch: Math.max(10, key.length + 2),
-    }));
-    worksheet["!cols"] = columnWidths;
-
-    XLSX.writeFile(workbook, "CowsData.xlsx");
+  const paginate = (pageNumber) => {
+    if (pageNumber > 0 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
   };
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    const marginLeft = 14;
-    const startY = 25;
-    let currentY = startY;
 
-    // Judul dokumen
-    doc.setFontSize(16);
-    doc.text("Cows Data", marginLeft, currentY);
-    currentY += 10;
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
 
-    // Header tabel
-    const tableColumn = ["#", "Name", "Breed", "Gender", "Entry Date"];
-    const columnWidths = [10, 50, 50, 30, 30];
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-    // Render header tabel
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    let currentX = marginLeft;
-    tableColumn.forEach((col, index) => {
-      doc.text(col, currentX, currentY);
-      currentX += columnWidths[index];
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (currentPage > 1) {
+      pages.push(
+        <button
+          key="first"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </button>
+      );
+      pages.push(
+        <button
+          key="prev"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+      );
+    }
+
+    if (startPage > 1) {
+      pages.push(
+        <span key="start-ellipsis" className="mx-1">
+          ...
+        </span>
+      );
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          className={`btn btn-sm mx-1 ${
+            currentPage === i ? "btn-primary" : "btn-outline-primary"
+          }`}
+          onClick={() => paginate(i)}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      pages.push(
+        <span key="end-ellipsis" className="mx-1">
+          ...
+        </span>
+      );
+    }
+
+    if (currentPage < totalPages) {
+      pages.push(
+        <button
+          key="next"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      );
+      pages.push(
+        <button
+          key="last"
+          className="btn btn-sm btn-outline-primary mx-1"
+          onClick={() => paginate(totalPages)}
+          disabled={currentPage === totalPages}
+        >
+          Last
+        </button>
+      );
+    }
+
+    return pages;
+  };
+
+  const clearFilters = () => {
+    setSearchQuery(""); // Reset pencarian
+    setSelectedGender(""); // Reset filter gender
+    setSelectedEntryDate(null); // Reset filter tanggal masuk
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    clearFilters(); // Hapus semua filter
+    fetchData(); // Muat ulang data
+    setTimeout(() => setIsRefreshing(false), 1000); // Hentikan animasi setelah 1 detik
+  };
+  const handleExportExcel = async () => {
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to export the Excel file?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, export it!",
+      cancelButtonText: "Cancel",
     });
-    currentY += 6;
 
-    // Render data tabel
-    doc.setFont("helvetica", "normal");
-    cows.forEach((cow, rowIndex) => {
-      if (currentY > 270) {
-        doc.addPage();
-        currentY = startY;
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
+    let success = false;
+
+    try {
+      const response = await exportCowsExcel();
+
+      if (!response.ok) {
+        throw new Error(`Failed to export Excel: ${response.statusText}`);
       }
 
-      currentX = marginLeft;
-      const rowData = [
-        rowIndex + 1,
-        cow.name,
-        cow.breed,
-        cow.gender,
-        cow.entry_date,
-      ];
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "CowsData.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      rowData.forEach((cell, cellIndex) => {
-        const text = doc.splitTextToSize(String(cell), columnWidths[cellIndex]);
-        doc.text(text, currentX, currentY);
-        currentX += columnWidths[cellIndex];
+      success = true;
+    } catch (error) {
+      console.error("Failed to export Excel:", error.message);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to export Excel: " + error.message,
+        icon: "error",
       });
+    }
 
-      currentY += 6;
+    // Always show success message
+    if (success) {
+      await Swal.fire({
+        title: "Success!",
+        text: "Excel file has been exported successfully.",
+        icon: "success",
+      });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to export the PDF file?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, export it!",
+      cancelButtonText: "Cancel",
     });
 
-    // Simpan file PDF
-    doc.save("CowsData.pdf");
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
+    let success = false;
+
+    try {
+      const response = await exportCowsPDF();
+
+      if (!response || !response.ok) {
+        throw new Error(
+          `Failed to export PDF: ${response?.statusText || "Unknown error"}`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "CowsData.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      success = true;
+    } catch (error) {
+      console.error("PDF export error:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to export PDF: " + error.message,
+        icon: "error",
+      });
+    }
+
+    // Always show success message
+    if (success) {
+      await Swal.fire({
+        title: "Success!",
+        text: "PDF file has been exported successfully.",
+        icon: "success",
+      });
+    }
   };
 
   useEffect(() => {
@@ -138,28 +317,34 @@ const CowListPage = () => {
     return cows.find((cow) => cow.id === deleteCowId);
   };
 
-  const filteredCows = cows.filter((cow) => {
-    const searchLower = searchQuery.toLowerCase();
-    const genderMatch =
-      !selectedGender ||
-      cow.gender?.toLowerCase() === selectedGender.toLowerCase();
-    const entryDateMatch =
-      !selectedEntryDate ||
-      new Date(cow.entry_date).toDateString() ===
-        selectedEntryDate.toDateString();
-    const searchMatch =
-      cow.name?.toLowerCase().includes(searchLower) ||
-      cow.breed?.toLowerCase().includes(searchLower) ||
-      cow.reproductive_status?.toLowerCase().includes(searchLower);
-
-    return genderMatch && entryDateMatch && searchMatch;
-  });
-
   return (
     <div className="p-4">
       <div className="d-flex flex-column mb-4">
-        <h2 className="text-primary mb-3">
-          <i className="bi bi-cow"></i> Cow Data
+        <h2 className="text-primary mb-3 d-flex align-items-center justify-content-between">
+          <span className="d-flex align-items-center">
+            <i className="bi bi-cow me-2"></i> Cow Data
+          </span>
+          <button
+            className="btn btn-outline-primary waves-effect waves-light"
+            onClick={handleRefresh}
+            title="Refresh Table"
+            style={{
+              padding: "7px",
+              borderRadius: "50%",
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#007bff")}
+            onMouseLeave={(e) =>
+              (e.target.style.backgroundColor = "transparent")
+            }
+          >
+            <i
+              className="bi bi-arrow-clockwise"
+              style={{
+                transition: "transform 0.5s ease",
+                transform: isRefreshing ? "rotate(360deg)" : "rotate(0deg)",
+              }}
+            ></i>
+          </button>
         </h2>
       </div>
 
@@ -272,9 +457,9 @@ const CowListPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCows.map((cow, index) => (
+                    {currentItems.map((cow, index) => (
                       <tr key={cow.id}>
-                        <th scope="row">{index + 1}</th>
+                        <th scope="row">{indexOfFirstItem + index + 1}</th>
                         <td>{cow.name}</td>
                         <td>{cow.breed}</td>
                         <td>{cow.birth_date}</td>
@@ -288,7 +473,7 @@ const CowListPage = () => {
                           ) : (
                             <span className="badge bg-secondary">Inactive</span>
                           )}
-                        </td>{" "}
+                        </td>
                         <td>{cow.lactation_phase || "-"}</td>
                         <td>
                           <button
@@ -314,6 +499,15 @@ const CowListPage = () => {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination */}
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <p className="mb-0">
+                    Showing {indexOfFirstItem + 1} to{" "}
+                    {Math.min(indexOfLastItem, filteredCows.length)} of{" "}
+                    {filteredCows.length} Cows
+                  </p>
+                  <nav>{renderPagination()}</nav>
+                </div>
               </div>
             </div>
           </div>

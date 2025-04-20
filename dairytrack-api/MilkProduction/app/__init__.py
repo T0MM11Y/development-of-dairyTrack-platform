@@ -30,7 +30,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Configure CORS
-CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE"])
+CORS(app, origins="*", allow_headers=["*"], methods=["GET", "POST", "PUT", "DELETE"])
 
 from app.models import Farmer, Cow, RawMilk, Supervisor, Admin, daily_milk_total, blog, topicBlog, gallery
 from app.routes import farmers_bp, cows_bp, raw_milks_bp, supervisors_bp, admins_bp, auth_bp, blogs_bp, daily_milk_totals_bp, topic_blogs_bp, galleries_bp

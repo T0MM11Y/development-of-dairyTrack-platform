@@ -3,74 +3,86 @@ import 'package:flutter/material.dart';
 class MenuPeternakan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu Produksi'),
-      ),
-      body: Center(
-        // Membuat konten berada di tengah layar
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
-            shrinkWrap:
-                true, // Menyesuaikan ukuran grid agar tidak memenuhi seluruh layar
-            crossAxisCount: 2,
-            crossAxisSpacing: 16.0,
-            mainAxisSpacing: 16.0,
-            children: [
-              _buildMenuContainer(
-                context,
-                'Data Peternak',
-                Icons.person,
-                Colors.blue,
-                onTap: () {
-                  Navigator.pushNamed(context, '/all-peternak');
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Data Sapi',
-                Icons.pets,
-                Colors.green,
-                onTap: () {
-                  Navigator.pushNamed(context, '/all-cow');
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Data Supervisor',
-                Icons.supervisor_account,
-                Colors.orange,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Data Supervisor dipilih')),
-                  );
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Blog Articles',
-                Icons.article,
-                Colors.purple,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Blog Articles dipilih')),
-                  );
-                },
-              ),
-              // Perpanjang container untuk Gallery
-              _buildWideMenuContainer(
-                context,
-                'Gallery',
-                Icons.photo,
-                Colors.red,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gallery dipilih')),
-                  );
-                },
-              ),
-            ],
+    return WillPopScope(
+      onWillPop: () async => true, // Nonaktifkan tombol "Back" bawaan perangkat
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 93, 144, 231),
+          title: const Text('Menu Produksi'),
+          leading: BackButton(
+            onPressed: () {
+              // Tambahkan logika khusus jika diperlukan
+              Navigator.maybePop(context);
+            },
+          ),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 156.0, left: 46.0, right: 46.0),
+            child: Column(
+              children: [
+                GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 23.0,
+                  mainAxisSpacing: 16.0,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildMenuContainer(
+                      context,
+                      'Data Peternak',
+                      Icons.person,
+                      Colors.blue,
+                      onTap: () {
+                        Navigator.pushNamed(context, '/all-peternak');
+                      },
+                    ),
+                    _buildMenuContainer(
+                      context,
+                      'Data Sapi',
+                      Icons.pets,
+                      Colors.green,
+                      onTap: () {
+                        Navigator.pushNamed(context, '/all-cow');
+                      },
+                    ),
+                    _buildMenuContainer(
+                      context,
+                      'Data Supervisor',
+                      Icons.supervisor_account,
+                      Colors.orange,
+                      onTap: () {
+                        Navigator.pushNamed(context, '/all-supervisor');
+                      },
+                    ),
+                    _buildMenuContainer(
+                      context,
+                      'Blog Articles',
+                      Icons.article,
+                      Colors.purple,
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Blog Articles dipilih')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24.0),
+                _buildWideMenuContainer(
+                  context,
+                  'Gallery',
+                  Icons.photo,
+                  Colors.red,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gallery dipilih')),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -91,13 +103,13 @@ class MenuPeternakan extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48.0, color: color),
+            Icon(icon, size: 40.0, color: color),
             const SizedBox(height: 8.0),
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16.0,
+                fontSize: 14.0,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -108,25 +120,24 @@ class MenuPeternakan extends StatelessWidget {
     );
   }
 
-  // Widget khusus untuk memperpanjang Gallery
   Widget _buildWideMenuContainer(
       BuildContext context, String title, IconData icon, Color color,
       {required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: double.infinity, // Membuat lebar penuh
-        height: 150.0, // Menambah tinggi container
+        width: double.infinity,
+        height: 100.0,
         decoration: BoxDecoration(
           color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(color: color, width: 2.0),
         ),
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48.0, color: color),
-            const SizedBox(height: 8.0),
+            Icon(icon, size: 40.0, color: color),
+            const SizedBox(width: 16.0),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -145,11 +156,20 @@ class MenuPeternakan extends StatelessWidget {
 
 void main() {
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     home: MenuPeternakan(),
     routes: {
       '/all-peternak': (context) => Scaffold(
             appBar: AppBar(title: const Text('Data Peternak')),
             body: const Center(child: Text('Halaman Data Peternak')),
+          ),
+      '/all-cow': (context) => Scaffold(
+            appBar: AppBar(title: const Text('Data Sapi')),
+            body: const Center(child: Text('Halaman Data Sapi')),
+          ),
+      '/all-supervisor': (context) => Scaffold(
+            appBar: AppBar(title: const Text('Data Supervisor')),
+            body: const Center(child: Text('Halaman Data Supervisor')),
           ),
     },
   ));

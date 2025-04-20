@@ -3,6 +3,7 @@ import {
   getSupervisorById,
   updateSupervisor,
 } from "../../../../api/peternakan/supervisor";
+import Swal from "sweetalert2";
 
 const SupervisorEditPage = ({ supervisorId, onClose, onSupervisorUpdated }) => {
   const [form, setForm] = useState(null);
@@ -36,13 +37,29 @@ const SupervisorEditPage = ({ supervisorId, onClose, onSupervisorUpdated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+
     try {
       await updateSupervisor(supervisorId, form);
       onSupervisorUpdated();
       onClose();
+
+      Swal.fire({
+        title: "Success!",
+        text: "Supervisor berhasil diperbarui.",
+        icon: "success",
+      });
     } catch (err) {
       console.error("Failed to update supervisor:", err);
-      setError("Gagal memperbarui data supervisor. Coba lagi!");
+      const errorMessage =
+        err.response?.data?.message ||
+        "Gagal memperbarui data supervisor. Coba lagi!";
+      setError(errorMessage);
+
+      Swal.fire({
+        title: "Error!",
+        text: errorMessage,
+        icon: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -118,6 +135,21 @@ const SupervisorEditPage = ({ supervisorId, onClose, onSupervisorUpdated }) => {
                     className="form-control"
                     disabled={submitting}
                   />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">Jenis Kelamin</label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                    disabled={submitting}
+                  >
+                    <option value="">Pilih Jenis Kelamin</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
                 </div>
                 <button
                   type="submit"

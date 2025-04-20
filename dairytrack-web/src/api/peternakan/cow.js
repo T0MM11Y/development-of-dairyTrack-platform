@@ -16,3 +16,21 @@ export const updateCow = (id, data) => fetchAPI(`cows/${id}`, "PUT", data);
 
 // DELETE sapi (HAPUS `/` setelah ID)
 export const deleteCow = (id) => fetchAPI(`cows/${id}`, "DELETE");
+
+// EXPORT sapi ke PDF
+export const exportCowsPDF = async () => {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:5000/api/cows/biekenpedeedf"
+    );
+    console.log("PDF Export Response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error fetching PDF:", error);
+    throw error;
+  }
+};
+
+// EXPORT sapi ke Excel
+export const exportCowsExcel = () =>
+  fetch("http://127.0.0.1:5000/api/cows/exc");

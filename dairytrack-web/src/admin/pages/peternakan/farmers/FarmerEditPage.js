@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getFarmerById, updateFarmer } from "../../../../api/peternakan/farmer";
+import Swal from "sweetalert2"; // Pastikan SweetAlert sudah diimpor
 
 const FarmerEditPage = ({ farmerId, onClose, onFarmerUpdated }) => {
   const [form, setForm] = useState(null);
@@ -36,6 +37,11 @@ const FarmerEditPage = ({ farmerId, onClose, onFarmerUpdated }) => {
     setSubmitting(true);
     try {
       await updateFarmer(farmerId, form);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data peternak berhasil diperbarui.",
+      });
       onFarmerUpdated();
       onClose();
     } catch (err) {
@@ -228,8 +234,8 @@ const FarmerEditPage = ({ farmerId, onClose, onFarmerUpdated }) => {
                     className="form-select"
                     disabled={submitting}
                   >
-                    <option value="Active">Aktif</option>
-                    <option value="Inactive">Tidak Aktif</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                 </div>
 

@@ -1,6 +1,6 @@
 class Cow {
-  final int id;
-  final int farmerId;
+  int? id; // Password menjadi opsional
+  int? farmerId;
   final String name;
   final String breed;
   final DateTime birthDate;
@@ -14,8 +14,8 @@ class Cow {
   final DateTime updatedAt;
 
   Cow({
-    required this.id,
-    required this.farmerId,
+    this.id,
+    this.farmerId,
     required this.name,
     required this.breed,
     required this.birthDate,
@@ -31,8 +31,8 @@ class Cow {
 
   factory Cow.fromJson(Map<String, dynamic> json) {
     return Cow(
-      id: json['id'] ?? 0, // Default to 0 if null
-      farmerId: json['farmer_id'] ?? 0, // Default to 0 if null
+      id: json['id'], // Bisa null
+      farmerId: json['farmer_id'],
       name: json['name'] ?? 'Unknown', // Default to 'Unknown' if null
       breed: json['breed'] ?? 'Unknown', // Default to 'Unknown' if null
       birthDate: json['birth_date'] != null
@@ -61,8 +61,9 @@ class Cow {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'farmer_id': farmerId,
+      if (id != null) 'id': id, // Hanya tambahkan jika tidak null
+      if (farmerId != null)
+        'farmer_id': farmerId, // Hanya tambahkan jika tidak null
       'name': name,
       'breed': breed,
       'birth_date': birthDate.toIso8601String(),
