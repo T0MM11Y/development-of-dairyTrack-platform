@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class MenuPakan extends StatelessWidget {
+class MenuPemeriksaanKesehatan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Menu Pakan'),
+        title: const Text('Menu Pemeriksaan Kesehatan'),
       ),
       body: Center(
         child: Padding(
@@ -18,69 +18,38 @@ class MenuPakan extends StatelessWidget {
             children: [
               _buildMenuContainer(
                 context,
-                'Dashboard Pakan',
-                Icons.dashboard,
+                'Pemeriksaan Penyakit Sapi',
+                Icons.health_and_safety,
                 Colors.blue,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Dashboard Pakan dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-pemeriksaan-penyakit-sapi');
                 },
               ),
               _buildMenuContainer(
                 context,
-                'Jenis Pakan',
-                Icons.category,
-                Colors.green,
-                () {
-                  Navigator.pushNamed(context, '/jenis-pakan');
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Pakan',
-                Icons.grass,
+                'Gejala Penyakit Sapi',
+                Icons.warning,
                 Colors.orange,
-                () {
-                  Navigator.pushNamed(context, '/daftar-pakan');
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-gejala');
                 },
               ),
               _buildMenuContainer(
                 context,
-                'Stok Pakan',
-                Icons.inventory,
+                'Riwayat Penyakit Sapi',
+                Icons.history,
                 Colors.purple,
-                () {
-                  Navigator.pushNamed(context, '/stok-pakan');
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Pakan Harian',
-                Icons.calendar_today,
-                Colors.red,
-                () {
-                  Navigator.pushNamed(context, '/jadwal-pakan');
-                },
-              ),
-              _buildMenuContainer(
-                context,
-                'Item Pakan',
-                Icons.list,
-                Colors.teal,
-                () {
-                  Navigator.pushNamed(context, '/item-pakan');
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-riwayat-penyakit-sapi');
                 },
               ),
               _buildWideMenuContainer(
                 context,
-                'Nutrisi',
-                Icons.abc_rounded,
-                Colors.amber,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Nutrisi dipilih')),
-                  );
+                'Reproduksi Sapi',
+                Icons.pregnant_woman,
+                Colors.green,
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-reproduksi');
                 },
               ),
             ],
@@ -91,12 +60,8 @@ class MenuPakan extends StatelessWidget {
   }
 
   Widget _buildMenuContainer(
-    BuildContext context, 
-    String title, 
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap
-  ) {
+      BuildContext context, String title, IconData icon, Color color,
+      {required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -109,7 +74,7 @@ class MenuPakan extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 48.0, color: color),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -126,12 +91,8 @@ class MenuPakan extends StatelessWidget {
   }
 
   Widget _buildWideMenuContainer(
-    BuildContext context, 
-    String title, 
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap
-  ) {
+      BuildContext context, String title, IconData icon, Color color,
+      {required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -146,7 +107,7 @@ class MenuPakan extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 48.0, color: color),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -161,13 +122,4 @@ class MenuPakan extends StatelessWidget {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: MenuPakan(),
-    routes: {
-      '/jenis-pakan': (context) => Text('Halaman Jenis Pakan'),  // Ganti dengan halaman AllFeedTypes
-    },
-  ));
 }

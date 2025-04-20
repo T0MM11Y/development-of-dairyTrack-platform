@@ -1,12 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-//ipv4CMDmu
 
-const String BASE_URL = "http://127.0.0.1:5003/api";
+const String BASE_URL = "http://192.168.61.247:5003/api";
 
-Future<dynamic> fetchAPI(String endpoint,
-    {String method = "GET", Map<String, dynamic>? data}) async {
-  final Uri url = Uri.parse('$BASE_URL/$endpoint');
+Future<dynamic> fetchAPI(
+  String endpoint, {
+  String method = "GET",
+  Map<String, dynamic>? data,
+  Map<String, String>? queryParams,
+}) async {
+  // Construct the URL with query parameters
+  Uri url = Uri.parse('$BASE_URL/$endpoint');
+  if (queryParams != null && queryParams.isNotEmpty) {
+    url = url.replace(queryParameters: queryParams);
+  }
+
   final Map<String, String> headers = {
     "Content-Type": "application/json",
   };
@@ -17,9 +25,17 @@ Future<dynamic> fetchAPI(String endpoint,
     if (method == "GET") {
       response = await http.get(url, headers: headers);
     } else if (method == "POST") {
-      response = await http.post(url, headers: headers, body: jsonEncode(data));
+      response = await http.post(
+        url,
+        headers: headers,
+        body: data != null ? jsonEncode(data) : null,
+      );
     } else if (method == "PUT") {
-      response = await http.put(url, headers: headers, body: jsonEncode(data));
+      response = await http.put(
+        url,
+        headers: headers,
+        body: data != null ? jsonEncode(data) : null,
+      );
     } else if (method == "DELETE") {
       response = await http.delete(url, headers: headers);
     } else {

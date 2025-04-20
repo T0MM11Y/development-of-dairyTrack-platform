@@ -76,7 +76,7 @@ sequelize
 app.use("/api/feedType", FeedType);
 app.use("/api/feed", Feed);
 app.use("/api/feedStock", FeedStock);
-app.use("/api/dailyFeedComplete", DailyFeedComplete);
+app.use("/api/dailyFeedSchedule", DailyFeedComplete);
 app.use("/api/dailyFeedItem", DailyFeedItems);
 app.use("/api/dailyFeedNutrients", DailyFeedNutrients);
 app.use("/api/notification", Notification);
