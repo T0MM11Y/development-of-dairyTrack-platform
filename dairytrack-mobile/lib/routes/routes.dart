@@ -1,10 +1,13 @@
 import 'package:dairy_track/modules/home/home.dart';
 import 'package:dairy_track/modules/pakan_sapi/menuPakan.dart';
 import 'package:dairy_track/modules/penjualan/menuPenjualan.dart';
+import 'package:dairy_track/modules/peternakan/cow/addCow.dart';
 import 'package:dairy_track/modules/peternakan/cow/allCow.dart';
 import 'package:dairy_track/modules/peternakan/menuPeternakan.dart';
 import 'package:dairy_track/modules/peternakan/farmer/addPeternak.dart';
 import 'package:dairy_track/modules/peternakan/farmer/allPeternak.dart';
+import 'package:dairy_track/modules/peternakan/supervisor/addSupervisor.dart';
+import 'package:dairy_track/modules/peternakan/supervisor/allSupervisor.dart';
 import 'package:dairy_track/modules/produksi_susu/menuProduction.dart';
 import 'package:dairy_track/modules/produksi_susu/dataProduksiSusu/dataProduksiSusu.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +21,10 @@ class Routes {
   static const String allPeternak = '/all-peternak';
   static const String addPeternak = '/add-peternak';
   static const String allCow = '/all-cow';
+  static const String addCow = '/add-cow';
+  static const String allSupervisor = '/all-supervisor';
+  static const String addSupervisor = '/add-supervisor';
+
   static const String pakan = '/pakan';
   static const String penjualan = '/penjualan';
 
@@ -36,6 +43,9 @@ class Routes {
       allPeternak: (context) => AllPeternak(),
       addPeternak: (context) => AddPeternak(),
       allCow: (context) => AllCow(),
+      addCow: (context) => AddCow(),
+      allSupervisor: (context) => AllSupervisor(),
+      addSupervisor: (context) => AddSupervisor(),
 
       // Pakan route
       pakan: (context) => MenuPakan(),
