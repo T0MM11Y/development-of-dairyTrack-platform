@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jquery.steps-1.1.0">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/src/assets/admin/libs/jquery-steps/build/jquery.steps-1.1.0.zip!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
