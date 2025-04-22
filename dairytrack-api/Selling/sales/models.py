@@ -4,23 +4,24 @@ from django.db import transaction
 from django.db import models
 from stock.models import ProductStock, ProductType
 from finance.models import Income
+from .utils.whatsapp import send_gupshup_whatsapp_message
+import logging
 
+logger = logging.getLogger(__name__)
 
-# Create your models here.
 class Order(models.Model):
-    
     class Meta:
         db_table = "order"
     
     STATUS_CHOICES = [
-        ('Requested', 'Requested'),  # Status default ketika order dibuat
-        ('Processed', 'Processed'),  # Setelah produk dicek dan biaya pengiriman ditambahkan
-        ('Completed', 'Completed'),  # Setelah pembayaran dipilih
-        ('Cancelled', 'Cancelled'),  # Jika dibatalkan
+        ('Requested', 'Requested'),
+        ('Processed', 'Processed'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
     ]
     
     PAYMENT_METHOD_CHOICES = [
-        ('', 'Select Payment Method'),  # Default kosong, tidak boleh langsung completed
+        ('', 'Select Payment Method'),
         ('Cash', 'Cash'),
         ('Credit Card', 'Credit Card'),
         ('Bank Transfer', 'Bank Transfer'),
@@ -40,57 +41,67 @@ class Order(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-
         if not self.order_no:
-            self.order_no = f"ORD{uuid.uuid4().hex[:6].upper()}"  # ID unik No Orderan
+            self.order_no = f"ORD{uuid.uuid4().hex[:6].upper()}"
 
         if self.pk is not None:
-            # Ambil data order sebelumnya
             previous_order = Order.objects.get(pk=self.pk)
             previous_status = previous_order.status
             previous_shipping_cost = previous_order.shipping_cost
             
-            # Jika shipping cost diubah dan status masih Requested
             if previous_shipping_cost != self.shipping_cost and self.status == 'Requested':
-                self.status = 'Processed'  # Ubah status menjadi Processed
-                
+                self.status = 'Processed'
         else:
-            previous_status = None  # Order baru
+            previous_status = None
 
-        # Pastikan metode pembayaran harus dipilih sebelum menyelesaikan order
         if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
             if not self.payment_method:
                 raise ValidationError("Metode pembayaran harus dipilih sebelum menyelesaikan order.")
 
-        # Save terlebih dahulu
         super().save(*args, **kwargs)
         
-        # Update total_price setiap kali save dipanggil
-        # Ini akan menjamin total_price selalu terupdate
         if self.pk is not None:
             self.update_total_price()
-        
-        # Proses completion hanya jika status berubah menjadi "Completed"
+
         if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
             self.process_completion()
 
     def update_total_price(self):
-        """ Hitung total harga berdasarkan OrderItem """
-        total = sum(item.total_price for item in self.order_items.all()) # pylint: disable=no-member
+        total = sum(item.total_price for item in self.order_items.all())
         self.total_price = total + self.shipping_cost
         super().save(update_fields=['total_price'])
 
+    def send_order_details_to_whatsapp(self):
+        # Pastikan order_items tidak kosong
+        if not self.order_items.exists():
+            logger.error(f"No order items found for order {self.order_no}")
+            return
+
+        # Buat detail item untuk pesan
+        items_details = "\n".join(
+            f"- {item.quantity} x {item.product_type.product_name} (Rp {item.total_price})"
+            for item in self.order_items.all()
+        )
+        message = (
+            f"Order Baru: {self.order_no}\n"
+            f"Nama: {self.customer_name}\n"
+            f"Lokasi: {self.location}\n"
+            f"Item:\n{items_details}\n"
+            f"Biaya Pengiriman: Rp {self.shipping_cost}\n"
+            f"Total Harga: Rp {self.total_price}\n"
+            f"Status: {self.status}\n"
+            f"Terima kasih atas pesanan Anda!"
+        )
+        logger.debug(f"Sending WhatsApp message to {self.phone_number}: {message}")
+        send_gupshup_whatsapp_message(self.phone_number, message)
+
     def process_completion(self):
-        """ Buat satu transaksi penjualan dan perbarui stok saat pesanan selesai """
         with transaction.atomic():
-            # Update stok untuk setiap item
             total_quantity = 0
-            for item in self.order_items.all(): # pylint: disable=no-member
-                # Gunakan method sell_product dari ProductStock
+            for item in self.order_items.all():
                 ProductStock.sell_product(item.product_type, item.quantity)
                 total_quantity += item.quantity
             
-            # Buat satu transaksi penjualan untuk seluruh order
             SalesTransaction.objects.create(
                 order=self,
                 quantity=total_quantity,
@@ -101,9 +112,7 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.order_no} - {self.customer_name}"
 
-
 class OrderItem(models.Model):
-    
     class Meta:
         db_table = "order_item"
 
@@ -114,22 +123,22 @@ class OrderItem(models.Model):
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
 
-
     def save(self, *args, **kwargs):
-        """ Hitung total harga sebelum menyimpan """
-        self.price_per_unit = self.product_type.price   # pylint: disable=no-member
+        if not hasattr(self.product_type, 'price') or self.product_type.price is None:
+            logger.error(f"ProductType {self.product_type} has no price or price is None")
+            raise ValidationError(f"Harga untuk {self.product_type.product_name} tidak tersedia.")
+        
+        self.price_per_unit = self.product_type.price
         self.total_price = self.quantity * self.price_per_unit
+        logger.debug(f"OrderItem saved: {self.quantity} x {self.product_type.product_name}, total_price={self.total_price}")
         super().save(*args, **kwargs)
 
-        # Setelah menyimpan OrderItem, update total_price Order
-        self.order.update_total_price() # pylint: disable=no-member
-
+        self.order.update_total_price()
 
     def __str__(self):
-        return f"{self.quantity} x {self.product_type} in {self.order.order_no}" # pylint: disable=no-member
+        return f"{self.quantity} x {self.product_type} in {self.order.order_no}"
 
 class SalesTransaction(models.Model):
-    
     class Meta:
         db_table = "sales_transaction"
 
@@ -143,8 +152,7 @@ class SalesTransaction(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        # Jika transaksi belum ada di income, tambahkan otomatis
-        if not Income.objects.filter(description=f"Sales Transaction {self.pk}").exists(): # pylint: disable=no-member
+        if not Income.objects.filter(description=f"Sales Transaction {self.pk}").exists():
             Income.objects.create(
                 income_type="sales",
                 amount=self.total_price,

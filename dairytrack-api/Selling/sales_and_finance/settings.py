@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+# from decouple import config
 
 # Path dasar proyek
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,8 +37,16 @@ SECRET_KEY = 'django-insecure-agt1jdcq+w%2t&0f+w1f9qrhkk4g!j)((s3y7!kjzwz6)ge7zc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+# settings.py
+# from decouple import config
+# GUPSHUP_API_KEY = config('GUPSHUP_API_KEY')
+# GUPSHUP_SOURCE_NUMBER = config('GUPSHUP_SOURCE_NUMBER')
+
+# settings.py
+GUPSHUP_API_KEY = 'sk_49b512570561442898bf2a6cb4b4c001' 
+GUPSHUP_SOURCE_NUMBER = '917834811114'
 
 # Application definition
 
@@ -92,8 +101,11 @@ WSGI_APPLICATION = 'sales_and_finance.wsgi.application'
 
 # Mengizinkan akses dari frontend React
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # URL frontend React
+    "http://localhost:3000",
+    "http://172.20.10.3:5001"
 ]
+
+
 
 # Jika ingin mengizinkan semua domain (tidak disarankan untuk production)
 CORS_ALLOW_ALL_ORIGINS = True  # (Opsional, hanya gunakan saat testing)
@@ -197,5 +209,32 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',  # Tambahkan parser ini
+        'rest_framework.parsers.MultiPartParser',
+    ],
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'whatsapp_errors.log',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }
