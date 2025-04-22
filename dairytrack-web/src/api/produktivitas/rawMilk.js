@@ -57,7 +57,7 @@ export const getAllRawMilksWithExpiredStatus = async () => {
 };
 export const getCowRawMilkData = async () => {
   try {
-    const response = await fetchAPI("raw_milks/raw_milk_data", "GET");
+    const response = await fetchAPI("raw_milks/rawmilkdata2", "GET");
     return response;
   } catch (error) {
     console.error(
