@@ -396,8 +396,8 @@ def export_raw_milks_excel():
         }
     )
 
-@raw_milks_bp.route('/raw_milks/raw_milk_data', methods=['GET'])
-def get_cow_raw_milk_data():
+@raw_milks_bp.route('/raw_milks/rawmilkdata2', methods=['GET'])
+def get_cow_rawmilkdata2():
     # Query data RawMilk dengan join ke tabel Cow
     raw_milks = RawMilk.query.join(Cow).order_by(RawMilk.production_time.desc()).all()
 
@@ -415,3 +415,23 @@ def get_cow_raw_milk_data():
         })
 
     return jsonify(result), 200
+
+@raw_milks_bp.route('/raw_milks/raw_milk_data', methods=['GET'])
+def get_cow_raw_milk_data():
+    # Query data RawMilk dengan join ke tabel Cow
+    raw_milks = RawMilk.query.join(Cow).order_by(RawMilk.production_time.desc()).all()
+
+    # Format data untuk response
+    result = [
+        {
+            'name': raw_milk.cow.name if raw_milk.cow else "Unknown",
+            'production_time': raw_milk.production_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'volume_liters': raw_milk.volume_liters,
+            'lactation_phase': raw_milk.cow.lactation_phase if raw_milk.cow else "Unknown",
+            'lactation_status': raw_milk.cow.lactation_status if raw_milk.cow else False,
+            'session': raw_milk.session,
+        }
+        for raw_milk in raw_milks
+    ]
+
+    return jsonify({'message': 'Data berhasil diambil', 'data': result , 'status': 200}), 200
