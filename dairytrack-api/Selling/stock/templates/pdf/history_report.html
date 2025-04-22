@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product History Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h2, p { text-align: center; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 6px; text-align: center; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Product History Report</h2>
+
+    {% if start_date and end_date %}
+        <p>Export period: {{ start_date }} - {{ end_date }}</p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Product Type</th>
+                <th>Change Type</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for history in histories %}
+            <tr>
+                <td>{{ history.change_date }}</td>
+                <td>
+                    {% if history.product_stock and history.product_stock.product_type %}
+                        {{ history.product_stock.product_type.product_name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ history.change_type }}</td>
+                <td>
+                    {{ history.quantity_change }}
+                    {% if history.product_stock and history.product_stock.product_type and history.product_stock.product_type.unit %}
+                        {{ history.product_stock.product_type.unit }}
+                    {% endif %}
+                </td>
+                <td>{{ history.total_price }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No history available for selected period.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
