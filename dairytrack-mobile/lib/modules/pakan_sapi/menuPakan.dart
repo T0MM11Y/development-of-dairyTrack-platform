@@ -33,9 +33,7 @@ class MenuPakan extends StatelessWidget {
                 Icons.category,
                 Colors.green,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Jenis Pakan dipilih')),
-                  );
+                  Navigator.pushNamed(context, '/jenis-pakan');
                 },
               ),
               _buildMenuContainer(
@@ -44,9 +42,7 @@ class MenuPakan extends StatelessWidget {
                 Icons.grass,
                 Colors.orange,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Pakan dipilih')),
-                  );
+                  Navigator.pushNamed(context, '/daftar-pakan');
                 },
               ),
               _buildMenuContainer(
@@ -55,9 +51,7 @@ class MenuPakan extends StatelessWidget {
                 Icons.inventory,
                 Colors.purple,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Stok Pakan dipilih')),
-                  );
+                  Navigator.pushNamed(context, '/stok-pakan');
                 },
               ),
               _buildMenuContainer(
@@ -66,9 +60,7 @@ class MenuPakan extends StatelessWidget {
                 Icons.calendar_today,
                 Colors.red,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Pakan Harian dipilih')),
-                  );
+                  Navigator.pushNamed(context, '/jadwal-pakan');
                 },
               ),
               _buildMenuContainer(
@@ -77,9 +69,7 @@ class MenuPakan extends StatelessWidget {
                 Icons.list,
                 Colors.teal,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Item Pakan dipilih')),
-                  );
+                  Navigator.pushNamed(context, '/item-pakan');
                 },
               ),
               _buildWideMenuContainer(
@@ -100,8 +90,13 @@ class MenuPakan extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuContainer(BuildContext context, String title, IconData icon,
-      Color color, VoidCallback onTap) {
+  Widget _buildMenuContainer(
+    BuildContext context, 
+    String title, 
+    IconData icon, 
+    Color color, 
+    VoidCallback onTap
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -130,8 +125,13 @@ class MenuPakan extends StatelessWidget {
     );
   }
 
-  Widget _buildWideMenuContainer(BuildContext context, String title,
-      IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildWideMenuContainer(
+    BuildContext context, 
+    String title, 
+    IconData icon, 
+    Color color, 
+    VoidCallback onTap
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -166,5 +166,8 @@ class MenuPakan extends StatelessWidget {
 void main() {
   runApp(MaterialApp(
     home: MenuPakan(),
+    routes: {
+      '/jenis-pakan': (context) => Text('Halaman Jenis Pakan'),  // Ganti dengan halaman AllFeedTypes
+    },
   ));
 }

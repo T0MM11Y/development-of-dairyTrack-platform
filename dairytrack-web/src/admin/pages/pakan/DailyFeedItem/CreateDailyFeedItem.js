@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createdailyFeedItem } from "../../../../api/pakan/dailyFeedItem";
 import { getFeeds } from "../../../../api/pakan/feed";
-import { getAllDailyFeedDetails } from "../../../../api/pakan/dailyFeedDetail";
+import { getAllDailyFeeds } from "../../../../api/pakan/dailyFeed";
 import { getFeedStock } from "../../../../api/pakan/feedstock";
 import { getAlldailyFeedItems } from "../../../../api/pakan/dailyFeedItem";
 import { getCows } from "../../../../api/peternakan/cow";
@@ -37,7 +37,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
           feedItemsResponse,
           cowsResponse,
         ] = await Promise.all([
-          getAllDailyFeedDetails(),
+          getAllDailyFeeds(),
           getFeeds(),
           getFeedStock(),
           getAlldailyFeedItems(),
