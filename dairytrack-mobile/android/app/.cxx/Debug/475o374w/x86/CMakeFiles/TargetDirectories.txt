@@ -1,0 +1,2 @@
+C:/Users/T0MM11Y/Documents/TA/C0D3~Collaboration/DevelopmentOf-DairyTrack-Platform/dairytrack-mobile/android/app/.cxx/Debug/475o374w/x86/CMakeFiles/edit_cache.dir
+C:/Users/T0MM11Y/Documents/TA/C0D3~Collaboration/DevelopmentOf-DairyTrack-Platform/dairytrack-mobile/android/app/.cxx/Debug/475o374w/x86/CMakeFiles/rebuild_cache.dir
