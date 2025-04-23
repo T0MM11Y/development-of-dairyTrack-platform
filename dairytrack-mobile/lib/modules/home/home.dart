@@ -17,10 +17,17 @@ class _HomeScreenState extends State<HomeScreen> {
   String userEmail = HomeController.defaultUserEmail;
   bool isLoading = false;
 
+  // Statistics data
+  int totalCows = 0;
+  double totalIncome = 0;
+  int sickCows = 0;
+  double milkProductionAvg = 0;
+
   @override
   void initState() {
     super.initState();
     _initializeData();
+    _loadStatistics();
   }
 
   Future<void> _initializeData() async {
@@ -38,6 +45,21 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (e) {
       debugPrint('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadStatistics() async {
+    try {
+      // In a real app, you would fetch these from your API
+      // For now, we'll use mock data
+      setState(() {
+        totalCows = 42;
+        totalIncome = 12500000;
+        sickCows = 3;
+        milkProductionAvg = 12.5;
+      });
+    } catch (e) {
+      debugPrint('Error loading statistics: $e');
     }
   }
 
@@ -260,6 +282,60 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+              // Statistics Section
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                color: Colors.grey[200],
+                child: Column(
+                  children: [
+                    const Text(
+                      'Statistik Hari Ini',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatCard(
+                          icon: Icons.pets,
+                          title: 'Total Sapi',
+                          value: totalCows.toString(),
+                          color: Colors.blue,
+                        ),
+                        _buildStatCard(
+                          icon: Icons.attach_money,
+                          title: 'Pendapatan',
+                          value: 'Rp${totalIncome.toStringAsFixed(0)}',
+                          color: Colors.green,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatCard(
+                          icon: Icons.medical_services,
+                          title: 'Sapi Sakit',
+                          value: sickCows.toString(),
+                          color: Colors.orange,
+                        ),
+                        _buildStatCard(
+                          icon: Icons.local_drink,
+                          title: 'Rata-rata Susu (L)',
+                          value: milkProductionAvg.toStringAsFixed(1),
+                          color: Colors.purple,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: Container(
                   color: Colors.white,
@@ -318,6 +394,53 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 30, color: color),
+          const SizedBox(height: 5),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
