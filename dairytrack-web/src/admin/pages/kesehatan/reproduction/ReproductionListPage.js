@@ -20,7 +20,16 @@ const ReproductionListPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
 
 
   const fetchData = async () => {
@@ -75,10 +84,18 @@ const ReproductionListPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">{t('reproduction.title')}</h2>
-        <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + {t('reproduction.add')}
+        <button
+  className="btn btn-info"
+  onClick={() => {
+    if (!isSupervisor) {
+      setModalType("create");
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + {t('reproduction.add')}
+</button>
 
-        </button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -136,47 +153,54 @@ const ReproductionListPage = () => {
                       <button
   className="btn btn-warning btn-sm me-2"
   onClick={() => {
-    Swal.fire({
-      title: "Edit Data Reproduksi?",
-      text: "Anda akan membuka form edit data reproduksi.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#6c757d",
-      confirmButtonText: "Ya, edit",
-      cancelButtonText: "Batal",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setEditId(item.id);
-        setModalType("edit");
-      }
-    });
+    if (!isSupervisor) {
+      Swal.fire({
+        title: "Edit Data Reproduksi?",
+        text: "Anda akan membuka form edit data reproduksi.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Ya, edit",
+        cancelButtonText: "Batal",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setEditId(item.id);
+          setModalType("edit");
+        }
+      });
+    }
   }}
+  {...disableIfSupervisor}
 >
   <i className="ri-edit-line"></i>
 </button>
 
-                        <button
+<button
   className="btn btn-danger btn-sm"
   onClick={() => {
-    Swal.fire({
-      title: "Yakin ingin menghapus?",
-      text: "Data reproduksi ini tidak dapat dikembalikan.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#6c757d",
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        handleDelete(item.id); // langsung kirim ID
-      }
-    });
+    if (!isSupervisor) {
+      Swal.fire({
+        title: "Yakin ingin menghapus?",
+        text: "Data reproduksi ini tidak dapat dikembalikan.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Ya, hapus!",
+        cancelButtonText: "Batal",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          handleDelete(item.id);
+        }
+      });
+    }
   }}
+  {...disableIfSupervisor}
 >
   <i className="ri-delete-bin-6-line"></i>
 </button>
+
 
                       </td>
                     </tr>

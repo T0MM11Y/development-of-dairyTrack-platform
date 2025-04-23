@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 //ipv4CMDmu
 const String BASE_URL = "http://192.168.182.47:5000/api";
 
+// const String BASE_URL = "http://10.0.2.2:5000/api";
+
 Future<dynamic> fetchAPI(
   String endpoint, {
   String method = "GET",

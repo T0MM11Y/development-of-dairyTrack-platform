@@ -10,6 +10,17 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
   const [expirationStatus, setExpirationStatus] = useState({});
   const [cowData, setCowData] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const user = JSON.parse(localStorage.getItem("user"));
+const isSupervisor = user?.type === "supervisor";
+
+const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
+
 
   // Memoized calculations
   const totalPages = useMemo(
@@ -278,20 +289,32 @@ const RawMilkTable = ({ rawMilks, openModal, isLoading }) => {
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="btn btn-warning btn-sm me-2"
-                          onClick={() => openModal("edit", rawMilk.id)}
-                          aria-label="Edit"
-                        >
-                          <i className="ri-edit-line"></i>
-                        </button>
-                        <button
-                          onClick={() => openModal("delete", rawMilk.id)}
-                          className="btn btn-danger btn-sm"
-                          aria-label="Delete"
-                        >
-                          <i className="ri-delete-bin-6-line"></i>
-                        </button>
+                      <button
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    if (!isSupervisor) {
+      openModal("edit", rawMilk.id);
+    }
+  }}
+  aria-label="Edit"
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+<button
+  onClick={() => {
+    if (!isSupervisor) {
+      openModal("delete", rawMilk.id);
+    }
+  }}
+  className="btn btn-danger btn-sm"
+  aria-label="Delete"
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
                       </td>
                     </tr>
                   );

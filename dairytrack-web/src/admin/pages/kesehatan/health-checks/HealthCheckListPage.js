@@ -17,7 +17,17 @@ const HealthCheckListPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
+  
 
   const fetchData = async () => {
     setLoading(true); // Mulai loading
@@ -79,9 +89,18 @@ const HealthCheckListPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl fw-bold text-dark">{t('healthcheck.data')}
         </h2>
-        <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + Tambah
-        </button>
+        <button
+  className="btn btn-info"
+  onClick={() => {
+    if (!isSupervisor) {
+      setModalType("create");
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + Tambah
+</button>
+
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
@@ -162,6 +181,8 @@ const HealthCheckListPage = () => {
       <button
   className="btn btn-warning btn-sm me-2"
   onClick={() => {
+    if (isSupervisor) return;
+
     if (item.needs_attention === false) {
       Swal.fire({
         icon: "info",
@@ -194,17 +215,25 @@ const HealthCheckListPage = () => {
       });
     }
   }}
+  {...disableIfSupervisor}
 >
   <i className="ri-edit-line"></i>
 </button>
 
 
-        <button
-          className="btn btn-danger btn-sm"
-          onClick={() => setDeleteId(item.id)}
-        >
-          <i className="ri-delete-bin-6-line"></i>
-        </button>
+
+<button
+  className="btn btn-danger btn-sm"
+  onClick={() => {
+    if (!isSupervisor) {
+      setDeleteId(item.id);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
       </td>
     </tr>
   ))}

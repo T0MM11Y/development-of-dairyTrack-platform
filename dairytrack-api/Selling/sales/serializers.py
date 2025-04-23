@@ -9,18 +9,16 @@ logger = logging.getLogger(__name__)
 class OrderItemSerializer(serializers.ModelSerializer):
     product_type = serializers.PrimaryKeyRelatedField(
         queryset=ProductType.objects.all(),
-        write_only=True  # Hanya untuk input
+        write_only=True
     )
-    product_type_detail = ProductTypeSerializer(source='product_type', read_only=True)  # Untuk output detail
+    product_type_detail = ProductTypeSerializer(source='product_type', read_only=True)
 
     class Meta:
         model = OrderItem
         fields = ['id', 'product_type', 'product_type_detail', 'quantity', 'total_price']
-        read_only_fields = ['total_price'] # Tambahkan product_stock agar tidak bisa diubah setelah dibuat
+        read_only_fields = ['total_price']
 
-    # Override untuk menangani penulisan (write) product_type saat create/update
     def create(self, validated_data):
-        # Saat create, product_type diharapkan sebagai objek (bukan hanya ID)
         return OrderItem.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
@@ -48,11 +46,13 @@ class OrderSerializer(serializers.ModelSerializer):
         if not order_items_data:
             raise serializers.ValidationError({"order_items": "Minimal satu item harus dipesan."})
 
+        # Buat order tanpa memanggil send_order_details_to_whatsapp di save
         order = Order.objects.create(**validated_data)
 
+        # Buat OrderItem
         for item_data in order_items_data:
             product_type_obj = item_data.get('product_type')
-            logger.debug(f"Product type: {product_type_obj}")
+            logger.debug(f"Product type: {product_type_obj}, price: {product_type_obj.price}")
             if not product_type_obj:
                 order.delete()
                 raise serializers.ValidationError({"order_items": "Product type tidak valid."})
@@ -63,6 +63,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"order_items": f"Stok untuk {product_type_obj.product_name} tidak mencukupi."})
 
             price_per_unit = product_type_obj.price
+            logger.debug(f"Creating OrderItem: product_type={product_type_obj}, price_per_unit={price_per_unit}, quantity={item_data.get('quantity')}")
             OrderItem.objects.create(
                 order=order,
                 product_type=product_type_obj,
@@ -70,8 +71,18 @@ class OrderSerializer(serializers.ModelSerializer):
                 price_per_unit=price_per_unit
             )
 
+        # Update total_price setelah semua OrderItem dibuat
         order.update_total_price()
         order.refresh_from_db()
+        logger.info(f"Order created: {order.order_no}, total_price={order.total_price}")
+
+        # Kirim pesan WhatsApp setelah OrderItem dibuat
+        if order.phone_number and order.status == 'Requested':
+            try:
+                order.send_order_details_to_whatsapp()
+            except Exception as e:
+                logger.error(f"Failed to send WhatsApp message for order {order.order_no}: {str(e)}")
+
         return order
 
     def update(self, instance, validated_data):
@@ -99,7 +110,7 @@ class OrderSerializer(serializers.ModelSerializer):
                     )
 
         for attr, value in validated_data.items():
-            if attr != 'order_items':  # Jangan update order_items langsung
+            if attr != 'order_items':
                 setattr(instance, attr, value)
 
         instance.save()

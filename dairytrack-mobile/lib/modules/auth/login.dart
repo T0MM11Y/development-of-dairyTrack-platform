@@ -142,6 +142,12 @@ class _LoginPageState extends State<LoginPage> {
                 });
 
                 if (response['status'] == 200) {
+                  final userData = response['user'];
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString("user", jsonEncode(userData));
+                  await prefs.setString("email",
+                      userData['email']); // Simpan email secara eksplisit
+
                   Navigator.pushNamed(context, Routes.home);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(

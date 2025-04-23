@@ -21,7 +21,15 @@ const BlogAll = () => {
   const [editBlogId, setEditBlogId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false); // State for refresh animation
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak memiliki akses",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -171,18 +179,30 @@ const BlogAll = () => {
 
           {/* Action Buttons */}
           <div className="col-md-4 d-flex gap-2 justify-content-end">
-            <button
-              className="btn btn-info"
-              onClick={() => setShowCreateModal(true)}
-            >
-              + Create Blog
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowCreateTopicModal(true)} // Open CreateTopicModal
-            >
-              + Add Topic
-            </button>
+          <button
+  className="btn btn-info"
+  onClick={() => {
+    if (!isSupervisor) {
+      setShowCreateModal(true);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + Create Blog
+</button>
+
+<button
+  className="btn btn-secondary"
+  onClick={() => {
+    if (!isSupervisor) {
+      setShowCreateTopicModal(true);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + Add Topic
+</button>
+
           </div>
         </div>
       </div>
@@ -247,18 +267,30 @@ const BlogAll = () => {
                         </td>
                         <td>{item.topic_name}</td>
                         <td>
-                          <button
-                            onClick={() => handleEdit(item.id)}
-                            className="btn btn-warning me-2"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id)} // Panggil handleDelete dengan id
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
+                        <button
+  onClick={() => {
+    if (!isSupervisor) {
+      handleEdit(item.id);
+    }
+  }}
+  className="btn btn-warning me-2"
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+<button
+  onClick={() => {
+    if (!isSupervisor) {
+      handleDelete(item.id);
+    }
+  }}
+  className="btn btn-danger"
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
                         </td>
                       </tr>
                     ))}
