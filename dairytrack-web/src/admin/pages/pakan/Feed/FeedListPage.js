@@ -1,35 +1,51 @@
 import { useEffect, useState } from "react";
-import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
 import { useNavigate } from "react-router-dom";
+import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
+import { getNutritions } from "../../../../api/pakan/nutrient";
 import Swal from "sweetalert2";
 import CreateFeedPage from "./CreateFeed";
-import FeedDetailPage from "./FeedDetailPage";
 
 const FeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
   const [filteredFeeds, setFilteredFeeds] = useState([]);
+  const [nutritions, setNutritions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedFeedId, setSelectedFeedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await getFeeds();
-      if (response.success && response.feeds) {
-        setFeeds(response.feeds);
-        setFilteredFeeds(response.feeds);
+      // Fetch feeds
+      const feedResponse = await getFeeds();
+      console.log("getFeeds Response:", feedResponse);
+      if (feedResponse.success && (feedResponse.data || feedResponse.feeds || feedResponse.pakan)) {
+        const feedData = feedResponse.data || feedResponse.feeds || feedResponse.pakan;
+        console.log("Processed feedData:", feedData);
+        setFeeds(feedData);
+        setFilteredFeeds(feedData);
       } else {
+        console.warn("No valid feed data found:", feedResponse);
         setFeeds([]);
         setFilteredFeeds([]);
       }
+
+      // Fetch nutritions
+      const nutritionResponse = await getNutritions();
+      console.log("getNutritions Response:", nutritionResponse);
+      if (nutritionResponse.success && nutritionResponse.nutrisi) {
+        console.log("Processed nutritions:", nutritionResponse.nutrisi);
+        setNutritions(nutritionResponse.nutrisi);
+      } else {
+        console.warn("No valid nutrition data found:", nutritionResponse);
+        setNutritions([]);
+      }
     } catch (error) {
-      console.error("Gagal mengambil data pakan:", error.message);
+      console.error("Gagal mengambil data:", error.message, error);
       setFeeds([]);
       setFilteredFeeds([]);
+      setNutritions([]);
     } finally {
       setLoading(false);
     }
@@ -43,49 +59,70 @@ const FeedListPage = () => {
     const filtered = feeds.filter((feed) =>
       feed.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    console.log("Filtered feeds:", filtered);
     setFilteredFeeds(filtered);
   }, [searchTerm, feeds]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, name) => {
     const result = await Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Pakan akan dihapus secara permanen.",
+      title: "Konfirmasi Hapus",
+      text: `Apakah Anda yakin ingin menghapus pakan "${name}"? Tindakan ini tidak dapat dibatalkan.`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, hapus!",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
+      reverseButtons: true,
     });
+
     if (!result.isConfirmed) return;
 
     try {
-      await deleteFeed(id);
-      Swal.fire("Terhapus!", "Pakan berhasil dihapus.", "success");
-      fetchData();
+      const response = await deleteFeed(id);
+      if (response.success || response === true) {
+        Swal.fire({
+          title: "Berhasil!",
+          text: "Pakan berhasil dihapus.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        fetchData();
+      } else {
+        throw new Error(response.message || "Gagal menghapus pakan.");
+      }
     } catch (error) {
-      Swal.fire("Gagal", error.message || "Terjadi kesalahan.", "error");
+      Swal.fire("Gagal", error.message || "Terjadi kesalahan saat menghapus pakan.", "error");
     }
   };
 
   const handleAddFeed = () => {
     setShowCreateModal(false);
-    fetchData(); // Refresh data setelah tambah
+    fetchData();
   };
 
-  const handleViewDetail = (id) => {
-    setSelectedFeedId(id);
-    setShowDetailModal(true);
-  };
-
-  const handleDetailClose = () => {
-    setShowDetailModal(false);
-    setSelectedFeedId(null);
-    fetchData(); // Refresh data setelah edit
+  const handleEdit = (id) => {
+    navigate(`/admin/edit-pakan/${id}`);
   };
 
   const formatNumber = (num) => {
+    if (num === null || num === undefined) return "N/A";
     return Number(num).toLocaleString("id-ID").split(",")[0];
+  };
+
+  // Get nutrient value by nutrition ID
+  const getNutrientValue = (feed, nutritionId) => {
+    const record = feed.FeedNutrisiRecords?.find(
+      (record) => record.nutrisi_id === nutritionId // Use nutrisi_id to match API
+    );
+    return record ? parseFloat(record.amount) : null;
+  };
+
+  // Convert MJ/kg to kcal/kg for energy nutrients
+  const convertEnergyToKcal = (mj, unit) => {
+    if (mj === null || mj === undefined) return null;
+    return unit === "MJ/kg" ? mj * 239 : mj;
   };
 
   return (
@@ -126,9 +163,11 @@ const FeedListPage = () => {
                   <th>No</th>
                   <th>Nama</th>
                   <th>Jenis</th>
-                  <th>Protein (%)</th>
-                  <th>Energi (kcal/kg)</th>
-                  <th>Serat (%)</th>
+                  {nutritions.map((nutrition) => (
+                    <th key={nutrition.id}>
+                      {nutrition.name} ({nutrition.unit})
+                    </th>
+                  ))}
                   <th>Stok Minimum</th>
                   <th>Harga</th>
                   <th>Aksi</th>
@@ -139,24 +178,32 @@ const FeedListPage = () => {
                   <tr key={feed.id}>
                     <td>{index + 1}</td>
                     <td>{feed.name}</td>
-                    <td>{feed.feedType?.name || "N/A"}</td>
-                    <td>{formatNumber(feed.protein)}</td>
-                    <td>{formatNumber(feed.energy)}</td>
-                    <td>{formatNumber(feed.fiber)}</td>
+                    <td>{feed.FeedType?.name || "N/A"}</td>
+                    {nutritions.map((nutrition) => (
+                      <td key={nutrition.id}>
+                        {formatNumber(
+                          convertEnergyToKcal(
+                            getNutrientValue(feed, nutrition.id),
+                            nutrition.unit
+                          )
+                        )}
+                      </td>
+                    ))}
                     <td>{formatNumber(feed.min_stock)}</td>
                     <td>Rp {formatNumber(feed.price)}</td>
                     <td>
                       <button
                         className="btn btn-warning btn-sm me-2"
-                        onClick={() => handleViewDetail(feed.id)}
+                        onClick={() => handleEdit(feed.id)}
                         aria-label={`Edit ${feed.name}`}
                         style={{ borderRadius: "6px" }}
                       >
                         <i className="ri-edit-line"></i>
                       </button>
                       <button
-                        onClick={() => handleDelete(feed.id)}
+                        onClick={() => handleDelete(feed.id, feed.name)}
                         className="btn btn-danger btn-sm"
+                        aria-label={`Hapus ${feed.name}`}
                       >
                         <i className="ri-delete-bin-6-line"></i>
                       </button>
@@ -174,9 +221,6 @@ const FeedListPage = () => {
           onFeedAdded={handleAddFeed}
           onClose={() => setShowCreateModal(false)}
         />
-      )}
-      {showDetailModal && (
-        <FeedDetailPage id={selectedFeedId} onClose={handleDetailClose} />
       )}
     </div>
   );

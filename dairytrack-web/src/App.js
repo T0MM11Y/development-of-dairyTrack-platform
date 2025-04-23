@@ -20,6 +20,10 @@ import JenisPakan from "./admin/pages/pakan/FeedType/FeedTypeListPage.js";
 import TambahJenisPakan from "./admin/pages/pakan/FeedType/CreateFeedType.js";
 import DetailJenisPakan from "./admin/pages/pakan/FeedType/FeedTypeDetail.js";
 
+import HalamanNutrisi from "./admin/pages/pakan/Nutrient/nutrientList.js";
+import TambahNutrisi from "./admin/pages/pakan/Nutrient/createNutrition.js";
+import EditNutrisi from "./admin/pages/pakan/Nutrient/editNutrition.js";
+
 import Pakan from "./admin/pages/pakan/Feed/FeedListPage.js";
 import TambahPakan from "./admin/pages/pakan/Feed/CreateFeed.js";
 import DetailPakan from "./admin/pages/pakan/Feed/FeedDetailPage.js";
@@ -252,6 +256,18 @@ function App() {
         element={
           <ProtectedRoute>{withAdminLayout(TambahJenisPakan)}</ProtectedRoute>
         }
+      />
+      <Route
+        path="/admin/nutrisi"
+        element={<ProtectedRoute>{withAdminLayout(HalamanNutrisi)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/tambah-nutrisi"
+        element={<ProtectedRoute>{withAdminLayout(TambahNutrisi)}</ProtectedRoute>}
+      />
+      <Route
+        path="/admin/edit-nutrisi/:id"
+        element={<ProtectedRoute>{withAdminLayout(EditNutrisi)}</ProtectedRoute>}
       />
       <Route
         path="/admin/pakan"
