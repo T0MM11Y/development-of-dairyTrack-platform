@@ -37,19 +37,40 @@ class _HomeScreenState extends State<HomeScreen> {
         userEmail = userData['userEmail'] ?? HomeController.defaultUserEmail;
       });
     } catch (e) {
-      // Handle error if needed
       debugPrint('Error loading user data: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
+    return WillPopScope(
+      onWillPop: () async => false,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
           title: const Text('Home'),
           backgroundColor: Globalstyle.primaryAccent,
+          actions: [
+            IconButton(
+              color: Colors.white,
+              icon: const Icon(Icons.notifications),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Notifikasi'),
+                    content: const Text('Tidak ada notifikasi baru.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         drawer: _buildDrawer(context),
         body: _buildBody(),
@@ -59,8 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           UserAccountsDrawerHeader(
             decoration: BoxDecoration(
@@ -70,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
               userName,
               style: TextStyle(
                 color: Globalstyle.primaryBackground,
+                fontWeight: FontWeight.bold,
               ),
             ),
             accountEmail: Text(
@@ -85,68 +106,205 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                   fontSize: 24.0,
                   color: Globalstyle.primaryBackground,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          _buildDrawerItem(
-            icon: Icons.home,
-            title: 'Peternakan',
-            onTap: () => _navigateTo(context, '/peternakan'),
-          ),
-          _buildDrawerItem(
-            icon: Icons.local_drink,
-            title: 'Produksi Susu',
-            onTap: () => _navigateTo(context, '/milk-production'),
-          ),
-          _buildDrawerItem(
-            icon: Icons.grass,
-            title: 'Pakan Sapi',
-            onTap: () => _navigateTo(context, '/pakan'),
-          ),
-          _buildDrawerItem(
-            icon: Icons.shopping_cart,
-            title: 'Penjualan',
-            onTap: () => _navigateTo(context, '/penjualan'),
-          ),
-            _buildDrawerItem(
-            icon: Icons.medical_services, // Ikon untuk kesehatan
-            title: 'Pemeriksaan Kesehatan',
-            onTap: () => _navigateTo(context, '/pemeriksaan-kesehatan'),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildDrawerItem(
+                  icon: Icons.person,
+                  title: 'Data Peternak',
+                  onTap: () => Navigator.pushNamed(context, '/all-peternak'),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.pets,
+                  title: 'Data Sapi',
+                  onTap: () => Navigator.pushNamed(context, '/all-cow'),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.supervisor_account,
+                  title: 'Data Supervisor',
+                  onTap: () => Navigator.pushNamed(context, '/all-supervisor'),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const Divider(),
+                _buildDrawerItem(
+                  icon: Icons.article,
+                  title: 'Blog Articles',
+                  onTap: () => Navigator.pushNamed(context, '/all-blog'),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.photo_library,
+                  title: 'Gallery',
+                  onTap: () => Navigator.pushNamed(context, '/all-gallery'),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
+            ),
           ),
           const Divider(),
-          _buildDrawerItem(
-            icon: Icons.logout,
-            title: 'Logout',
-            onTap: () => _homeController.showLogoutConfirmation(context),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Logout',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    letterSpacing: 1.0),
+              ),
+              onTap: () => _homeController.showLogoutConfirmation(context),
+            ),
           ),
         ],
       ),
     );
   }
 
-  ListTile _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
-    );
-  }
-
   Widget _buildBody() {
     return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0),
+        Container(
+          color: Colors.white,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Add your main content here
+              Container(
+                padding: const EdgeInsets.all(20.0),
+                color: const Color.fromARGB(255, 128, 128, 128),
+                child: Center(
+                  child: StreamBuilder<DateTime>(
+                    stream: Stream.periodic(
+                        const Duration(seconds: 1), (_) => DateTime.now()),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Text(
+                          'Loading...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }
+                      final now = snapshot.data!;
+                      final formattedDate =
+                          '${_getDayName(now.weekday)}, ${now.day}-${now.month}-${now.year}';
+                      final formattedTime =
+                          '${now.hour == 0 ? 12 : now.hour > 12 ? now.hour - 12 : now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}';
+                      final greeting = _getGreeting(now.hour);
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$greeting, $userName!',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "'Roboto Mono', monospace",
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              formattedDate,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                  fontFamily: "'Roboto Mono', monospace",
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              formattedTime,
+                              style: const TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 13,
+                                fontFamily: "'Roboto Mono', monospace",
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.only(top: 1, left: 29, right: 29),
+                  child: Center(
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 1,
+                      children: [
+                        _buildMenuCard(
+                          context,
+                          imagePath: 'assets/images/milk_production.png',
+                          title: 'Produksi Susu',
+                          color: Colors.blue,
+                          route: '/milk-production',
+                        ),
+                        _buildMenuCard(
+                          context,
+                          imagePath: 'assets/images/pakan.png',
+                          title: 'Pakan Sapi',
+                          color: Colors.green,
+                          route: '/pakan',
+                        ),
+                        _buildMenuCard(
+                          context,
+                          imagePath: 'assets/images/health.png',
+                          title: 'Pemeriksaan Kesehatan',
+                          color: Colors.red,
+                          route: '/pemeriksaan-kesehatan',
+                        ),
+                        _buildMenuCard(
+                          context,
+                          imagePath: 'assets/images/money.png',
+                          title: 'Penjualan',
+                          color: Colors.orange,
+                          route: '/penjualan',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -163,8 +321,102 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  String _getGreeting(int hour) {
+    if (hour >= 5 && hour < 12) {
+      return 'Selamat Pagi';
+    } else if (hour >= 12 && hour < 18) {
+      return 'Selamat Siang';
+    } else {
+      return 'Selamat Malam';
+    }
+  }
+
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required String imagePath,
+    required String title,
+    required Color color,
+    required String route,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _navigateTo(context, route),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                imagePath,
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  ListTile _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    TextStyle? textStyle,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(
+        title,
+        style: textStyle ??
+            const TextStyle(
+              fontSize: 14,
+              letterSpacing: 1.0,
+            ),
+      ),
+      onTap: onTap,
+    );
+  }
+
   void _navigateTo(BuildContext context, String route) {
     Navigator.pushNamed(context, route);
+  }
+
+  String _getDayName(int weekday) {
+    switch (weekday) {
+      case 1:
+        return 'Senin';
+      case 2:
+        return 'Selasa';
+      case 3:
+        return 'Rabu';
+      case 4:
+        return 'Kamis';
+      case 5:
+        return 'Jumat';
+      case 6:
+        return 'Sabtu';
+      case 7:
+        return 'Minggu';
+      default:
+        return '';
+    }
   }
 }
 
