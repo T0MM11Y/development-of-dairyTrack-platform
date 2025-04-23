@@ -13,60 +13,56 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final HomeController _homeController = HomeController();
-  String userName = HomeController.defaultUserName;
-  String userEmail = HomeController.defaultUserEmail;
-  bool isLoading = false;
-
-  // Statistics data
-  int totalCows = 0;
-  double totalIncome = 0;
-  int sickCows = 0;
-  double milkProductionAvg = 0;
+  late UserData _userData;
+  late StatisticsData _statistics;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _userData = UserData.initial();
+    _statistics = StatisticsData.initial();
     _initializeData();
-    _loadStatistics();
   }
 
   Future<void> _initializeData() async {
-    setState(() => isLoading = true);
-    await _loadUserData();
-    setState(() => isLoading = false);
+    setState(() => _isLoading = true);
+    await Future.wait([_loadUserData(), _loadStatistics()]);
+    setState(() => _isLoading = false);
   }
 
   Future<void> _loadUserData() async {
     try {
       final userData = await _homeController.loadUserData();
-      setState(() {
-        userName = userData['userName'] ?? HomeController.defaultUserName;
-        userEmail = userData['userEmail'] ?? HomeController.defaultUserEmail;
-      });
+      setState(() => _userData = UserData.fromMap(userData));
     } catch (e) {
       debugPrint('Error loading user data: $e');
+      // Fallback to initial data
+      setState(() => _userData = UserData.initial());
     }
   }
 
   Future<void> _loadStatistics() async {
     try {
-      // In a real app, you would fetch these from your API
-      // For now, we'll use mock data
-      setState(() {
-        totalCows = 42;
-        totalIncome = 12500000;
-        sickCows = 3;
-        milkProductionAvg = 12.5;
-      });
+      // In a real app, replace with API call
+      final mockStats = StatisticsData(
+        totalCows: 42,
+        totalIncome: 12500000,
+        sickCows: 3,
+        milkProductionAvg: 12.5,
+      );
+      setState(() => _statistics = mockStats);
     } catch (e) {
       debugPrint('Error loading statistics: $e');
+      // Fallback to initial data
+      setState(() => _statistics = StatisticsData.initial());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false,
+      onWillPop: () async => false, // Mencegah tombol back perangkat
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -76,21 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               color: Colors.white,
               icon: const Icon(Icons.notifications),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Notifikasi'),
-                    content: const Text('Tidak ada notifikasi baru.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('OK'),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onPressed: _showNotificationDialog,
             ),
           ],
         ),
@@ -100,31 +82,43 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notifikasi'),
+        content: const Text('Tidak ada notifikasi baru.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Globalstyle.primaryAccent,
-            ),
+            decoration: BoxDecoration(color: Globalstyle.primaryAccent),
             accountName: Text(
-              userName,
+              _userData.name,
               style: TextStyle(
                 color: Globalstyle.primaryBackground,
                 fontWeight: FontWeight.bold,
               ),
             ),
             accountEmail: Text(
-              userEmail,
-              style: TextStyle(
-                color: Globalstyle.primaryBackground,
-              ),
+              _userData.email,
+              style: TextStyle(color: Globalstyle.primaryBackground),
             ),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Globalstyle.secondaryAccent,
               child: Text(
-                userName.isNotEmpty ? userName[0].toUpperCase() : 'N',
+                _userData.initials,
                 style: TextStyle(
                   fontSize: 24.0,
                   color: Globalstyle.primaryBackground,
@@ -140,48 +134,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildDrawerItem(
                   icon: Icons.person,
                   title: 'Data Peternak',
-                  onTap: () => Navigator.pushNamed(context, '/all-peternak'),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                  ),
+                  onTap: () => _navigateTo(context, '/all-peternak'),
                 ),
                 _buildDrawerItem(
                   icon: Icons.pets,
                   title: 'Data Sapi',
-                  onTap: () => Navigator.pushNamed(context, '/all-cow'),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                  ),
+                  onTap: () => _navigateTo(context, '/all-cow'),
                 ),
                 _buildDrawerItem(
                   icon: Icons.supervisor_account,
                   title: 'Data Supervisor',
-                  onTap: () => Navigator.pushNamed(context, '/all-supervisor'),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                  ),
+                  onTap: () => _navigateTo(context, '/all-supervisor'),
                 ),
                 const Divider(),
                 _buildDrawerItem(
                   icon: Icons.article,
                   title: 'Blog Articles',
-                  onTap: () => Navigator.pushNamed(context, '/all-blog'),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                  ),
+                  onTap: () => _navigateTo(context, '/all-blog'),
                 ),
                 _buildDrawerItem(
                   icon: Icons.photo_library,
                   title: 'Gallery',
-                  onTap: () => Navigator.pushNamed(context, '/all-gallery'),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                  ),
+                  onTap: () => _navigateTo(context, '/all-gallery'),
                 ),
               ],
             ),
@@ -194,10 +168,11 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text(
                 'Logout',
                 style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    letterSpacing: 1.0),
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1.0,
+                ),
               ),
               onTap: () => _homeController.showLogoutConfirmation(context),
             ),
@@ -210,190 +185,205 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     return Stack(
       children: [
-        Container(
-          color: Colors.white,
-          child: Column(
+        _buildContent(),
+        if (_isLoading) _buildLoadingOverlay(),
+      ],
+    );
+  }
+
+  Widget _buildContent() {
+    return Column(
+      children: [
+        _buildHeaderSection(),
+        _buildStatisticsSection(),
+        _buildMenuGrid(),
+      ],
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      color: const Color.fromARGB(255, 128, 128, 128),
+      child: StreamBuilder<DateTime>(
+        stream:
+            Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return _buildLoadingTime();
+
+          final now = snapshot.data!;
+          return _buildTimeAndGreeting(now);
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoadingTime() {
+    return const Text(
+      'Loading...',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildTimeAndGreeting(DateTime now) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_getGreeting(now.hour)}, ${_userData.name}!',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: "'Roboto Mono', monospace",
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '${_getDayName(now.weekday)}, ${now.day}-${now.month}-${now.year}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+              fontFamily: "'Roboto Mono', monospace",
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formatTime(now),
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontSize: 13,
+              fontFamily: "'Roboto Mono', monospace",
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      color: Colors.grey[200],
+      child: Column(
+        children: [
+          const Text(
+            'Statistik Hari Ini',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Container(
-                padding: const EdgeInsets.all(20.0),
-                color: const Color.fromARGB(255, 128, 128, 128),
-                child: Center(
-                  child: StreamBuilder<DateTime>(
-                    stream: Stream.periodic(
-                        const Duration(seconds: 1), (_) => DateTime.now()),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Text(
-                          'Loading...',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      }
-                      final now = snapshot.data!;
-                      final formattedDate =
-                          '${_getDayName(now.weekday)}, ${now.day}-${now.month}-${now.year}';
-                      final formattedTime =
-                          '${now.hour == 0 ? 12 : now.hour > 12 ? now.hour - 12 : now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}';
-                      final greeting = _getGreeting(now.hour);
-                      return Align(
-                        alignment: Alignment.centerLeft,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '$greeting, $userName!',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: "'Roboto Mono', monospace",
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              formattedDate,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                  fontFamily: "'Roboto Mono', monospace",
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              formattedTime,
-                              style: const TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 13,
-                                fontFamily: "'Roboto Mono', monospace",
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              _buildStatCard(
+                icon: Icons.pets,
+                title: 'Total Sapi',
+                value: _statistics.totalCows.toString(),
+                color: Colors.blue,
               ),
-              // Statistics Section
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                color: Colors.grey[200],
-                child: Column(
-                  children: [
-                    const Text(
-                      'Statistik Hari Ini',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatCard(
-                          icon: Icons.pets,
-                          title: 'Total Sapi',
-                          value: totalCows.toString(),
-                          color: Colors.blue,
-                        ),
-                        _buildStatCard(
-                          icon: Icons.attach_money,
-                          title: 'Pendapatan',
-                          value: 'Rp${totalIncome.toStringAsFixed(0)}',
-                          color: Colors.green,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatCard(
-                          icon: Icons.medical_services,
-                          title: 'Sapi Sakit',
-                          value: sickCows.toString(),
-                          color: Colors.orange,
-                        ),
-                        _buildStatCard(
-                          icon: Icons.local_drink,
-                          title: 'Rata-rata Susu (L)',
-                          value: milkProductionAvg.toStringAsFixed(1),
-                          color: Colors.purple,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              _buildStatCard(
+                icon: Icons.attach_money,
+                title: 'Pendapatan',
+                value: 'Rp${_statistics.totalIncome.toStringAsFixed(0)}',
+                color: Colors.green,
               ),
-              Expanded(
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.only(top: 1, left: 29, right: 29),
-                  child: Center(
-                    child: GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 1,
-                      children: [
-                        _buildMenuCard(
-                          context,
-                          imagePath: 'assets/images/milk_production.png',
-                          title: 'Produksi Susu',
-                          color: Colors.blue,
-                          route: '/milk-production',
-                        ),
-                        _buildMenuCard(
-                          context,
-                          imagePath: 'assets/images/pakan.png',
-                          title: 'Pakan Sapi',
-                          color: Colors.green,
-                          route: '/pakan',
-                        ),
-                        _buildMenuCard(
-                          context,
-                          imagePath: 'assets/images/health.png',
-                          title: 'Pemeriksaan Kesehatan',
-                          color: Colors.red,
-                          route: '/pemeriksaan-kesehatan',
-                        ),
-                        _buildMenuCard(
-                          context,
-                          imagePath: 'assets/images/money.png',
-                          title: 'Penjualan',
-                          color: Colors.orange,
-                          route: '/penjualan',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatCard(
+                icon: Icons.medical_services,
+                title: 'Sapi Sakit',
+                value: _statistics.sickCows.toString(),
+                color: Colors.orange,
+              ),
+              _buildStatCard(
+                icon: Icons.local_drink,
+                title: 'Rata-rata Susu (L)',
+                value: _statistics.milkProductionAvg.toStringAsFixed(1),
+                color: Colors.purple,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuGrid() {
+    return Expanded(
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.only(top: 1, left: 29, right: 29),
+        child: Center(
+          child: GridView.count(
+            shrinkWrap: true,
+            crossAxisCount: 2,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 1,
+            children: [
+              _buildMenuCard(
+                context,
+                imagePath: 'assets/images/milk_production.png',
+                title: 'Produksi Susu',
+                color: Colors.blue,
+                route: '/milk-production',
+              ),
+              _buildMenuCard(
+                context,
+                imagePath: 'assets/images/pakan.png',
+                title: 'Pakan Sapi',
+                color: Colors.green,
+                route: '/pakan',
+              ),
+              _buildMenuCard(
+                context,
+                imagePath: 'assets/images/health.png',
+                title: 'Pemeriksaan Kesehatan',
+                color: Colors.red,
+                route: '/pemeriksaan-kesehatan',
+              ),
+              _buildMenuCard(
+                context,
+                imagePath: 'assets/images/money.png',
+                title: 'Penjualan',
+                color: Colors.orange,
+                route: '/penjualan',
               ),
             ],
           ),
         ),
-        if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5),
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: Globalstyle.primaryAccent,
-              ),
-            ),
-          ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: Globalstyle.primaryAccent,
+        ),
+      ),
     );
   }
 
@@ -444,16 +434,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _getGreeting(int hour) {
-    if (hour >= 5 && hour < 12) {
-      return 'Selamat Pagi';
-    } else if (hour >= 12 && hour < 18) {
-      return 'Selamat Siang';
-    } else {
-      return 'Selamat Malam';
-    }
-  }
-
   Widget _buildMenuCard(
     BuildContext context, {
     required String imagePath,
@@ -501,17 +481,15 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    TextStyle? textStyle,
   }) {
     return ListTile(
       leading: Icon(icon),
       title: Text(
         title,
-        style: textStyle ??
-            const TextStyle(
-              fontSize: 14,
-              letterSpacing: 1.0,
-            ),
+        style: const TextStyle(
+          fontSize: 12,
+          letterSpacing: 1.0,
+        ),
       ),
       onTap: onTap,
     );
@@ -521,25 +499,34 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, route);
   }
 
+  String _getGreeting(int hour) {
+    if (hour >= 5 && hour < 12) return 'Selamat Pagi';
+    if (hour >= 12 && hour < 18) return 'Selamat Siang';
+    return 'Selamat Malam';
+  }
+
   String _getDayName(int weekday) {
-    switch (weekday) {
-      case 1:
-        return 'Senin';
-      case 2:
-        return 'Selasa';
-      case 3:
-        return 'Rabu';
-      case 4:
-        return 'Kamis';
-      case 5:
-        return 'Jumat';
-      case 6:
-        return 'Sabtu';
-      case 7:
-        return 'Minggu';
-      default:
-        return '';
-    }
+    const days = [
+      '',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu'
+    ];
+    return days[weekday];
+  }
+
+  String _formatTime(DateTime time) {
+    final hour = time.hour == 0
+        ? 12
+        : time.hour > 12
+            ? time.hour - 12
+            : time.hour;
+    final period = time.hour >= 12 ? 'PM' : 'AM';
+    return '${hour}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')} $period';
   }
 }
 
@@ -554,28 +541,17 @@ class HomeController {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString("user");
-
-      if (userData == null) {
-        return _defaultUserData();
-      }
+      if (userData == null) return UserData.initial().toMap();
 
       final user = jsonDecode(userData);
       return {
-        'userName':
-            '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
-        'userEmail': user['email'] ?? defaultUserEmail,
+        'name': '${user['first_name'] ?? ''} ${user['last_name'] ?? ''}'.trim(),
+        'email': user['email'] ?? defaultUserEmail,
       };
     } catch (e) {
       debugPrint('Error parsing user data: $e');
-      return _defaultUserData();
+      return UserData.initial().toMap();
     }
-  }
-
-  Map<String, String> _defaultUserData() {
-    return {
-      'userName': defaultUserName,
-      'userEmail': defaultUserEmail,
-    };
   }
 
   Future<void> logout(BuildContext context) async {
@@ -595,14 +571,17 @@ class HomeController {
 
       if (response['status'] == 200) {
         await prefs.clear();
-        _showSnackBar(context, "Logout berhasil!");
-        await Future.delayed(const Duration(seconds: 3));
-        _navigateToLogin(context);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/login',
+          (route) => false,
+        );
+        _showSnackBar(context, 'Logout berhasil.');
       } else {
-        _showSnackBar(context, response['message'] ?? logoutErrorMessage);
+        _showSnackBar(context, logoutErrorMessage);
       }
     } catch (e) {
-      debugPrint('Logout error: $e');
+      debugPrint('Error during logout: $e');
       _showSnackBar(context, generalErrorMessage);
     }
   }
@@ -635,8 +614,46 @@ class HomeController {
       SnackBar(content: Text(message)),
     );
   }
+}
 
-  void _navigateToLogin(BuildContext context) {
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-  }
+class UserData {
+  final String name;
+  final String email;
+
+  UserData({required this.name, required this.email});
+
+  factory UserData.initial() => UserData(
+        name: HomeController.defaultUserName,
+        email: HomeController.defaultUserEmail,
+      );
+
+  factory UserData.fromMap(Map<String, String> map) => UserData(
+        name: map['name'] ?? HomeController.defaultUserName,
+        email: map['email'] ?? HomeController.defaultUserEmail,
+      );
+
+  Map<String, String> toMap() => {'name': name, 'email': email};
+
+  String get initials => name.isNotEmpty ? name[0].toUpperCase() : 'N';
+}
+
+class StatisticsData {
+  final int totalCows;
+  final double totalIncome;
+  final int sickCows;
+  final double milkProductionAvg;
+
+  StatisticsData({
+    required this.totalCows,
+    required this.totalIncome,
+    required this.sickCows,
+    required this.milkProductionAvg,
+  });
+
+  factory StatisticsData.initial() => StatisticsData(
+        totalCows: 0,
+        totalIncome: 0,
+        sickCows: 0,
+        milkProductionAvg: 0,
+      );
 }

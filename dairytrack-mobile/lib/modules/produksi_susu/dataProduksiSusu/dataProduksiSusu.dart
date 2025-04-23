@@ -38,6 +38,16 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
     }
   }
 
+  void _resetFilters() {
+    setState(() {
+      selectedCow = null;
+      selectedPhase = null;
+      selectedSession = null;
+      selectedDate = null;
+      _fetchRawMilkData();
+    });
+  }
+
   void _applyFilters() {
     setState(() {
       filteredData = data.where((milk) {
@@ -171,6 +181,13 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _resetFilters,
+            tooltip: 'Refresh',
+          ),
+        ],
       ),
       body: Container(
         color: const Color.fromARGB(255, 255, 254, 254),

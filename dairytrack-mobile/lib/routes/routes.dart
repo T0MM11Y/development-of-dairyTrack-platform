@@ -1,4 +1,5 @@
 import 'package:dairy_track/config/api/peternakan/blog.dart';
+import 'package:dairy_track/modules/auth/login.dart';
 import 'package:dairy_track/modules/home/home.dart';
 
 //pakan
@@ -32,7 +33,6 @@ import 'package:dairy_track/modules/peternakan/cow/addCow.dart';
 import 'package:dairy_track/modules/peternakan/cow/allCow.dart';
 import 'package:dairy_track/modules/peternakan/gallery/allGallery.dart';
 import 'package:dairy_track/modules/peternakan/gallery/createGallery.dart';
-import 'package:dairy_track/modules/peternakan/menuPeternakan.dart';
 import 'package:dairy_track/modules/peternakan/farmer/addPeternak.dart';
 import 'package:dairy_track/modules/peternakan/farmer/allPeternak.dart';
 import 'package:dairy_track/modules/peternakan/supervisor/addSupervisor.dart';
@@ -53,6 +53,8 @@ import 'package:flutter/material.dart';
 
 class Routes {
   // Route constants
+  static const String loginn = '/login';
+
   static const String home = '/home';
   static const String milkProduction = '/milk-production';
   static const String dataProduksiSusu = '/data-produksi-susu';
@@ -84,14 +86,16 @@ class Routes {
   static const String feedItem = '/item-pakan';
   static const String addfeedItem = '/tambah-item-pakan';
   static const String editfeedItem = '/edit-item-pakan';
-  
+
   static const String penjualan = '/penjualan';
-   // Pemeriksaan kesehatan (menu)
+  // Pemeriksaan kesehatan (menu)
   static const String pemeriksaanKesehatan = '/pemeriksaan-kesehatan';
 
   // Pemeriksaan Penyakit Sapi
-  static const String pemeriksaanPenyakitSapi = '/all-pemeriksaan-penyakit-sapi';
-  static const String addPemeriksaanPenyakitSapi = '/add-pemeriksaan-penyakit-sapi';
+  static const String pemeriksaanPenyakitSapi =
+      '/all-pemeriksaan-penyakit-sapi';
+  static const String addPemeriksaanPenyakitSapi =
+      '/add-pemeriksaan-penyakit-sapi';
 
   // Gejala Penyakit Sapi
   static const String gejalaPenyakitSapi = '/all-gejala';
@@ -108,6 +112,7 @@ class Routes {
   // Route mapping
   static Map<String, WidgetBuilder> getRoutes() {
     return {
+      loginn: (context) => LoginPage(),
       // Home route
       home: (context) => const HomeScreen(),
 
@@ -116,7 +121,6 @@ class Routes {
       dataProduksiSusu: (context) => DataProduksiSusu(),
 
       // Peternakan routes
-      peternakan: (context) => MenuPeternakan(),
       allPeternak: (context) => AllPeternak(),
       addPeternak: (context) => AddPeternak(),
       allCow: (context) => AllCow(),
@@ -167,7 +171,7 @@ class Routes {
       // Penjualan route
       penjualan: (context) => MenuPenjualan(),
 
-        // Pemeriksaan Kesehatan (menu utama)
+      // Pemeriksaan Kesehatan (menu utama)
       pemeriksaanKesehatan: (context) => MenuPemeriksaanKesehatan(),
 
       // Pemeriksaan Penyakit Sapi
