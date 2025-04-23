@@ -28,6 +28,16 @@ const SymptomListPage = () => {
   const [modalType, setModalType] = useState(null); // "create" | "edit" | null
   const [editId, setEditId] = useState(null);
   const { t } = useTranslation();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
 
   const fetchData = async () => {
     try {
@@ -232,13 +242,23 @@ const SymptomListPage = () => {
         <h2 className="text-xl font-bold text-gray-800">{t('symptoms.symptom_data')}
         </h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setModalType("create")}
-            className="btn btn-info"
-            style={{ marginRight: "50px" }}
-          >
-            + Tambah Gejala
-          </button>
+        <button
+  onClick={() => {
+    if (!isSupervisor) {
+      setModalType("create");
+    }
+  }}
+  className="btn btn-info"
+  style={{
+    marginRight: "50px",
+    ...(isSupervisor && { opacity: 0.5, cursor: "not-allowed" }),
+  }}
+  title={isSupervisor ? "Supervisor tidak dapat menambahkan data gejala" : ""}
+  disabled={isSupervisor}
+>
+  + Tambah Gejala
+</button>
+
           <button
             onClick={exportToExcel}
             className="btn btn-success"
@@ -313,6 +333,8 @@ const SymptomListPage = () => {
           <button
   className="btn btn-warning btn-sm me-2"
   onClick={() => {
+    if (isSupervisor) return;
+
     const hc = healthChecks.find((h) => h.id === item.health_check);
 
     if (hc?.status === "handled") {
@@ -341,12 +363,15 @@ const SymptomListPage = () => {
       }
     });
   }}
+  {...disableIfSupervisor}
 >
   <i className="ri-edit-line" />
 </button>
 
 <button
   onClick={() => {
+    if (isSupervisor) return;
+
     Swal.fire({
       title: "Yakin ingin menghapus?",
       text: "Data gejala ini tidak dapat dikembalikan.",
@@ -358,15 +383,17 @@ const SymptomListPage = () => {
       cancelButtonText: "Batal",
     }).then((result) => {
       if (result.isConfirmed) {
-        setDeleteId(item.id); // ✅ set ID dulu
-        handleDelete(item.id); // ✅ langsung panggil handleDelete
+        setDeleteId(item.id);
+        handleDelete(item.id);
       }
     });
   }}
   className="btn btn-danger btn-sm"
+  {...disableIfSupervisor}
 >
   <i className="ri-delete-bin-6-line" />
 </button>
+
 
 
         </td>

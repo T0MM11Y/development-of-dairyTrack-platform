@@ -20,6 +20,16 @@ const DailyFeedListPage = () => {
   const [cowNames, setCowNames] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const { t } = useTranslation();
+  const user = JSON.parse(localStorage.getItem("user"));
+const isSupervisor = user?.type === "supervisor";
+
+const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
   const fetchData = async () => {
     try {
@@ -161,18 +171,31 @@ const DailyFeedListPage = () => {
       name: "Aksi",
       cell: (row) => (
         <div className="d-flex gap-2 justify-content-center">
-          <button
-            className="btn btn-warning btn-sm waves-effect waves-light me-2"
-            onClick={() => { setSelectedFeedId(row.id); setShowDetailModal(true); }}
-          >
-            <i className="ri-edit-line"></i>
-          </button>
-          <button
-            className="btn btn-sm btn-danger"
-            onClick={() => handleDelete(row.id)}
-          >
-            <i className="ri-delete-bin-6-line"></i>
-          </button>
+         <button
+  className="btn btn-warning btn-sm waves-effect waves-light me-2"
+  onClick={() => {
+    if (!isSupervisor) {
+      setSelectedFeedId(row.id);
+      setShowDetailModal(true);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+<button
+  className="btn btn-sm btn-danger"
+  onClick={() => {
+    if (!isSupervisor) {
+      handleDelete(row.id);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
         </div>
       ),
       width: columnWidth,
@@ -228,13 +251,23 @@ const DailyFeedListPage = () => {
         <h2 className="text-xl font-bold text-gray-800">{t('dailyfeed.daily_feed_data')}
         </h2>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-info waves-effect waves-light text-uppercase"
-          style={{ backgroundColor: '#17a2b8', borderColor: '#17a2b8' }}
-        >
-          {t('dailyfeed.add_feed')}
+  onClick={() => {
+    if (!isSupervisor) {
+      setShowCreateModal(true);
+    }
+  }}
+  className="btn btn-info waves-effect waves-light text-uppercase"
+  style={{
+    backgroundColor: '#17a2b8',
+    borderColor: '#17a2b8',
+    ...(isSupervisor && { opacity: 0.5, cursor: 'not-allowed' }) // Tambahkan efek abu-abu jika supervisor
+  }}
+  title={isSupervisor ? "Supervisor tidak dapat menambahkan data pakan" : ""}
+  disabled={isSupervisor}
+>
+  {t('dailyfeed.add_feed')}
+</button>
 
-        </button>
       </div>
 
       <div className="mb-4" style={{ maxWidth: "250px" }}>

@@ -25,6 +25,17 @@ const DiseaseHistoryListPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
+  
 
   const fetchData = async () => {
     setLoading(true); // ✅ mulai loading
@@ -85,10 +96,18 @@ const DiseaseHistoryListPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">{t('disease_history.title')}
         </h2>
-        <button className="btn btn-info" onClick={() => setModalType("create")}>
-          + {t('disease_history.add')}
+        <button
+  className="btn btn-info"
+  onClick={() => {
+    if (!isSupervisor) {
+      setModalType("create");
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + {t('disease_history.add')}
+</button>
 
-        </button>
       </div>
 
       {loading ? (
@@ -186,36 +205,44 @@ const DiseaseHistoryListPage = () => {
                   </td>
                   <td>{item.description || "-"}</td>
                   <td>
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => {
-                        setEditId(item.id);
-                        setModalType("edit");
-                      }}
-                    >
-                      <i className="ri-edit-line"></i>
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => {
-                        Swal.fire({
-                          title: "Yakin ingin menghapus?",
-                          text: "Riwayat penyakit ini tidak dapat dikembalikan.",
-                          icon: "warning",
-                          showCancelButton: true,
-                          confirmButtonColor: "#d33",
-                          cancelButtonColor: "#6c757d",
-                          confirmButtonText: "Ya, hapus!",
-                          cancelButtonText: "Batal",
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            handleDelete(item.id);
-                          }
-                        });
-                      }}
-                    >
-                      <i className="ri-delete-bin-6-line" />
-                    </button>
+                  <button
+  className="btn btn-warning btn-sm me-2"
+  onClick={() => {
+    if (!isSupervisor) {
+      setEditId(item.id);
+      setModalType("edit");
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+<button
+  className="btn btn-danger btn-sm"
+  onClick={() => {
+    if (!isSupervisor) {
+      Swal.fire({
+        title: "Yakin ingin menghapus?",
+        text: "Riwayat penyakit ini tidak dapat dikembalikan.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Ya, hapus!",
+        cancelButtonText: "Batal",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          handleDelete(item.id);
+        }
+      });
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line" />
+</button>
+
                   </td>
                 </tr>
               );

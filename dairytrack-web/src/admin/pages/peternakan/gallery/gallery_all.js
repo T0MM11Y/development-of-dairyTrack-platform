@@ -15,7 +15,15 @@ const GalleryAll = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentGallery, setCurrentGallery] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false); // State for refresh animation
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak memiliki akses",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -161,9 +169,18 @@ const GalleryAll = () => {
 
           {/* Action Buttons */}
           <div className="col-md-4 d-flex gap-2 justify-content-end">
-            <button className="btn btn-primary" onClick={handleCreate}>
-              + Add Gallery
-            </button>
+          <button
+  className="btn btn-primary"
+  onClick={() => {
+    if (!isSupervisor) {
+      handleCreate();
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + Add Gallery
+</button>
+
           </div>
         </div>
       </div>
@@ -216,18 +233,30 @@ const GalleryAll = () => {
                         </td>
                         <td>{item.tittle || "Untitled"}</td>
                         <td>
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="btn btn-warning me-2"
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
+                        <button
+  onClick={() => {
+    if (!isSupervisor) {
+      handleEdit(item);
+    }
+  }}
+  className="btn btn-warning me-2"
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
+<button
+  onClick={() => {
+    if (!isSupervisor) {
+      handleDelete(item.id);
+    }
+  }}
+  className="btn btn-danger"
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
                         </td>
                       </tr>
                     ))}

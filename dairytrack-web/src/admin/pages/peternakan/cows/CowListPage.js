@@ -21,6 +21,9 @@ const CowListPage = () => {
   const [deleteCowId, setDeleteCowId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
+const isSupervisor = user?.type === "supervisor";
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
@@ -401,12 +404,14 @@ const CowListPage = () => {
 
           {/* Action Buttons */}
           <div className="col-md-4 d-flex gap-2 justify-content-end">
-            <button
-              onClick={() => setModalType("create")}
-              className="btn btn-info"
-            >
-              + Add Cow
-            </button>
+          <button
+  onClick={() => setModalType("create")}
+  disabled={isSupervisor}
+  className="btn btn-info"
+  style={isSupervisor ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+>
+  + Add Cow
+</button>
             <button
               onClick={handleExportExcel}
               className="btn btn-success"
@@ -476,24 +481,34 @@ const CowListPage = () => {
                         </td>
                         <td>{cow.lactation_phase || "-"}</td>
                         <td>
-                          <button
-                            className="btn btn-warning me-2"
-                            onClick={() => {
-                              setEditCowId(cow.id);
-                              setModalType("edit");
-                            }}
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteCowId(cow.id);
-                              setModalType("delete");
-                            }}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
+                        <button
+  className="btn btn-warning me-2"
+  onClick={() => {
+    if (!isSupervisor) {
+      setEditCowId(cow.id);
+      setModalType("edit");
+    }
+  }}
+  disabled={isSupervisor}
+  title={isSupervisor ? "Supervisor tidak dapat mengedit data sapi" : ""}
+  style={isSupervisor ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+>
+  <i className="ri-edit-line"></i>
+</button>
+<button
+  onClick={() => {
+    if (!isSupervisor) {
+      setDeleteCowId(cow.id);
+      setModalType("delete");
+    }
+  }}
+  disabled={isSupervisor}
+  className="btn btn-danger"
+  title={isSupervisor ? "Supervisor tidak dapat menghapus data sapi" : ""}
+  style={isSupervisor ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
                         </td>
                       </tr>
                     ))}

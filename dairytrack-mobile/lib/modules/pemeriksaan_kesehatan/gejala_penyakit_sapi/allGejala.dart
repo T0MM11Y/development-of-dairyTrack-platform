@@ -64,35 +64,34 @@ class _AllGejalaState extends State<AllGejala> {
     }
   }
 
-  String getStatusText(int healthCheckId) {
-    try {
-      final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
-      if (hc.needsAttention == false) {
-        return 'Sehat';
-      } else if (hc.status == 'handled') {
-        return 'Sudah Ditangani';
-      } else {
-        return 'Belum Ditangani';
-      }
-    } catch (e) {
+ String getStatusText(int healthCheckId) {
+  try {
+    final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
+
+    if (hc.status == 'handled') {
+      return 'Sudah Ditangani';
+    } else {
       return 'Belum Ditangani';
     }
+  } catch (e) {
+    return 'Belum Ditangani';
   }
+}
 
-  Color getStatusColor(int healthCheckId) {
-    try {
-      final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
-      if (hc.needsAttention == false) {
-        return Colors.blue;
-      } else if (hc.status == 'handled') {
-        return Colors.green;
-      } else {
-        return Colors.orange;
-      }
-    } catch (e) {
-      return Colors.orange;
+Color getStatusColor(int healthCheckId) {
+  try {
+    final hc = healthChecks.firstWhere((h) => h.id == healthCheckId);
+
+    if (hc.status == 'handled') {
+      return Colors.green; // ✅ Sudah Ditangani
+    } else {
+      return Colors.orange; // ✅ Belum Ditangani
     }
+  } catch (e) {
+    return Colors.orange; // ✅ Kalau error, anggap Belum Ditangani
   }
+}
+
 
   Future<void> confirmDelete(int symptomId) async {
     bool isDeleting = false;

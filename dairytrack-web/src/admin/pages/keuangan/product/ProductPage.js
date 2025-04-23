@@ -22,7 +22,16 @@ const ProductStockListPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(null);
   const { t } = useTranslation();
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -215,19 +224,38 @@ const ProductStockListPage = () => {
             </button>
           ) : (
             <button
-              className="btn btn-warning btn-sm me-2"
-              onClick={() => setShowEditModal(row.id)}
-            >
-              <i className="ri-edit-line"></i>
-            </button>
-          )}
-          <button
-            onClick={() => setDeleteId(row.id)}
-            className="btn btn-danger btn-sm"
-            disabled={submitting}
+            className="btn btn-warning btn-sm me-2"
+            onClick={() => {
+              if (!isSupervisor) {
+                setShowEditModal(row.id);
+              }
+            }}
+            {...disableIfSupervisor}
           >
-            <i className="ri-delete-bin-6-line"></i>
+            <i className="ri-edit-line"></i>
           </button>
+          
+          )}
+         <button
+  onClick={() => {
+    if (!isSupervisor && !submitting) {
+      setDeleteId(row.id);
+    }
+  }}
+  className="btn btn-danger btn-sm"
+  disabled={submitting || isSupervisor}
+  style={(submitting || isSupervisor) ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+  title={
+    isSupervisor
+      ? "Supervisor tidak dapat menghapus stok produk"
+      : submitting
+      ? "Sedang memproses..."
+      : ""
+  }
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
         </>
       ),
       ignoreRowClick: true,
@@ -264,11 +292,17 @@ const ProductStockListPage = () => {
         <h2 className="text-xl font-bold text-gray-800 m-1">{t('product.product_stock')}
         </h2>
         <button
-          className="btn btn-info"
-          onClick={() => setShowCreateModal(true)}
-        >
-          + Product Stock
-        </button>
+  className="btn btn-info"
+  onClick={() => {
+    if (!isSupervisor) {
+      setShowCreateModal(true);
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  + Product Stock
+</button>
+
       </div>
 
       {error && (
