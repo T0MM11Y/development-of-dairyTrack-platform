@@ -1,208 +1,206 @@
-const Feed = require("../models/feedModel.js");
-const FeedType = require("../models/feedTypeModel.js");
+const Feed = require("../models/feedModel");
+const FeedType = require("../models/feedTypeModel");
+const Nutrisi = require("../models/nutritionModel");
+const FeedNutrisi = require("../models/feedNutritionModel");
 const { Op } = require("sequelize");
-// Helper function for validation errors
-const getValidationErrors = (error) => {
-  if (error.errors) {
-    return error.errors.map((err) => ({
-      field: err.path,
-      message: err.message,
-    }));
-  }
-  return [{ field: "unknown", message: error.message }];
+
+const handleError = (res, error, status = 500) => {
+  console.error("Error:", error);
+  return res.status(status).json({
+    success: false,
+    error: error.message || "Server error",
+  });
 };
 
-// Add new feed
-exports.addFeed = async (req, res) => {
-  console.log("Request body:", req.body);
+const validateModels = () => {
+  if (!Feed || !FeedType || !Nutrisi || !FeedNutrisi) {
+    throw new Error("One or more models are not properly defined");
+  }
+};
 
-  const { typeId, name, protein, energy, fiber, min_stock, price } = req.body;
-
+const createFeed = async (req, res) => {
   try {
-    if (typeId === undefined || typeId === "")
-      return res.status(400).json({ success: false, field: "typeId", message: "Feed type is required" });
-    if (name === undefined || name === "")
-      return res.status(400).json({ success: false, field: "name", message: "Feed name is required" });
-    if (protein === undefined || protein === "")
-      return res.status(400).json({ success: false, field: "protein", message: "Protein value is required" });
-    if (energy === undefined || energy === "")
-      return res.status(400).json({ success: false, field: "energy", message: "Energy value is required" });
-    if (fiber === undefined || fiber === "")
-      return res.status(400).json({ success: false, field: "fiber", message: "Fiber value is required" });
-    if (min_stock === undefined || min_stock === "")
-      return res.status(400).json({ success: false, field: "min_stock", message: "Minimum stock is required" });
-    if (price === undefined || price === "")
-      return res.status(400).json({ success: false, field: "price", message: "Price is required" });
+    validateModels();
 
-    const parsedProtein = parseFloat(protein);
-    const parsedEnergy = parseFloat(energy);
-    const parsedFiber = parseFloat(fiber);
-    const parsedMinStock = parseInt(min_stock, 10);
-    const parsedPrice = parseFloat(price);
+    const { typeId, name, min_stock, price, nutrisiList } = req.body;
 
-    if (isNaN(parsedProtein))
-      return res.status(400).json({ success: false, field: "protein", message: "Protein must be a valid number" });
-    if (isNaN(parsedEnergy))
-      return res.status(400).json({ success: false, field: "energy", message: "Energy must be a valid number" });
-    if (isNaN(parsedFiber))
-      return res.status(400).json({ success: false, field: "fiber", message: "Fiber must be a valid number" });
-    if (isNaN(parsedMinStock))
-      return res.status(400).json({ success: false, field: "min_stock", message: "Minimum stock must be a valid number" });
-    if (isNaN(parsedPrice))
-      return res.status(400).json({ success: false, field: "price", message: "Price must be a valid number" });
+    if (!typeId || !name || min_stock === undefined || price === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: "typeId, name, min_stock, and price are required",
+      });
+    }
 
     const feedType = await FeedType.findByPk(typeId);
     if (!feedType) {
-      return res.status(404).json({ success: false, field: "typeId", message: "Feed type not found" });
+      return res.status(404).json({ success: false, error: "Feed type not found" });
     }
 
-    // Cek jika nama pakan sudah ada
-    const existingFeed = await Feed.findOne({ where: { name } });
-    if (existingFeed) {
-      return res.status(409).json({
-        success: false,
-        field: "name",
-        message: `Pakan dengan nama "${name}" sudah ada. Silakan gunakan nama lain.`,
+    const feed = await Feed.create({ typeId, name, min_stock, price });
+
+    if (nutrisiList && Array.isArray(nutrisiList)) {
+      const nutritions = await Nutrisi.findAll({
+        where: { id: { [Op.in]: nutrisiList.map(n => n.nutrisi_id) } },
       });
+
+      if (nutritions.length !== nutrisiList.length) {
+        return res.status(404).json({ success: false, error: "One or more nutritions not found" });
+      }
+
+      const feedNutrisiData = nutrisiList.map(n => ({
+        feed_id: feed.id,
+        nutrisi_id: n.nutrisi_id,
+        amount: n.amount || 0.0,
+      }));
+
+      await FeedNutrisi.bulkCreate(feedNutrisiData);
     }
 
-    const feed = await Feed.create({
-      typeId,
-      name,
-      protein: parsedProtein,
-      energy: parsedEnergy,
-      fiber: parsedFiber,
-      min_stock: parsedMinStock,
-      price: parsedPrice,
+    const createdFeed = await Feed.findByPk(feed.id, {
+      include: [
+        { model: FeedType, as: "FeedType" },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi" }],
+        },
+      ],
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Feed created successfully",
-      feed
-    });
-  } catch (err) {
-    console.error("Error creating feed:", err);
-
-    if (err.name === "SequelizeValidationError") {
-      return res.status(400).json({
-        success: false,
-        errors: getValidationErrors(err)
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: err.message || "Failed to create feed"
-    });
+    return res.status(201).json({ success: true, data: createdFeed });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
-// Get all feeds
-exports.getAllFeeds = async (req, res) => {
+
+const getAllFeeds = async (req, res) => {
   try {
+    const { typeId, name } = req.query;
+    const filter = {};
+    if (typeId) filter.typeId = typeId;
+    if (name) filter.name = { [Op.like]: `%${name}%` };
+
     const feeds = await Feed.findAll({
-      include: {
-        model: FeedType,
-        as: "feedType", // Sesuaikan alias sesuai definisi pada model
-        attributes: ["id", "name"],
-      },
+      where: filter,
+      include: [
+        { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+        },
+      ],
+      order: [["name", "ASC"]],
     });
-    
-    res.status(200).json({ success: true, feeds });
-  } catch (err) {
-    console.error("Error fetching feeds:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+
+    return res.status(200).json({ success: true, count: feeds.length, data: feeds });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
 
-// Get feed by ID
-exports.getFeedById = async (req, res) => {
-  const { id } = req.params;
-
-  if (isNaN(id)) {
-    return res.status(400).json({ success: false, field: "id", message: "Invalid ID format" });
-  }
-
+const getFeedById = async (req, res) => {
   try {
-    const feed = await Feed.findOne({
-      where: { id },
-      include: {
-        model: FeedType,
-        as: "feedType",
-        attributes: ["id", "name"],
-      },
+    const { id } = req.params;
+
+    const feed = await Feed.findByPk(id, {
+      include: [
+        { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+        },
+      ],
     });
 
     if (!feed) {
-      return res.status(404).json({ success: false, field: "id", message: "Feed not found" });
+      return res.status(404).json({ success: false, message: "Pakan tidak ditemukan" });
     }
 
-    res.status(200).json({ success: true, feed });
-  } catch (err) {
-    console.error("Error fetching feed:", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(200).json({ success: true, data: feed });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
 
-// Update feed
-exports.updateFeed = async (req, res) => {
-  const { id } = req.params;
-  const { typeId, name, protein, energy, fiber, min_stock, price } = req.body;
-
+const updateFeed = async (req, res) => {
   try {
+    validateModels();
+    const { id } = req.params;
+    const { typeId, name, min_stock, price, nutrisiList } = req.body;
+
     const feed = await Feed.findByPk(id);
-    if (!feed) {
-      return res.status(404).json({ success: false, field: "id", message: "Pakan tidak ditemukan" });
-    }
+    if (!feed) return res.status(404).json({ success: false, error: "Feed not found" });
 
     if (typeId) {
       const feedType = await FeedType.findByPk(typeId);
-      if (!feedType) {
-        return res.status(404).json({ success: false, field: "typeId", message: "Jenis pakan tidak ditemukan" });
-      }
+      if (!feedType) return res.status(404).json({ success: false, error: "Feed type not found" });
     }
 
-    // Cek apakah nama pakan sudah ada (kecuali untuk pakan yang sedang diupdate)
-    if (name) {
-      const existingFeed = await Feed.findOne({
-        where: {
-          name: name,
-          id: { [Op.ne]: id }, // Mengecualikan pakan dengan id yang sedang diupdate
-        },
+    await feed.update({
+      typeId: typeId || feed.typeId,
+      name: name || feed.name,
+      min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
+      price: price !== undefined ? price : feed.price,
+    });
+
+    if (nutrisiList && Array.isArray(nutrisiList)) {
+      await FeedNutrisi.destroy({ where: { feed_id: id } });
+
+      const nutritions = await Nutrisi.findAll({
+        where: { id: { [Op.in]: nutrisiList.map(n => n.nutrisi_id) } },
       });
 
-      if (existingFeed) {
-        return res.status(400).json({
-          success: false,
-          field: "name",
-          message: `Pakan "${name}" sudah ada`,
-        });
+      if (nutritions.length !== nutrisiList.length) {
+        return res.status(404).json({ success: false, error: "One or more nutritions not found" });
       }
+
+      const feedNutrisiData = nutrisiList.map(n => ({
+        feed_id: id,
+        nutrisi_id: n.nutrisi_id,
+        amount: n.amount || 0.0,
+      }));
+
+      await FeedNutrisi.bulkCreate(feedNutrisiData);
     }
 
-    await feed.update({ typeId, name, protein, energy, fiber, min_stock, price });
-    res.status(200).json({ success: true, message: "Pakan berhasil diperbarui", feed });
-  } catch (err) {
-    if (err.name === "SequelizeValidationError") {
-      return res.status(400).json({ success: false, errors: getValidationErrors(err) });
-    }
-    res.status(500).json({ success: false, message: err.message });
+    const updatedFeed = await Feed.findByPk(id, {
+      include: [
+        { model: FeedType, as: "FeedType" },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi" }],
+        },
+      ],
+    });
+
+    return res.status(200).json({ success: true, data: updatedFeed });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
 
-// Delete feed by ID
-exports.deleteFeed = async (req, res) => {
-  const { id } = req.params;
-
+const deleteFeed = async (req, res) => {
   try {
+    validateModels();
+    const { id } = req.params;
+
     const feed = await Feed.findByPk(id);
-    if (!feed) {
-      return res.status(404).json({ success: false, field: "id", message: "Feed not found" });
-    }
+    if (!feed) return res.status(404).json({ success: false, error: "Feed not found" });
 
     await feed.destroy();
-    res.status(200).json({ success: true, message: "Feed deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(200).json({ success: true, message: "Feed deleted successfully" });
+  } catch (error) {
+    return handleError(res, error);
   }
+};
+
+module.exports = {
+  createFeed,
+  getAllFeeds,
+  getFeedById,
+  updateFeed,
+  deleteFeed,
 };

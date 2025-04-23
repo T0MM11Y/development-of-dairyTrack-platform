@@ -1,55 +1,41 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-const Feed = sequelize.define(
-  "Feed",
+const FeedNutrisi = sequelize.define(
+  "FeedNutrisi",
   {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    typeId: {
+    feed_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "feed_type",
+        model: "feed",
         key: "id",
       },
       onDelete: "CASCADE",
       onUpdate: "CASCADE",
-      field: "type_id",
-      validate: {
-        notNull: { msg: "Feed type is required" },
-        isInt: { msg: "Feed type must be an integer" },
-      },
     },
-    name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: {
-        msg: "Feed name must be unique",
-      },
-      validate: {
-        notEmpty: { msg: "Feed name cannot be empty" },
-      },
-    },
-    min_stock: {
+    nutrisi_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      validate: {
-        isInt: { msg: "Minimum stock must be an integer" },
-        min: { args: [0], msg: "Minimum stock must be at least 0" },
+      references: {
+        model: "nutritions",
+        key: "id",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
-    price: {
+    amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0.0,
       validate: {
-        isDecimal: { msg: "Price must be a decimal number" },
-        min: { args: [0], msg: "Price must be at least 0" },
+        isDecimal: { msg: "Amount must be a decimal number" },
+        min: { args: [0], msg: "Amount must be at least 0" },
       },
     },
     createdAt: {
@@ -66,9 +52,16 @@ const Feed = sequelize.define(
     },
   },
   {
-    tableName: "feed",
+    tableName: "feed_nutrisi",
     timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["feed_id", "nutrisi_id"],
+      },
+    ],
   }
 );
 
-module.exports = Feed;
+module.exports = FeedNutrisi;
+

@@ -1,56 +1,89 @@
-// Impor semua model
-const Feed = require("./feedModel");
 const FeedType = require("./feedTypeModel");
+const Feed = require("./feedModel");
+const Nutrisi = require("./nutritionModel");
+const FeedNutrisi = require("./feedNutritionModel");
+const DailyFeedSchedule = require("./dailyFeedSchedule");
+const DailyFeedItems = require("./dailyFeedItemsModel");
 const FeedStock = require("./feedStockModel");
 const Notification = require("./notificationModel");
-const DailyFeedComplete = require("./dailyFeedComplete");
-const DailyFeedItems = require("./dailyFeedItemsModel");
 
-// FeedType <--> Feed (One-to-Many)
-FeedType.hasMany(Feed, { foreignKey: "typeId", as: "feeds" });
-Feed.belongsTo(FeedType, { foreignKey: "typeId", as: "feedType" });
+function defineAssociations() {
+  console.log("Defining associations...");
 
-// Feed <--> FeedStock (One-to-Many)
-Feed.hasMany(FeedStock, { foreignKey: "feedId", as: "feedStocks" });
-FeedStock.belongsTo(Feed, { foreignKey: "feedId", as: "feed" });
+  // FeedType ↔ Feed (One-to-Many)
+  FeedType.hasMany(Feed, { foreignKey: "typeId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "Feeds" });
+  Feed.belongsTo(FeedType, { foreignKey: "typeId", as: "FeedType" });
 
-// FeedStock <--> Notification (One-to-Many)
-FeedStock.hasMany(Notification, { foreignKey: "feed_stock_id", as: "notifications" });
-Notification.belongsTo(FeedStock, { foreignKey: "feed_stock_id", as: "feedStock" });
+  // Feed ↔ Nutrisi (Many-to-Many via FeedNutrisi)
+  Feed.belongsToMany(Nutrisi, {
+    through: FeedNutrisi,
+    foreignKey: "feed_id",
+    as: "Nutrisi",
+  });
+  Nutrisi.belongsToMany(Feed, {
+    through: FeedNutrisi,
+    foreignKey: "nutrisi_id",
+    as: "Feeds",
+  });
 
-// DailyFeedComplete <--> DailyFeedItems (One-to-Many)
-DailyFeedComplete.hasMany(DailyFeedItems, {
-  foreignKey: "daily_feed_id",
-  as: "feedItems",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-DailyFeedItems.belongsTo(DailyFeedComplete, {
-  foreignKey: "daily_feed_id",
-  as: "feedSession",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
+  // Feed ↔ FeedNutrisi (One-to-Many)
+  Feed.hasMany(FeedNutrisi, {
+    foreignKey: "feed_id",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "FeedNutrisiRecords",
+  });
+  FeedNutrisi.belongsTo(Feed, { foreignKey: "feed_id", as: "Feed" });
 
-// DailyFeedItems <--> Feed (Many-to-One)
-DailyFeedItems.belongsTo(Feed, {
-  foreignKey: "feed_id",
-  as: "feed",
-});
+  // Nutrisi ↔ FeedNutrisi (One-to-Many)
+  Nutrisi.hasMany(FeedNutrisi, {
+    foreignKey: "nutrisi_id",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "FeedNutrisiRecords",
+  });
+  FeedNutrisi.belongsTo(Nutrisi, { foreignKey: "nutrisi_id", as: "Nutrisi" });
 
-// Debugging: Log asosiasi yang dimuat
-console.log("FeedType associations:", FeedType.associations);
-console.log("Feed associations:", Feed.associations);
-console.log("FeedStock associations:", FeedStock.associations);
-console.log("Notification associations:", Notification.associations);
-console.log("DailyFeedComplete associations:", DailyFeedComplete.associations);
-console.log("DailyFeedItems associations:", DailyFeedItems.associations);
+  // DailyFeedSchedule ↔ DailyFeedItems (One-to-Many)
+  DailyFeedSchedule.hasMany(DailyFeedItems, {
+    foreignKey: "daily_feed_id",
+    as: "DailyFeedItems",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  });
+  DailyFeedItems.belongsTo(DailyFeedSchedule, {
+    foreignKey: "daily_feed_id",
+    as: "DailyFeedSchedule",
+  });
 
-module.exports = {
-  Feed,
-  FeedType,
-  FeedStock,
-  Notification,
-  DailyFeedComplete,
-  DailyFeedItems,
-};
+  // Feed ↔ DailyFeedItems (One-to-Many)
+  Feed.hasMany(DailyFeedItems, {
+    foreignKey: "feed_id",
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+    as: "DailyFeedItems",
+  });
+  DailyFeedItems.belongsTo(Feed, { foreignKey: "feed_id", as: "Feed" });
+
+  // Feed ↔ FeedStock (One-to-One)
+  Feed.hasOne(FeedStock, {
+    foreignKey: "feedId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "FeedStock",
+  });
+  FeedStock.belongsTo(Feed, { foreignKey: "feedId", as: "Feed" });
+
+  // FeedStock ↔ Notification (One-to-Many)
+  FeedStock.hasMany(Notification, {
+    foreignKey: "feed_stock_id",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "Notifications",
+  });
+  Notification.belongsTo(FeedStock, { foreignKey: "feed_stock_id", as: "FeedStock" });
+
+  console.log("Associations defined successfully");
+}
+
+module.exports = defineAssociations;

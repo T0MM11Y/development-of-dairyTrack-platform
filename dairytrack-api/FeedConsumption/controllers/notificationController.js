@@ -2,6 +2,7 @@ const Notification = require("../models/notificationModel");
 const FeedStock = require("../models/feedStockModel");
 const Feed = require("../models/feedModel");
 const { Op } = require("sequelize");
+const sequelize = require("../config/database"); // Added the missing import
 
 // Utility function to create a feed stock notification
 const createFeedStockNotification = async (feedStockId, message) => {
@@ -35,12 +36,12 @@ const notificationController = {
         include: [
           {
             model: FeedStock,
-            as: "feedStock",
+            as: "FeedStock", // Updated to match your association definition
             required: false,
             include: [
               {
                 model: Feed,
-                as: "feed",
+                as: "Feed", // Updated to match your association definition
                 required: false,
                 attributes: ["name"],
               },
@@ -55,12 +56,12 @@ const notificationController = {
         const notificationData = notification.toJSON();
         if (
           notificationData.feed_stock_id &&
-          notificationData.feedStock &&
-          notificationData.feedStock.feed
+          notificationData.FeedStock &&
+          notificationData.FeedStock.Feed
         ) {
           // Konversi stock menjadi integer
-          const stockAsInteger = Math.floor(parseFloat(notificationData.feedStock.stock));
-          const feedName = notificationData.feedStock.feed.name;
+          const stockAsInteger = Math.floor(parseFloat(notificationData.FeedStock.stock));
+          const feedName = notificationData.FeedStock.Feed.name;
           notificationData.message = `Sisa stok ${feedName} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
           // Tambahkan properti name
           notificationData.name = `Stok Feed ${feedName}`;
@@ -69,7 +70,7 @@ const notificationController = {
             notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
           notificationData.name = "Stok Feed Tidak Diketahui";
         }
-        delete notificationData.feedStock;
+        delete notificationData.FeedStock;
         return notificationData;
       });
   
@@ -132,14 +133,14 @@ const notificationController = {
         include: [
           {
             model: Feed,
-            as: "feed",
+            as: "Feed", // Updated to match your association definition
             required: true,
             attributes: ["name", "min_stock"],
           },
         ],
         where: {
           stock: {
-            [Op.lte]: sequelize.col("feed.min_stock"),
+            [Op.lte]: sequelize.literal('`Feed`.`min_stock`'), // Fixed the sequelize reference
           },
         },
       });
@@ -155,7 +156,8 @@ const notificationController = {
       const notifications = [];
 
       for (const stockItem of criticalStocks) {
-        const message = `Sisa stok ${stockItem.feed.name} tinggal ${stockItem.stock}kg, silahkan tambah stok`;
+        const stockAsInteger = Math.floor(parseFloat(stockItem.stock));
+        const message = `Sisa stok ${stockItem.Feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
 
         const existingNotification = await Notification.findOne({
           where: {
@@ -204,12 +206,12 @@ const notificationController = {
         include: [
           {
             model: FeedStock,
-            as: "feedStock",
+            as: "FeedStock", // Updated to match your association definition
             required: false,
             include: [
               {
                 model: Feed,
-                as: "feed",
+                as: "Feed", // Updated to match your association definition
                 required: false,
                 attributes: ["name"],
               },
@@ -223,12 +225,12 @@ const notificationController = {
         const notificationData = notification.toJSON();
         if (
           notificationData.feed_stock_id &&
-          notificationData.feedStock &&
-          notificationData.feedStock.feed
+          notificationData.FeedStock &&
+          notificationData.FeedStock.Feed
         ) {
           // Konversi stock menjadi integer
-          const stockAsInteger = Math.floor(parseFloat(notificationData.feedStock.stock));
-          const feedName = notificationData.feedStock.feed.name;
+          const stockAsInteger = Math.floor(parseFloat(notificationData.FeedStock.stock));
+          const feedName = notificationData.FeedStock.Feed.name;
           notificationData.message = `Sisa stok ${feedName} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
           // Tambahkan properti name
           notificationData.name = `Stok Feed ${feedName}`;
@@ -237,7 +239,7 @@ const notificationController = {
             notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
           notificationData.name = "Stok Feed Tidak Diketahui";
         }
-        delete notificationData.feedStock;
+        delete notificationData.FeedStock;
         return notificationData;
       });
   
