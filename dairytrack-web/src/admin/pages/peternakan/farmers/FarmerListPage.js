@@ -20,6 +20,15 @@ const FarmerListPage = () => {
   const [editFarmerId, setEditFarmerId] = useState(null);
   const [deleteFarmerId, setDeleteFarmerId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak memiliki akses",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
@@ -435,6 +444,8 @@ const FarmerListPage = () => {
             <button
               onClick={() => setModalType("create")}
               className="btn btn-info"
+              {...disableIfSupervisor}
+
             >
               + Add Farmer
             </button>
@@ -527,24 +538,32 @@ const FarmerListPage = () => {
                           )}
                         </td>
                         <td>
+                        <button
+  className="btn btn-warning me-2"
+  onClick={() => {
+    if (!isSupervisor) {
+      setEditFarmerId(farmer.id);
+      setModalType("edit");
+    }
+  }}
+  {...disableIfSupervisor}
+>
+  <i className="ri-edit-line"></i>
+</button>
+
                           <button
-                            className="btn btn-warning me-2"
-                            onClick={() => {
-                              setEditFarmerId(farmer.id);
-                              setModalType("edit");
-                            }}
-                          >
-                            <i className="ri-edit-line"></i>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteFarmerId(farmer.id);
-                              setModalType("delete");
-                            }}
-                            className="btn btn-danger"
-                          >
-                            <i className="ri-delete-bin-6-line"></i>
-                          </button>
+  onClick={() => {
+    if (!isSupervisor) {
+      setDeleteFarmerId(farmer.id);
+      setModalType("delete");
+    }
+  }}
+  className="btn btn-danger"
+  {...disableIfSupervisor}
+>
+  <i className="ri-delete-bin-6-line"></i>
+</button>
+
                         </td>
                       </tr>
                     ))}

@@ -1,12 +1,12 @@
-const express = require("express");
-const { addFeed, deleteFeed, updateFeed, getFeedById, getAllFeeds } = require("../controllers/feedController");
-
+// routes/feedRoutes.js
+const express = require('express');
 const router = express.Router();
+const feedController = require('../controllers/feedController');
 
-router.post("/", addFeed);
-router.delete("/:id", deleteFeed);
-router.put("/:id", updateFeed);
-router.get("/:id", getFeedById);
-router.get("/", getAllFeeds);
+router.post('/', feedController.createFeed);
+router.get('/', feedController.getAllFeeds);
+router.get('/:id', feedController.getFeedById);
+router.put('/:id', feedController.updateFeed);
+router.delete('/:id', feedController.deleteFeed);
 
 module.exports = router;

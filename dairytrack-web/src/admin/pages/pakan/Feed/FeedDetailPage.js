@@ -1,283 +1,402 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { getFeedById, updateFeed } from "../../../../api/pakan/feed";
 import { getFeedTypes } from "../../../../api/pakan/feedType";
+import { getNutritions } from "../../../../api/pakan/nutrient";
 import Swal from "sweetalert2";
 
-const FeedDetailPage = ({ id, onClose }) => {
+const EditFeedPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [feedTypes, setFeedTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [nutritions, setNutritions] = useState([]);
   const [form, setForm] = useState({
     typeId: "",
     name: "",
-    protein: "",
-    energy: "",
-    fiber: "",
-    minStock: "",
-    price: "",
+    min_stock: 0,
+    price: 0,
   });
+  const [selectedNutrients, setSelectedNutrients] = useState([]); // [{ nutrisiId, amount, name, unit }]
+  const [nutrientToAdd, setNutrientToAdd] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const typesResponse = await getFeedTypes();
-        if (!typesResponse?.success || !typesResponse?.feedTypes) {
-          throw new Error("Gagal mengambil data jenis pakan.");
-        }
-        setFeedTypes(typesResponse.feedTypes);
 
+        // Fetch feed types
+        const typeResponse = await getFeedTypes();
+        console.log("getFeedTypes Response:", typeResponse);
+        if (typeResponse.success && (typeResponse.feedTypes || typeResponse.jenisPakan)) {
+          setFeedTypes(typeResponse.feedTypes || typeResponse.jenisPakan);
+        } else {
+          throw new Error("Jenis pakan tidak tersedia.");
+        }
+
+        // Fetch nutritions
+        const nutritionResponse = await getNutritions();
+        console.log("getNutritions Response:", nutritionResponse);
+        if (nutritionResponse.success && nutritionResponse.nutrisi) {
+          setNutritions(nutritionResponse.nutrisi);
+        } else {
+          throw new Error("Data nutrisi tidak tersedia.");
+        }
+
+        // Fetch feed
         const feedResponse = await getFeedById(id);
-        if (!feedResponse?.success || !feedResponse?.feed) {
-          throw new Error("Data pakan tidak ditemukan.");
+        console.log("getFeedById Response:", feedResponse);
+        if (feedResponse.success && (feedResponse.data || feedResponse.pakan || feedResponse.feed)) {
+          const feed = feedResponse.data || feedResponse.pakan || feedResponse.feed;
+          setForm({
+            typeId: feed.typeId?.toString() || "",
+            name: feed.name || "",
+            min_stock: Number(feed.min_stock) || 0,
+            price: Number(feed.price) || 0,
+          });
+          // Initialize selected nutrients from FeedNutrisiRecords
+          if (feed.FeedNutrisiRecords) {
+            setSelectedNutrients(
+              feed.FeedNutrisiRecords.map((record) => ({
+                nutrisiId: record.nutrisi_id || record.nutrisiId,
+                amount: Number(record.amount) || "",
+                name: record.Nutrisi?.name || "Unknown",
+                unit: record.Nutrisi?.unit || "",
+              }))
+            );
+          }
+        } else {
+          throw new Error("Pakan tidak ditemukan.");
         }
-
-        const feed = feedResponse.feed;
-        const formattedPrice = Math.round(Number(feed.price || 0)).toLocaleString('id-ID');
-        
-        setForm({
-          typeId: feed.typeId?.toString() || "",
-          name: feed.name || "",
-          protein: Math.round(feed.protein || 0).toString(),
-          energy: Math.round(feed.energy || 0).toString(),
-          fiber: Math.round(feed.fiber || 0).toString(),
-          minStock: Math.round(feed.min_stock || 0).toString(),
-          price: formattedPrice,
-        });
       } catch (err) {
-        setError(err.message || "Terjadi kesalahan saat mengambil data.");
+        setError(err.message || "Gagal mengambil data.");
         console.error("Fetch error:", err);
+        Swal.fire({
+          title: "Gagal",
+          text: err.message || "Terjadi kesalahan saat memuat data.",
+          icon: "error",
+          confirmButtonText: "Kembali",
+        }).then(() => navigate("/admin/pakan"));
       } finally {
         setLoading(false);
       }
     };
-    
     fetchData();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'price') {
-      const numericValue = value.replace(/\D/g, '');
-      const formattedValue = numericValue ? Number(numericValue).toLocaleString('id-ID') : '';
-      setForm((prev) => ({ ...prev, [name]: formattedValue }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]:
+        name === "typeId"
+          ? value
+          : name === "min_stock" || name === "price"
+          ? Number(value) || 0
+          : value,
+    }));
+  };
+
+  const handleNutrientChange = (nutrisiId, value) => {
+    setSelectedNutrients((prev) =>
+      prev.map((nutrient) =>
+        nutrient.nutrisiId === nutrisiId
+          ? { ...nutrient, amount: value ? Number(value) : "" }
+          : nutrient
+      )
+    );
+  };
+
+  const handleAddNutrient = () => {
+    if (!nutrientToAdd) {
+      setError("Pilih nutrisi terlebih dahulu.");
+      return;
     }
+    if (selectedNutrients.some((n) => n.nutrisiId === Number(nutrientToAdd))) {
+      setError("Nutrisi sudah dipilih.");
+      return;
+    }
+
+    const nutrient = nutritions.find((n) => n.id === Number(nutrientToAdd));
+    if (nutrient) {
+      setSelectedNutrients((prev) => [
+        ...prev,
+        { nutrisiId: nutrient.id, amount: "", name: nutrient.name, unit: nutrient.unit },
+      ]);
+      setNutrientToAdd("");
+      setError("");
+    }
+  };
+
+  const handleRemoveNutrient = (nutrisiId) => {
+    setSelectedNutrients((prev) => prev.filter((n) => n.nutrisiId !== nutrisiId));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
-    const requiredFields = ['typeId', 'name', 'protein', 'energy', 'fiber', 'minStock', 'price'];
-    const emptyFields = requiredFields.filter(field => !form[field] || form[field].toString().trim() === '');
-    
-    if (emptyFields.length > 0) {
-      setError("Semua kolom wajib diisi.");
+
+    // Validate required fields
+    if (!form.typeId || !form.name || form.min_stock < 0 || form.price < 0) {
+      setError("Jenis pakan, nama, stok minimum, dan harga wajib diisi dengan nilai valid.");
+      return;
+    }
+
+    // Validate nutrients
+    if (selectedNutrients.length === 0) {
+      setError("Setidaknya satu nutrisi harus ditambahkan.");
+      return;
+    }
+    const invalidNutrient = selectedNutrients.find(
+      (n) => n.amount === "" || n.amount === null || n.amount < 0
+    );
+    if (invalidNutrient) {
+      setError(`Masukkan nilai valid untuk ${invalidNutrient.name}.`);
       return;
     }
 
     const confirm = await Swal.fire({
-      title: 'Yakin ingin menyimpan perubahan?',
-      icon: 'question',
+      title: "Yakin ingin menyimpan perubahan?",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonText: 'Ya, simpan',
-      cancelButtonText: 'Batal',
+      confirmButtonText: "Ya, simpan",
+      cancelButtonText: "Batal",
     });
-    
+
     if (!confirm.isConfirmed) return;
-    
+
     setSubmitting(true);
 
     try {
-      const priceValue = form.price.replace(/\./g, '');
-      
-      // Modified to match backend expectations - remove id from body
+      const nutrientRecords = selectedNutrients.map((n) => ({
+        nutrisiId: n.nutrisiId,
+        amount: Number(n.amount),
+      }));
+
       const feedData = {
-        typeId: parseInt(form.typeId),
+        typeId: Number(form.typeId),
         name: form.name.trim(),
-        protein: parseFloat(form.protein),
-        energy: parseFloat(form.energy),
-        fiber: parseFloat(form.fiber),
-        min_stock: parseInt(form.minStock),
-        price: parseFloat(priceValue),
+        min_stock: Number(form.min_stock),
+        price: Number(form.price),
+        nutrients: nutrientRecords,
       };
 
       console.log("Sending feed data for update:", { id, ...feedData });
 
-      // Assuming updateFeed accepts (id, data) parameters
       const response = await updateFeed(id, feedData);
-      
-      if (!response?.success) {
-        throw new Error(response?.message || "Gagal memperbarui data pakan.");
-      }
+      console.log("updateFeed Response:", response);
 
-      await Swal.fire({
-        title: 'Berhasil!',
-        text: 'Data pakan berhasil diperbarui.',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
-      onClose();
+      if (response.success) {
+        await Swal.fire({
+          title: "Berhasil!",
+          text: response.message || "Data pakan berhasil diperbarui.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        navigate("/admin/pakan");
+      } else {
+        throw new Error(response.message || "Gagal memperbarui data pakan.");
+      }
     } catch (err) {
       console.error("Update error:", err);
+      const errorMessage = err.message.includes("sudah ada")
+        ? err.message
+        : err.message === "Pakan not found"
+        ? "Pakan tidak ditemukan."
+        : "Terjadi kesalahan saat memperbarui pakan.";
       await Swal.fire({
-        title: 'Error!',
-        text: err.message || "Terjadi kesalahan saat menyimpan data.",
-        icon: 'error',
-        confirmButtonText: 'OK'
+        title: "Gagal!",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonText: "OK",
       });
-      setError(err.message || "Gagal menyimpan perubahan.");
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleCancel = () => {
+    navigate("/admin/pakan");
+  };
+
   if (loading) {
     return (
-      <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Edit Pakan</h5>
-              <button className="btn-close" onClick={onClose}></button>
-            </div>
-            <div className="modal-body text-center">
-              <div className="spinner-border text-primary" role="status" />
-              <p className="mt-2">Memuat data pakan...</p>
-            </div>
-          </div>
-        </div>
+      <div className="p-4 text-center">
+        <div className="spinner-border text-primary" role="status" />
+        <p className="mt-2">Memuat data pakan...</p>
       </div>
     );
   }
 
   return (
-    <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="modal-dialog">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Edit Pakan</h5>
-            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
-          </div>
-          <div className="modal-body">
-            {error && <div className="alert alert-danger">{error}</div>}
-            
-            <form onSubmit={handleSubmit}>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Jenis Pakan</label>
+    <div className="p-4">
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Edit Pakan</h2>
+      <div className="card">
+        <div className="card-body">
+          {error && <div className="alert alert-danger">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Jenis Pakan</label>
+              <select
+                name="typeId"
+                value={form.typeId}
+                onChange={handleChange}
+                className="form-select"
+                required
+                disabled={submitting}
+              >
+                <option value="">Pilih Jenis</option>
+                {feedTypes.map((ft) => (
+                  <option key={ft.id} value={ft.id}>
+                    {ft.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Nama</label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Nama pakan"
+                required
+                disabled={submitting}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Stok Minimum</label>
+              <input
+                type="number"
+                name="min_stock"
+                value={form.min_stock}
+                onChange={handleChange}
+                className="form-control"
+                min="0"
+                placeholder="0"
+                required
+                disabled={submitting}
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Harga (Rp)</label>
+              <input
+                type="number"
+                name="price"
+                value={form.price}
+                onChange={handleChange}
+                className="form-control"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                required
+                disabled={submitting}
+              />
+            </div>
+            <h5 className="mb-3">Nutrisi</h5>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Tambah Nutrisi</label>
+              <div className="input-group">
                 <select
-                  name="typeId"
-                  value={form.typeId}
-                  onChange={handleChange}
+                  value={nutrientToAdd}
+                  onChange={(e) => setNutrientToAdd(e.target.value)}
                   className="form-select"
                   disabled={submitting}
                 >
-                  <option value="">Pilih Jenis</option>
-                  {feedTypes.map((ft) => (
-                    <option key={ft.id} value={ft.id}>
-                      {ft.name}
-                    </option>
-                  ))}
+                  <option value="">Pilih Nutrisi</option>
+                  {nutritions
+                    .filter(
+                      (n) => !selectedNutrients.some((sn) => sn.nutrisiId === n.id)
+                    )
+                    .map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.name} ({n.unit})
+                      </option>
+                    ))}
                 </select>
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Nama</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="form-control"
-                  placeholder="Nama pakan"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Protein (%)</label>
-                <input
-                  type="number"
-                  name="protein"
-                  value={form.protein}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Energi (kcal/kg)</label>
-                <input
-                  type="number"
-                  name="energy"
-                  value={form.energy}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Serat (%)</label>
-                <input
-                  type="number"
-                  name="fiber"
-                  value={form.fiber}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Stok Minimum</label>
-                <input
-                  type="number"
-                  name="minStock"
-                  value={form.minStock}
-                  onChange={handleChange}
-                  className="form-control"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="mb-2">
-                <label className="form-label fw-bold">Harga</label>
-                <div className="input-group">
-                  <span className="input-group-text">Rp</span>
-                  <input
-                    type="text"
-                    name="price"
-                    value={form.price}
-                    onChange={handleChange}
-                    className="form-control"
-                    placeholder="0"
-                    disabled={submitting}
-                  />
-                </div>
-              </div>
-              <div className="mt-3">
-                <button 
-                  type="submit" 
-                  className="btn btn-success me-2" 
-                  disabled={submitting}
-                >
-                  {submitting ? "Menyimpan..." : "Simpan Perubahan"}
-                </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
-                  onClick={onClose}
-                  disabled={submitting}
+                  className="btn btn-outline-primary"
+                  onClick={handleAddNutrient}
+                  disabled={!nutrientToAdd || submitting}
                 >
-                  Batal
+                  Tambah
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+            {selectedNutrients.length > 0 && (
+              <div className="mb-3">
+                {selectedNutrients.map((nutrient) => (
+                  <div key={nutrient.nutrisiId} className="mb-2 d-flex align-items-center">
+                    <div className="flex-grow-1">
+                      <label
+                        htmlFor={`nutrient-${nutrient.nutrisiId}`}
+                        className="form-label fw-bold"
+                      >
+                        {nutrient.name} ({nutrient.unit})
+                      </label>
+                      <input
+                        type="number"
+                        id={`nutrient-${nutrient.nutrisiId}`}
+                        value={nutrient.amount}
+                        onChange={(e) =>
+                          handleNutrientChange(nutrient.nutrisiId, e.target.value)
+                        }
+                        className="form-control"
+                        min="0"
+                        step="0.01"
+                        placeholder={`Masukkan ${nutrient.name.toLowerCase()}`}
+                        disabled={submitting}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm ms-2"
+                      onClick={() => handleRemoveNutrient(nutrient.nutrisiId)}
+                      aria-label={`Hapus ${nutrient.name}`}
+                      disabled={submitting}
+                    >
+                      <i className="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="d-flex justify-content-end gap-2">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                disabled={submitting}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  />
+                ) : null}
+                Simpan
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 };
 
-export default FeedDetailPage;
+export default EditFeedPage;

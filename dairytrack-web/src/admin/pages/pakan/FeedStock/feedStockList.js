@@ -8,12 +8,8 @@ import EditFeedStockPage from "./EditStock";
 const formatStockNumber = (value) => {
   const num = parseFloat(value);
   if (isNaN(num)) return "0";
-
-  // Convert to integer if no decimal part
-  const formatted = Math.floor(num).toString();
-
-  // Add thousand separator
-  return formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // Use toFixed(2) to show two decimal places, then add thousand separators
+  return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
 const FeedStockPage = () => {
@@ -35,10 +31,23 @@ const FeedStockPage = () => {
       } else {
         console.error("Unexpected response format", response);
         setFeedStock([]);
+        Swal.fire({
+          title: "Gagal",
+          text: "Format respons API tidak sesuai.",
+          icon: "error",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
     } catch (error) {
       console.error("Gagal mengambil data feed stock:", error.message);
       setFeedStock([]);
+      Swal.fire({
+        title: "Gagal",
+        text: error.message || "Terjadi kesalahan saat memuat data stok pakan.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
@@ -56,12 +65,19 @@ const FeedStockPage = () => {
 
   const handleStockAdded = () => {
     setShowAddModal(false);
+    setPreFeedId(null); // Reset preFeedId
     fetchData(); // Refresh the list
   };
 
   const handleStockUpdated = () => {
     setShowEditModal(false);
+    setEditStockId(null);
     fetchData(); // Refresh the list
+  };
+
+  const handleAddModalClose = () => {
+    setShowAddModal(false);
+    setPreFeedId(null); // Reset preFeedId when closing modal
   };
 
   useEffect(() => {
@@ -73,7 +89,10 @@ const FeedStockPage = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Stok Pakan</h2>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setPreFeedId(null); // Ensure no preselected feed
+            setShowAddModal(true);
+          }}
           className="btn btn-info waves-effect waves-light"
         >
           + Tambah Stok Pakan
@@ -107,7 +126,7 @@ const FeedStockPage = () => {
                     {feedStock.map((item, index) => (
                       <tr key={item.id}>
                         <th scope="row">{index + 1}</th>
-                        <td>{item.feed?.name || "Unknown"}</td>
+                        <td>{item.Feed?.name || "Unknown"}</td>
                         <td>{formatStockNumber(item.stock)}</td>
                         <td>
                           <button
@@ -122,7 +141,7 @@ const FeedStockPage = () => {
                           </button>
                           <button
                             className="btn btn-info waves-effect waves-light"
-                            onClick={() => handleAddStock(item.feed?.id)}
+                            onClick={() => handleAddStock(item.Feed?.id)}
                             style={{ padding: "6px 12px" }}
                           >
                             <i
@@ -145,7 +164,7 @@ const FeedStockPage = () => {
         <AddFeedStockPage
           preFeedId={preFeedId}
           onStockAdded={handleStockAdded}
-          onClose={() => setShowAddModal(false)}
+          onClose={handleAddModalClose}
         />
       )}
 

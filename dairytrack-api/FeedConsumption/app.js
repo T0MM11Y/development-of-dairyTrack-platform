@@ -1,5 +1,4 @@
 require("dotenv").config();
-require("./models/associations");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -7,14 +6,31 @@ const sequelize = require("./config/database");
 const initializeDatabase = require("./config/initDatabase");
 const feedStockService = require("./controllers/feedStockMonitoring");
 
+// Impor fungsi defineAssociations
+const defineAssociations = require("./models/associations");
+
+// Impor semua model untuk memastikan inisialisasi
+const FeedType = require("./models/feedTypeModel");
+const Feed = require("./models/feedModel");
+const Nutrisi = require("./models/nutritionModel");
+const FeedNutrisi = require("./models/feedNutritionModel");
+const DailyFeedSchedule = require("./models/dailyFeedSchedule");
+const DailyFeedItems = require("./models/dailyFeedItemsModel");
+const FeedStock = require("./models/feedStockModel");
+const Notification = require("./models/notificationModel");
+
 // Import Routes
-const FeedType = require("./routes/feedTypeRoutes");
-const Feed = require("./routes/feedRoutes");
-const FeedStock = require("./routes/feedStockRoutes");
-const DailyFeedComplete = require("./routes/dailyFeedCompleteRoutes");
-const DailyFeedItems = require("./routes/dailyFeedItemRoutes");
-const DailyFeedNutrients = require("./routes/dailyFeedNutrientsRoutes");
-const Notification = require("./routes/notificationRoutes");
+const FeedTypeRoutes = require("./routes/feedTypeRoutes");
+const FeedRoutes = require("./routes/feedRoutes");
+const NutritionRoutes = require("./routes/nutritionRoutes");
+const FeedStockRoutes = require("./routes/feedStockRoutes");
+const DailyFeedScheduleRoutes = require("./routes/dailyFeedScheduleRoutes");
+const DailyFeedItemsRoutes = require("./routes/dailyFeedItemRoutes");
+const DailyFeedNutrientsRoutes = require("./routes/dailyFeedNutrientsRoutes");
+const NotificationRoutes = require("./routes/notificationRoutes");
+
+// Jalankan asosiasi
+defineAssociations();
 
 // Inisialisasi database
 initializeDatabase();
@@ -52,10 +68,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Fungsi untuk menjadwalkan pengecekan stok pakan
 const scheduleStockCheck = () => {
   setInterval(async () => {
     try {
       await feedStockService.monitorFeedStockLevels();
+      console.log("Feed stock levels checked successfully");
     } catch (error) {
       console.error("Scheduled feed stock check failed:", error);
     }
@@ -69,21 +87,32 @@ scheduleStockCheck();
 const syncOption = process.env.DB_SYNC_ALTER === "true" ? { alter: true } : {};
 sequelize
   .sync(syncOption)
-  .then(() => console.log("✅ Database ready"))
-  .catch((err) => console.error("❌ Database sync error:", err));
+  .then(() => {
+    console.log("✅ Database synchronized successfully");
+  })
+  .catch((err) => {
+    console.error("❌ Database sync error:", err);
+  });
 
 // Routes
-app.use("/api/feedType", FeedType);
-app.use("/api/feed", Feed);
-app.use("/api/feedStock", FeedStock);
-app.use("/api/dailyFeedSchedule", DailyFeedComplete);
-app.use("/api/dailyFeedItem", DailyFeedItems);
-app.use("/api/dailyFeedNutrients", DailyFeedNutrients);
-app.use("/api/notification", Notification);
+app.use("/api/feedType", FeedTypeRoutes);
+app.use("/api/feed", FeedRoutes);
+app.use("/api/nutrition", NutritionRoutes);
+app.use("/api/feedStock", FeedStockRoutes);
+app.use("/api/dailyFeedSchedule", DailyFeedScheduleRoutes);
+app.use("/api/dailyFeedItem", DailyFeedItemsRoutes);
+app.use("/api/dailyFeedNutrients", DailyFeedNutrientsRoutes);
+app.use("/api/notification", NotificationRoutes);
 
 // Middleware untuk menangani endpoint yang tidak ditemukan
 app.use((req, res) => {
   res.status(404).json({ message: "Endpoint not found!" });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({ message: "Internal server error", error: err.message });
 });
 
 // Jalankan server

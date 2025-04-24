@@ -26,7 +26,7 @@ const parseFormattedNumber = (formattedValue) => {
 
 const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
   const [stockData, setStockData] = useState({
-    feed: { name: "" },
+    Feed: { name: "" },
     stock: "",
   });
   const [newStock, setNewStock] = useState("");
@@ -41,6 +41,8 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
           title: "Error",
           text: "Stock ID is required",
           icon: "error",
+          timer: 1500,
+          showConfirmButton: false,
         });
         onClose();
         return;
@@ -49,27 +51,31 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
       try {
         setLoading(true);
         const response = await getFeedStockById(stockId);
+        console.log("getFeedStockById Response:", response);
+
         if (response.success && response.stock) {
           setStockData({
-            feed: response.stock.feed || { name: "" },
+            Feed: response.stock.Feed || { name: "Unknown" },
             stock: response.stock.stock || 0,
           });
           setNewStock(response.stock.stock || "");
           setFormattedNewStock(formatNumber(response.stock.stock || 0));
         } else {
           Swal.fire({
-            title: "Error",
-            text: "Failed to load stock data",
+            title: "Gagal",
+            text: response.message || "Gagal memuat data stok pakan.",
             icon: "error",
+            confirmButtonText: "OK",
           });
           onClose();
         }
       } catch (error) {
         console.error("Error fetching stock data:", error.message);
         Swal.fire({
-          title: "Error",
-          text: "Failed to load stock data: " + error.message,
+          title: "Gagal",
+          text: error.message || "Terjadi kesalahan saat memuat data stok pakan.",
           icon: "error",
+          confirmButtonText: "OK",
         });
         onClose();
       } finally {
@@ -83,6 +89,7 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
   const handleStockChange = (e) => {
     const value = e.target.value;
 
+    // Allow only numbers, dots, and commas
     const regex = /^[0-9.,]*$/;
     if (value !== "" && !regex.test(value)) {
       return;
@@ -105,16 +112,28 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
     e.preventDefault();
     if (newStock === "" && newStock !== "0") {
       Swal.fire({
-        title: "Error",
-        text: "Please enter stock amount",
+        title: "Gagal",
+        text: "Masukkan jumlah stok pakan.",
         icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    const newStockValue = parseFloat(newStock);
+    if (newStockValue < 0) {
+      Swal.fire({
+        title: "Gagal",
+        text: "Jumlah stok tidak boleh negatif.",
+        icon: "error",
+        confirmButtonText: "OK",
       });
       return;
     }
 
     Swal.fire({
       title: "Konfirmasi",
-      text: `Yakin ingin mengubah stok pakan "${stockData.feed?.name}" menjadi ${formatNumber(newStock)} kg?`,
+      text: `Yakin ingin mengubah stok pakan "${stockData.Feed?.name}" menjadi ${formatNumber(newStock)} kg?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Ya, ubah",
@@ -123,30 +142,34 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
       if (result.isConfirmed) {
         setSubmitting(true);
         try {
-          const response = await updateFeedStock(stockId, { stock: newStock });
+          const response = await updateFeedStock(stockId, { stock: newStockValue });
 
           if (response.success) {
             Swal.fire({
               title: "Berhasil",
-              text: "Stock berhasil diperbarui",
+              text: "Stok pakan berhasil diperbarui.",
               icon: "success",
-              confirmButtonText: "OK",
+              timer: 1500,
+              showConfirmButton: false,
             }).then(() => {
               onStockUpdated();
               onClose();
             });
           } else {
             Swal.fire({
-              title: "Error",
-              text: "Gagal memperbarui stok",
+              title: "Gagal",
+              text: response.message || "Gagal memperbarui stok pakan.",
               icon: "error",
+              confirmButtonText: "OK",
             });
           }
         } catch (error) {
+          console.error("Error updating stock:", error);
           Swal.fire({
-            title: "Error",
-            text: "Gagal memperbarui stok: " + error.message,
+            title: "Gagal",
+            text: error.message || "Terjadi kesalahan saat memperbarui stok pakan.",
             icon: "error",
+            confirmButtonText: "OK",
           });
         } finally {
           setSubmitting(false);
@@ -188,33 +211,34 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
               className="btn-close"
               onClick={onClose}
               disabled={submitting}
+              aria-label="Close"
             ></button>
           </div>
           <div className="modal-body">
             {loading ? (
               <div className="text-center p-4">
                 <div className="spinner-border text-warning" role="status">
-                  <span className="sr-only">Loading...</span>
+                  <span className="sr-only">Memuat...</span>
                 </div>
-                <p className="mt-2">Loading stock data...</p>
+                <p className="mt-2">Memuat data stok...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="form-group mb-3">
                   <label htmlFor="feedName" className="form-label">
-                    Feed
+                    Pakan
                   </label>
                   <input
                     type="text"
                     id="feedName"
                     className="form-control"
-                    value={stockData.feed?.name || ""}
+                    value={stockData.Feed?.name || ""}
                     readOnly
                   />
                 </div>
                 <div className="form-group mb-3">
                   <label htmlFor="currentStock" className="form-label">
-                    Current Stock (kg)
+                    Stok Saat Ini (kg)
                   </label>
                   <input
                     type="text"
@@ -226,7 +250,7 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
                 </div>
                 <div className="form-group mb-3">
                   <label htmlFor="newStock" className="form-label">
-                    New Stock (kg)
+                    Stok Baru (kg)
                   </label>
                   <input
                     type="text"
@@ -239,6 +263,7 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
                     required
                     inputMode="decimal"
                     placeholder="0"
+                    disabled={submitting}
                   />
                 </div>
                 <button
@@ -246,7 +271,14 @@ const EditFeedStockPage = ({ stockId, onStockUpdated, onClose }) => {
                   className="btn btn-warning w-100"
                   disabled={submitting}
                 >
-                  {submitting ? "Saving..." : "Update Stock"}
+                  {submitting ? (
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  Update Stok
                 </button>
               </form>
             )}

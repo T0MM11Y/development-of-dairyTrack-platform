@@ -7,14 +7,14 @@ exports.getAllFeedStocks = async (req, res) => {
     const stocks = await FeedStock.findAll({
       include: {
         model: Feed,
-        as: "feed",
+        as: "Feed", // Corrected alias to match association
         attributes: ["id", "name"],
       },
     });
     res.status(200).json({ success: true, stocks });
   } catch (err) {
     console.error("Error fetching feed stocks:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
@@ -23,7 +23,7 @@ exports.getFeedStockById = async (req, res) => {
   const { id } = req.params;
 
   if (isNaN(id)) {
-    return res.status(400).json({ field: "id", message: "Invalid ID format" });
+    return res.status(400).json({ success: false, field: "id", message: "Invalid ID format" });
   }
 
   try {
@@ -31,19 +31,19 @@ exports.getFeedStockById = async (req, res) => {
       where: { id },
       include: {
         model: Feed,
-        as: "feed",
+        as: "Feed", // Corrected alias to match association
         attributes: ["id", "name"],
       },
     });
 
     if (!stock) {
-      return res.status(404).json({ field: "id", message: "Feed stock not found" });
+      return res.status(404).json({ success: false, field: "id", message: "Feed stock not found" });
     }
 
     res.status(200).json({ success: true, stock });
   } catch (err) {
     console.error("Error fetching feed stock:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
@@ -51,14 +51,14 @@ exports.getFeedStockById = async (req, res) => {
 exports.addFeedStock = async (req, res) => {
   const { feedId, additionalStock } = req.body;
 
-  if (!feedId) return res.status(400).json({ field: "feedId", message: "Feed ID is required" });
-  if (additionalStock === undefined) return res.status(400).json({ field: "additionalStock", message: "Additional stock is required" });
+  if (!feedId) return res.status(400).json({ success: false, field: "feedId", message: "Feed ID is required" });
+  if (additionalStock === undefined) return res.status(400).json({ success: false, field: "additionalStock", message: "Additional stock is required" });
 
   try {
     // Pastikan feed ada
     const feed = await Feed.findByPk(feedId);
     if (!feed) {
-      return res.status(404).json({ field: "feedId", message: "Feed not found" });
+      return res.status(404).json({ success: false, field: "feedId", message: "Feed not found" });
     }
 
     // Cek apakah sudah ada record stock untuk feed ini
@@ -75,25 +75,29 @@ exports.addFeedStock = async (req, res) => {
     }
   } catch (err) {
     console.error("Error adding feed stock:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
 // Update feed stock (ubah nilai stok secara manual)
 exports.updateFeedStock = async (req, res) => {
   const { id } = req.params;
-  const { stock } = req.body; // hanya mengubah nilai stock
+  const { stock } = req.body;
+
+  if (stock === undefined) {
+    return res.status(400).json({ success: false, field: "stock", message: "Stock value is required" });
+  }
 
   try {
     const stockRecord = await FeedStock.findByPk(id);
     if (!stockRecord) {
-      return res.status(404).json({ field: "id", message: "Feed stock not found" });
+      return res.status(404).json({ success: false, field: "id", message: "Feed stock not found" });
     }
 
-    await stockRecord.update({ stock });
+    await stockRecord.update({ stock: parseFloat(stock) });
     res.status(200).json({ success: true, stock: stockRecord });
   } catch (err) {
     console.error("Error updating feed stock:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };

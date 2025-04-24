@@ -146,6 +146,11 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
           label: "Jenis Pakan",
         },
         {
+          path: "/admin/nutrisi",
+          icon: "ri-leaf-line",
+          label: "Nutrisi",
+        },
+        {
           path: "/admin/pakan",
           icon: "ri-leaf-line",
           label: "Pakan",
@@ -376,7 +381,7 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
                   isActive(menuPaths[menu.key]) ? "active" : ""
                 }`}
                 variants={menuItemVariants}
-                whileHover="hover"
+                whileHover="hover"tst
                 whileTap="tap"
               >
                 {menu.submenus.length > 0 ? (

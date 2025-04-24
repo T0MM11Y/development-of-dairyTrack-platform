@@ -26,6 +26,15 @@ const DataProduksiSusu = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+  const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak memiliki akses",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
   // Filter states
   const [selectedCow, setSelectedCow] = useState("");
@@ -359,13 +368,18 @@ const DataProduksiSusu = () => {
           </div>
 
           <div className="col-md-4 d-flex gap-2 justify-content-end">
-            <button
-              onClick={() => openModal("create")}
-              className="btn btn-info d-flex align-items-center gap-1"
-              disabled={isLoading}
-            >
-              <i className="bi bi-plus-circle"></i> Add Record
-            </button>
+           <button
+  onClick={() => {
+    if (!isSupervisor && !isLoading) {
+      openModal("create");
+    }
+  }}
+  className="btn btn-info d-flex align-items-center gap-1"
+  {...(isLoading ? { disabled: true } : disableIfSupervisor)}
+>
+  <i className="bi bi-plus-circle"></i> Add Record
+</button>
+
             <button
               onClick={() => handleExport("excel")}
               className="btn btn-success"
