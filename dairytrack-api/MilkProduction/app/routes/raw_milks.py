@@ -8,8 +8,8 @@ import io
 import pandas as pd
 from app.models import RawMilk, Cow  # Tambahkan Cow di sini
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from reportlab.lib import colors
+from reportlab.pdfgen import canvas
 
 # Timezone lokal (misalnya, Asia/Jakarta)
 local_tz = pytz.timezone('Asia/Jakarta')
@@ -25,10 +25,6 @@ def get_raw_milks():
     for raw_milk in raw_milks:
         raw_milk_dict = raw_milk.to_dict()
         
-        # Filter data dengan nilai null
-        if None in raw_milk_dict.values():
-            continue  # Lewati data dengan nilai null
-        
         result.append(raw_milk_dict)
     return jsonify(result)
 
@@ -41,15 +37,10 @@ def get_raw_milk(id):
 @raw_milks_bp.route('/raw_milks', methods=['POST'])
 def create_raw_milk():
     data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No input data provided'}), 400
 
-    try:
-        production_time = datetime.fromisoformat(data.get('production_time'))
-        if production_time.tzinfo is None:
+    production_time = datetime.fromisoformat(data.get('production_time'))
+    if production_time.tzinfo is None:
             production_time = local_tz.localize(production_time)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid or missing production_time'}), 400
 
     # Set expiration time to 8 hours from production time
     expiration_time = production_time + timedelta(hours=8)
@@ -88,6 +79,8 @@ def create_raw_milk():
     db.session.commit()
     response_data = raw_milk.to_dict()
     response_data['time_left'] = time_left
+    response_data['status'] = 'success'
+    response_data['message'] = 'Data berhasil diproses'
     return jsonify(response_data), 201
 
 @raw_milks_bp.route('/raw_milks/<int:id>', methods=['PUT'])
@@ -98,7 +91,15 @@ def update_raw_milk(id):
         return jsonify({'error': 'No input data provided'}), 400
 
     raw_milk.cow_id = data.get('cow_id', raw_milk.cow_id)
-    raw_milk.production_time = data.get('production_time', raw_milk.production_time)
+
+    # Validasi dan konversi production_time
+    production_time = data.get('production_time', raw_milk.production_time)
+    if production_time:
+        try:
+            raw_milk.production_time = datetime.fromisoformat(production_time)
+        except ValueError:
+            return jsonify({'error': f'Invalid datetime format: {production_time}'}), 400
+
     raw_milk.volume_liters = data.get('volume_liters', raw_milk.volume_liters)
     raw_milk.previous_volume = float(data.get('previous_volume', raw_milk.previous_volume))
     raw_milk.status = data.get('status', raw_milk.status)
@@ -106,7 +107,7 @@ def update_raw_milk(id):
     raw_milk.available_stocks = data.get('available_stocks', raw_milk.available_stocks)
 
     db.session.commit()
-    return jsonify(raw_milk.to_dict())
+    return jsonify({'message': 'Data berhasil diperbarui', 'data': raw_milk.to_dict()})
     
 @raw_milks_bp.route('/raw_milks/cow/<int:cow_id>', methods=['GET'])
 def get_raw_milks_by_cow_id(cow_id):
@@ -209,7 +210,7 @@ def delete_raw_milk(id):
     raw_milk = RawMilk.query.get_or_404(id)
     db.session.delete(raw_milk)
     db.session.commit()
-    return jsonify({'message': 'Raw milk production has been deleted!'})
+    return jsonify({'message': 'Raw milk production has been deleted!' , 'status': 200}), 200
 
 @raw_milks_bp.route('/raw_milks/freshness_notifications', methods=['GET'])
 def get_freshness_notifications():
@@ -424,6 +425,8 @@ def get_cow_raw_milk_data():
     # Format data untuk response
     result = [
         {
+            'id': raw_milk.id,
+            'cow_id': raw_milk.cow_id,  # Tambahkan cow_id
             'name': raw_milk.cow.name if raw_milk.cow else "Unknown",
             'production_time': raw_milk.production_time.strftime('%Y-%m-%d %H:%M:%S'),
             'volume_liters': raw_milk.volume_liters,

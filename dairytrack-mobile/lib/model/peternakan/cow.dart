@@ -1,5 +1,5 @@
 class Cow {
-  int? id; // Password menjadi opsional
+  int? id;
   int? farmerId;
   final String name;
   final String breed;
@@ -16,54 +16,54 @@ class Cow {
   Cow({
     this.id,
     this.farmerId,
-    required this.name,
-    required this.breed,
-    required this.birthDate,
-    required this.lactationStatus,
+    this.name = 'Unknown', // Default value
+    this.breed = 'Unknown', // Default value
+    DateTime? birthDate, // Nullable
+    this.lactationStatus = false, // Default value
     this.lactationPhase,
-    required this.weight_kg,
-    required this.reproductiveStatus,
-    required this.gender,
-    required this.entryDate,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+    this.weight_kg = 0.0, // Default value
+    this.reproductiveStatus = 'Unknown', // Default value
+    this.gender = 'Unknown', // Default value
+    DateTime? entryDate, // Nullable
+    DateTime? createdAt, // Nullable
+    DateTime? updatedAt, // Nullable
+  })  : birthDate = birthDate ?? DateTime(1970, 1, 1), // Default value
+        entryDate = entryDate ?? DateTime(1970, 1, 1), // Default value
+        createdAt = createdAt ?? DateTime(1970, 1, 1), // Default value
+        updatedAt = updatedAt ?? DateTime(1970, 1, 1); // Default value
 
   factory Cow.fromJson(Map<String, dynamic> json) {
     return Cow(
-      id: json['id'], // Bisa null
+      id: json['id'],
       farmerId: json['farmer_id'],
-      name: json['name'] ?? 'Unknown', // Default to 'Unknown' if null
-      breed: json['breed'] ?? 'Unknown', // Default to 'Unknown' if null
+      name: json['name'] ?? 'Unknown',
+      breed: json['breed'] ?? 'Unknown',
       birthDate: json['birth_date'] != null
           ? DateTime.parse(json['birth_date'])
-          : DateTime(1970, 1, 1), // Default to epoch if null
-      lactationStatus:
-          json['lactation_status'] ?? false, // Default to false if null
-      lactationPhase: json['lactation_phase'], // Nullable, no default needed
+          : null,
+      lactationStatus: json['lactation_status'] ?? false,
+      lactationPhase: json['lactation_phase'],
       weight_kg: json['weight_kg'] != null
           ? double.tryParse(json['weight_kg'].toString()) ?? 0.0
-          : 0.0, // Default to 0.0 if null or invalid
-      reproductiveStatus: json['reproductive_status'] ??
-          'Unknown', // Default to 'Unknown' if null
-      gender: json['gender'] ?? 'Unknown', // Default to 'Unknown' if null
+          : 0.0,
+      reproductiveStatus: json['reproductive_status'] ?? 'Unknown',
+      gender: json['gender'] ?? 'Unknown',
       entryDate: json['entry_date'] != null
           ? DateTime.parse(json['entry_date'])
-          : DateTime(1970, 1, 1), // Default to epoch if null
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
-          : DateTime(1970, 1, 1), // Default to epoch if null
+          : null,
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
-          : DateTime(1970, 1, 1), // Default to epoch if null
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id, // Hanya tambahkan jika tidak null
-      if (farmerId != null)
-        'farmer_id': farmerId, // Hanya tambahkan jika tidak null
+      if (id != null) 'id': id,
+      if (farmerId != null) 'farmer_id': farmerId,
       'name': name,
       'breed': breed,
       'birth_date': birthDate.toIso8601String(),

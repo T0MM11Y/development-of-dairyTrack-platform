@@ -1,3 +1,4 @@
+import 'package:dairy_track/modules/produksi_susu/trendProduksiSusu/trenProduksiSusu.dart';
 import 'package:flutter/material.dart';
 import 'dataProduksiSusu/dataProduksiSusu.dart'; // Import halaman DataProduksiSusu
 
@@ -39,8 +40,11 @@ class MenuProduction extends StatelessWidget {
                 Icons.trending_up,
                 Colors.green,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Trend Produksi Susu dipilih')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TrenProduksiSusu(),
+                    ),
                   );
                 },
               ),
