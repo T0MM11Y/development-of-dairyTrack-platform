@@ -38,8 +38,8 @@ class _TrenProduksiSusuState extends State<TrenProduksiSusu> {
             status = 'Stable';
           }
           return {
-            'cowName': item['cow_name'] ?? 'Unknown',
-            'date': item['date'] ?? '',
+            'cowName': item['name'] ?? 'Unknown',
+            'date': item['production_time'] ?? '',
             'volume': volume,
             'status': status,
           };

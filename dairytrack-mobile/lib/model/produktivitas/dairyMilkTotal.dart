@@ -30,18 +30,27 @@ class DailyMilkTotal {
 
   factory DailyMilkTotal.fromJson(Map<String, dynamic> json) {
     return DailyMilkTotal(
-      id: json['id'] is String
-          ? int.parse(json['id'])
-          : json['id'], // Pastikan id adalah int
+      id: json['id'] != null
+          ? (json['id'] is String
+              ? int.tryParse(json['id']) ?? 0
+              : json['id'] as int)
+          : 0, // Konversi ke int dengan default 0
       date: DateTime.parse(json['date']),
-      totalVolume: (json['total_volume'] as num)
-          .toDouble(), // Pastikan total_volume adalah double
-      totalSessions: json['total_sessions'] is String
-          ? int.parse(json['total_sessions'])
-          : json['total_sessions'], // Pastikan total_sessions adalah int
-      cowId: json['cow_id'] is String
-          ? int.parse(json['cow_id'])
-          : json['cow_id'], // Pastikan cow_id adalah int
+      totalVolume: json['total_volume'] != null
+          ? (json['total_volume'] is String
+              ? double.tryParse(json['total_volume']) ?? 0.0
+              : (json['total_volume'] as num).toDouble())
+          : 0.0, // Konversi ke double dengan default 0.0
+      totalSessions: json['total_sessions'] != null
+          ? (json['total_sessions'] is String
+              ? int.tryParse(json['total_sessions']) ?? 0
+              : json['total_sessions'] as int)
+          : 0, // Konversi ke int dengan default 0
+      cowId: json['cow_id'] != null
+          ? (json['cow_id'] is String
+              ? int.tryParse(json['cow_id']) ?? 0
+              : json['cow_id'] as int)
+          : 0, // Konversi ke int dengan default 0
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       cow: json['cow'] != null ? Cow.fromJson(json['cow']) : null,
