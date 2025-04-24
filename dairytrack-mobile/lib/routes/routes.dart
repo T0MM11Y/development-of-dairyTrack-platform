@@ -51,6 +51,17 @@ import 'package:dairy_track/modules/pemeriksaan_kesehatan/reproduksi_sapi/allRep
 import 'package:dairy_track/modules/pemeriksaan_kesehatan/reproduksi_sapi/addReproduksi.dart';
 import 'package:flutter/material.dart';
 
+// Sales and Financial ==================================
+import 'package:dairy_track/modules/penjualan/menuPenjualan.dart';
+import 'package:dairy_track/model/penjualan/productType.dart';
+import 'package:dairy_track/model/penjualan/product.dart';
+import 'package:dairy_track/modules/penjualan/productType/listProductType.dart';
+import 'package:dairy_track/modules/penjualan/productType/createProductType.dart';
+import 'package:dairy_track/modules/penjualan/productType/editProductType.dart';
+import 'package:dairy_track/modules/penjualan/product/listProductStock.dart';
+import 'package:dairy_track/modules/penjualan/product/createProductStock.dart';
+import 'package:dairy_track/modules/penjualan/product/editProductStock.dart';
+
 class Routes {
   // Route constants
   static const String loginn = '/login';
@@ -108,6 +119,15 @@ class Routes {
   // Reproduksi Sapi
   static const String reproduksiSapi = '/all-reproduksi';
   static const String addReproduksiSapi = '/add-reproduksi';
+
+  // Sales And Financial =======================================================
+  static const String listProductType = '/product-type';
+  static const String createProductType = '/create-product-type';
+  static const String editProductType = '/edit-product-type';
+  static const String listProductStock = '/product-stock';
+  static const String createProductStock = '/create-product-stock';
+  static const String editProductStock = '/edit-product-stock';
+  // Sales And Financial =======================================================
 
   // Route mapping
   static Map<String, WidgetBuilder> getRoutes() {
@@ -189,6 +209,25 @@ class Routes {
       // Reproduksi Sapi
       reproduksiSapi: (context) => AllReproduksi(),
       addReproduksiSapi: (context) => AddReproduksi(),
+
+      // Sales And Financial ===================================================================
+      // Product Type
+
+      listProductType: (context) => ListProductTypes(),
+      createProductType: (context) => CreateProductType(),
+      editProductType: (context) {
+        final productType =
+            ModalRoute.of(context)!.settings.arguments as ProdukType;
+        return EditProductType(productType: productType);
+      },
+      listProductStock: (context) => ListProductStocks(),
+      createProductStock: (context) => CreateProductStock(),
+      editProductStock: (context) {
+        final productStock =
+            ModalRoute.of(context)!.settings.arguments as ProductStock;
+        return EditProductStock(productStock: productStock);
+      },
+      // Sales And Financial ===================================================================
     };
   }
 }
