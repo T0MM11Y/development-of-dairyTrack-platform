@@ -215,67 +215,72 @@ def delete_raw_milk(id):
 @raw_milks_bp.route('/raw_milks/freshness_notifications', methods=['GET'])
 def get_freshness_notifications():
     current_time = datetime.now(local_tz)  # Current time with timezone
-    raw_milks = RawMilk.query.all()
-    
     FRESHNESS_THRESHOLD = timedelta(hours=4)  # 4 hours before expiration
     notifications = []
 
+    # Query only raw milks that are not expired and nearing expiration
+    raw_milks = RawMilk.query.filter(
+        RawMilk.expiration_time > current_time,
+        RawMilk.expiration_time <= current_time + FRESHNESS_THRESHOLD,
+        RawMilk.is_expired == False
+    ).all()
+
     for raw_milk in raw_milks:
+        # Ensure expiration_time is timezone-aware
         expiration_time = raw_milk.expiration_time
         if expiration_time.tzinfo is None:
             expiration_time = local_tz.localize(expiration_time)
-        
+
+        # Calculate time remaining
         time_remaining = expiration_time - current_time
+        hours, remainder = divmod(time_remaining.seconds, 3600)
+        minutes = remainder // 60
+        human_readable_time = f"{hours} hours {minutes} minutes"
 
-        # Check if the milk is nearing expiration (within 4 hours) and not expired
-        if timedelta(0) < time_remaining <= FRESHNESS_THRESHOLD and not raw_milk.is_expired:
-            # Convert time_remaining to a human-readable format
-            hours, remainder = divmod(time_remaining.seconds, 3600)
-            minutes = remainder // 60
-            human_readable_time = f"{hours} hours {minutes} minutes"
+        # Create notification message
+        message = f"Milk nearing expiration: {human_readable_time} remaining until expiration."
 
-            message = f"Milk nearing expiration: {human_readable_time} remaining until expiration."
+        # Check if a notification already exists for this raw milk
+        existing_notification = Notification.query.filter_by(
+            cow_id=raw_milk.cow_id,
+            date=current_time.date()
+        ).first()
 
-            # Check if a notification already exists for this raw milk
-            existing_notification = Notification.query.filter_by(
+        if not existing_notification:
+            # Create a new notification if it doesn't exist
+            notification = Notification(
                 cow_id=raw_milk.cow_id,
                 date=current_time.date(),
                 message=message
-            ).first()
+            )
+            db.session.add(notification)
 
-            if existing_notification:
-                existing_notification.message = message
-            else:
-                notification = Notification(
-                    cow_id=raw_milk.cow_id,
-                    date=current_time.date(),
-                    message=message
-                )
-                db.session.add(notification)
+        # Ensure created_at is timezone-aware
+        created_at = raw_milk.created_at
+        if created_at.tzinfo is None:
+            created_at = local_tz.localize(created_at)
 
-            # Ensure raw_milk.created_at is timezone-aware
-            created_at = raw_milk.created_at
-            if created_at.tzinfo is None:
-                created_at = local_tz.localize(created_at)
+        # Calculate how long ago the milk record was created
+        time_since_creation = current_time - created_at
+        hours_ago, remainder = divmod(time_since_creation.total_seconds(), 3600)
+        minutes_ago = remainder // 60
+        human_readable_creation_time = f"{int(hours_ago)} hours {int(minutes_ago)} minutes ago"
 
-            # Calculate how long ago the milk record was created
-            time_since_creation = current_time - created_at
-            hours_ago, remainder = divmod(time_since_creation.total_seconds(), 3600)
-            minutes_ago = remainder // 60
-            human_readable_creation_time = f"{int(hours_ago)} hours {int(minutes_ago)} minutes ago"
+        # Add notification to the response list
+        notifications.append({
+            'cow_id': raw_milk.cow_id,
+            'id': raw_milk.id,
+            'expiration_time': expiration_time.isoformat(),
+            'time_remaining': human_readable_time,
+            'message': message,
+            'date': human_readable_creation_time,
+            'name': raw_milk.cow.name if raw_milk.cow else None,
+        })
 
-            notifications.append({
-                'cow_id': raw_milk.cow_id,
-                'id': raw_milk.id,
-                'expiration_time': expiration_time.isoformat(),
-                'time_remaining': human_readable_time,
-                'message': message,
-                'date': human_readable_creation_time,
-                'name': raw_milk.cow.name if raw_milk.cow else None,
-            })
-
+    # Commit database changes
     db.session.commit()
 
+    # Return response
     if not notifications:
         return jsonify({'message': 'No milk nearing expiration.'}), 200
 
