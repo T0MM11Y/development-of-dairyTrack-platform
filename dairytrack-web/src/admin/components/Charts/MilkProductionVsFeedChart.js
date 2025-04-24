@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
 import Swal from "sweetalert2";
-import {getFeedUsageByDate } from "../../../api/pakan/dailyFeedItem"; // Adjust path as needed
-import {getFeedTypes } from "../../../api/pakan/feedType"; // Adjust path as needed
+import { getFeedUsageByDate } from "../../../api/pakan/dailyFeedItem"; // Adjust path as needed
+import { getFeedTypes } from "../../../api/pakan/feedType"; // Adjust path as needed
 
 const MilkProductionVsFeedChart = () => {
   const [feedTypes, setFeedTypes] = useState([]);
   const [feedUsageData, setFeedUsageData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  });
+  const [tempDateRange, setTempDateRange] = useState({
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0],
     endDate: new Date().toISOString().split("T")[0],
   });
@@ -75,6 +79,52 @@ const MilkProductionVsFeedChart = () => {
     };
   }, [dateRange.startDate, dateRange.endDate]);
 
+  // Handle date filter change
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setTempDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Apply filter
+  const applyFilter = () => {
+    // Validate dates
+    const startDate = new Date(tempDateRange.startDate);
+    const endDate = new Date(tempDateRange.endDate);
+
+    if (startDate > endDate) {
+      Swal.fire({
+        title: "Error!",
+        text: "Tanggal mulai tidak boleh lebih besar dari tanggal akhir.",
+        icon: "error",
+      });
+      return;
+    }
+
+    setDateRange({
+      startDate: tempDateRange.startDate,
+      endDate: tempDateRange.endDate
+    });
+  };
+
+  // Reset filter to last 30 days
+  const resetFilter = () => {
+    const newStartDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split("T")[0];
+    const newEndDate = new Date().toISOString().split("T")[0];
+    
+    setTempDateRange({
+      startDate: newStartDate,
+      endDate: newEndDate
+    });
+    
+    setDateRange({
+      startDate: newStartDate,
+      endDate: newEndDate
+    });
+  };
+
   // Prepare Chart Data
   const chartData = useMemo(() => {
     if (!feedUsageData || feedUsageData.length === 0) {
@@ -113,7 +163,58 @@ const MilkProductionVsFeedChart = () => {
       <div className="col-xl-12">
         <div className="card">
           <div className="card-body">
-            <h4 className="card-title mb-4">Feed Consumption</h4>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h4 className="card-title mb-0">Feed Consumption</h4>
+              <div className="d-flex filter-container">
+                <div className="date-filter d-flex align-items-center">
+                  <div className="me-3">
+                    <label htmlFor="startDate" className="form-label me-2">Dari:</label>
+                    <input 
+                      type="date" 
+                      id="startDate" 
+                      name="startDate" 
+                      className="form-control" 
+                      value={tempDateRange.startDate} 
+                      onChange={handleDateChange}
+                    />
+                  </div>
+                  <div className="me-3">
+                    <label htmlFor="endDate" className="form-label me-2">Sampai:</label>
+                    <input 
+                      type="date" 
+                      id="endDate" 
+                      name="endDate" 
+                      className="form-control" 
+                      value={tempDateRange.endDate} 
+                      onChange={handleDateChange}
+                    />
+                  </div>
+                  <div className="d-flex">
+                    <button 
+                      className="btn btn-primary me-2" 
+                      onClick={applyFilter}
+                      disabled={loading}
+                    >
+                      <i className="ri-filter-3-line me-1"></i> Terapkan
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={resetFilter}
+                      disabled={loading}
+                    >
+                      <i className="ri-refresh-line me-1"></i> Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="date-range-info mb-3">
+              <span className="text-muted">
+                Menampilkan data: <strong>{new Date(dateRange.startDate).toLocaleDateString('id-ID')}</strong> - <strong>{new Date(dateRange.endDate).toLocaleDateString('id-ID')}</strong>
+              </span>
+            </div>
+
             {loading ? (
               <div className="text-center py-4">
                 <div className="spinner-border text-primary" role="status">

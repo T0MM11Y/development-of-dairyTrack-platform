@@ -292,7 +292,7 @@ const DailyFeedListPage = () => {
           <table className="table table-striped mb-0">
             <thead>
               <tr>
-                <th style={{ width: "5%", textAlign: "center" }}>No</th>
+                <th style={{ width: "5%", textAlign: "center" }}>{t('dailyfeed.table.no')}:</th>
                 <th style={{ width: "15%", textAlign: "center" }}>Nama Sapi</th>
                 <th style={{ width: "15%", textAlign: "center" }}>Tanggal</th>
                 <th style={{ width: "15%", textAlign: "center" }}>Sesi</th>
