@@ -1,8 +1,7 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
 import React, { useEffect, useState } from "react";
-import './i18n'; // ✅ ini harus ada
-
+import "./i18n"; // ✅ ini harus ada
 
 // Public
 import Login from "./Auth/login";
@@ -259,15 +258,21 @@ function App() {
       />
       <Route
         path="/admin/nutrisi"
-        element={<ProtectedRoute>{withAdminLayout(HalamanNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(HalamanNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/tambah-nutrisi"
-        element={<ProtectedRoute>{withAdminLayout(TambahNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(TambahNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/edit-nutrisi/:id"
-        element={<ProtectedRoute>{withAdminLayout(EditNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(EditNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/pakan"
