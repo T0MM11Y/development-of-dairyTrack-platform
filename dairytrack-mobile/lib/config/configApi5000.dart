@@ -52,7 +52,13 @@ Future<dynamic> fetchAPI(
           .timeout(const Duration(seconds: 10));
     } else if (method == "DELETE") {
       response = await http
-          .delete(url, headers: headers)
+          .delete(
+            url,
+            headers: headers,
+            body: data != null
+                ? jsonEncode(data)
+                : null, // Tambahkan body jika diperlukan
+          )
           .timeout(const Duration(seconds: 10));
     } else {
       throw UnsupportedError("HTTP method not supported");

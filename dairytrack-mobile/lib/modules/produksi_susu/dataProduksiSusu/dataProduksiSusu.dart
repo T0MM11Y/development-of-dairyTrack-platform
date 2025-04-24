@@ -1,4 +1,6 @@
+import 'package:dairy_track/model/produktivitas/rawMilk.dart';
 import 'package:dairy_track/modules/produksi_susu/dataProduksiSusu/addDataProduksiSusu.dart';
+import 'package:dairy_track/modules/produksi_susu/dataProduksiSusu/editDataProduksiSusu.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../config/api/produktivitas/rawMilk.dart';
@@ -15,6 +17,8 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
   String? selectedPhase;
   String? selectedSession;
   DateTime? selectedDate;
+  bool isLoading = false;
+  bool isExporting = false;
 
   @override
   void initState() {
@@ -23,18 +27,32 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
   }
 
   Future<void> _fetchRawMilkData() async {
-    final response = await getRawMilkData();
-    if (response['status'] == 'success') {
-      setState(() {
-        data = List<Map<String, dynamic>>.from(
-          response['data'].map((rawMilk) => rawMilk.toJson()),
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await getRawMilkData();
+      if (response['status'] == 'success') {
+        setState(() {
+          data = List<Map<String, dynamic>>.from(
+            response['data'].map((rawMilk) => rawMilk.toJson()),
+          );
+          filteredData = List.from(data);
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat data: ${response['message']}')),
         );
-        filteredData = data;
-      });
-    } else {
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Failed to fetch data')),
+        SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -44,8 +62,192 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
       selectedPhase = null;
       selectedSession = null;
       selectedDate = null;
-      _fetchRawMilkData();
+      filteredData = List.from(data);
     });
+  }
+
+  Future<void> _exportPDF(BuildContext context) async {
+    if (isExporting) return;
+
+    setState(() {
+      isExporting = true;
+    });
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
+
+      final file = await exportRawMilkPDF(context);
+
+      Navigator.of(context).pop();
+
+      if (file != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF berhasil diekspor ke: ${file.path}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengekspor PDF: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isExporting = false;
+      });
+    }
+  }
+
+  Future<void> _exportExcel(BuildContext context) async {
+    if (isExporting) return;
+
+    setState(() {
+      isExporting = true;
+    });
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
+
+      final file = await exportRawMilkExcel(context);
+
+      Navigator.of(context).pop();
+
+      if (file != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel berhasil diekspor ke: ${file.path}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengekspor Excel: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isExporting = false;
+      });
+    }
+  }
+
+  bool isDeleting = false; // Tambahkan variabel untuk mengontrol loading
+
+  void _showDeleteDialog(Map<String, dynamic> milk) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Stack(
+              children: [
+                AlertDialog(
+                  title: Text('Konfirmasi Hapus'),
+                  content: Text(
+                      'Apakah Anda yakin ingin menghapus data produksi susu ini?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        if (mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                      child: Text('Batal'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[700],
+                      ),
+                      onPressed: () async {
+                        setState(() {
+                          isDeleting = true; // Tampilkan loading
+                        });
+
+                        try {
+                          final result = await deleteRawMilkData(milk['id']);
+                          if (result['status'] == 'success') {
+                            // Tampilkan notifikasi berhasil
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Data berhasil dihapus'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                            // Refresh data
+                            await _fetchRawMilkData();
+                          } else {
+                            // Tampilkan notifikasi gagal
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Gagal menghapus data: ${result['message']}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          // Tampilkan notifikasi error
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text('Terjadi kesalahan: ${e.toString()}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              isDeleting = false; // Sembunyikan loading
+                            });
+                            Navigator.of(dialogContext).pop(); // Tutup dialog
+                          }
+                        }
+                      },
+                      child:
+                          Text('Hapus', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+                if (isDeleting)
+                  ModalBarrier(
+                    dismissible: false,
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                if (isDeleting)
+                  Center(
+                    child: CircularProgressIndicator(),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _applyFilters() {
@@ -56,17 +258,28 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
             milk['session']?.toString() == selectedSession;
         final matchesPhase =
             selectedPhase == null || milk['lactation_phase'] == selectedPhase;
-        final matchesDate = selectedDate == null ||
-            (milk['production_time'] != null &&
-                DateFormat('yyyy-MM-dd')
-                        .format(DateTime.parse(milk['production_time'])) ==
-                    DateFormat('yyyy-MM-dd').format(selectedDate!));
+
+        bool matchesDate = selectedDate == null;
+        if (!matchesDate && milk['production_time'] != null) {
+          try {
+            matchesDate = DateFormat('yyyy-MM-dd')
+                    .format(DateTime.parse(milk['production_time'])) ==
+                DateFormat('yyyy-MM-dd').format(selectedDate!);
+          } catch (e) {
+            matchesDate = false;
+          }
+        }
+
         return matchesCow && matchesPhase && matchesSession && matchesDate;
       }).toList();
     });
   }
 
-  Widget _buildPhaseBadge(String phase) {
+  Widget _buildPhaseBadge(String? phase) {
+    if (phase == null || phase.isEmpty) {
+      return SizedBox.shrink();
+    }
+
     Color badgeColor;
     String phaseText;
     switch (phase) {
@@ -112,7 +325,11 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
     );
   }
 
-  Widget _buildSessionBadge(String session) {
+  Widget _buildSessionBadge(String? session) {
+    if (session == null || session.isEmpty) {
+      return SizedBox.shrink();
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -138,9 +355,9 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
     );
   }
 
-  Widget _buildStatusBadge(bool isActive) {
-    final status = isActive ? 'Aktif' : 'Non-Aktif';
-    final color = isActive ? Colors.green : Colors.red;
+  Widget _buildStatusBadge(bool? isActive) {
+    final status = isActive == true ? 'Aktif' : 'Non-Aktif';
+    final color = isActive == true ? Colors.green : Colors.red;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -153,7 +370,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isActive ? Icons.check_circle : Icons.cancel,
+            isActive == true ? Icons.check_circle : Icons.cancel,
             color: color,
             size: 14,
           ),
@@ -184,8 +401,18 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: _resetFilters,
+            onPressed: isLoading ? null : _fetchRawMilkData,
             tooltip: 'Refresh',
+          ),
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf),
+            onPressed: isExporting ? null : () => _exportPDF(context),
+            tooltip: 'Export PDF',
+          ),
+          IconButton(
+            icon: Icon(Icons.table_chart),
+            onPressed: isExporting ? null : () => _exportExcel(context),
+            tooltip: 'Export Excel',
           ),
         ],
       ),
@@ -195,7 +422,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
           children: [
             _buildFilterSection(),
             Expanded(
-              child: _buildDataList(),
+              child: isLoading ? _buildLoadingIndicator() : _buildDataList(),
             ),
           ],
         ),
@@ -207,7 +434,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
             MaterialPageRoute(
               builder: (context) => AddDataProduksiSusu(),
             ),
-          );
+          ).then((_) => _fetchRawMilkData());
         },
         backgroundColor: Color(0xFFE74C3C),
         child: const Icon(Icons.add, color: Colors.white),
@@ -215,14 +442,26 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
     );
   }
 
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
   Widget _buildFilterSection() {
-    final cows = data.map((e) => e['name'] as String).toSet().toList();
-    final lactationPhases =
-        data.map((e) => e['lactation_phase'] as String).toSet().toList();
+    final cows = data
+        .map((e) => e['name']?.toString() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList();
+    final lactationPhases = data
+        .map((e) => e['lactation_phase']?.toString() ?? '')
+        .where((phase) => phase.isNotEmpty)
+        .toSet()
+        .toList();
     final sessions = data
-        .map((e) => e['session']?.toString()) // Konversi nilai ke String
-        .where((session) => session != null) // Hapus nilai null
-        .cast<String>() // Pastikan tipe menjadi List<String>
+        .map((e) => e['session']?.toString())
+        .where((session) => session != null && session.isNotEmpty)
         .toSet()
         .toList();
 
@@ -279,7 +518,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
                   child: _buildFilterDropdown(
                     label: 'Session',
                     value: selectedSession,
-                    items: sessions,
+                    items: sessions.whereType<String>().toList(),
                     onChanged: (value) {
                       setState(() {
                         selectedSession = value;
@@ -324,7 +563,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         ),
         ...items.map((item) {
           return DropdownMenuItem(
-            value: item, // Pastikan ini adalah nama sapi
+            value: item,
             child: Text(item, style: TextStyle(color: Color(0xFF2C3E50))),
           );
         }).toList(),
@@ -400,13 +639,13 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.white54),
+            Icon(Icons.search_off, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'Data tidak ditemukan',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.white,
+                color: Colors.black87,
               ),
             ),
             SizedBox(height: 8),
@@ -414,7 +653,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
               'Coba ubah filter pencarian Anda',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white70,
+                color: Colors.black54,
               ),
             ),
           ],
@@ -438,9 +677,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                // Add onTap functionality if needed
-              },
+              onTap: () {},
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -451,7 +688,7 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
                       children: [
                         Expanded(
                           child: Text(
-                            milk['name'] ?? 'Sapi Tidak Dikenal',
+                            milk['name']?.toString() ?? 'Sapi Tidak Dikenal',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -459,6 +696,87 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditDataProduksiSusu(
+                                    rawMilk: RawMilk(
+                                      id: milk['id'],
+                                      cowId: milk['cow_id'],
+                                      cowName: milk['name']?.toString() ??
+                                          'Sapi Tidak Dikenal',
+                                      productionTime:
+                                          milk['production_time'] != null
+                                              ? DateTime.parse(
+                                                  milk['production_time'])
+                                              : DateTime.now(),
+                                      volumeLiters: double.tryParse(
+                                              milk['volume_liters']
+                                                      ?.toString() ??
+                                                  '0') ??
+                                          0,
+                                      lactationPhase:
+                                          milk['lactation_phase']?.toString() ??
+                                              'Unknown',
+                                      lactationStatus:
+                                          milk['lactation_status'] == true,
+                                      expirationTime:
+                                          milk['expiration_time'] != null
+                                              ? DateTime.parse(
+                                                  milk['expiration_time'])
+                                              : DateTime.now(),
+                                      availableStocks: double.tryParse(
+                                              milk['available_stocks']
+                                                      ?.toString() ??
+                                                  '0') ??
+                                          0,
+                                      session: int.tryParse(
+                                              milk['session']?.toString() ??
+                                                  '') ??
+                                          0,
+                                      createdAt: milk['created_at'] != null
+                                          ? DateTime.parse(milk['created_at'])
+                                          : DateTime.now(),
+                                      updatedAt: milk['updated_at'] != null
+                                          ? DateTime.parse(milk['updated_at'])
+                                          : DateTime.now(),
+                                      isExpired: milk['is_expired'] == true,
+                                    ),
+                                  ),
+                                ),
+                              ).then((_) {
+                                _fetchRawMilkData();
+                              });
+                            } else if (value == 'delete') {
+                              _showDeleteDialog(milk);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, color: Colors.blue[600]),
+                                  const SizedBox(width: 8),
+                                  const Text('Edit'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete, color: Colors.red[600]),
+                                  const SizedBox(width: 8),
+                                  const Text('Delete'),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         _buildStatusBadge(isActive),
                       ],
@@ -476,15 +794,15 @@ class _DataProduksiSusuState extends State<DataProduksiSusu> {
                     _buildInfoRow(
                       icon: Icons.water_drop,
                       label: 'Volume Susu',
-                      value: '${milk['volume_liters'] ?? '0'} Liter',
+                      value:
+                          '${milk['volume_liters']?.toString() ?? '0'} Liter',
                     ),
                     SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildPhaseBadge(milk['lactation_phase'] ?? ''),
-                        if (milk['session'] != null)
-                          _buildSessionBadge(milk['session'].toString()),
+                        _buildPhaseBadge(milk['lactation_phase']?.toString()),
+                        _buildSessionBadge(milk['session']?.toString()),
                       ],
                     ),
                   ],

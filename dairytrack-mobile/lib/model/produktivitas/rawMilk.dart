@@ -4,14 +4,13 @@ import 'package:dairy_track/model/produktivitas/dairyMilkTotal.dart';
 class RawMilk {
   int? id;
   int cowId;
+  String? cowName; // Tambahkan properti cowName
   DateTime productionTime;
   DateTime expirationTime;
   double volumeLiters;
-  String? name;
   String? lactationPhase;
-  bool lactationStatus; // Ubah tipe menjadi bool
+  bool lactationStatus;
   double? previousVolume;
-  String status;
   int session;
   int? dailyTotalId;
   double availableStocks;
@@ -28,14 +27,13 @@ class RawMilk {
   RawMilk({
     this.id,
     required this.cowId,
+    this.cowName, // Tambahkan ke konstruktor
     required this.productionTime,
     required this.expirationTime,
     required this.volumeLiters,
-    this.name,
     this.lactationPhase,
-    required this.lactationStatus, // Properti diperbarui
+    required this.lactationStatus,
     this.previousVolume,
-    required this.status,
     required this.session,
     this.dailyTotalId,
     required this.availableStocks,
@@ -49,11 +47,11 @@ class RawMilk {
   factory RawMilk.fromJson(Map<String, dynamic> json) {
     try {
       return RawMilk(
-        id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
+        id: json['id'],
         cowId: json['cow_id'] != null
             ? int.tryParse(json['cow_id'].toString()) ?? 0
             : 0,
-        name: json['name'] ?? 'Unknown',
+        cowName: json['name'] ?? 'Unknown', // Tambahkan parsing cowName
         lactationPhase: json['lactation_phase'],
         productionTime: json['production_time'] != null
             ? DateTime.parse(json['production_time'])
@@ -71,8 +69,7 @@ class RawMilk {
                 ? double.tryParse(json['previous_volume'])
                 : (json['previous_volume'] as num).toDouble())
             : null,
-        lactationStatus: json['lactation_status'] == true, // Konversi ke bool
-        status: json['status'] ?? 'Unknown',
+        lactationStatus: json['lactation_status'] == true,
         session: json['session'] != null
             ? int.tryParse(json['session'].toString()) ?? 0
             : 0,
@@ -106,14 +103,13 @@ class RawMilk {
     return {
       if (id != null) 'id': id,
       'cow_id': cowId,
-      'name': name,
+      'name': cowName, // Tambahkan cowName ke toJson
       'lactation_phase': lactationPhase,
       'production_time': productionTime.toIso8601String(),
       'expiration_time': expirationTime.toIso8601String(),
       'volume_liters': volumeLiters,
       if (previousVolume != null) 'previous_volume': previousVolume,
-      'lactation_status': lactationStatus, // Tetap sebagai bool
-      'status': status,
+      'lactation_status': lactationStatus,
       'session': session,
       if (dailyTotalId != null) 'daily_total_id': dailyTotalId,
       'available_stocks': availableStocks,

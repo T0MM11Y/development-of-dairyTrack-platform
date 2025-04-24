@@ -3,7 +3,7 @@ import 'package:dairy_track/config/configApi5000.dart';
 // GET semua data daily milk totals
 Future<List<dynamic>> getDailyMilkTotals() async {
   final response = await fetchAPI("daily_milk_totals");
-  if (response['status'] == 200) {
+  if (response['status'] == 200 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);
@@ -13,7 +13,7 @@ Future<List<dynamic>> getDailyMilkTotals() async {
 // GET satu daily milk total by ID
 Future<Map<String, dynamic>> getDailyMilkTotalById(String id) async {
   final response = await fetchAPI("daily_milk_totals/$id");
-  if (response['status'] == 200) {
+  if (response['status'] == 200 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);
@@ -23,7 +23,7 @@ Future<Map<String, dynamic>> getDailyMilkTotalById(String id) async {
 // GET semua data daily milk totals berdasarkan cow_id
 Future<List<dynamic>> getDailyMilkTotalsByCowId(String cowId) async {
   final response = await fetchAPI("daily_milk_totals/cow/$cowId");
-  if (response['status'] == 200) {
+  if (response['status'] == 200 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);
@@ -39,7 +39,7 @@ Future<Map<String, dynamic>> createDailyMilkTotal(
     data: data,
     isFormData: true,
   );
-  if (response['status'] == 201) {
+  if (response['status'] == 201 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);
@@ -55,7 +55,7 @@ Future<Map<String, dynamic>> updateDailyMilkTotal(
     data: data,
     isFormData: true,
   );
-  if (response['status'] == 200) {
+  if (response['status'] == 200 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);
@@ -73,7 +73,7 @@ Future<void> deleteDailyMilkTotal(String id) async {
 // GET low production notifications
 Future<List<dynamic>> getLowProductionNotifications() async {
   final response = await fetchAPI("daily_milk_totals/notifications");
-  if (response['status'] == 200) {
+  if (response['status'] == 200 || response['data'] is Map) {
     return response['data'];
   } else {
     throw Exception(response['message']);

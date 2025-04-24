@@ -30,11 +30,18 @@ class DailyMilkTotal {
 
   factory DailyMilkTotal.fromJson(Map<String, dynamic> json) {
     return DailyMilkTotal(
-      id: json['id'],
+      id: json['id'] is String
+          ? int.parse(json['id'])
+          : json['id'], // Pastikan id adalah int
       date: DateTime.parse(json['date']),
-      totalVolume: (json['total_volume'] as num).toDouble(),
-      totalSessions: json['total_sessions'],
-      cowId: json['cow_id'],
+      totalVolume: (json['total_volume'] as num)
+          .toDouble(), // Pastikan total_volume adalah double
+      totalSessions: json['total_sessions'] is String
+          ? int.parse(json['total_sessions'])
+          : json['total_sessions'], // Pastikan total_sessions adalah int
+      cowId: json['cow_id'] is String
+          ? int.parse(json['cow_id'])
+          : json['cow_id'], // Pastikan cow_id adalah int
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       cow: json['cow'] != null ? Cow.fromJson(json['cow']) : null,

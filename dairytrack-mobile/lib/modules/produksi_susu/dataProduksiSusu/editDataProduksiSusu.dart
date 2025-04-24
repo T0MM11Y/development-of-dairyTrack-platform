@@ -4,12 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:dairy_track/model/peternakan/cow.dart';
 import 'package:dairy_track/model/produktivitas/rawMilk.dart';
 
-class AddDataProduksiSusu extends StatefulWidget {
+class EditDataProduksiSusu extends StatefulWidget {
+  final RawMilk rawMilk;
+
+  EditDataProduksiSusu({required this.rawMilk});
+
   @override
-  _AddDataProduksiSusuState createState() => _AddDataProduksiSusuState();
+  _EditDataProduksiSusuState createState() => _EditDataProduksiSusuState();
 }
 
-class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
+class _EditDataProduksiSusuState extends State<EditDataProduksiSusu> {
   final _formKey = GlobalKey<FormState>();
   Cow? selectedCow;
   DateTime? productionTime;
@@ -17,17 +21,30 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
   String? selectedLactationPhase;
   bool lactationStatus = false;
 
-  List<Cow> cowList = []; // List to store cows
+  List<Cow> cowList = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchCowList(); // Fetch cow list on initialization
+    _fetchCowList();
+    _initializeFields();
+  }
+
+  void _initializeFields() {
+    selectedCow = Cow(
+      id: widget.rawMilk.cowId,
+      name: widget.rawMilk.cowName ?? 'Unknown Name',
+    );
+    productionTime = widget.rawMilk.productionTime;
+    _volumeController.text = widget.rawMilk.volumeLiters.toString();
+    selectedLactationPhase = widget.rawMilk.lactationPhase;
+    lactationStatus = widget.rawMilk.lactationStatus;
   }
 
   Future<void> _fetchCowList() async {
     try {
-      final cows = await getCows(); // Fetch cows from cow.dart
+      final cows = await getCows();
       setState(() {
         cowList = cows;
       });
@@ -36,45 +53,31 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
     }
   }
 
-  Future<Cow?> _getCowById(int id) async {
-    try {
-      return await getCowById(id.toString()); // Fetch cow by ID
-    } catch (e) {
-      print('Error fetching cow by ID: $e');
-      return null;
-    }
-  }
-
-  bool _isLoading = false; // Tambahkan variabel untuk status loading
-
-  void _submitDataProduksiSusu() async {
+  void _updateDataProduksiSusu() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isLoading = true; // Aktifkan loading
+        _isLoading = true;
       });
 
       try {
-        // Buat objek RawMilk
-        final rawMilk = RawMilk(
+        final updatedRawMilk = RawMilk(
+          id: widget.rawMilk.id,
           cowId: selectedCow!.id!,
           productionTime: productionTime!,
-          expirationTime:
-              productionTime!.add(Duration(days: 7)), // Contoh masa kedaluwarsa
+          expirationTime: productionTime!.add(Duration(days: 7)),
           volumeLiters: double.parse(_volumeController.text),
           lactationPhase: lactationStatus ? selectedLactationPhase : 'Dry',
           lactationStatus: lactationStatus,
-          session: 1, // Contoh sesi
+          session: widget.rawMilk.session,
           availableStocks: double.parse(_volumeController.text),
-          createdAt: DateTime.now(),
+          createdAt: widget.rawMilk.createdAt,
           updatedAt: DateTime.now(),
-          isExpired: false,
+          isExpired: widget.rawMilk.isExpired,
         );
 
-        // Panggil API untuk submit data
-        final response = await submitRawMilkData(rawMilk);
+        final response = await updateRawMilkData(updatedRawMilk);
 
         if (response['status'] == 'success') {
-          // Tampilkan snackbar sukses
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -94,9 +97,8 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
               margin: EdgeInsets.all(16),
             ),
           );
-          Navigator.pop(context); // Kembali ke halaman sebelumnya
+          Navigator.pop(context, true);
         } else {
-          // Tampilkan snackbar gagal
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -118,7 +120,6 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
           );
         }
       } catch (e) {
-        // Tangani error dan tampilkan snackbar error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -140,7 +141,7 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
         );
       } finally {
         setState(() {
-          _isLoading = false; // Nonaktifkan loading
+          _isLoading = false;
         });
       }
     }
@@ -150,7 +151,7 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Data Produksi Susu',
+        title: const Text('Edit Data Produksi Susu',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 93, 144, 231),
@@ -163,7 +164,7 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE8F5E9), // Light green
+              Color(0xFFE8F5E9),
               Colors.white,
             ],
           ),
@@ -181,29 +182,17 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
                       _buildDropdownField(
                         label: 'Pilih Sapi',
                         icon: Icons.pets,
-                        items: cowList
-                            .map((cow) => cow.name)
-                            .toList(), // Tampilkan nama sapi
-                        selectedValue: selectedCow
-                            ?.name, // Tampilkan nama sapi yang dipilih
-                        onChanged: (value) {
-                          final cow = cowList.firstWhere((cow) =>
-                              cow.name ==
-                              value); // Cari objek Cow berdasarkan nama
-                          setState(() {
-                            selectedCow = cow; // Simpan objek Cow yang dipilih
-                          });
-                        },
+                        items: cowList.map((cow) => cow.name).toList(),
+                        selectedValue: selectedCow?.name,
+                        onChanged: null, // Nonaktifkan perubahan
+                        isEnabled: false, // Nonaktifkan dropdown
                       ),
                       SizedBox(height: 12),
                       _buildDatePickerField(
                         label: 'Waktu Produksi',
                         selectedDate: productionTime,
-                        onDateSelected: (date) {
-                          setState(() {
-                            productionTime = date;
-                          });
-                        },
+                        onDateSelected: (date) {}, // Nonaktifkan perubahan
+                        isEnabled: false, // Nonaktifkan date picker
                       ),
                       SizedBox(height: 12),
                       _buildTextFormField(
@@ -220,11 +209,13 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
                         icon: Icons.timeline,
                         items: lactationStatus
                             ? ['Early', 'Mid', 'Late']
-                            : [
-                                'Dry'
-                              ], // Tambahkan 'Dry' jika lactationStatus false
-                        selectedValue:
-                            lactationStatus ? selectedLactationPhase : 'Dry',
+                            : ['Dry'],
+                        selectedValue: lactationStatus
+                            ? (['Early', 'Mid', 'Late']
+                                    .contains(selectedLactationPhase)
+                                ? selectedLactationPhase
+                                : 'Early') // Default ke 'Early' jika tidak cocok
+                            : 'Dry', // Default ke 'Dry' jika lactationStatus false
                         onChanged: lactationStatus
                             ? (value) {
                                 setState(() {
@@ -348,7 +339,9 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 2, horizontal: 16),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isEnabled
+            ? Colors.grey.shade50
+            : Colors.grey.shade200, // Ubah warna jika isEnabled false
       ),
       value: selectedValue,
       items: items
@@ -357,7 +350,8 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
                 child: Text(item),
               ))
           .toList(),
-      onChanged: isEnabled ? onChanged : null,
+      onChanged:
+          isEnabled ? onChanged : null, // Nonaktifkan jika isEnabled false
       borderRadius: BorderRadius.circular(8.0),
       dropdownColor: Colors.white,
     );
@@ -367,6 +361,7 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
     required String label,
     required DateTime? selectedDate,
     required Function(DateTime) onDateSelected,
+    bool isEnabled = true, // Tambahkan parameter isEnabled dengan default true
   }) {
     return TextFormField(
       decoration: InputDecoration(
@@ -383,37 +378,42 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isEnabled
+            ? Colors.grey.shade50
+            : Colors.grey.shade200, // Ubah warna jika tidak aktif
       ),
       readOnly: true,
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: DateTime.now(),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-        );
-        if (date != null) {
-          final time = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay.now(),
-          );
-          if (time != null) {
-            onDateSelected(DateTime(
-              date.year,
-              date.month,
-              date.day,
-              time.hour,
-              time.minute,
-            ));
-          }
-        }
-      },
+      onTap: isEnabled
+          ? () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(1900),
+                lastDate: DateTime.now(),
+              );
+              if (date != null) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
+                if (time != null) {
+                  onDateSelected(DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    time.hour,
+                    time.minute,
+                  ));
+                }
+              }
+            }
+          : null, // Nonaktifkan jika isEnabled false
       controller: TextEditingController(
         text: selectedDate == null
             ? ''
             : '${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${selectedDate.hour}:${selectedDate.minute}',
       ),
+      enabled: isEnabled, // Nonaktifkan input jika isEnabled false
     );
   }
 
@@ -449,15 +449,17 @@ class _AddDataProduksiSusuState extends State<AddDataProduksiSusu> {
         elevation: 4,
         shadowColor: Colors.green.shade200,
       ),
-      onPressed: _submitDataProduksiSusu, // Panggil fungsi submit
-      child: Text(
-        'Simpan Data Produksi Susu',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
+      onPressed: _isLoading ? null : _updateDataProduksiSusu,
+      child: _isLoading
+          ? CircularProgressIndicator(color: Colors.white)
+          : Text(
+              'Update Data Produksi Susu',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
     );
   }
 }
