@@ -20,19 +20,12 @@ const LanguageDropdown = () => {
   const { i18n } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Simpan bahasa dan flag berdasarkan kode bahasa
   const languages = {
-    en: {
-      name: "English",
-      flag: englishFlag,
-    },
-    id: {
-      name: "Indo",
-      flag: indoFlag,
-    },
+    en: { name: "English", flag: englishFlag },
+    id: { name: "Indo", flag: indoFlag },
   };
 
-  const currentLangCode = i18n.language || "en"; // ambil kode bahasa aktif
+  const currentLangCode = i18n.language || "en";
   const currentLanguage = languages[currentLangCode]?.name || "English";
   const currentFlag = languages[currentLangCode]?.flag || englishFlag;
 
@@ -41,8 +34,8 @@ const LanguageDropdown = () => {
   };
 
   const handleLanguageChange = (langCode) => {
-    i18n.changeLanguage(langCode); // langsung ganti bahasa
-    setIsDropdownOpen(false); // tutup dropdown setelah pilih
+    i18n.changeLanguage(langCode);
+    setIsDropdownOpen(false);
   };
 
   return (
@@ -61,7 +54,6 @@ const LanguageDropdown = () => {
 
       {isDropdownOpen && (
         <div className="dropdown-menu dropdown-menu-end show">
-          {/* Tampilkan opsi selain yang sekarang aktif */}
           {Object.entries(languages).map(
             ([code, lang]) =>
               code !== currentLangCode && (
@@ -74,12 +66,7 @@ const LanguageDropdown = () => {
                     handleLanguageChange(code);
                   }}
                 >
-                  <img
-                    src={lang.flag}
-                    alt={lang.name}
-                    className="me-1"
-                    height="12"
-                  />
+                  <img src={lang.flag} alt={lang.name} className="me-1" height="12" />
                   <span className="align-middle">{lang.name}</span>
                 </a>
               )
@@ -92,11 +79,9 @@ const LanguageDropdown = () => {
 
 const Header = ({ onToggleSidebar }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] =
-    useState(false);
-  const [notifications, setNotifications] = useState([]); // State for notifications
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false); // Loading state for notifications
-
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const notificationDropdownRef = useRef(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +89,6 @@ const Header = ({ onToggleSidebar }) => {
   const [userName, setUserName] = useState("Guest");
 
   const navigate = useNavigate();
-
   const userDropdownRef = useRef(null);
   const notificationButtonRef = useRef(null);
   const userButtonRef = useRef(null);
@@ -115,27 +99,37 @@ const Header = ({ onToggleSidebar }) => {
       try {
         const lowProductionResponse = await getLowProductionNotifications();
         const freshnessResponse = await getFreshnessNotifications();
-        const signalNotifications = await getAllNotifications();
+        const signalNotificationsResponse = await getAllNotifications();
         const feedNotificationResponse = await getFeedNotifications();
 
-        // Pastikan untuk mengambil data dari properti `data` untuk feedNotification
-        const feedNotifications = feedNotificationResponse.data || [];
+        console.log("Signal Notifications Response:", signalNotificationsResponse);
+        console.log("Feed Notifications Response:", feedNotificationResponse);
+
+        const feedNotifications = feedNotificationResponse.success
+          ? feedNotificationResponse.data || []
+          : [];
+        const signalNotifications = Array.isArray(signalNotificationsResponse)
+          ? signalNotificationsResponse
+          : signalNotificationsResponse.data || [];
 
         const combinedNotifications = [
           ...(lowProductionResponse.notifications || []),
           ...(freshnessResponse.notifications || []),
-          ...(signalNotifications || []),
-          ...feedNotifications, // Gunakan feedNotifications yang sudah dipetakan
+          ...signalNotifications,
+          ...feedNotifications,
         ];
 
         // Sort notifications by date (newest first)
-        combinedNotifications.sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
-        );
+        combinedNotifications.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateB - dateA; // Descending order
+        });
 
         setNotifications(combinedNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error.message);
+        setNotifications([]);
       } finally {
         setIsLoadingNotifications(false);
       }
@@ -154,7 +148,6 @@ const Header = ({ onToggleSidebar }) => {
         confirmButtonText: "OK",
       }).then(async () => {
         setIsLoading(true);
-
         try {
           const response = await fetchAPI("auth/logout", "POST", {
             email: JSON.parse(localStorage.getItem("user"))?.email,
@@ -162,7 +155,6 @@ const Header = ({ onToggleSidebar }) => {
 
           if (response.status === 200) {
             localStorage.removeItem("user");
-
             setTimeout(() => {
               navigate("/logout", { replace: true });
               window.history.pushState(null, null, window.location.href);
@@ -176,11 +168,7 @@ const Header = ({ onToggleSidebar }) => {
             setIsLoading(false);
           }
         } catch (error) {
-          Swal.fire(
-            "Error",
-            "An unexpected error occurred. Please try again later.",
-            "error"
-          );
+          Swal.fire("Error", "An unexpected error occurred. Please try again later.", "error");
           setIsLoading(false);
         }
       });
@@ -202,9 +190,7 @@ const Header = ({ onToggleSidebar }) => {
     let interval;
     if (isLoading) {
       interval = setInterval(() => {
-        setLoadingText((prev) =>
-          prev === "Processing..." ? "Processing" : prev + "."
-        );
+        setLoadingText((prev) => (prev === "Processing..." ? "Processing" : prev + "."));
       }, 500);
     } else {
       setLoadingText("Processing");
@@ -246,7 +232,6 @@ const Header = ({ onToggleSidebar }) => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         setIsLoading(true);
-
         try {
           const response = await fetchAPI("auth/logout", "POST", {
             email: JSON.parse(localStorage.getItem("user"))?.email,
@@ -254,7 +239,6 @@ const Header = ({ onToggleSidebar }) => {
 
           if (response.status === 200) {
             localStorage.removeItem("user");
-
             setTimeout(() => {
               navigate("/logout", { replace: true });
               window.history.pushState(null, null, window.location.href);
@@ -268,16 +252,13 @@ const Header = ({ onToggleSidebar }) => {
             setIsLoading(false);
           }
         } catch (error) {
-          Swal.fire(
-            "Error",
-            "An unexpected error occurred. Please try again later.",
-            "error"
-          );
+          Swal.fire("Error", "An unexpected error occurred. Please try again later.", "error");
           setIsLoading(false);
         }
       }
     });
   };
+
   return (
     <header
       id="page-topbar"
@@ -290,7 +271,6 @@ const Header = ({ onToggleSidebar }) => {
       }}
     >
       <div className="navbar-header d-flex align-items-center justify-content-between">
-        {/* Logo and Sidebar Toggle */}
         <div className="d-flex align-items-center">
           <button
             type="button"
@@ -306,25 +286,16 @@ const Header = ({ onToggleSidebar }) => {
           </div>
         </div>
 
-        {/* Main Navigation */}
         <div className="d-flex align-items-center gap-3">
-          {/* Language Dropdown */}
           <LanguageDropdown />
-
-          {/* Fullscreen Toggle */}
           <button
             type="button"
             className="btn header-item noti-icon waves-effect d-none d-lg-inline-block"
             onClick={toggleFullScreen}
           >
-            <i
-              className={`ri-${
-                isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"
-              }`}
-            ></i>
+            <i className={`ri-${isFullScreen ? "fullscreen-exit-line" : "fullscreen-line"}`}></i>
           </button>
 
-          {/* Notification Dropdown */}
           <div className="dropdown d-inline-block">
             <button
               type="button"
@@ -337,10 +308,10 @@ const Header = ({ onToggleSidebar }) => {
                 <span
                   style={{
                     position: "absolute",
-                    top: "2px", // Adjusted to move badge slightly further down
-                    right: "0px", // Unchanged to keep horizontal position
-                    backgroundColor: "#dc3545", // Red background
-                    color: "white", // White text
+                    top: "2px",
+                    right: "0px",
+                    backgroundColor: "#dc3545",
+                    color: "white",
                     borderRadius: "50%",
                     width: "20px",
                     height: "20px",
@@ -350,7 +321,7 @@ const Header = ({ onToggleSidebar }) => {
                     fontSize: "12px",
                     fontWeight: "bold",
                     lineHeight: "1",
-                    border: "1px solid #fff", // Optional: white border for contrast
+                    border: "1px solid #fff",
                   }}
                 >
                   {notifications.length}
@@ -383,16 +354,11 @@ const Header = ({ onToggleSidebar }) => {
                   </div>
                 </div>
               </div>
-              <div
-                data-simplebar
-                style={{ maxHeight: "250px", overflowY: "auto" }}
-              >
+              <div data-simplebar style={{ maxHeight: "250px", overflowY: "auto" }}>
                 {isLoadingNotifications ? (
                   <div className="text-center p-3">Loading...</div>
                 ) : notifications.length === 0 ? (
-                  <div className="text-center p-3">
-                    No notifications available.
-                  </div>
+                  <div className="text-center p-3">No notifications available.</div>
                 ) : (
                   notifications.map((notification, index) => (
                     <a
@@ -406,9 +372,7 @@ const Header = ({ onToggleSidebar }) => {
                         <div className="avatar-xs me-3">
                           <span
                             className={`avatar-title ${
-                              notification.type === "freshness"
-                                ? "bg-success"
-                                : "bg-warning"
+                              notification.type === "freshness" ? "bg-success" : "bg-warning"
                             } rounded-circle font-size-16`}
                           >
                             <i
@@ -421,15 +385,10 @@ const Header = ({ onToggleSidebar }) => {
                           </span>
                         </div>
                         <div className="flex-1">
-                          <h6 className="mb-1">
-                            {notification.name || "Unknown Notification"}
-                          </h6>
-                          <p className="mb-1 text-muted">
-                            {notification.message}
-                          </p>
+                          <h6 className="mb-1">{notification.name || "Unknown Notification"}</h6>
+                          <p className="mb-1 text-muted">{notification.message}</p>
                           <div className="font-size-12 text-muted">
-                            <i className="mdi mdi-clock-outline"></i>{" "}
-                            {notification.date}
+                            <i className="mdi mdi-clock-outline"></i> {notification.date}
                           </div>
                         </div>
                         {notification.isNew && (
@@ -444,10 +403,7 @@ const Header = ({ onToggleSidebar }) => {
               </div>
               <div className="p-2 border-top">
                 <div className="d-grid">
-                  <a
-                    className="btn btn-sm btn-primary font-size-14 text-center"
-                    href="#!"
-                  >
+                  <a className="btn btn-sm btn-primary font-size-14 text-center" href="#!">
                     <i className="mdi mdi-arrow-right-circle me-1"></i> View All
                   </a>
                 </div>
@@ -455,7 +411,6 @@ const Header = ({ onToggleSidebar }) => {
             </div>
           </div>
 
-          {/* User Dropdown */}
           <div className="dropdown d-inline-block user-dropdown">
             <button
               ref={userButtonRef}
@@ -475,17 +430,14 @@ const Header = ({ onToggleSidebar }) => {
             </button>
             <div
               ref={userDropdownRef}
-              className={`dropdown-menu dropdown-menu-end ${
-                isUserDropdownOpen ? "show" : ""
-              }`}
+              className={`dropdown-menu dropdown-menu-end ${isUserDropdownOpen ? "show" : ""}`}
             >
               <a className="dropdown-item" href="#">
                 <i className="ri-user-line align-middle me-1"></i> Profile
               </a>
               <div className="dropdown-divider"></div>
               <button className="dropdown-item" onClick={handleLogout}>
-                <i className="ri-logout-circle-r-line align-middle me-1"></i>{" "}
-                Logout
+                <i className="ri-logout-circle-r-line align-middle me-1"></i> Logout
               </button>
             </div>
           </div>
