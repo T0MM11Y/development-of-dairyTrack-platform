@@ -17,12 +17,11 @@ class EditProductStock extends StatefulWidget {
 class _EditProductStockState extends State<EditProductStock> {
   final _formKey = GlobalKey<FormState>();
   final _initialQuantityController = TextEditingController();
-  final _quantityController = TextEditingController();
   final _totalMilkUsedController = TextEditingController();
   final _productionAtController = TextEditingController();
   final _expiryAtController = TextEditingController();
   ProdukType? _selectedProductType;
-  String _status = 'active';
+  String _status = 'available';
   bool _isLoading = false;
   List<ProdukType> _productTypes = [];
 
@@ -32,7 +31,6 @@ class _EditProductStockState extends State<EditProductStock> {
     _fetchProductTypes();
     _initialQuantityController.text =
         widget.productStock.initialQuantity.toString();
-    _quantityController.text = widget.productStock.quantity.toString();
     _totalMilkUsedController.text =
         widget.productStock.totalMilkUsed.toString();
     _productionAtController.text =
@@ -64,7 +62,7 @@ class _EditProductStockState extends State<EditProductStock> {
       BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.parse(controller.text),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -86,9 +84,8 @@ class _EditProductStockState extends State<EditProductStock> {
           id: widget.productStock.id,
           productType: _selectedProductType!.id,
           initialQuantity: int.parse(_initialQuantityController.text.trim()),
-          quantity: int.parse(_quantityController.text.trim()),
-          productionAt: _productionAtController.text.trim(),
-          expiryAt: _expiryAtController.text.trim(),
+          productionAt: DateTime.parse(_productionAtController.text.trim()),
+          expiryAt: DateTime.parse(_expiryAtController.text.trim()),
           status: _status,
           totalMilkUsed: double.parse(_totalMilkUsedController.text.trim()),
         );
@@ -114,7 +111,6 @@ class _EditProductStockState extends State<EditProductStock> {
   @override
   void dispose() {
     _initialQuantityController.dispose();
-    _quantityController.dispose();
     _totalMilkUsedController.dispose();
     _productionAtController.dispose();
     _expiryAtController.dispose();
@@ -186,26 +182,6 @@ class _EditProductStockState extends State<EditProductStock> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Jumlah Saat Ini',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.inventory),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Jumlah saat ini tidak boleh kosong';
-                        }
-                        final parsed = int.tryParse(value.trim());
-                        if (parsed == null || parsed < 0) {
-                          return 'Jumlah harus berupa angka non-negatif';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
                       controller: _totalMilkUsedController,
                       decoration: const InputDecoration(
                         labelText: 'Total Susu Digunakan (Liter)',
@@ -263,7 +239,7 @@ class _EditProductStockState extends State<EditProductStock> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.info),
                       ),
-                      items: ['active', 'expired', 'out_of_stock']
+                      items: ['available', 'expired', 'contamination']
                           .map((String status) {
                         return DropdownMenuItem<String>(
                           value: status,

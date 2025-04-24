@@ -63,24 +63,22 @@ Future<ProductStock> getProductStockById(int id) async {
 Future<bool> createProductStock({
   required int productType,
   required int initialQuantity,
-  required int quantity,
+  required double totalMilkUsed,
   required String productionAt,
   required String expiryAt,
   required String status,
-  required double totalMilkUsed,
 }) async {
   try {
     final response = await fetchAPI(
       "product-stock",
       method: "POST",
-      multipartData: {
-        'product_type': productType.toString(),
-        'initial_quantity': initialQuantity.toString(),
-        'quantity': quantity.toString(),
+      data: {
+        'product_type': productType,
+        'initial_quantity': initialQuantity,
+        'total_milk_used': totalMilkUsed,
         'production_at': productionAt,
         'expiry_at': expiryAt,
         'status': status,
-        'total_milk_used': totalMilkUsed.toString(),
       },
     );
 
@@ -101,24 +99,22 @@ Future<bool> updateProductStock({
   required int id,
   required int productType,
   required int initialQuantity,
-  required int quantity,
-  required String productionAt,
-  required String expiryAt,
-  required String status,
   required double totalMilkUsed,
+  required DateTime productionAt,
+  required DateTime expiryAt,
+  required String status,
 }) async {
   try {
     final response = await fetchAPI(
-      "product-stock/$id",
+      "product-stock/$id/",
       method: "PUT",
-      multipartData: {
-        'product_type': productType.toString(),
-        'initial_quantity': initialQuantity.toString(),
-        'quantity': quantity.toString(),
-        'production_at': productionAt,
-        'expiry_at': expiryAt,
+      data: {
+        'product_type': productType,
+        'initial_quantity': initialQuantity,
+        'total_milk_used': totalMilkUsed,
+        'production_at': productionAt.toIso8601String(),
+        'expiry_at': expiryAt.toIso8601String(),
         'status': status,
-        'total_milk_used': totalMilkUsed.toString(),
       },
     );
 
@@ -137,7 +133,7 @@ Future<bool> updateProductStock({
 // DELETE stok produk
 Future<bool> deleteProductStock(int id) async {
   try {
-    final response = await fetchAPI("product-stock/$id", method: "DELETE");
+    final response = await fetchAPI("product-stock/$id/", method: "DELETE");
     print('Response from deleteProductStock: $response');
     if (response == true || response is Map<String, dynamic>) {
       return true;

@@ -12,6 +12,7 @@ class ListProductStocks extends StatefulWidget {
 
 class _ListProductStocksState extends State<ListProductStocks> {
   String? searchQuery;
+  String? _selectedStatus; // null untuk "Semua"
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
   int? _deletingId;
@@ -25,9 +26,12 @@ class _ListProductStocksState extends State<ListProductStocks> {
             stock.productTypeDetail.productName
                 .toLowerCase()
                 .contains(searchQuery!.toLowerCase());
-        return matchesSearchQuery;
+        final matchesStatus =
+            _selectedStatus == null || stock.status == _selectedStatus;
+        return matchesSearchQuery && matchesStatus;
       }).toList();
     } catch (e) {
+      print('Error fetching product stocks: $e');
       throw Exception('Failed to fetch product stocks: $e');
     }
   }
@@ -103,18 +107,49 @@ class _ListProductStocksState extends State<ListProductStocks> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Cari berdasarkan Nama Produk',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value.trim();
-                    });
-                  },
+                child: Column(
+                  children: [
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Cari berdasarkan Nama Produk',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.search),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value.trim();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String?>(
+                      value: _selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Filter Status',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.filter_list),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Semua'),
+                        ),
+                        ...['available', 'expired', 'contamination']
+                            .map((String status) {
+                          return DropdownMenuItem<String>(
+                            value: status,
+                            child: Text(status),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedStatus = newValue;
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -211,6 +246,7 @@ class _ListProductStocksState extends State<ListProductStocks> {
                                                 Navigator.pushNamed(
                                                   context,
                                                   '/edit-product-stock',
+                                                  arguments: stock,
                                                 ).then((result) {
                                                   if (result == true) {
                                                     _refreshData();

@@ -1,6 +1,5 @@
 import 'package:dairy_track/config/api/penjualan/product.dart';
 import 'package:dairy_track/config/api/penjualan/productType.dart';
-import 'package:dairy_track/model/penjualan/product.dart';
 import 'package:dairy_track/model/penjualan/productType.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -15,12 +14,11 @@ class CreateProductStock extends StatefulWidget {
 class _CreateProductStockState extends State<CreateProductStock> {
   final _formKey = GlobalKey<FormState>();
   final _initialQuantityController = TextEditingController();
-  final _quantityController = TextEditingController();
   final _totalMilkUsedController = TextEditingController();
   final _productionAtController = TextEditingController();
   final _expiryAtController = TextEditingController();
   ProdukType? _selectedProductType;
-  String _status = 'active';
+  String _status = 'available'; 
   bool _isLoading = false;
   List<ProdukType> _productTypes = [];
 
@@ -75,7 +73,6 @@ class _CreateProductStockState extends State<CreateProductStock> {
         await createProductStock(
           productType: _selectedProductType!.id,
           initialQuantity: int.parse(_initialQuantityController.text.trim()),
-          quantity: int.parse(_quantityController.text.trim()),
           productionAt: _productionAtController.text.trim(),
           expiryAt: _expiryAtController.text.trim(),
           status: _status,
@@ -103,7 +100,6 @@ class _CreateProductStockState extends State<CreateProductStock> {
   @override
   void dispose() {
     _initialQuantityController.dispose();
-    _quantityController.dispose();
     _totalMilkUsedController.dispose();
     _productionAtController.dispose();
     _expiryAtController.dispose();
@@ -175,26 +171,6 @@ class _CreateProductStockState extends State<CreateProductStock> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Jumlah Saat Ini',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.inventory),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Jumlah saat ini tidak boleh kosong';
-                        }
-                        final parsed = int.tryParse(value.trim());
-                        if (parsed == null || parsed < 0) {
-                          return 'Jumlah harus berupa angka non-negatif';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
                       controller: _totalMilkUsedController,
                       decoration: const InputDecoration(
                         labelText: 'Total Susu Digunakan (Liter)',
@@ -252,7 +228,7 @@ class _CreateProductStockState extends State<CreateProductStock> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.info),
                       ),
-                      items: ['active', 'expired', 'out_of_stock']
+                      items: ['available', 'expired', 'contamination']
                           .map((String status) {
                         return DropdownMenuItem<String>(
                           value: status,
