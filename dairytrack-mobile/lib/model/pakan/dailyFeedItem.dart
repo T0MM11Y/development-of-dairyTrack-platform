@@ -20,13 +20,21 @@ class FeedItem {
   // Create a FeedItem from a JSON object
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     return FeedItem(
-      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      dailyFeedId: int.tryParse(json['daily_feed_id']?.toString() ?? '0') ?? 0,
-      feedId: int.tryParse(json['feed_id']?.toString() ?? '0') ?? 0,
-      quantity: json['quantity'] != null 
-          ? double.tryParse(json['quantity'].toString() ?? '0.0') ?? 0.0
-          : 0.0,
-      feed: json['feed'] != null ? Feed.fromJson(json['feed']) : null,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
+      dailyFeedId: json['daily_feed_id'] is int
+          ? json['daily_feed_id']
+          : int.tryParse(json['daily_feed_id'].toString()) ?? 0,
+      feedId: json['feed_id'] is int
+          ? json['feed_id']
+          : int.tryParse(json['feed_id'].toString()) ?? 0,
+      quantity: json['quantity'] is double
+          ? json['quantity']
+          : double.tryParse(json['quantity'].toString()) ?? 0.0,
+      feed: json['feed'] != null && json['feed'] is Map<String, dynamic>
+          ? Feed.fromJson(json['feed'])
+          : null,
     );
   }
 
