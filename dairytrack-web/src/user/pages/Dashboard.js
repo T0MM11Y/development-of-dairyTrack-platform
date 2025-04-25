@@ -398,7 +398,7 @@ function Dashboard() {
           )}
           <div className="text-center mt-5">
             <Link
-              to="/products"
+              to="/produk"
               className="btn btn-outline-primary px-4 py-2 rounded-pill"
               style={{ fontWeight: "500" }}
             >

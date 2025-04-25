@@ -143,7 +143,7 @@ const AddIncomeModal = ({ onClose, onSaved }) => {
                   value={form.description}
                   onChange={handleChange}
                   className="form-control"
-                  placeholder="Masukkan deskripsi pemasukan (opsional)"
+                  placeholder="Masukkan deskripsi pemasukan (wajib)"
                   rows="3"
                   disabled={submitting}
                 />

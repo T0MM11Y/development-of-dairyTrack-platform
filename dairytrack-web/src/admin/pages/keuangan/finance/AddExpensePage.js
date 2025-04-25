@@ -3,7 +3,6 @@ import { createExpense } from "../../../../api/keuangan/expense";
 import { showAlert } from "../../../../admin/pages/keuangan/utils/alert";
 import { useTranslation } from "react-i18next";
 
-
 const AddExpenseModal = ({ onClose, onSaved }) => {
   const [form, setForm] = useState({
     expense_type: "",
@@ -74,7 +73,7 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h4 className="modal-title text-info fw-bold">
-            {t('finance.add_expense')}
+              {t("finance.add_expense")}
             </h4>
             <button
               className="btn-close"
@@ -86,7 +85,8 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
             {error && <p className="text-danger text-center">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('finance.expense_type')}
+                <label className="form-label fw-bold">
+                  {t("finance.expense_type")}
                 </label>
                 <select
                   name="expense_type"
@@ -96,32 +96,38 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
                   required
                   disabled={submitting}
                 >
-                  <option value="">-- {t('finance.select_expense_type')}
-                  --</option>
-                  <option value="material_purchase">{t('finance.purchase_material')}
+                  <option value="">
+                    -- {t("finance.select_expense_type")}
+                    --
                   </option>
-                  <option value="feed_purchase">{t('finance.purchase_feed')}
+                  <option value="material_purchase">
+                    {t("finance.purchase_material")}
                   </option>
-                  <option value="medicine_purchase">{t('finance.purchase_medicine')}
+                  <option value="feed_purchase">
+                    {t("finance.purchase_feed")}
                   </option>
-                  <option value="employee_salary">{t('finance.employee_salary')}
+                  <option value="medicine_purchase">
+                    {t("finance.purchase_medicine")}
                   </option>
-                  <option value="operational">{t('finance.operational_cost')}
+                  <option value="employee_salary">
+                    {t("finance.employee_salary")}
+                  </option>
+                  <option value="operational">
+                    {t("finance.operational_cost")}
                   </option>
                   <option value="equipment_purchase">
-                  {t('finance.equipment_purchase')}
-
+                    {t("finance.equipment_purchase")}
                   </option>
-                  <option value="marketing">{t('finance.marketing')}
-                  </option>
-                  <option value="other">{t('finance.others')}
-                  </option>
+                  <option value="marketing">{t("finance.marketing")}</option>
+                  <option value="other">{t("finance.others")}</option>
                 </select>
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('finance.amount')}
-                (Rp)</label>
+                <label className="form-label fw-bold">
+                  {t("finance.amount")}
+                  (Rp)
+                </label>
                 <input
                   type="number"
                   name="amount"
@@ -135,7 +141,8 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('finance.transaction_date')}
+                <label className="form-label fw-bold">
+                  {t("finance.transaction_date")}
                 </label>
                 <input
                   type="datetime-local"
@@ -149,14 +156,15 @@ const AddExpenseModal = ({ onClose, onSaved }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('finance.description')}
+                <label className="form-label fw-bold">
+                  {t("finance.description")}
                 </label>
                 <textarea
                   name="description"
                   value={form.description}
                   onChange={handleChange}
                   className="form-control"
-                  placeholder="Masukkan deskripsi pengeluaran (opsional)"
+                  placeholder="Masukkan deskripsi pengeluaran (wajib)"
                   rows="3"
                   disabled={submitting}
                 />

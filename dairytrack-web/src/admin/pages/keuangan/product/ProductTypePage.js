@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  deleteProductStock,
-  getProductStocks,
-} from "../../../../api/keuangan/product";
+  getProductTypes,
+  deleteProductType,
+} from "../../../../api/keuangan/productType";
 import DataTable from "react-data-table-component";
-import ProductStockCreateModal from "./ProductTypeCreatePage";
-import ProductEditPage from "./ProductEditPage";
-import { showAlert, showConfirmAlert } from "../../../../admin/pages/keuangan/utils/alert";
+import ProductTypeCreateModal from "./ProductTypeCreatePage";
+import ProductTypeEditModal from "./ProductTypeEditPage";
+import {
+  showAlert,
+  showConfirmAlert,
+} from "../../../../admin/pages/keuangan/utils/alert";
 import { useTranslation } from "react-i18next";
 
-
-const ProductStockListPage = () => {
+const ProductTypePage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,31 +21,22 @@ const ProductStockListPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(null);
   const { t } = useTranslation();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isSupervisor = user?.type === "supervisor";
+
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor tidak dapat mengedit data",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const productsRes = await getProductStocks();
-      const processedData = productsRes.map((item) => {
-        const now = new Date();
-        const expiryDate = new Date(item.expiry_at);
-        const timeRemaining = expiryDate - now;
-        return {
-          ...item,
-          timeRemaining: timeRemaining > 0 ? timeRemaining : 0,
-        };
-      });
-      const sortedData = processedData.sort((a, b) => {
-        if (a.status === "available" && b.status === "available") {
-          return a.timeRemaining - b.timeRemaining;
-        } else if (a.status === "available") {
-          return -1;
-        } else if (b.status === "available") {
-          return 1;
-        }
-        return 0;
-      });
-      setData(sortedData);
+      const productTypesRes = await getProductTypes();
+      setData(productTypesRes);
       setError("");
     } catch (err) {
       console.error("Gagal mengambil data:", err.message);
@@ -53,57 +46,13 @@ const ProductStockListPage = () => {
     }
   };
 
-  const formatTimeRemaining = (timeRemaining) => {
-    if (timeRemaining <= 0) {
-      return "Expired";
-    }
-    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    );
-    const minutes = Math.floor(
-      (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
-    );
-    if (days > 0) {
-      return `${days} hari ${hours} jam`;
-    } else if (hours > 0) {
-      return `${hours} jam ${minutes} menit`;
-    } else if (minutes > 0) {
-      return `${minutes} menit`;
-    } else {
-      return "< 1 menit";
-    }
-  };
-
-  const formatDateTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("id-ID", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
-  const getStatusBadgeClass = (status, timeRemaining) => {
-    if (status !== "available") {
-      return "bg-danger";
-    }
-    if (timeRemaining < 86400000) {
-      return "bg-warning";
-    }
-    return "bg-success";
-  };
-
   const handleProductAdded = () => {
     fetchData();
     setShowCreateModal(false);
     showAlert({
       type: "success",
       title: "Berhasil",
-      text: "Stok produk berhasil ditambahkan.",
+      text: "Tipe produk berhasil ditambahkan.",
     });
   };
 
@@ -113,7 +62,7 @@ const ProductStockListPage = () => {
     showAlert({
       type: "success",
       title: "Berhasil",
-      text: "Stok produk berhasil diperbarui.",
+      text: "Tipe produk berhasil diperbarui.",
     });
   };
 
@@ -122,7 +71,7 @@ const ProductStockListPage = () => {
 
     const result = await showConfirmAlert({
       title: "Konfirmasi Hapus",
-      text: "Apakah Anda yakin ingin menghapus stok produk ini? Tindakan ini tidak dapat dibatalkan.",
+      text: "Apakah Anda yakin ingin menghapus tipe produk ini? Tindakan ini tidak dapat dibatalkan.",
       confirmButtonText: "Hapus",
       cancelButtonText: "Batal",
     });
@@ -130,19 +79,19 @@ const ProductStockListPage = () => {
     if (result.isConfirmed) {
       setSubmitting(true);
       try {
-        await deleteProductStock(deleteId);
+        await deleteProductType(deleteId);
         fetchData();
         await showAlert({
           type: "success",
           title: "Berhasil",
-          text: "Stok produk berhasil dihapus.",
+          text: "Tipe produk berhasil dihapus.",
         });
       } catch (err) {
         console.error("Gagal menghapus data:", err.message);
         await showAlert({
           type: "error",
           title: "Gagal Menghapus",
-          text: "Gagal menghapus stok produk: " + err.message,
+          text: "Gagal menghapus tipe produk: " + err.message,
         });
       } finally {
         setSubmitting(false);
@@ -153,72 +102,99 @@ const ProductStockListPage = () => {
     }
   };
 
+  const formatRupiah = (number) => {
+    if (!number) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
+
   const columns = [
     {
-      name: "Product Type",
-      selector: (row) => row.product_type_detail?.product_name || "Unknown",
-      sortable: true,
+      name: "#",
+      cell: (row, index) => index + 1,
+      width: "60px",
     },
     {
-      name: "Remaining Qty",
-      selector: (row) => row.quantity,
-      sortable: true,
-    },
-    {
-      name: "Production Date",
-      selector: (row) => formatDateTime(row.production_at),
-      sortable: true,
-    },
-    {
-      name: "Expiry Date",
-      selector: (row) => formatDateTime(row.expiry_at),
-      sortable: true,
-    },
-    {
-      name: "Status",
+      name: t("product.product_image"),
       cell: (row) => (
-        <span
-          className={`badge ${getStatusBadgeClass(row.status, row.timeRemaining)}`}
-        >
-          {row.status === "available"
-            ? `${row.status} (${formatTimeRemaining(row.timeRemaining)})`
-            : row.status}
-        </span>
+        <img
+          src={row.image || "/placeholder-image.jpg"}
+          alt={row.product_name}
+          className="rounded"
+          style={{
+            width: "50px",
+            height: "50px",
+            objectFit: "cover",
+          }}
+        />
+      ),
+      width: "100px",
+    },
+    {
+      name: t("product.product_name"),
+      selector: (row) => row.product_name,
+      sortable: true,
+    },
+    {
+      name: t("product.product_description"),
+      cell: (row) => (
+        <div>
+          {row.product_description.length > 50
+            ? `${row.product_description.substring(0, 50)}...`
+            : row.product_description}
+        </div>
       ),
       sortable: true,
-      selector: (row) => row.status,
     },
     {
-      name: "Total Milk Used",
-      selector: (row) => `${row.total_milk_used} L`,
+      name: t("product.price"),
+      cell: (row) => formatRupiah(row.price),
+      sortable: true,
+      selector: (row) => row.price,
+    },
+    {
+      name: t("product.unit"),
+      selector: (row) => row.unit,
       sortable: true,
     },
     {
-      name: "Actions",
+      name: t("action"),
       cell: (row) => (
         <>
-          {row.status === "contamination" ||
-          row.status === "expired" ||
-          row.status === "sold_out" ? (
-            <button
-              className="btn btn-warning btn-sm me-2"
-              disabled
-              title="Tidak dapat diedit"
-            >
-              <i className="ri-edit-line"></i>
-            </button>
-          ) : (
-            <button
-              className="btn btn-warning btn-sm me-2"
-              onClick={() => setShowEditModal(row.id)}
-            >
-              <i className="ri-edit-line"></i>
-            </button>
-          )}
           <button
-            onClick={() => setDeleteId(row.id)}
+            className="btn btn-warning btn-sm me-2"
+            onClick={() => {
+              if (!isSupervisor) {
+                setShowEditModal(row.id);
+              }
+            }}
+            {...disableIfSupervisor}
+          >
+            <i className="ri-edit-line"></i>
+          </button>
+          <button
+            onClick={() => {
+              if (!isSupervisor && !submitting) {
+                setDeleteId(row.id);
+              }
+            }}
             className="btn btn-danger btn-sm"
-            disabled={submitting}
+            disabled={submitting || isSupervisor}
+            style={
+              submitting || isSupervisor
+                ? { opacity: 0.5, cursor: "not-allowed" }
+                : {}
+            }
+            title={
+              isSupervisor
+                ? "Supervisor tidak dapat menghapus tipe produk"
+                : submitting
+                ? "Sedang memproses..."
+                : ""
+            }
           >
             <i className="ri-delete-bin-6-line"></i>
           </button>
@@ -227,6 +203,7 @@ const ProductStockListPage = () => {
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
+      width: "150px",
     },
   ];
 
@@ -246,23 +223,24 @@ const ProductStockListPage = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      fetchData();
-    }, 600000); // 10 menit
-    return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 m-1">{t('product.product_stock')}
+        <h2 className="text-xl font-bold text-gray-800 m-1">
+          {t("product.product_type")}
         </h2>
         <button
           className="btn btn-info"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            if (!isSupervisor) {
+              setShowCreateModal(true);
+            }
+          }}
+          {...disableIfSupervisor}
         >
-          + {t('product.product_stock')}
-
+          + {t("product.product_type")}
         </button>
       </div>
 
@@ -284,15 +262,13 @@ const ProductStockListPage = () => {
                 <div className="spinner-border text-primary" role="status">
                   <span className="sr-only">Loading...</span>
                 </div>
-                <p className="mt-2">{t('product.loading_product_stock')}
-                ...</p>
+                <p className="mt-2">{t("product.loading_product_types")}...</p>
               </div>
             }
             progressPending={loading}
             noDataComponent={
               <div className="text-center my-3">
-                <p className="text-gray-500">{t('product.no_product_stock')}
-                .</p>
+                <p className="text-gray-500">{t("product.no_product_types")}</p>
               </div>
             }
             customStyles={customStyles}
@@ -309,15 +285,15 @@ const ProductStockListPage = () => {
           style={{
             background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
             minHeight: "100vh",
-            display: "flex !important",
-            alignItems: "center !important",
-            justifyContent: "center !important",
-            position: "fixed !important",
-            top: "0 !important",
-            left: "0 !important",
-            right: "0 !important",
-            bottom: "0 !important",
-            zIndex: "1050 !important",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1050,
           }}
           tabIndex="-1"
           role="dialog"
@@ -329,7 +305,7 @@ const ProductStockListPage = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 id="deleteModalTitle" className="modal-title text-danger">
-                  Konfirmasi Hapus
+                  {t("product.delete_confirmation")}
                 </h5>
                 <button
                   type="button"
@@ -341,9 +317,9 @@ const ProductStockListPage = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Apakah Anda yakin ingin menghapus stok produk ini?
+                  {t("product.confirm_delete_product_type")}
                   <br />
-                  Tindakan ini tidak dapat dibatalkan.
+                  {t("product.action_cannot_be_undone")}
                 </p>
               </div>
               <div className="modal-footer">
@@ -353,7 +329,7 @@ const ProductStockListPage = () => {
                   onClick={() => setDeleteId(null)}
                   disabled={submitting}
                 >
-                  Batal
+                  {t("product.cancel")}
                 </button>
                 <button
                   type="button"
@@ -368,10 +344,10 @@ const ProductStockListPage = () => {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      Menghapus...
+                      {t("product.deleting")}...
                     </>
                   ) : (
-                    "Hapus"
+                    t("product.delete")
                   )}
                 </button>
               </div>
@@ -382,15 +358,15 @@ const ProductStockListPage = () => {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <ProductStockCreateModal
+        <ProductTypeCreateModal
           onClose={() => setShowCreateModal(false)}
-          onProductAdded={handleProductAdded}
+          onSaved={handleProductAdded}
         />
       )}
 
       {/* Edit Modal */}
       {showEditModal && (
-        <ProductEditPage
+        <ProductTypeEditModal
           productId={showEditModal}
           onProductUpdated={handleProductUpdated}
           onClose={() => setShowEditModal(null)}
@@ -400,4 +376,4 @@ const ProductStockListPage = () => {
   );
 };
 
-export default ProductStockListPage;
+export default ProductTypePage;

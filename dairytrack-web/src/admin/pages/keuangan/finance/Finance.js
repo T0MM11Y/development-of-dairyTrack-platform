@@ -4,6 +4,8 @@ import {
   getFinanceExportPdf,
   getFinanceExportExcel,
 } from "../../../../api/keuangan/finance";
+import { getExpenses } from "../../../../api/keuangan/expense";
+import { getIncomes } from "../../../../api/keuangan/income";
 import FinanceSummaryCards from "./components/FinanceSummaryCards";
 import FinanceCharts from "./components/FinanceCharts";
 import RecentTransactions from "./components/RecentTransactions";
@@ -11,7 +13,6 @@ import FilterExportPanel from "./components/FilterExportPanel";
 import AddExpenseModal from "./AddExpensePage";
 import AddIncomeModal from "./AddIncomePage";
 import { useTranslation } from "react-i18next";
-
 
 const Finance = () => {
   // State for data
@@ -56,22 +57,18 @@ const Finance = () => {
       const queryString = queryParams.toString();
       console.log("Fetching data with params:", queryString);
 
-      const financesResponse = await getFinances(queryString);
-
-      const incomes = financesResponse.filter(
-        (item) => item.transaction_type === "income"
-      );
-      const expenses = financesResponse.filter(
-        (item) => item.transaction_type === "expense"
-      );
+      // Mengambil data dari endpoint yang benar
+      const incomesResponse = await getIncomes(queryString);
+      const expensesResponse = await getExpenses(queryString);
+      const financesResponse = [...incomesResponse, ...expensesResponse];
 
       setFinanceData(financesResponse);
-      setIncomeData(incomes);
-      setExpenseData(expenses);
+      setIncomeData(incomesResponse);
+      setExpenseData(expensesResponse);
 
-      calculateTotals(incomes, expenses);
-      processMonthlyData(incomes, expenses);
-      processCategoryData(incomes, expenses);
+      calculateTotals(incomesResponse, expensesResponse);
+      processMonthlyData(incomesResponse, expensesResponse);
+      processCategoryData(incomesResponse, expensesResponse);
       setError("");
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -278,11 +275,7 @@ const Finance = () => {
   const processCategoryData = (incomes, expenses) => {
     setIncomeByCategory(
       incomes.reduce((acc, income) => {
-        const category =
-          income.category ||
-          income.income_type ||
-          income.transaction_type ||
-          "unknown";
+        const category = income.income_type || "unknown";
         acc[category] = (acc[category] || 0) + parseFloat(income.amount || 0);
         return acc;
       }, {})
@@ -290,11 +283,7 @@ const Finance = () => {
 
     setExpenseByCategory(
       expenses.reduce((acc, expense) => {
-        const category =
-          expense.category ||
-          expense.expense_type ||
-          expense.transaction_type ||
-          "unknown";
+        const category = expense.expense_type || "unknown";
         acc[category] = (acc[category] || 0) + parseFloat(expense.amount || 0);
         return acc;
       }, {})
@@ -333,11 +322,8 @@ const Finance = () => {
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-0">{t('finance.finance_title')}
-          </h2>
-          <p className="text-muted">
-          {t('finance.finance_description')}.
-          </p>
+          <h2 className="mb-0">{t("finance.finance_title")}</h2>
+          <p className="text-muted">{t("finance.finance_description")}.</p>
         </div>
       </div>
 
@@ -350,8 +336,7 @@ const Finance = () => {
               title="Digunakan untuk menambahkan pemasukan"
               onClick={() => setShowAddIncomeModal(true)}
             >
-              <i className="bx bx-plus me-1"></i> + {t('finance.add_income')}
-
+              <i className="bx bx-plus me-1"></i> + {t("finance.add_income")}
             </button>
 
             <button
@@ -360,7 +345,7 @@ const Finance = () => {
               title="Digunakan untuk menambahkan pengeluaran"
               onClick={() => setShowAddExpenseModal(true)}
             >
-              <i className="bx bx-plus me-1"></i> + {t('finance.add_expense')}
+              <i className="bx bx-plus me-1"></i> + {t("finance.add_expense")}
             </button>
           </div>
         </div>
