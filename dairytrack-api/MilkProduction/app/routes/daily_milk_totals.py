@@ -10,12 +10,20 @@ from datetime import datetime
 daily_milk_totals_bp = Blueprint('daily_milk_totals', __name__)
 local_tz = pytz.timezone('Asia/Jakarta')
 
-
 @daily_milk_totals_bp.route('/daily_milk_totals', methods=['GET'])
 def get_daily_milk_totals():
     daily_totals = DailyMilkTotal.query.order_by(DailyMilkTotal.date.desc()).all()
     result = [daily_total.to_dict() for daily_total in daily_totals]
-    return jsonify(result), 200
+    
+    # Print the type of the response data to the terminal
+    print(f"Type of response data: {type(result)}")
+    if result:
+        print("Types of elements in the response data:")
+        for index, element in enumerate(result):
+            print(f"Element {index}: {type(element)}")
+    
+    # Corrected return statement
+    return jsonify({'status': 200, 'data': result}), 200
 
 @daily_milk_totals_bp.route('/daily_milk_totals/<int:id>', methods=['GET'])
 def get_daily_milk_total(id):
