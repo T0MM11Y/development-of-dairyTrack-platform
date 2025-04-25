@@ -61,6 +61,7 @@ import 'package:dairy_track/modules/penjualan/productType/editProductType.dart';
 import 'package:dairy_track/modules/penjualan/product/listProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/createProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/editProductStock.dart';
+import 'package:dairy_track/modules/penjualan/finance/listFinance.dart';
 
 class Routes {
   // Route constants
@@ -127,6 +128,8 @@ class Routes {
   static const String listProductStock = '/product-stock';
   static const String createProductStock = '/create-product-stock';
   static const String editProductStock = '/edit-product-stock';
+
+  static const String listFinance = '/finance';
   // Sales And Financial =======================================================
 
   // Route mapping
@@ -227,6 +230,7 @@ class Routes {
             ModalRoute.of(context)!.settings.arguments as ProductStock;
         return EditProductStock(productStock: productStock);
       },
+      listFinance: (context) => FinanceList(),
       // Sales And Financial ===================================================================
     };
   }

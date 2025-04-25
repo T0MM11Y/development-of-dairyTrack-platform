@@ -58,7 +58,7 @@ class MenuPenjualan extends StatelessWidget {
                 Icons.account_balance_outlined,
                 Colors.red,
                 onTap: () {
-                  Navigator.pushNamed(context, '/all-peternak');
+                  Navigator.pushNamed(context, '/finance');
                 },
               ),
             ],
