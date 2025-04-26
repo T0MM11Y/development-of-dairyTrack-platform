@@ -84,7 +84,6 @@ const calculateTotalNutrients = async (items) => {
   return Object.values(nutrientTotals);
 };
 
-// **CREATE (Buat Daily Feed Baru)**
 exports.createDailyFeed = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -96,6 +95,25 @@ exports.createDailyFeed = async (req, res) => {
       return res
         .status(400)
         .json({ message: "cow_id, date, dan session diperlukan" });
+    }
+
+    // Cek duplikasi berdasarkan cow_id, date, dan session
+    const existingFeed = await DailyFeedSchedule.findOne({
+      where: {
+        cow_id,
+        date,
+        session,
+      },
+      transaction,
+    });
+
+    if (existingFeed) {
+      await transaction.rollback();
+      return res.status(409).json({
+        success: false,
+        message: `Untuk sapi ID ${cow_id} tanggal ${date} sesi ${session} sudah ada. Silahkan cek kembali data yang ingin ditambahkan.`,
+        existing: existingFeed,
+      });
     }
 
     // Ambil cuaca
@@ -142,7 +160,7 @@ exports.createDailyFeed = async (req, res) => {
               include: [
                 {
                   model: FeedNutrisi,
-                  as: "FeedNutrisiRecords", // Perbaiki alias
+                  as: "FeedNutrisiRecords",
                   include: [
                     {
                       model: Nutrisi,
@@ -303,13 +321,13 @@ exports.updateDailyFeed = async (req, res) => {
       }
     }
 
-    // Cek duplikasi
+    // Cek duplikasi berdasarkan cow_id, date, dan session (kecuali ID saat ini)
     const existingFeed = await DailyFeedSchedule.findOne({
       where: {
         cow_id: cow_id || feed.cow_id,
         date: date || feed.date,
         session: session || feed.session,
-        id: { [Op.ne]: id },
+        id: { [Op.ne]: id }, // Kecualikan ID yang sedang diedit
       },
       transaction: t,
     });
@@ -318,9 +336,7 @@ exports.updateDailyFeed = async (req, res) => {
       await t.rollback();
       return res.status(409).json({
         success: false,
-        message: `Data untuk sapi ID ${cow_id || feed.cow_id} pada ${
-          date || feed.date
-        } sesi ${session || feed.session} sudah ada`,
+        message: `Untuk sapi ID ${cow_id || feed.cow_id} tanggal ${date || feed.date} sesi ${session || feed.session} sudah ada. Silahkan cek kembali data yang ingin diperbarui.`,
         existing: existingFeed,
       });
     }
@@ -352,7 +368,7 @@ exports.updateDailyFeed = async (req, res) => {
               include: [
                 {
                   model: FeedNutrisi,
-                  as: "FeedNutrisi",
+                  as: "FeedNutrisiRecords", // Use correct alias
                   include: [
                     {
                       model: Nutrisi,
@@ -379,7 +395,6 @@ exports.updateDailyFeed = async (req, res) => {
       .json({ message: "Gagal memperbarui daily feed", error: error.message });
   }
 };
-
 // **DELETE (Hapus Daily Feed)**
 exports.deleteDailyFeed = async (req, res) => {
   const { id } = req.params;

@@ -115,17 +115,18 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
+    // Validation logic remains the same
     if (!form.typeId || !form.name || form.min_stock < 0 || form.price < 0) {
       setError("Jenis pakan, nama, stok minimum, dan harga wajib diisi dengan nilai valid.");
       return;
     }
-
+  
     if (selectedNutrients.length === 0) {
       setError("Setidaknya satu nutrisi harus ditambahkan.");
       return;
     }
-
+  
     const invalidNutrient = selectedNutrients.find(
       (n) => n.amount === "" || n.amount === null || n.amount < 0
     );
@@ -133,7 +134,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
       setError(`Masukkan nilai valid untuk ${invalidNutrient.name}.`);
       return;
     }
-
+  
     const confirm = await Swal.fire({
       title: "Yakin ingin menambah pakan?",
       icon: "question",
@@ -141,28 +142,28 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
       confirmButtonText: "Ya, tambah",
       cancelButtonText: "Batal",
     });
-
+  
     if (!confirm.isConfirmed) return;
-
+  
     setSubmitting(true);
-
+  
     try {
       const nutrientRecords = selectedNutrients.map((n) => ({
-        nutrisi_id: n.nutrisiId, // ✅ sesuai dengan backend
+        nutrisi_id: n.nutrisiId,
         amount: Number(n.amount),
       }));
-
+  
       const feedData = {
         typeId: Number(form.typeId),
         name: form.name.trim(),
         min_stock: Number(form.min_stock),
         price: Number(form.price),
-        nutrisiList: nutrientRecords, // ✅ ubah dari "nutrients"
+        nutrisiList: nutrientRecords,
       };
-
+  
       const response = await createFeed(feedData);
       console.log("createFeed Response:", response);
-
+  
       if (response.success) {
         await Swal.fire({
           title: "Berhasil!",
@@ -171,13 +172,14 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
           timer: 1500,
           showConfirmButton: false,
         });
-
+  
         setForm({ typeId: "", name: "", min_stock: 0, price: 0 });
         setSelectedNutrients([]);
         setNutrientToAdd("");
         onFeedAdded();
       } else {
-        throw new Error(response.message || "Gagal menambahkan pakan.");
+        // Use response.error instead of response.message
+        throw new Error(response.error || "Gagal menambahkan pakan.");
       }
     } catch (err) {
       console.error("Error:", err);
@@ -191,7 +193,6 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
       setSubmitting(false);
     }
   };
-
   return (
     <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="modal-dialog modal-dialog-centered">
