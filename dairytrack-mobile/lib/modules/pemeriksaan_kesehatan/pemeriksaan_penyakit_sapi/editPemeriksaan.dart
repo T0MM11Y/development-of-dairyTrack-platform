@@ -34,9 +34,7 @@ class _EditPemeriksaanState extends State<EditPemeriksaan> {
   }
 
  Future<void> fetchData() async {
-  setState(() {
-    isLoading = true;
-  });
+  if (mounted) setState(() => isLoading = true);
 
   try {
     final healthCheck = await getHealthCheckById(widget.healthCheckId);
@@ -49,26 +47,31 @@ class _EditPemeriksaanState extends State<EditPemeriksaan> {
       cow = null;
     }
 
-    setState(() {
-      form = healthCheck;
-      cowName = cow != null ? '${cow.name} (${cow.breed})' : 'Sapi tidak ditemukan';
-    });
+    if (mounted) {
+      setState(() {
+        form = healthCheck;
+        cowName = cow != null ? '${cow.name} (${cow.breed})' : 'Sapi tidak ditemukan';
+      });
+    }
   } catch (e) {
-    setState(() {
-      error = 'Gagal memuat data pemeriksaan.';
-    });
+    if (mounted) {
+      setState(() {
+        error = 'Gagal memuat data pemeriksaan.';
+      });
+    }
   } finally {
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 }
+
 
 
  Future<void> submitForm() async {
   if (form == null) return;
 
-  setState(() => isSubmitting = true);
+  if (mounted) setState(() => isSubmitting = true);
 
   bool success = false;
   try {
@@ -76,20 +79,23 @@ class _EditPemeriksaanState extends State<EditPemeriksaan> {
   } catch (e) {
     success = false;
   } finally {
-    setState(() => isSubmitting = false);
+    if (mounted) setState(() => isSubmitting = false);
   }
+
+  if (!mounted) return;
 
   if (success) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('✅ Data pemeriksaan berhasil diperbarui')),
     );
-    widget.onSaved(); // ✅ balik dan reload
+    widget.onSaved(); // ✅ callback tetap dijalankan setelah mounted check
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('❌ Gagal memperbarui data pemeriksaan')),
     );
   }
 }
+
 
 
   @override

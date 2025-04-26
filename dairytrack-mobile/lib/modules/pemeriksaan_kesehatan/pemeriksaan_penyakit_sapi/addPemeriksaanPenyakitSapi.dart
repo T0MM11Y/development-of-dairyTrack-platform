@@ -48,34 +48,40 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
 
   Future<void> handleSubmit() async {
   if (!_formKey.currentState!.validate() || selectedCowId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
+      );
+    }
     return;
   }
 
-  setState(() => isSubmitting = true);
+  if (mounted) setState(() => isSubmitting = true);
 
   try {
     await createHealthCheck({
-      'cow_id': int.parse(selectedCowId!), // ✅ WAJIB pakai cow_id
+      'cow_id': int.parse(selectedCowId!),
       'rectal_temperature': rectalTemperature ?? 0.0,
       'heart_rate': heartRate ?? 0,
       'respiration_rate': respirationRate ?? 0,
       'rumination': rumination ?? 0.0,
     });
 
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Data pemeriksaan berhasil disimpan')),
     );
 
-    Navigator.of(context).pop(true); // ✅ Kirim true supaya page sebelumnya bisa reload!
+    Navigator.of(context).pop(true);
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
+      );
+    }
   } finally {
-    setState(() => isSubmitting = false);
+    if (mounted) setState(() => isSubmitting = false);
   }
 }
 

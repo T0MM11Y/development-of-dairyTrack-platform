@@ -52,37 +52,44 @@ class _AddRiwayatPenyakitSapiState extends State<AddRiwayatPenyakitSapi> {
     }
   }
 
-  Future<void> handleSubmit() async {
-    if (selectedHealthCheckId == null ||
-        diseaseNameController.text.trim().isEmpty ||
-        descriptionController.text.trim().isEmpty) {
+ Future<void> handleSubmit() async {
+  if (selectedHealthCheckId == null ||
+      diseaseNameController.text.trim().isEmpty ||
+      descriptionController.text.trim().isEmpty) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Semua field harus diisi')),
       );
-      return;
     }
+    return;
+  }
 
-    setState(() => isSubmitting = true);
+  if (mounted) setState(() => isSubmitting = true);
 
-    try {
-      await createDiseaseHistory({
-        'health_check': selectedHealthCheckId,
-        'disease_name': diseaseNameController.text.trim(),
-        'description': descriptionController.text.trim(),
-      });
+  try {
+    await createDiseaseHistory({
+      'health_check': selectedHealthCheckId,
+      'disease_name': diseaseNameController.text.trim(),
+      'description': descriptionController.text.trim(),
+    });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data riwayat penyakit berhasil disimpan')),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data riwayat penyakit berhasil disimpan')),
+    );
+    Navigator.pop(context, true);
+  } catch (e) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal menyimpan data riwayat penyakit')),
       );
-    } finally {
-      setState(() => isSubmitting = false);
     }
+  } finally {
+    if (mounted) setState(() => isSubmitting = false);
   }
+}
+
 
   HealthCheck? get selectedHealthCheck {
     if (selectedHealthCheckId == null) return null;
@@ -200,9 +207,15 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              infoRow(Icons.pets, 'Sapi: ${selectedCow?.name ?? "-"} (${selectedCow?.breed ?? "-"})'),
-                              const SizedBox(height: 6),
-                              infoRow(Icons.thermostat, 'Suhu Rektal: ${selectedHealthCheck?.rectalTemperature ?? "-"} °C'),
+          infoRow(Icons.pets, 'Sapi: ${selectedCow?.name ?? "-"} (${selectedCow?.breed ?? "-"})'),
+          const SizedBox(height: 6),
+          infoRow(Icons.thermostat, 'Suhu Rektal: ${selectedHealthCheck?.rectalTemperature ?? "-"} °C'),
+          const SizedBox(height: 6),
+          infoRow(Icons.favorite, 'Detak Jantung: ${selectedHealthCheck?.heartRate ?? "-"} bpm'),
+          const SizedBox(height: 6),
+          infoRow(Icons.air, 'Laju Pernapasan: ${selectedHealthCheck?.respirationRate ?? "-"} bpm'),
+          const SizedBox(height: 6),
+          infoRow(Icons.refresh, 'Rumenasi: ${selectedHealthCheck?.rumination ?? "-"} kontraksi/menit'),
                             ],
                           ),
                         ),

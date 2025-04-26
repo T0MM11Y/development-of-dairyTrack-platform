@@ -186,10 +186,12 @@ class ReproductionCreateUpdateSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="cow.name", read_only=True)
+    farmer_id = serializers.IntegerField(source='farmer.id', read_only=True)  # ✅ WAJIB
+
 
     class Meta:
         model = Notification
-        fields = ['id', 'cow', 'name', 'message', 'date', 'created_at']
+        fields = ['id','farmer_id', 'cow', 'name', 'message', 'date', 'created_at']
     def get_created_at(self, obj):
         # Pastikan waktu dibuat dalam local timezone (WIB dari settings.py)
         local_created_at = localtime(obj.created_at)

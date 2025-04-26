@@ -7,6 +7,8 @@ import 'package:dairy_track/model/kesehatan/health_check.dart';
 import 'package:dairy_track/model/peternakan/cow.dart';
 import 'package:dairy_track/modules/pemeriksaan_kesehatan/gejala_penyakit_sapi/viewGejala.dart';
 import 'package:dairy_track/modules/pemeriksaan_kesehatan/gejala_penyakit_sapi/editGejala.dart';
+import 'package:collection/collection.dart';
+
 
 class AllGejala extends StatefulWidget {
   @override
@@ -28,31 +30,32 @@ class _AllGejalaState extends State<AllGejala> {
   }
 
   Future<void> fetchAllData() async {
+  if (mounted) setState(() => isLoading = true);
+
+  try {
+    final fetchedSymptoms = await getSymptoms();
+    final fetchedHealthChecks = await getHealthChecks();
+    final fetchedCows = await getCows();
+
+    if (!mounted) return;
+
     setState(() {
-      isLoading = true;
+      symptoms = fetchedSymptoms;
+      healthChecks = fetchedHealthChecks;
+      cows = fetchedCows;
+      error = null;
     });
-
-    try {
-      final fetchedSymptoms = await getSymptoms();
-      final fetchedHealthChecks = await getHealthChecks();
-      final fetchedCows = await getCows();
-
-      setState(() {
-        symptoms = fetchedSymptoms;
-        healthChecks = fetchedHealthChecks;
-        cows = fetchedCows;
-        error = null;
-      });
-    } catch (e) {
+  } catch (e) {
+    if (mounted) {
       setState(() {
         error = 'Gagal mengambil data: $e';
       });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
     }
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
+
 
   String getCowName(int healthCheckId) {
     try {
@@ -230,24 +233,85 @@ Color getStatusColor(int healthCheckId) {
                                     );
                                   },
                                 ),
-                                IconButton(
-                                  tooltip: 'Edit Gejala',
-                                  icon: const Icon(Icons.edit),
-                                  color: Colors.orange,
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => EditGejala(
-                                        symptomId: symptom.id,
-                                        onClose: () => Navigator.of(context).pop(),
-                                        onSaved: () {
-                                          Navigator.of(context).pop();
-                                          fetchAllData();
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
+                              IconButton(
+  tooltip: 'Edit Gejala',
+  icon: const Icon(Icons.edit),
+  color: Colors.orange,
+  onPressed: () {
+    // Temukan healthCheck terkait
+    final healthCheck = healthChecks.firstWhere(
+      (hc) => hc.id == symptom.healthCheckId,
+      orElse: () => HealthCheck(
+        id: 0,
+        cowId: 0,
+        status: '',
+        needsAttention: false,
+        checkupDate: DateTime.now(),
+        rectalTemperature: 0.0,
+        heartRate: 0,
+        respirationRate: 0,
+        rumination: 0.0,
+        isFollowedUp: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+
+    // ❌ Tidak bisa diedit jika sudah handled
+    if (healthCheck.status == 'handled') {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Tidak Bisa Diedit'),
+          content: const Text(
+            'Gejala ini tidak dapat diedit karena pemeriksaannya sudah ditangani.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // ✅ Tampilkan konfirmasi edit
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Gejala?'),
+        content: const Text('Anda akan membuka form edit data gejala.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            onPressed: () {
+              Navigator.of(context).pop(); // Tutup dialog konfirmasi
+              showDialog(
+                context: context,
+                builder: (_) => EditGejala(
+                  symptomId: symptom.id,
+                  onClose: () => Navigator.of(context).pop(),
+                  onSaved: () {
+                    Navigator.of(context).pop();
+                    fetchAllData();
+                  },
+                ),
+              );
+            },
+            child: const Text('Ya, Edit'),
+          ),
+        ],
+      ),
+    );
+  },
+),
+
                                 IconButton(
                                   tooltip: 'Hapus Gejala',
                                   icon: const Icon(Icons.delete),

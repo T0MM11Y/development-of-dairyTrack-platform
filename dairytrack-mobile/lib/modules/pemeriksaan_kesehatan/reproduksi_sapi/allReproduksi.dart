@@ -24,24 +24,29 @@ class _AllReproduksiState extends State<AllReproduksi> {
   }
 
   Future<void> fetchAllData() async {
-    setState(() => isLoading = true);
-    try {
-      final fetchedReproductions = await getReproductions();
-      final fetchedCows = await getCows();
+  if (mounted) setState(() => isLoading = true);
 
-      setState(() {
-        reproductions = fetchedReproductions;
-        cows = fetchedCows;
-        error = null;
-      });
-    } catch (e) {
+  try {
+    final fetchedReproductions = await getReproductions();
+    final fetchedCows = await getCows();
+
+    if (!mounted) return;
+
+    setState(() {
+      reproductions = fetchedReproductions;
+      cows = fetchedCows;
+      error = null;
+    });
+  } catch (e) {
+    if (mounted) {
       setState(() {
         error = 'Gagal mengambil data: $e';
       });
-    } finally {
-      setState(() => isLoading = false);
     }
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
 
   String getCowName(int cowId) {
     try {

@@ -2,22 +2,29 @@ from django.db import models
 from django.utils.timezone import now
 
 class Farmer(models.Model):
-    user = models.OneToOneField("auth.User", on_delete=models.CASCADE)  # Hubungkan dengan user
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    birth_date = models.DateField()
-    contact = models.CharField(max_length=15)
+    email = models.CharField(max_length=100, unique=True)
+    first_name = models.CharField(max_length=50, null=True, blank=True)
+    last_name = models.CharField(max_length=50, null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    contact = models.CharField(max_length=15, null=True, blank=True)
     religion = models.CharField(max_length=50, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
-    gender = models.CharField(max_length=10)
-    total_cattle = models.IntegerField(default=0)
-    join_date = models.DateField()
-    status = models.CharField(max_length=20)
+    gender = models.CharField(max_length=10, null=True, blank=True)
+    total_cattle = models.IntegerField(null=True, blank=True)
+    join_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    password = models.CharField(max_length=128)  # Sudah sesuai struktur
+    role = models.CharField(max_length=250, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.first_name or ''} {self.last_name or ''}"
+
+    class Meta:
+        db_table = "farmers"
+
 class RawMilk(models.Model):
     cow = models.ForeignKey("Cow", on_delete=models.CASCADE)
     production_time = models.DateTimeField(auto_now_add=True)
@@ -38,9 +45,9 @@ class ProcessedMilk(models.Model):
 
     def __str__(self):
         return f"Processed {self.product_type} from Raw Milk {self.raw_milk.id}"
-
+   
 class Cow(models.Model):
-    farmer = models.ForeignKey("Farmer", on_delete=models.CASCADE)
+    farmer = models.ForeignKey("Farmer", on_delete=models.CASCADE, related_name="cows")  # ✅ Tambahkan ini
     name = models.CharField(max_length=50)
     breed = models.CharField(max_length=50)
     birth_date = models.DateField()
@@ -176,6 +183,7 @@ class Reproduction(models.Model):
 
 class Notification(models.Model):
     cow = models.ForeignKey("Cow", on_delete=models.CASCADE, related_name="notifications")  # Relasi ke tabel cows
+    farmer = models.ForeignKey("Farmer", on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
     date = models.DateField(default=now)  # Tanggal notifikasi (bukan datetime)
     message = models.CharField(max_length=255)  # Pesan maksimum 255 karakter
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp saat dibuat
