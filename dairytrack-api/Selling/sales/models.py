@@ -44,25 +44,45 @@ class Order(models.Model):
         if not self.order_no:
             self.order_no = f"ORD{uuid.uuid4().hex[:6].upper()}"
 
+        # Simpan status sebelumnya untuk mendeteksi perubahan
         if self.pk is not None:
             previous_order = Order.objects.get(pk=self.pk)
             previous_status = previous_order.status
             previous_shipping_cost = previous_order.shipping_cost
-            
-            if previous_shipping_cost != self.shipping_cost and self.status == 'Requested':
-                self.status = 'Processed'
         else:
             previous_status = None
+            previous_shipping_cost = None
 
+        # Otomatis ubah status ke Processed jika shipping_cost berubah saat status Requested
+        if self.pk is not None and previous_shipping_cost != self.shipping_cost and self.status == 'Requested':
+            self.status = 'Processed'
+
+        # Validasi metode pembayaran saat status menjadi Completed
         if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
             if not self.payment_method:
                 raise ValidationError("Metode pembayaran harus dipilih sebelum menyelesaikan order.")
 
+        # Simpan perubahan ke database
         super().save(*args, **kwargs)
-        
+
+        # Update total_price setelah simpan
         if self.pk is not None:
             self.update_total_price()
 
+        # Kirim pesan WhatsApp berdasarkan perubahan status
+        if self.pk is not None and self.phone_number:
+            if previous_status != "Processed" and self.status == "Processed":
+                try:
+                    self.send_processed_whatsapp_message()
+                except Exception as e:
+                    logger.error(f"Failed to send Processed WhatsApp message for order {self.order_no}: {str(e)}")
+            elif previous_status != "Completed" and self.status == "Completed":
+                try:
+                    self.send_completed_whatsapp_message()
+                except Exception as e:
+                    logger.error(f"Failed to send Completed WhatsApp message for order {self.order_no}: {str(e)}")
+
+        # Proses penyelesaian pesanan jika status Completed
         if self.pk is not None and previous_status != "Completed" and self.status == "Completed":
             self.process_completion()
 
@@ -79,20 +99,77 @@ class Order(models.Model):
 
         # Buat detail item untuk pesan
         items_details = "\n".join(
-            f"- {item.quantity} x {item.product_type.product_name} (Rp {item.total_price})"
+            f"- {item.quantity} x {item.product_type.product_name} (Rp {item.total_price:,})"
             for item in self.order_items.all()
         )
         message = (
-            f"Order Baru: {self.order_no}\n"
-            f"Nama: {self.customer_name}\n"
-            f"Lokasi: {self.location}\n"
-            f"Item:\n{items_details}\n"
-            f"Biaya Pengiriman: Rp {self.shipping_cost}\n"
-            f"Total Harga: Rp {self.total_price}\n"
-            f"Status: {self.status}\n"
-            f"Terima kasih atas pesanan Anda!"
+            f"🌟 Selamat datang di DairyTrack! 🌟\n\n"
+            f"Terima kasih atas pesanan Anda. Berikut adalah detail pesanan Anda:\n\n"
+            f"📋 Nomor Pesanan: {self.order_no}\n"
+            f"👤 Nama: {self.customer_name}\n"
+            f"📍 Lokasi: {self.location}\n"
+            f"🧀 Item Pesanan:\n{items_details}\n"
+            f"🚚 Biaya Pengiriman: Rp {self.shipping_cost:,}\n"
+            f"💵 Total Harga: Rp {self.total_price:,}\n"
+            f"📊 Status: {self.status}\n\n"
+            f"⏳ Mohon menunggu konfirmasi dari admin kami untuk melanjutkan proses berikutnya dan menetapkan biaya pengiriman.\n\n"
+            f"😊 Senang berbelanja bersama kami! Terima kasih atas kepercayaan Anda kepada DairyTrack.\n"
         )
         logger.debug(f"Sending WhatsApp message to {self.phone_number}: {message}")
+        send_gupshup_whatsapp_message(self.phone_number, message)
+
+    def send_processed_whatsapp_message(self):
+        # Pastikan order_items tidak kosong
+        if not self.order_items.exists():
+            logger.error(f"No order items found for order {self.order_no}")
+            return
+
+        # Buat detail item untuk pesan
+        items_details = "\n".join(
+            f"- {item.quantity} x {item.product_type.product_name} (Rp {item.total_price:,})"
+            for item in self.order_items.all()
+        )
+        message = (
+            f"🌟 DairyTrack - Pesanan Anda Sedang Diproses! 🌟\n\n"
+            f"Berikut adalah pembaruan untuk pesanan Anda:\n\n"
+            f"📋 Nomor Pesanan: {self.order_no}\n"
+            f"👤 Nama: {self.customer_name}\n"
+            f"📍 Lokasi: {self.location}\n"
+            f"🧀 Item Pesanan:\n{items_details}\n"
+            f"🚚 Biaya Pengiriman: Rp {self.shipping_cost:,}\n"
+            f"💵 Total Harga: Rp {self.total_price:,}\n"
+            f"📊 Status: Sedang Diproses\n\n"
+            f"⏳ Admin kami akan segera menghubungi Anda untuk menetapkan metode pembayaran dan melanjutkan proses pengiriman.\n\n"
+            f"😊 Terima kasih atas kepercayaan Anda kepada DairyTrack!\n"
+        )
+        logger.debug(f"Sending Processed WhatsApp message to {self.phone_number}: {message}")
+        send_gupshup_whatsapp_message(self.phone_number, message)
+
+    def send_completed_whatsapp_message(self):
+        # Pastikan order_items tidak kosong
+        if not self.order_items.exists():
+            logger.error(f"No order items found for order {self.order_no}")
+            return
+
+        # Buat detail item untuk pesan
+        items_details = "\n".join(
+            f"- {item.quantity} x {item.product_type.product_name} (Rp {item.total_price:,})"
+            for item in self.order_items.all()
+        )
+        message = (
+            f"🌟 DairyTrack - Pesanan Anda Selesai! 🌟\n\n"
+            f"Kami dengan senang hati menginformasikan bahwa pesanan Anda telah selesai:\n\n"
+            f"📋 Nomor Pesanan: {self.order_no}\n"
+            f"👤 Nama: {self.customer_name}\n"
+            f"📍 Lokasi: {self.location}\n"
+            f"🧀 Item Pesanan:\n{items_details}\n"
+            f"🚚 Biaya Pengiriman: Rp {self.shipping_cost:,}\n"
+            f"💵 Total Harga: Rp {self.total_price:,}\n"
+            f"💳 Metode Pembayaran: {self.payment_method}\n"
+            f"📊 Status: Selesai\n\n"
+            f"😊 Terima kasih telah berbelanja bersama DairyTrack! Kami berharap dapat melayani Anda kembali.\n"
+        )
+        logger.debug(f"Sending Completed WhatsApp message to {self.phone_number}: {message}")
         send_gupshup_whatsapp_message(self.phone_number, message)
 
     def process_completion(self):

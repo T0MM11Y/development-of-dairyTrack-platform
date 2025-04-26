@@ -103,11 +103,14 @@ const RecentMilkCard = () => {
                   <td>{indexOfFirstItem + index + 1}</td>
                   <td>{entry?.name || "Unknown"}</td>
                   <td>
-                    {new Date(entry.date).toLocaleDateString("id-ID", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {new Date(entry.production_time).toLocaleDateString(
+                      "id-ID",
+                      {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      }
+                    )}
                   </td>
                   <td>{entry.volume_liters}</td>
                   <td>{entry?.lactation_phase || "N/A"}</td>

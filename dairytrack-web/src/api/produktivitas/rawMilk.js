@@ -75,16 +75,6 @@ export const updateRawMilk = (id, data) =>
 
 export const deleteRawMilk = (id) => fetchAPI(`raw_milks/${id}`, "DELETE");
 
-export const getFreshnessNotifications = async () => {
-  try {
-    const response = await fetchAPI("raw_milks/freshness_notifications", "GET");
-    return response;
-  } catch (error) {
-    console.error("Failed to fetch freshness notifications:", error.message);
-    throw error;
-  }
-};
-
 export const exportFarmersPDF = async () => {
   try {
     const response = await fetch(

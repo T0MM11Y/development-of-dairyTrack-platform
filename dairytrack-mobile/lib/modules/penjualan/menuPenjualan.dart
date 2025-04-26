@@ -21,10 +21,8 @@ class MenuPenjualan extends StatelessWidget {
                 'Produk',
                 Icons.shopping_bag,
                 Colors.blue,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Produk dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/product-stock');
                 },
               ),
               _buildMenuContainer(
@@ -32,10 +30,8 @@ class MenuPenjualan extends StatelessWidget {
                 'Tipe Produk',
                 Icons.category,
                 Colors.green,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Tipe Produk dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/product-type');
                 },
               ),
               _buildMenuContainer(
@@ -43,10 +39,8 @@ class MenuPenjualan extends StatelessWidget {
                 'Riwayat Produk',
                 Icons.history,
                 Colors.orange,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Riwayat Produk dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-peternak');
                 },
               ),
               _buildMenuContainer(
@@ -54,10 +48,8 @@ class MenuPenjualan extends StatelessWidget {
                 'Penjualan',
                 Icons.point_of_sale,
                 Colors.purple,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Penjualan dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/all-peternak');
                 },
               ),
               _buildWideMenuContainer(
@@ -65,10 +57,8 @@ class MenuPenjualan extends StatelessWidget {
                 'Keuangan',
                 Icons.account_balance_outlined,
                 Colors.red,
-                () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Keuangan dipilih')),
-                  );
+                onTap: () {
+                  Navigator.pushNamed(context, '/finance');
                 },
               ),
             ],
@@ -78,8 +68,9 @@ class MenuPenjualan extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuContainer(BuildContext context, String title, IconData icon,
-      Color color, VoidCallback onTap) {
+  Widget _buildMenuContainer(
+      BuildContext context, String title, IconData icon, Color color,
+      {required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -92,7 +83,7 @@ class MenuPenjualan extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 48.0, color: color),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -108,11 +99,14 @@ class MenuPenjualan extends StatelessWidget {
     );
   }
 
-  Widget _buildWideMenuContainer(BuildContext context, String title,
-      IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildWideMenuContainer(
+      BuildContext context, String title, IconData icon, Color color,
+      {required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
+        height: 150.0,
         decoration: BoxDecoration(
           color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12.0),
@@ -122,7 +116,7 @@ class MenuPenjualan extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 48.0, color: color),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               title,
               textAlign: TextAlign.center,
