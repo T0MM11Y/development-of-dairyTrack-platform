@@ -31,12 +31,25 @@ const createFeed = async (req, res) => {
       });
     }
 
+    // Check for duplicate feed name (case-insensitive)
+    const existingFeed = await Feed.findOne({
+      where: {
+        name: { [Op.like]: name.trim() }, // Use Op.like for MySQL
+      },
+    });
+    if (existingFeed) {
+      return res.status(400).json({
+        success: false,
+        error: `Pakan ${name} sudah ada, silahkan tambahkan yang lain`,
+      });
+    }
+
     const feedType = await FeedType.findByPk(typeId);
     if (!feedType) {
       return res.status(404).json({ success: false, error: "Feed type not found" });
     }
 
-    const feed = await Feed.create({ typeId, name, min_stock, price });
+    const feed = await Feed.create({ typeId, name: name.trim(), min_stock, price });
 
     if (nutrisiList && Array.isArray(nutrisiList)) {
       const nutritions = await Nutrisi.findAll({
@@ -78,7 +91,7 @@ const getAllFeeds = async (req, res) => {
     const { typeId, name } = req.query;
     const filter = {};
     if (typeId) filter.typeId = typeId;
-    if (name) filter.name = { [Op.like]: `%${name}%` };
+    if (name) filter.name = { [Op.like]: `%${name}%` }; // Use Op.like for MySQL
 
     const feeds = await Feed.findAll({
       where: filter,
@@ -133,6 +146,22 @@ const updateFeed = async (req, res) => {
     const feed = await Feed.findByPk(id);
     if (!feed) return res.status(404).json({ success: false, error: "Feed not found" });
 
+    // Check for duplicate feed name (case-insensitive), excluding the current feed
+    if (name && name.trim() !== feed.name) {
+      const existingFeed = await Feed.findOne({
+        where: {
+          name: { [Op.like]: name.trim() }, // Use Op.like for MySQL
+          id: { [Op.ne]: id }, // Exclude the current feed
+        },
+      });
+      if (existingFeed) {
+        return res.status(400).json({
+          success: false,
+          error: `Pakan ${name} sudah ada, silahkan tambahkan yang lain`,
+        });
+      }
+    }
+
     if (typeId) {
       const feedType = await FeedType.findByPk(typeId);
       if (!feedType) return res.status(404).json({ success: false, error: "Feed type not found" });
@@ -140,7 +169,7 @@ const updateFeed = async (req, res) => {
 
     await feed.update({
       typeId: typeId || feed.typeId,
-      name: name || feed.name,
+      name: name ? name.trim() : feed.name,
       min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
       price: price !== undefined ? price : feed.price,
     });

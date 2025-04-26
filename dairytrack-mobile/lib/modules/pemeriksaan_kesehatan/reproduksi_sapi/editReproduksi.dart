@@ -98,76 +98,87 @@ class _EditReproduksiState extends State<EditReproduksi> {
   }
 
   Future<void> submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    final calvingDate = DateTime.tryParse(calvingDateController.text);
-    final previousCalvingDate =
-        DateTime.tryParse(previousCalvingDateController.text);
-    final inseminationDate = DateTime.tryParse(inseminationDateController.text);
-    final totalInsemination = int.tryParse(totalInseminationController.text);
+  final calvingDate = DateTime.tryParse(calvingDateController.text);
+  final previousCalvingDate =
+      DateTime.tryParse(previousCalvingDateController.text);
+  final inseminationDate = DateTime.tryParse(inseminationDateController.text);
+  final totalInsemination = int.tryParse(totalInseminationController.text);
 
-    if (calvingDate == null ||
-        previousCalvingDate == null ||
-        inseminationDate == null ||
-        totalInsemination == null) {
+  if (calvingDate == null ||
+      previousCalvingDate == null ||
+      inseminationDate == null ||
+      totalInsemination == null) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Format data tidak valid.')),
       );
-      return;
     }
+    return;
+  }
 
-    if (previousCalvingDate.isAfter(calvingDate)) {
+  if (previousCalvingDate.isAfter(calvingDate)) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Tanggal kelahiran sebelumnya harus lebih awal.')),
       );
-      return;
     }
+    return;
+  }
 
-    if (inseminationDate.isBefore(calvingDate)) {
+  if (inseminationDate.isBefore(calvingDate)) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Tanggal inseminasi harus setelah kelahiran.')),
       );
-      return;
     }
+    return;
+  }
 
-    if (totalInsemination < 1) {
+  if (totalInsemination < 1) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Jumlah inseminasi minimal 1 kali.')),
       );
-      return;
     }
-
-    setState(() => isSubmitting = true);
-
-    bool success = false;
-    try {
-      success = await updateReproduction(widget.reproductionId, {
-        'cow': reproduction!.cowId,
-        'calving_date': calvingDateController.text,
-        'previous_calving_date': previousCalvingDateController.text,
-        'insemination_date': inseminationDateController.text,
-        'total_insemination': totalInsemination,
-        'successful_pregnancy': 1,
-      });
-    } catch (_) {
-      success = false;
-    } finally {
-      setState(() => isSubmitting = false);
-    }
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Data reproduksi berhasil diperbarui.')),
-      );
-      widget.onSaved(); // Reload & back
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Gagal memperbarui data reproduksi.')),
-      );
-    }
+    return;
   }
+
+  if (mounted) setState(() => isSubmitting = true);
+
+  bool success = false;
+  try {
+    success = await updateReproduction(widget.reproductionId, {
+      'cow': reproduction!.cowId,
+      'calving_date': calvingDateController.text,
+      'previous_calving_date': previousCalvingDateController.text,
+      'insemination_date': inseminationDateController.text,
+      'total_insemination': totalInsemination,
+      'successful_pregnancy': 1,
+    });
+  } catch (_) {
+    success = false;
+  } finally {
+    if (mounted) setState(() => isSubmitting = false);
+  }
+
+  if (!mounted) return;
+
+  if (success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Data reproduksi berhasil diperbarui.')),
+    );
+    widget.onSaved(); // Reload & back
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❌ Gagal memperbarui data reproduksi.')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -10,7 +10,7 @@ import logoLight from "../../assets/client/img/logo/logo.png";
 import englishFlag from "../../assets/admin/images/flags/us.jpg";
 import indoFlag from "../../assets/admin/images/flags/indo.png";
 import { getLowProductionNotifications } from "../../api/produktivitas/dailyMilkTotal";
-import { getAllNotifications } from "../../api/peternakan/notification";
+import { getAllNotifications } from "../../api/kesehatan/notification";
 import { getFeedNotifications } from "../../api/pakan/notification";
 
 import avatar1 from "../../assets/admin/images/users/toon_9.png";

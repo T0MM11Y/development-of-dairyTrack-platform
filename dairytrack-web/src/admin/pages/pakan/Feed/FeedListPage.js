@@ -4,6 +4,7 @@ import { getFeeds, deleteFeed } from "../../../../api/pakan/feed";
 import { getNutritions } from "../../../../api/pakan/nutrient";
 import Swal from "sweetalert2";
 import CreateFeedPage from "./CreateFeed";
+import EditFeedModal from "./FeedDetailPage";
 
 const FeedListPage = () => {
   const [feeds, setFeeds] = useState([]);
@@ -11,6 +12,8 @@ const FeedListPage = () => {
   const [nutritions, setNutritions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFeedId, setEditFeedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -103,7 +106,16 @@ const FeedListPage = () => {
   };
 
   const handleEdit = (id) => {
-    navigate(`/admin/edit-pakan/${id}`);
+    console.log("Opening edit modal for feed ID:", id);
+    setEditFeedId(id);
+    setShowEditModal(true);
+  };
+
+  const handleFeedUpdated = () => {
+    console.log("Feed updated, refreshing data");
+    fetchData();
+    setShowEditModal(false);
+    setEditFeedId(null);
   };
 
   const formatNumber = (num) => {
@@ -111,7 +123,6 @@ const FeedListPage = () => {
     return Number(num).toLocaleString("id-ID").split(",")[0];
   };
 
-  // Get nutrition details for a feed
   const getFeedNutritionDetails = (feed) => {
     if (!feed.FeedNutrisiRecords || !Array.isArray(feed.FeedNutrisiRecords)) {
       return [];
@@ -239,6 +250,17 @@ const FeedListPage = () => {
         <CreateFeedPage
           onFeedAdded={handleAddFeed}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {showEditModal && (
+        <EditFeedModal
+          feedId={editFeedId}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditFeedId(null);
+          }}
+          onFeedUpdated={handleFeedUpdated}
         />
       )}
     </div>

@@ -46,77 +46,83 @@ class _AddReproduksiState extends State<AddReproduksi> {
   }
 
   Future<void> handleSubmit() async {
-    if (selectedCowId == null ||
-        calvingDateController.text.isEmpty ||
-        prevCalvingDateController.text.isEmpty ||
-        inseminationDateController.text.isEmpty ||
-        totalInseminationController.text.isEmpty) {
+  if (selectedCowId == null ||
+      calvingDateController.text.isEmpty ||
+      prevCalvingDateController.text.isEmpty ||
+      inseminationDateController.text.isEmpty ||
+      totalInseminationController.text.isEmpty) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Semua field harus diisi')),
       );
-      return;
     }
+    return;
+  }
 
-    DateTime calvingDate = DateTime.parse(calvingDateController.text);
-    DateTime prevCalvingDate = DateTime.parse(prevCalvingDateController.text);
-    DateTime inseminationDate = DateTime.parse(inseminationDateController.text);
-    int totalInsemination = int.tryParse(totalInseminationController.text) ?? 0;
+  DateTime calvingDate = DateTime.parse(calvingDateController.text);
+  DateTime prevCalvingDate = DateTime.parse(prevCalvingDateController.text);
+  DateTime inseminationDate = DateTime.parse(inseminationDateController.text);
+  int totalInsemination = int.tryParse(totalInseminationController.text) ?? 0;
 
-    // Validasi logika
-    if (prevCalvingDate.isAfter(calvingDate)) {
+  if (prevCalvingDate.isAfter(calvingDate)) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tanggal calving sebelumnya harus lebih awal dari sekarang')),
       );
-      return;
     }
+    return;
+  }
 
-    if (!inseminationDate.isAfter(calvingDate)) {
+  if (!inseminationDate.isAfter(calvingDate)) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tanggal inseminasi harus setelah tanggal calving')),
       );
-      return;
     }
+    return;
+  }
 
-    if (totalInsemination < 1) {
+  if (totalInsemination < 1) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Jumlah inseminasi harus lebih dari 0')),
       );
-      return;
     }
+    return;
+  }
 
-    setState(() {
-      isSubmitting = true;
+  if (mounted) setState(() => isSubmitting = true);
+
+  try {
+    await createReproduction({
+      'cow': int.parse(selectedCowId!),
+      'calving_date': calvingDateController.text,
+      'previous_calving_date': prevCalvingDateController.text,
+      'insemination_date': inseminationDateController.text,
+      'total_insemination': totalInsemination,
+      'successful_pregnancy': 1,
     });
 
-    try {
-      await createReproduction({
-        'cow': int.parse(selectedCowId!),
-        'calving_date': calvingDateController.text,
-        'previous_calving_date': prevCalvingDateController.text,
-        'insemination_date': inseminationDateController.text,
-        'total_insemination': totalInsemination,
-        'successful_pregnancy': 1, // ✅ Default dikirim manual
-      });
+    if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data reproduksi berhasil disimpan')),
-      );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data reproduksi berhasil disimpan')),
+    );
 
-      if (widget.onSaved != null) {
-        widget.onSaved!();
-      }
+    widget.onSaved?.call(); // Lebih aman pakai .call()
 
-      Navigator.of(context).pop(true);
-    } catch (e) {
+    Navigator.of(context).pop(true);
+  } catch (e) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal menyimpan data reproduksi')),
       );
-    } finally {
-      setState(() {
-        isSubmitting = false;
-      });
     }
+  } finally {
+    if (mounted) setState(() => isSubmitting = false);
   }
+}
+
 
   Future<void> selectDate(BuildContext context, TextEditingController controller) async {
     final picked = await showDatePicker(

@@ -9,8 +9,6 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
     method,
     headers: {
       "Content-Type": "application/json",
-      // Add Authorization header if needed
-      // "Authorization": `Bearer ${localStorage.getItem("token")}`,
     },
   };
 
@@ -26,10 +24,12 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
     if (!response.ok) {
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "An error occurred.");
+        console.log("Error Response Data:", JSON.stringify(errorData, null, 2)); // Detailed logging
+        const errorMessage = errorData.message || errorData.error || "An error occurred.";
+        throw new Error(errorMessage);
       } else {
         const errorText = await response.text();
-        console.error("Server Error:", errorText);
+        console.error("Server Error (Non-JSON):", errorText);
         throw new Error("Internal Server Error");
       }
     }
@@ -42,5 +42,4 @@ export const fetchAPI = async (endpoint, method = "GET", data = null) => {
   }
 };
 
-// notification API
 export const getFeedNotifications = () => fetchAPI("notification");

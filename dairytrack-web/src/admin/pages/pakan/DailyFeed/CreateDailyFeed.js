@@ -81,7 +81,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
     setSubmitting(true);
     setError("");
 
-    if (!form.cowId || !form.feedDate) {
+    if (!form.cowId || !form.feedDate || !form.session) {
       setError("Semua kolom wajib diisi!");
       setSubmitting(false);
       Swal.fire({
@@ -101,6 +101,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
       };
 
       const response = await createDailyFeed(dailyFeedData);
+      console.log("API Response:", JSON.stringify(response, null, 2));
 
       if (response && response.success) {
         Swal.fire({
@@ -120,19 +121,17 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
       }
     } catch (err) {
       console.error("Gagal membuat data pakan harian:", err);
-      let errorMessage;
+      let errorMessage = err.message;
 
-      // Tangani error berdasarkan status dari backend
-      if (err.response && err.response.status === 409) {
-        // Cari nama sapi berdasarkan cow_id dari respons backend atau form
-        const errorCowId = err.response.data.cow_id || form.cowId;
-        const selectedCow = cows.find(cow => cow.id === Number(errorCowId));
+      if (err.message.includes("sudah ada")) {
+        // Cari nama sapi berdasarkan cowId
+        const errorCowId = Number(form.cowId);
+        const selectedCow = cows.find((cow) => cow.id === errorCowId);
         const cowName = selectedCow ? selectedCow.name : `ID ${errorCowId}`;
-        
-        // Format ulang pesan error dengan nama sapi
-        errorMessage = `Data untuk sapi "${cowName}" pada tanggal ${form.feedDate} sesi ${form.session} sudah ada. Silakan periksa kembali atau gunakan sesi yang berbeda.`;
+        // Format pesan error sesuai permintaan
+        errorMessage = `Untuk sapi ${cowName} tanggal ${form.feedDate} sesi ${form.session} sudah ada. Silahkan cek kembali data yang ingin ditambahkan.`;
       } else {
-        errorMessage = err.response?.data?.message || err.message || "Terjadi kesalahan, coba lagi.";
+        errorMessage = err.message || "Terjadi kesalahan, coba lagi.";
       }
 
       setError(errorMessage);
@@ -152,7 +151,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
       <div className="modal-content">
         <div className="modal-header">
           <h4 className="modal-title text-info fw-bold">
-            {t('dailyfeed.add_daily_feed')}
+            {t("dailyfeed.add_daily_feed")}
           </h4>
           <button
             type="button"
@@ -170,12 +169,12 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
-              <p className="mt-2">{t('dailyfeed.loading_data')}...</p>
+              <p className="mt-2">{t("dailyfeed.loading_data")}...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.cow')}</label>
+                <label className="form-label fw-bold">{t("dailyfeed.cow")}</label>
                 <select
                   name="cowId"
                   value={form.cowId}
@@ -184,7 +183,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   required
                   disabled={cowError || cows.length === 0}
                 >
-                  <option value="">{t('dailyfeed.select_cow')}</option>
+                  <option value="">{t("dailyfeed.select_cow")}</option>
                   {cows.map((cow) => (
                     <option key={cow.id} value={cow.id}>
                       {cow.name}
@@ -193,13 +192,13 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                 </select>
                 {cowError && (
                   <div className="invalid-feedback d-block">
-                    {t('dailyfeed.failed_load_cow')}
+                    {t("dailyfeed.failed_load_cow")}
                   </div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.date')}</label>
+                <label className="form-label fw-bold">{t("dailyfeed.date")}</label>
                 <input
                   type="date"
                   name="feedDate"
@@ -211,7 +210,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.session')}</label>
+                <label className="form-label fw-bold">{t("dailyfeed.session")}</label>
                 <select
                   name="session"
                   value={form.session}
@@ -219,10 +218,10 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   className="form-select"
                   required
                 >
-                  <option value="">{t('dailyfeed.select_session')}</option>
-                  <option value="Pagi">{t('dailyfeed.morning')}</option>
-                  <option value="Siang">{t('dailyfeed.afternoon')}</option>
-                  <option value="Sore">{t('dailyfeed.evening')}</option>
+                  <option value="">{t("dailyfeed.select_session")}</option>
+                  <option value="Pagi">{t("dailyfeed.morning")}</option>
+                  <option value="Siang">{t("dailyfeed.afternoon")}</option>
+                  <option value="Sore">{t("dailyfeed.evening")}</option>
                 </select>
               </div>
 
@@ -233,7 +232,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   onClick={handleClose}
                   disabled={submitting}
                 >
-                  {t('dailyfeed.cancel')}
+                  {t("dailyfeed.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -242,11 +241,15 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                 >
                   {submitting ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {t('dailyfeed.saving')}...
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      {t("dailyfeed.saving")}...
                     </>
                   ) : (
-                    t('dailyfeed.save')
+                    t("dailyfeed.save")
                   )}
                 </button>
               </div>

@@ -157,17 +157,57 @@ const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
 
                 {/* Info Pemeriksaan */}
                 {selectedCheck && (
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">{t('disease_history.rectal_temperature')}
-                    </label>
-                    <input
-                      type="text"
-                      value={`${selectedCheck.rectal_temperature} °C`}
-                      className="form-control"
-                      readOnly
-                    />
-                  </div>
-                )}
+  <>
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        {t('disease_history.rectal_temperature')}
+      </label>
+      <input
+        type="text"
+        value={`${selectedCheck.rectal_temperature} °C`}
+        className="form-control"
+        readOnly
+      />
+    </div>
+
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        {t('disease_history.heart_rate')}
+      </label>
+      <input
+        type="text"
+        value={`${selectedCheck.heart_rate} bpm`}
+        className="form-control"
+        readOnly
+      />
+    </div>
+
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        {t('disease_history.respiration_rate')}
+      </label>
+      <input
+        type="text"
+        value={`${selectedCheck.respiration_rate} bpm`}
+        className="form-control"
+        readOnly
+      />
+    </div>
+
+    <div className="mb-3">
+      <label className="form-label fw-bold">
+        {t('disease_history.rumination')}
+      </label>
+      <input
+        type="text"
+        value={`${selectedCheck.rumination} menit`}
+        className="form-control"
+        readOnly
+      />
+    </div>
+  </>
+)}
+
 
                 {selectedCheck && (
                   <div className="mb-3">

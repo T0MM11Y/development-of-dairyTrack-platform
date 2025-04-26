@@ -87,14 +87,17 @@ if (sym != null) {
   }
 
  Future<void> handleSubmit() async {
-  if (diseaseNameController.text.trim().isEmpty || descriptionController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('❗ Semua field harus diisi')),
-    );
+  if (diseaseNameController.text.trim().isEmpty ||
+      descriptionController.text.trim().isEmpty) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❗ Semua field harus diisi')),
+      );
+    }
     return;
   }
 
-  setState(() => isSubmitting = true);
+  if (mounted) setState(() => isSubmitting = true);
 
   bool success = false;
   try {
@@ -105,8 +108,10 @@ if (sym != null) {
   } catch (e) {
     success = false;
   } finally {
-    setState(() => isSubmitting = false);
+    if (mounted) setState(() => isSubmitting = false);
   }
+
+  if (!mounted) return;
 
   if (success) {
     ScaffoldMessenger.of(context).showSnackBar(

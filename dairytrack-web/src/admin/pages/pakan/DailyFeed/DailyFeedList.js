@@ -315,76 +315,101 @@ const DailyFeedListPage = () => {
           {searchTerm ? t("dailyfeed.no_search_results") : t("dailyfeed.no_feeds")}
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-striped mb-0">
-            <thead>
-              <tr>
-                <th style={{ width: "5%", textAlign: "center" }}>{t("dailyfeed.table.no")}</th>
-                <th style={{ width: "15%", textAlign: "center" }}>{t("dailyfeed.table.cow_name")}</th>
-                <th style={{ width: "15%", textAlign: "center" }}>{t("dailyfeed.table.date")}</th>
-                <th style={{ width: "15%", textAlign: "center" }}>{t("dailyfeed.table.session")}</th>
-                <th style={{ width: "15%", textAlign: "center" }}>{t("dailyfeed.table.weather")}</th>
-                <th style={{ width: "15%", textAlign: "center" }}>{t("dailyfeed.table.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {flatRows.map((row, index) => (
-                <tr key={`${row.id}_${index}`}>
-                  {row.isFirstSession && (
-                    <>
-                      <td
-                        rowSpan={row.rowSpan}
-                        style={{ textAlign: "center", verticalAlign: "middle" }}
-                      >
-                        {row.rowIndex}
+        <div className="card shadow-sm rounded">
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table table-striped table-hover mb-0">
+                <thead className="bg-primary text-white">
+                  <tr>
+                    <th className="py-3 px-4 text-center" style={{ width: "5%" }}>
+                      {t("dailyfeed.table.no")}
+                    </th>
+                    <th className="py-3 px-4 text-center" style={{ width: "15%" }}>
+                      {t("dailyfeed.table.cow_name")}
+                    </th>
+                    <th className="py-3 px-4 text-center" style={{ width: "15%" }}>
+                      {t("dailyfeed.table.date")}
+                    </th>
+                    <th className="py-3 px-4 text-center" style={{ width: "15%" }}>
+                      {t("dailyfeed.table.session")}
+                    </th>
+                    <th className="py-3 px-4 text-center" style={{ width: "15%" }}>
+                      {t("dailyfeed.table.weather")}
+                    </th>
+                    <th className="py-3 px-4 text-center" style={{ width: "15%" }}>
+                      {t("dailyfeed.table.actions")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flatRows.map((row, index) => (
+                    <tr
+                      key={`${row.id}_${index}`}
+                      className="border-bottom"
+                      style={{
+                        backgroundColor: row.isFirstSession ? "##17a2b8" : "inherit",
+                      }}
+                    >
+                      {row.isFirstSession && (
+                        <>
+                          <td
+                            rowSpan={row.rowSpan}
+                            className="text-center align-middle font-weight-bold"
+                            style={{ borderRight: "1px solid #dee2e6" }}
+                          >
+                            {row.rowIndex}
+                          </td>
+                          <td
+                            rowSpan={row.rowSpan}
+                            className="text-center align-middle"
+                            style={{ borderRight: "1px solid #dee2e6" }}
+                          >
+                            {cowNames[row.cow_id] || `Sapi #${row.cow_id}`}
+                          </td>
+                          <td
+                            rowSpan={row.rowSpan}
+                            className="text-center align-middle"
+                            style={{ borderRight: "1px solid #dee2e6" }}
+                          >
+                            {formatDate(row.date)}
+                          </td>
+                        </>
+                      )}
+                      <td className="text-center align-middle">
+                        {formatText(row.session)}
                       </td>
-                      <td
-                        rowSpan={row.rowSpan}
-                        style={{ textAlign: "center", verticalAlign: "middle" }}
-                      >
-                        {cowNames[row.cow_id] || `Sapi #${row.cow_id}`}
+                      <td className="text-center align-middle">
+                        {formatText(row.weather)}
                       </td>
-                      <td
-                        rowSpan={row.rowSpan}
-                        style={{ textAlign: "center", verticalAlign: "middle" }}
-                      >
-                        {formatDate(row.date)}
+                      <td className="text-center align-middle">
+                        <div className="d-flex gap-2 justify-content-center">
+                          <button
+                            className="btn btn-warning btn-sm waves-effect waves-light"
+                            onClick={() => {
+                              console.log("Edit button clicked for id:", row.id);
+                              handleEdit(row.id);
+                            }}
+                            title={t("dailyfeed.edit")}
+                            disabled={!row.id}
+                          >
+                            <i className="ri-edit-line"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger waves-effect waves-light"
+                            onClick={() => handleDelete(row.id)}
+                            title={t("dailyfeed.delete")}
+                            disabled={!row.id}
+                          >
+                            <i className="ri-delete-bin-6-line"></i>
+                          </button>
+                        </div>
                       </td>
-                    </>
-                  )}
-                  <td style={{ textAlign: "center" }}>
-                    {formatText(row.session)}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {formatText(row.weather)}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <div className="d-flex gap-2 justify-content-center">
-                      <button
-                        className="btn btn-warning btn-sm waves-effect waves-light"
-                        onClick={() => {
-                          console.log("Edit button clicked for id:", row.id);
-                          handleEdit(row.id);
-                        }}
-                        title={t("dailyfeed.edit")}
-                        disabled={!row.id}
-                      >
-                        <i className="ri-edit-line"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(row.id)}
-                        title={t("dailyfeed.delete")}
-                        disabled={!row.id}
-                      >
-                        <i className="ri-delete-bin-6-line"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>
