@@ -1,8 +1,7 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./configuration/i18n";
 import React, { useEffect, useState } from "react";
-import './i18n'; // ✅ ini harus ada
-
+import "./i18n"; // ✅ ini harus ada
 
 // Public
 import Login from "./Auth/login";
@@ -39,7 +38,7 @@ import DetailPakanHarian from "./admin/pages/pakan/DailyFeed/DetailDailyFeed.js"
 import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js";
 import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
 
-import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
+import NutrisiHarian from "./admin/pages/pakan/DailyNutrition/dailyNutritionDashboard.js";
 import DashboardPakan from "./admin/pages/pakan/Dashboard/FeedDashboard.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
@@ -259,15 +258,21 @@ function App() {
       />
       <Route
         path="/admin/nutrisi"
-        element={<ProtectedRoute>{withAdminLayout(HalamanNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(HalamanNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/tambah-nutrisi"
-        element={<ProtectedRoute>{withAdminLayout(TambahNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(TambahNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/edit-nutrisi/:id"
-        element={<ProtectedRoute>{withAdminLayout(EditNutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(EditNutrisi)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/pakan"
@@ -331,7 +336,9 @@ function App() {
       />
       <Route
         path="/admin/nutrisi-pakan-harian"
-        element={<ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(NutrisiHarian)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/susu/produksi"

@@ -28,6 +28,7 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
       "/admin/pakan-harian",
       "/admin/item-pakan-harian",
       "/admin/nutrisi-pakan-harian",
+      "/admin/nutrisi", 
     ],
     produktivitas: ["/admin/susu"],
     kesehatan: ["/admin/kesehatan"],
@@ -147,8 +148,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
         },
         {
           path: "/admin/nutrisi",
-          icon: "ri-leaf-line",
-          label: "Nutrisi",
+          icon: "ri-flask-line",
+          label: "Jenis Nutrisi",
         },
         {
           path: "/admin/pakan",
@@ -172,8 +173,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
         },
         {
           path: "/admin/nutrisi-pakan-harian",
-          icon: "ri-restaurant-2-line",
-          label: "Nutrisi",
+          icon: "ri-seedling-line",
+          label: "Nutrisi Harian Sapi",
         },
       ],
     },

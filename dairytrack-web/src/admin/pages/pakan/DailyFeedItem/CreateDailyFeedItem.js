@@ -39,7 +39,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
           }),
           getFeeds().catch((err) => {
             console.error("getFeeds error:", err);
-            return { success: false, feeds: [] };
+            return { success: false, data: [] };
           }),
           getFeedStock().catch((err) => {
             console.error("getFeedStock error:", err);
@@ -51,10 +51,10 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
           }),
         ]);
 
-        console.log("Daily Feed Response:", dailyFeedResponse);
-        console.log("Feed Response:", feedResponse);
-        console.log("Feed Stock Response:", stockResponse);
-        console.log("Cows Response:", cowsResponse);
+        console.log("Raw dailyFeedResponse:", dailyFeedResponse);
+        console.log("Raw feedResponse:", feedResponse);
+        console.log("Raw stockResponse:", stockResponse);
+        console.log("Raw cowsResponse:", cowsResponse);
 
         // Handle cow data
         const cowMap = Object.fromEntries(
@@ -66,27 +66,36 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
         // Handle daily feeds
         let validDailyFeeds = [];
         if (dailyFeedResponse.success && Array.isArray(dailyFeedResponse.data)) {
-          // Use all daily feeds, even if cow_id is invalid (we'll handle cow names later)
           validDailyFeeds = dailyFeedResponse.data;
           console.log("validDailyFeeds:", validDailyFeeds);
 
           if (validDailyFeeds.length === 0) {
             console.warn("No daily feeds found.");
             setDailyFeeds([]);
-            setError("Tidak ada sesi pakan harian yang tersedia. Silakan buat sesi pakan harian terlebih dahulu.");
+            setError(
+              "Tidak ada sesi pakan harian yang tersedia. Silakan buat sesi pakan harian terlebih dahulu."
+            );
           } else {
             setDailyFeeds(validDailyFeeds);
           }
 
-          // Check for missing cow_ids and log a warning
-          const missingCowIds = [...new Set(validDailyFeeds.map(feed => feed.cow_id))]
-            .filter(cowId => !cowMap.hasOwnProperty(cowId));
+          // Check for missing cow_ids
+          const missingCowIds = [
+            ...new Set(validDailyFeeds.map((feed) => feed.cow_id)),
+          ].filter((cowId) => !cowMap.hasOwnProperty(cowId));
           if (missingCowIds.length > 0) {
-            console.warn("Some daily feeds have cow_ids not found in cowMap:", missingCowIds);
-            setError("Beberapa sesi pakan harian memiliki ID sapi yang tidak ditemukan. Pastikan data sapi tersedia untuk ID: " + missingCowIds.join(", "));
+            console.warn(
+              "Some daily feeds have cow_ids not found in cowMap:",
+              missingCowIds
+            );
+            setError(
+              `Beberapa sesi pakan harian memiliki ID sapi yang tidak ditemukan. Pastikan data sapi tersedia untuk ID: ${missingCowIds.join(
+                ", "
+              )}`
+            );
           }
         } else {
-          console.error("Invalid daily feed data received");
+          console.error("Invalid daily feed data received:", dailyFeedResponse);
           setDailyFeeds([]);
           setError("Gagal memuat data sesi pakan harian.");
         }
@@ -94,17 +103,33 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
         // Handle feed stocks
         if (stockResponse.success && Array.isArray(stockResponse.stocks)) {
           setFeedStocks(stockResponse.stocks);
+          console.log("feedStocks:", stockResponse.stocks);
+          if (stockResponse.stocks.length === 0) {
+            setError(
+              (prev) =>
+                prev + " Tidak ada data stok pakan tersedia. Silakan tambahkan stok pakan."
+            );
+          }
         } else {
-          console.error("Invalid feed stock data received");
+          console.error("Invalid feed stock data received:", stockResponse);
           setFeedStocks([]);
+          setError((prev) => prev + " Gagal memuat data stok pakan.");
         }
 
         // Handle feeds
-        if (feedResponse.success && Array.isArray(feedResponse.feeds)) {
-          setFeeds(feedResponse.feeds);
+        if (feedResponse.success && Array.isArray(feedResponse.data)) {
+          setFeeds(feedResponse.data);
+          console.log("feeds:", feedResponse.data);
+          if (feedResponse.data.length === 0) {
+            setError(
+              (prev) =>
+                prev + " Tidak ada data pakan tersedia. Silakan tambahkan pakan terlebih dahulu."
+            );
+          }
         } else {
-          console.error("Invalid feed data received");
+          console.error("Invalid feed data received:", feedResponse);
           setFeeds([]);
+          setError((prev) => prev + " Gagal memuat data pakan.");
         }
 
         // Filter available daily feeds
@@ -122,32 +147,30 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
 
   const filterAvailableDailyFeeds = (dailyFeedsData, cowMap) => {
     try {
-      // Normalize today's date to YYYY-MM-DD format
       const today = new Date();
-      const todayISO = today.toISOString().split("T")[0]; // e.g., "2025-04-23"
+      const todayISO = today.toISOString().split("T")[0];
       console.log("Today ISO:", todayISO);
 
-      // Count feed items per daily feed using DailyFeedItems from the response
       const feedItemCounts = {};
       dailyFeedsData.forEach((feed) => {
-        const itemCount = Array.isArray(feed.DailyFeedItems) ? feed.DailyFeedItems.length : 0;
+        const itemCount = Array.isArray(feed.DailyFeedItems)
+          ? feed.DailyFeedItems.length
+          : 0;
         feedItemCounts[feed.id] = itemCount;
       });
       console.log("Feed Item Counts:", feedItemCounts);
 
-      // Filter daily feeds
       const validDailyFeeds = dailyFeedsData.filter((feed) => {
-        // Normalize feed date to YYYY-MM-DD format
         let feedDateISO;
         try {
           const feedDate = new Date(feed.date);
           if (isNaN(feedDate.getTime())) {
             throw new Error("Invalid date format");
           }
-          feedDateISO = feedDate.toISOString().split("T")[0]; // e.g., "2025-04-23"
+          feedDateISO = feedDate.toISOString().split("T")[0];
         } catch (err) {
           console.error(`Invalid date for feed ID ${feed.id}:`, feed.date);
-          return false; // Skip this feed if the date is invalid
+          return false;
         }
 
         console.log(`Feed ID: ${feed.id}, Feed Date ISO: ${feedDateISO}`);
@@ -167,7 +190,6 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
 
       console.log("Valid Daily Feeds after filtering:", validDailyFeeds);
 
-      // Enhance daily feeds with cow names and item counts
       const enhancedDailyFeeds = validDailyFeeds.map((feed) => {
         const cowName = cowMap[feed.cow_id] || `Sapi ID: ${feed.cow_id}`;
         const itemCount = feedItemCounts[feed.id] || 0;
@@ -231,13 +253,20 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
   };
 
   const getFeedStockInfo = (feedId) => {
-    const feedStock = feedStocks.find((stock) => stock.feed?.id === parseInt(feedId));
-    return feedStock?.stock || 0;
+    const feedStock = feedStocks.find((stock) => {
+      const match = stock.Feed?.id === parseInt(feedId);
+      console.log(`Checking feedId ${feedId} against stock:`, stock, `Match: ${match}`);
+      return match;
+    });
+    console.log(`FeedStock for feedId ${feedId}:`, feedStock);
+    return feedStock?.stock || 0; // Ganti dengan feedStock?.quantity jika kolom stok bernama 'quantity'
   };
 
   const getAvailableFeedsForRow = (currentIndex) => {
     const selectedFeedIds = formList
-      .map((item, index) => (index !== currentIndex && item.feed_id ? parseInt(item.feed_id) : null))
+      .map((item, index) =>
+        index !== currentIndex && item.feed_id ? parseInt(item.feed_id) : null
+      )
       .filter((id) => id !== null);
     return feeds.filter((feed) => !selectedFeedIds.includes(feed.id));
   };
