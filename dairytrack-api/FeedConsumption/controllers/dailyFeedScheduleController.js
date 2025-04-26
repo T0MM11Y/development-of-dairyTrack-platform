@@ -243,7 +243,7 @@ exports.getDailyFeedById = async (req, res) => {
               include: [
                 {
                   model: FeedNutrisi,
-                  as: "FeedNutrisi",
+                  as: "FeedNutrisiRecords", // Fixed alias
                   include: [
                     {
                       model: Nutrisi,

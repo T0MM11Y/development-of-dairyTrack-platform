@@ -7,14 +7,18 @@ import 'package:http/http.dart' as http;
 const String BASE_URL = "http://192.168.182.47:5000/api";
 
 // const String BASE_URL = "http://10.0.2.2:5000/api";
-
 Future<dynamic> fetchAPI(
   String endpoint, {
   String method = "GET",
   Map<String, dynamic>? data,
+  Map<String, dynamic>? queryParams, // Add queryParams parameter
   bool isFormData = false,
 }) async {
-  final Uri url = Uri.parse('$BASE_URL/$endpoint');
+  // Build the URL with query parameters if provided
+  final Uri url = Uri.parse('$BASE_URL/$endpoint').replace(
+    queryParameters: queryParams,
+  );
+
   final Map<String, String> headers = isFormData
       ? {}
       : {
@@ -55,9 +59,7 @@ Future<dynamic> fetchAPI(
           .delete(
             url,
             headers: headers,
-            body: data != null
-                ? jsonEncode(data)
-                : null, // Tambahkan body jika diperlukan
+            body: data != null ? jsonEncode(data) : null, // Add body if needed
           )
           .timeout(const Duration(seconds: 10));
     } else {

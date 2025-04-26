@@ -111,18 +111,25 @@ const FeedListPage = () => {
     return Number(num).toLocaleString("id-ID").split(",")[0];
   };
 
-  // Get nutrient value by nutrition ID
-  const getNutrientValue = (feed, nutritionId) => {
-    const record = feed.FeedNutrisiRecords?.find(
-      (record) => record.nutrisi_id === nutritionId // Use nutrisi_id to match API
-    );
-    return record ? parseFloat(record.amount) : null;
-  };
-
-  // Convert MJ/kg to kcal/kg for energy nutrients
-  const convertEnergyToKcal = (mj, unit) => {
-    if (mj === null || mj === undefined) return null;
-    return unit === "MJ/kg" ? mj * 239 : mj;
+  // Get nutrition details for a feed
+  const getFeedNutritionDetails = (feed) => {
+    if (!feed.FeedNutrisiRecords || !Array.isArray(feed.FeedNutrisiRecords)) {
+      return [];
+    }
+    
+    return feed.FeedNutrisiRecords.map(record => {
+      const nutrisi = record.Nutrisi || {
+        name: "Unknown",
+        unit: ""
+      };
+      
+      return {
+        id: record.nutrisi_id,
+        name: nutrisi.name,
+        value: parseFloat(record.amount),
+        unit: nutrisi.unit
+      };
+    });
   };
 
   return (
@@ -163,53 +170,65 @@ const FeedListPage = () => {
                   <th>No</th>
                   <th>Nama</th>
                   <th>Jenis</th>
-                  {nutritions.map((nutrition) => (
-                    <th key={nutrition.id}>
-                      {nutrition.name} ({nutrition.unit})
-                    </th>
-                  ))}
+                  <th>Nutrisi</th>
                   <th>Stok Minimum</th>
                   <th>Harga</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredFeeds.map((feed, index) => (
-                  <tr key={feed.id}>
-                    <td>{index + 1}</td>
-                    <td>{feed.name}</td>
-                    <td>{feed.FeedType?.name || "N/A"}</td>
-                    {nutritions.map((nutrition) => (
-                      <td key={nutrition.id}>
-                        {formatNumber(
-                          convertEnergyToKcal(
-                            getNutrientValue(feed, nutrition.id),
-                            nutrition.unit
-                          )
-                        )}
+                {filteredFeeds.map((feed, index) => {
+                  const nutritionDetails = getFeedNutritionDetails(feed);
+                  
+                  return (
+                    <tr key={feed.id}>
+                      <td>{index + 1}</td>
+                      <td>{feed.name}</td>
+                      <td>{feed.FeedType?.name || "N/A"}</td>
+                      <td>
+                        <div className="d-flex flex-wrap gap-2">
+                          {nutritionDetails.length > 0 ? (
+                            nutritionDetails.map((nutrisi, idx) => (
+                              <div 
+                                key={idx} 
+                                className="rounded bg-light p-2 text-center" 
+                                style={{ minWidth: '120px' }}
+                              >
+                                <div className="fw-medium">{nutrisi.name}</div>
+                                <small className="text-muted">
+                                  {formatNumber(nutrisi.value)} {nutrisi.unit}
+                                </small>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-muted">Tidak ada data nutrisi</span>
+                          )}
+                        </div>
                       </td>
-                    ))}
-                    <td>{formatNumber(feed.min_stock)}</td>
-                    <td>Rp {formatNumber(feed.price)}</td>
-                    <td>
-                      <button
-                        className="btn btn-warning btn-sm me-2"
-                        onClick={() => handleEdit(feed.id)}
-                        aria-label={`Edit ${feed.name}`}
-                        style={{ borderRadius: "6px" }}
-                      >
-                        <i className="ri-edit-line"></i>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(feed.id, feed.name)}
-                        className="btn btn-danger btn-sm"
-                        aria-label={`Hapus ${feed.name}`}
-                      >
-                        <i className="ri-delete-bin-6-line"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td>{formatNumber(feed.min_stock)}</td>
+                      <td>Rp {formatNumber(feed.price)}</td>
+                      <td>
+                        <div className="d-flex">
+                          <button
+                            className="btn btn-warning btn-sm me-2"
+                            onClick={() => handleEdit(feed.id)}
+                            aria-label={`Edit ${feed.name}`}
+                            style={{ borderRadius: "6px" }}
+                          >
+                            <i className="ri-edit-line"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(feed.id, feed.name)}
+                            className="btn btn-danger btn-sm"
+                            aria-label={`Hapus ${feed.name}`}
+                          >
+                            <i className="ri-delete-bin-6-line"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

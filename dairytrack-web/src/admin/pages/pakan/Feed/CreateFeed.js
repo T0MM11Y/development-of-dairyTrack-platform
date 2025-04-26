@@ -310,45 +310,25 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                               handleNutrientChange(nutrient.nutrisiId, e.target.value)
                             }
                             className="form-control"
+                            placeholder={`Masukkan jumlah ${nutrient.name}`}
                             min="0"
-                            step="0.01"
-                            placeholder={`Masukkan ${nutrient.name.toLowerCase()}`}
+                            required
                           />
                         </div>
                         <button
                           type="button"
-                          className="btn btn-danger btn-sm ms-2"
+                          className="btn btn-danger ms-2"
                           onClick={() => handleRemoveNutrient(nutrient.nutrisiId)}
-                          aria-label={`Hapus ${nutrient.name}`}
                         >
-                          <i className="ri-delete-bin-line"></i>
+                          Hapus
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={onClose}
-                    disabled={submitting}
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                    Simpan
+                <div className="text-end">
+                  <button type="submit" className="btn btn-primary" disabled={submitting}>
+                    {submitting ? "Menyimpan..." : "Simpan"}
                   </button>
                 </div>
               </form>

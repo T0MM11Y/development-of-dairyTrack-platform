@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
 import { createDailyFeed } from "../../../../api/pakan/dailyFeed";
-import { getFarmers } from "../../../../api/peternakan/farmer";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 
 const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
-  const [farmers, setFarmers] = useState([]);
   const [cows, setCows] = useState([]);
   const [form, setForm] = useState({
-    farmerId: "",
     cowId: "",
     feedDate: new Date().toISOString().split("T")[0],
     session: "Pagi",
@@ -17,7 +14,6 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [farmerError, setFarmerError] = useState(false);
   const [cowError, setCowError] = useState(false);
   const { t } = useTranslation();
 
@@ -37,27 +33,16 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
     const fetchData = async () => {
       setLoading(true);
       setError("");
-      setFarmerError(false);
       setCowError(false);
 
       try {
-        const [farmersData, cowsData] = await Promise.all([
-          getFarmers().catch((err) => {
-            console.error("Failed to fetch farmers:", err);
-            setFarmerError(true);
-            return [];
-          }),
-          getCows().catch((err) => {
-            console.error("Failed to fetch cows:", err);
-            setCowError(true);
-            return [];
-          }),
-        ]);
+        const cowsData = await getCows().catch((err) => {
+          console.error("Failed to fetch cows:", err);
+          setCowError(true);
+          return [];
+        });
 
-        setFarmers(farmersData);
         setCows(cowsData);
-
-        if (farmersData.length === 0) setFarmerError(true);
         if (cowsData.length === 0) setCowError(true);
       } catch (error) {
         console.error("Error in fetchData:", error);
@@ -96,7 +81,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
     setSubmitting(true);
     setError("");
 
-    if (!form.farmerId || !form.cowId || !form.feedDate) {
+    if (!form.cowId || !form.feedDate) {
       setError("Semua kolom wajib diisi!");
       setSubmitting(false);
       Swal.fire({
@@ -110,7 +95,6 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
 
     try {
       const dailyFeedData = {
-        farmer_id: Number(form.farmerId),
         cow_id: Number(form.cowId),
         date: form.feedDate,
         session: form.session,
@@ -168,8 +152,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
       <div className="modal-content">
         <div className="modal-header">
           <h4 className="modal-title text-info fw-bold">
-          {t('dailyfeed.add_daily_feed')}
-
+            {t('dailyfeed.add_daily_feed')}
           </h4>
           <button
             type="button"
@@ -187,41 +170,12 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               <div className="spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
-              <p className="mt-2">{t('dailyfeed.loading_data')}
-              ...</p>
+              <p className="mt-2">{t('dailyfeed.loading_data')}...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.farmer')}
-                </label>
-                <select
-                  name="farmerId"
-                  value={form.farmerId}
-                  onChange={handleChange}
-                  className={`form-select ${farmerError ? "is-invalid" : ""}`}
-                  required
-                  disabled={farmerError || farmers.length === 0}
-                >
-                  <option value="">{t('dailyfeed.select_farmer')}
-                  </option>
-                  {farmers.map((farmer) => (
-                    <option key={farmer.id} value={farmer.id}>
-                      {farmer.first_name} {farmer.last_name}
-                    </option>
-                  ))}
-                </select>
-                {farmerError && (
-                  <div className="invalid-feedback d-block">
-                    {t('dailyfeed.failed_load_farmer')}
-
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.cow')}
-                </label>
+                <label className="form-label fw-bold">{t('dailyfeed.cow')}</label>
                 <select
                   name="cowId"
                   value={form.cowId}
@@ -230,8 +184,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   required
                   disabled={cowError || cows.length === 0}
                 >
-                  <option value="">{t('dailyfeed.select_cow')}
-                  </option>
+                  <option value="">{t('dailyfeed.select_cow')}</option>
                   {cows.map((cow) => (
                     <option key={cow.id} value={cow.id}>
                       {cow.name}
@@ -240,14 +193,13 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                 </select>
                 {cowError && (
                   <div className="invalid-feedback d-block">
-{t('dailyfeed.failed_load_cow')}
-</div>
+                    {t('dailyfeed.failed_load_cow')}
+                  </div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.date')}
-                </label>
+                <label className="form-label fw-bold">{t('dailyfeed.date')}</label>
                 <input
                   type="date"
                   name="feedDate"
@@ -259,8 +211,7 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.session')}
-                </label>
+                <label className="form-label fw-bold">{t('dailyfeed.session')}</label>
                 <select
                   name="session"
                   value={form.session}
@@ -268,14 +219,10 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   className="form-select"
                   required
                 >
-                  <option value="">{t('dailyfeed.select_session')}
-                  </option>
-                  <option value="Pagi">{t('dailyfeed.morning')}
-                  </option>
-                  <option value="Siang">{t('dailyfeed.afternoon')}
-                  </option>
-                  <option value="Sore">{t('dailyfeed.evening')}
-                  </option>
+                  <option value="">{t('dailyfeed.select_session')}</option>
+                  <option value="Pagi">{t('dailyfeed.morning')}</option>
+                  <option value="Siang">{t('dailyfeed.afternoon')}</option>
+                  <option value="Sore">{t('dailyfeed.evening')}</option>
                 </select>
               </div>
 
@@ -287,24 +234,19 @@ const CreateDailyFeedPage = ({ onDailyFeedAdded, onClose }) => {
                   disabled={submitting}
                 >
                   {t('dailyfeed.cancel')}
-
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-info"
-                  disabled={submitting || farmerError || cowError}
+                  className="btn btn-primary"
+                  disabled={submitting}
                 >
                   {submitting ? (
                     <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Menyimpan...
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      {t('dailyfeed.saving')}...
                     </>
                   ) : (
-                    "SIMPAN"
+                    t('dailyfeed.save')
                   )}
                 </button>
               </div>

@@ -381,7 +381,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
                   isActive(menuPaths[menu.key]) ? "active" : ""
                 }`}
                 variants={menuItemVariants}
-                whileHover="hover"tst
+                whileHover="hover"
+                tst
                 whileTap="tap"
               >
                 {menu.submenus.length > 0 ? (
