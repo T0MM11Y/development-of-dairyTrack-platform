@@ -1,5 +1,6 @@
 import 'package:dairy_track/model/peternakan/cow.dart';
 import 'package:dairy_track/model/produktivitas/rawMilk.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 class DailyMilkTotal {
@@ -13,6 +14,7 @@ class DailyMilkTotal {
   final DateTime updatedAt;
   final Cow? cow;
   final List<RawMilk>? rawMilks;
+  final String lactation_phase; // Tambahkan properti lactation
 
   DailyMilkTotal({
     required this.id,
@@ -25,6 +27,7 @@ class DailyMilkTotal {
     required this.updatedAt,
     this.cow,
     this.rawMilks,
+    required this.lactation_phase, // Tambahkan ke konstruktor
   });
 
   factory DailyMilkTotal.fromJson(Map<String, dynamic> json) {
@@ -38,6 +41,9 @@ class DailyMilkTotal {
       parsedVolume = double.tryParse(volume) ?? 0.0;
     }
 
+    final String lactationPhase = json['lactation'] is String
+        ? json['lactation']
+        : json['lactation'].toString();
     // Parse cow data
     Cow? cow;
     if (json['cow'] != null && json['cow'] is Map<String, dynamic>) {
@@ -52,6 +58,11 @@ class DailyMilkTotal {
           .map((milk) => RawMilk.fromJson(milk))
           .toList();
     }
+
+    // Parse lactation
+    final int lactation = json['lactation'] is int
+        ? json['lactation']
+        : int.tryParse(json['lactation_phase'].toString()) ?? 0;
 
     return DailyMilkTotal(
       id: json['id'] is int
@@ -70,6 +81,8 @@ class DailyMilkTotal {
       status: status,
       cow: cow,
       rawMilks: rawMilks,
+      lactation_phase:
+          lactationPhase, // Assign the local variable to the constructor
     );
   }
 
@@ -82,6 +95,7 @@ class DailyMilkTotal {
       'cow_id': cowId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'lactation_phase': cow?.lactationPhase.toString(),
       if (cow != null) 'cow': cow!.toJson(),
       if (rawMilks != null)
         'raw_milks': rawMilks!.map((milk) => milk.toJson()).toList(),

@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:dairy_track/config/api/penjualan/productHistory.dart';
 import 'package:dairy_track/model/penjualan/productHistory.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProductHistoryList extends StatefulWidget {
   const ProductHistoryList({super.key});
@@ -23,6 +23,7 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
   @override
   void initState() {
     super.initState();
+    // Set default date range: last 30 days to today
     _startDateController.text = DateFormat('yyyy-MM-dd')
         .format(DateTime.now().subtract(Duration(days: 30)));
     _endDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -43,16 +44,16 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
     }
   }
 
-  Future<List<ProductHistory>> fetchProductHistory() async {
+  Future<List<ProductHistory>> fetchProductHistories() async {
     try {
       final startDate = _startDateController.text;
       final endDate = _endDateController.text;
       final queryString = 'start_date=$startDate&end_date=$endDate';
-      final history = await getProductStockHistorys(queryString: queryString);
-      return history;
+      final histories = await getProductStockHistorys(queryString: queryString);
+      return histories;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data riwayat stok: $e')),
+        SnackBar(content: Text('Gagal memuat data riwayat produk: $e')),
       );
       return [];
     }
@@ -76,7 +77,7 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
           ? await getProductStockHistoryExportPdf(queryString: queryString)
           : await getProductStockHistoryExportExcel(queryString: queryString);
 
-      // Menyimpan file di direktori dokumen aplikasi (tidak memerlukan izin eksternal)
+      // Save file to application documents directory
       final directory = await getApplicationDocumentsDirectory();
       final fileName = isPdf
           ? 'product_history_${startDate}_to_${endDate}.pdf'
@@ -99,19 +100,6 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
     }
   }
 
-  // Menghitung total quantity_change per change_type
-  Map<String, double> _calculateChangeTypeTotals(List<ProductHistory> history) {
-    final totals = {'sold': 0.0, 'restock': 0.0};
-    for (var item in history) {
-      if (item.changeType == 'sold') {
-        totals['sold'] = totals['sold']! + item.quantityChange;
-      } else if (item.changeType == 'restock') {
-        totals['restock'] = totals['restock']! + item.quantityChange;
-      }
-    }
-    return totals;
-  }
-
   @override
   void dispose() {
     _startDateController.dispose();
@@ -123,7 +111,7 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Stok Produk'),
+        title: const Text('Riwayat Produk'),
         backgroundColor: const Color.fromARGB(255, 93, 144, 231),
         elevation: 0,
       ),
@@ -213,7 +201,7 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
             ),
             Expanded(
               child: FutureBuilder<List<ProductHistory>>(
-                future: fetchProductHistory(),
+                future: fetchProductHistories(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -221,126 +209,60 @@ class _ProductHistoryListState extends State<ProductHistoryList> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return const Center(
-                        child: Text('Tidak ada data riwayat stok ditemukan.'));
+                        child:
+                            Text('Tidak ada data riwayat produk ditemukan.'));
                   }
 
-                  final history = snapshot.data!;
-                  final totals = _calculateChangeTypeTotals(history);
-
-                  return Column(
-                    children: [
-                      Card(
+                  final histories = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: histories.length,
+                    itemBuilder: (context, index) {
+                      final history = histories[index];
+                      return Card(
                         margin: const EdgeInsets.symmetric(
                             vertical: 8, horizontal: 16),
                         elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          title: Text(
+                            history.productName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Perbandingan Sold vs Restock',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tanggal: ${DateFormat('dd MMM yyyy').format(history.changeDate)}',
+                                style: TextStyle(color: Colors.grey[600]),
                               ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                height: 200,
-                                child: PieChart(
-                                  PieChartData(
-                                    sections: [
-                                      PieChartSectionData(
-                                        color: Colors.blue,
-                                        value: totals['sold'],
-                                        title:
-                                            'Sold\n${totals['sold'].toInt()} unit',
-                                        radius: 80,
-                                        titleStyle: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      PieChartSectionData(
-                                        color: Colors.green,
-                                        value: totals['restock'],
-                                        title:
-                                            'Restock\n${totals['restock'].toInt()} unit',
-                                        radius: 80,
-                                        titleStyle: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                    centerSpaceRadius: 40,
-                                    sectionsSpace: 2,
-                                  ),
-                                ),
+                              Text(
+                                'Tipe Perubahan: ${history.changeType}',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              Text(
+                                'Jumlah Perubahan: ${history.quantityChange} ${history.unit}',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              Text(
+                                'Stok Produk: ${history.productStock} ${history.unit}',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              Text(
+                                'Total Harga: Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(history.totalPrice)}',
+                                style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: history.length,
-                          itemBuilder: (context, index) {
-                            final item = history[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(16),
-                                title: Text(
-                                  item.productName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Tanggal: ${DateFormat('dd MMM yyyy').format(item.changeDate)}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Jenis Perubahan: ${item.changeType}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Jumlah: ${item.quantityChange} ${item.unit}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Stok Setelah: ${item.productStock} ${item.unit}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                    Text(
-                                      'Total Harga: Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(item.totalPrice)}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   );
                 },
               ),

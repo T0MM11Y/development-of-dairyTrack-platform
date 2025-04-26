@@ -1,3 +1,4 @@
+import 'package:dairy_track/modules/produksi_susu/analisisByLaktasi/analisisByLaktasi.dart';
 import 'package:dairy_track/modules/produksi_susu/trendProduksiSusu/trenProduksiSusu.dart';
 import 'package:flutter/material.dart';
 import 'dataProduksiSusu/dataProduksiSusu.dart'; // Import halaman DataProduksiSusu
@@ -54,8 +55,11 @@ class MenuProduction extends StatelessWidget {
                 Icons.analytics,
                 Colors.orange,
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Analisis by Laktasi dipilih')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AnalisisByLaktasiPage(),
+                    ),
                   );
                 },
               ),

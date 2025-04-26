@@ -112,43 +112,51 @@ class _AddGejalaState extends State<AddGejala> {
     }
   }
 
-  Future<void> handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (selectedHealthCheckId == null) {
+ Future<void> handleSubmit() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  if (selectedHealthCheckId == null) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih Health Check terlebih dahulu')),
       );
-      return;
     }
+    return;
+  }
 
-    setState(() => isSubmitting = true);
+  if (mounted) setState(() => isSubmitting = true);
 
-    try {
-      await createSymptom({
-        "health_check": selectedHealthCheckId,
-        "eye_condition": eyeCondition ?? "Normal", // ✅ Default Normal
-        "mouth_condition": mouthCondition ?? "Normal",
-        "nose_condition": noseCondition ?? "Normal",
-        "anus_condition": anusCondition ?? "Normal",
-        "leg_condition": legCondition ?? "Normal",
-        "skin_condition": skinCondition ?? "Normal",
-        "behavior": behavior ?? "Normal",
-        "weight_condition": weightCondition ?? "Normal",
-        "reproductive_condition": reproductiveCondition ?? "Normal",
-      });
+  try {
+    await createSymptom({
+      "health_check": selectedHealthCheckId,
+      "eye_condition": eyeCondition ?? "Normal",
+      "mouth_condition": mouthCondition ?? "Normal",
+      "nose_condition": noseCondition ?? "Normal",
+      "anus_condition": anusCondition ?? "Normal",
+      "leg_condition": legCondition ?? "Normal",
+      "skin_condition": skinCondition ?? "Normal",
+      "behavior": behavior ?? "Normal",
+      "weight_condition": weightCondition ?? "Normal",
+      "reproductive_condition": reproductiveCondition ?? "Normal",
+    });
 
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gejala berhasil ditambahkan')),
       );
       Navigator.pop(context, true);
-    } catch (e) {
+    }
+  } catch (e) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menyimpan: $e')),
       );
-    } finally {
-      setState(() => isSubmitting = false);
     }
+  } finally {
+    if (mounted) setState(() => isSubmitting = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

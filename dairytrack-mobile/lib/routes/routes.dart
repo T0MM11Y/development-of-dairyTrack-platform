@@ -61,6 +61,7 @@ import 'package:dairy_track/modules/penjualan/productType/editProductType.dart';
 import 'package:dairy_track/modules/penjualan/product/listProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/createProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/editProductStock.dart';
+import 'package:dairy_track/modules/penjualan/product/productHistory.dart';
 import 'package:dairy_track/modules/penjualan/finance/listFinance.dart';
 
 class Routes {
@@ -128,6 +129,7 @@ class Routes {
   static const String listProductStock = '/product-stock';
   static const String createProductStock = '/create-product-stock';
   static const String editProductStock = '/edit-product-stock';
+  static const String productHistory = '/product-history';
 
   static const String listFinance = '/finance';
   // Sales And Financial =======================================================
@@ -231,6 +233,7 @@ class Routes {
         return EditProductStock(productStock: productStock);
       },
       listFinance: (context) => FinanceList(),
+      productHistory: (context) => ProductHistoryList(),
       // Sales And Financial ===================================================================
     };
   }

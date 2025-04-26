@@ -18,7 +18,7 @@ class _TrenProduksiSusuPageState extends State<TrenProduksiSusuPage> {
   bool _showAverage = true;
   bool _showTarget = false;
   String? _selectedCow;
-  double _targetVolume = 18.0;
+  double _targetVolume = 15.0;
   final _scrollController = ScrollController();
 
   @override

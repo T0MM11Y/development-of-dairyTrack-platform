@@ -28,7 +28,6 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
       "/admin/pakan-harian",
       "/admin/item-pakan-harian",
       "/admin/nutrisi-pakan-harian",
-      "/admin/nutrisi", 
     ],
     produktivitas: ["/admin/susu"],
     kesehatan: ["/admin/kesehatan"],
@@ -148,8 +147,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
         },
         {
           path: "/admin/nutrisi",
-          icon: "ri-flask-line",
-          label: "Jenis Nutrisi",
+          icon: "ri-leaf-line",
+          label: "Nutrisi",
         },
         {
           path: "/admin/pakan",
@@ -173,8 +172,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
         },
         {
           path: "/admin/nutrisi-pakan-harian",
-          icon: "ri-seedling-line",
-          label: "Nutrisi Harian Sapi",
+          icon: "ri-restaurant-2-line",
+          label: "Nutrisi",
         },
       ],
     },
@@ -382,7 +381,8 @@ const Sidebar = ({ isCollapsed, isMobile, isOpen, onClose }) => {
                   isActive(menuPaths[menu.key]) ? "active" : ""
                 }`}
                 variants={menuItemVariants}
-                whileHover="hover"tst
+                whileHover="hover"
+                tst
                 whileTap="tap"
               >
                 {menu.submenus.length > 0 ? (
