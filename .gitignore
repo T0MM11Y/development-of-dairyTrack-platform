@@ -1,1 +1,5 @@
 *.json
+dairytrack-mobile/windows/flutter/generated_plugins.cmake
+dairytrack-mobile/windows/flutter/generated_plugin_registrant.cc
+*.log
+dairytrack-api/Selling/whatsapp_errors.log
