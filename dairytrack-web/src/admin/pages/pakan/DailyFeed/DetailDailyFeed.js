@@ -1,27 +1,19 @@
 import { useState, useEffect } from "react";
-import {
-  getDailyFeedById,
-  updateDailyFeed,
-} from "../../../../api/pakan/dailyFeed";
-import { getFarmers } from "../../../../api/peternakan/farmer";
+import { getDailyFeedById, updateDailyFeed } from "../../../../api/pakan/dailyFeed";
 import { getCows } from "../../../../api/peternakan/cow";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 
 const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
-  const [farmers, setFarmers] = useState([]);
   const [cows, setCows] = useState([]);
   const [form, setForm] = useState({
-    farmerId: "",
     cowId: "",
     feedDate: "",
     session: "",
-    weather: "",
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [farmerError, setFarmerError] = useState(false);
   const [cowError, setCowError] = useState(false);
   const { t } = useTranslation();
 
@@ -41,17 +33,11 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
     const fetchData = async () => {
       setLoading(true);
       setError("");
-      setFarmerError(false);
       setCowError(false);
 
       try {
-        const [feedData, farmersData, cowsData] = await Promise.all([
+        const [feedData, cowsData] = await Promise.all([
           getDailyFeedById(feedId),
-          getFarmers().catch((err) => {
-            console.error("Failed to fetch farmers:", err);
-            setFarmerError(true);
-            return [];
-          }),
           getCows().catch((err) => {
             console.error("Failed to fetch cows:", err);
             setCowError(true);
@@ -59,34 +45,29 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
           }),
         ]);
 
-        setFarmers(farmersData);
         setCows(cowsData);
-
-        if (farmersData.length === 0) setFarmerError(true);
         if (cowsData.length === 0) setCowError(true);
 
         if (feedData && feedData.data) {
           const feed = feedData.data;
           setForm({
-            farmerId: feed.farmer_id.toString(),
             cowId: feed.cow_id.toString(),
             feedDate: feed.date,
-            session: feed.session || "Pagi", // Fallback to "Pagi" only if session is undefined
-            weather: feed.weather || "",
+            session: feed.session || "Pagi",
           });
         } else {
           throw new Error("Could not retrieve feed data");
         }
       } catch (error) {
         console.error("Error in fetchData:", error);
-        setError("Terjadi kesalahan saat memuat data: " + error.message);
+        setError(t("dailyfeed.error_loading_data") + ": " + error.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [feedId]);
+  }, [feedId, t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -97,14 +78,14 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
     e.preventDefault();
 
     const confirmResult = await Swal.fire({
-      title: "Konfirmasi",
-      text: "Apakah Anda yakin ingin memperbarui data pakan harian ini?",
+      title: t("dailyfeed.confirm_title"),
+      text: t("dailyfeed.confirm_update_text"),
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, perbarui!",
-      cancelButtonText: "Batal",
+      confirmButtonText: t("dailyfeed.confirm_yes"),
+      cancelButtonText: t("dailyfeed.cancel"),
     });
 
     if (!confirmResult.isConfirmed) {
@@ -114,33 +95,31 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
     setSubmitting(true);
     setError("");
 
-    if (!form.farmerId || !form.cowId || !form.feedDate || !form.session) {
-      setError("Semua kolom wajib diisi!");
+    if (!form.cowId || !form.feedDate || !form.session) {
+      setError(t("dailyfeed.all_fields_required"));
       setSubmitting(false);
       Swal.fire({
-        title: "Error!",
-        text: "Semua kolom wajib diisi!",
+        title: t("dailyfeed.error_title"),
+        text: t("dailyfeed.all_fields_required"),
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: t("dailyfeed.ok"),
       });
       return;
     }
 
     try {
       const dailyFeedData = {
-        farmer_id: Number(form.farmerId),
         cow_id: Number(form.cowId),
         date: form.feedDate,
         session: form.session,
-        weather: form.weather,
       };
 
       const response = await updateDailyFeed(feedId, dailyFeedData);
 
       if (response && response.success) {
         Swal.fire({
-          title: "Berhasil!",
-          text: "Data pakan harian berhasil diperbarui!",
+          title: t("dailyfeed.success_title"),
+          text: t("dailyfeed.success_update"),
           icon: "success",
           timer: 2000,
           timerProgressBar: true,
@@ -151,20 +130,20 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
           handleClose();
         });
       } else {
-        throw new Error(response?.message || "Gagal memperbarui data.");
+        throw new Error(response?.message || t("dailyfeed.error_update"));
       }
     } catch (err) {
-      console.error("Gagal memperbarui data pakan harian:", err);
+      console.error("Failed to update daily feed:", err);
       const errorMessage =
         err.response?.status === 409
           ? err.response.data.message
-          : err.message || "Terjadi kesalahan, coba lagi.";
+          : err.message || t("dailyfeed.error_try_again");
       setError(errorMessage);
       Swal.fire({
-        title: "Error!",
+        title: t("dailyfeed.error_title"),
         text: errorMessage,
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: t("dailyfeed.ok"),
       });
     } finally {
       setSubmitting(false);
@@ -176,8 +155,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       <div className="modal-content">
         <div className="modal-header">
           <h4 className="modal-title text-info fw-bold">
-          {t('dailyfeed.detail_edit_daily_feed')}
-
+            {t("dailyfeed.detail_edit_daily_feed")}
           </h4>
           <button
             type="button"
@@ -193,43 +171,14 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
           {loading ? (
             <div className="text-center">
               <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Loading...</span>
+                <span className="sr-only">{t("dailyfeed.loading")}</span>
               </div>
-              <p className="mt-2">{t('dailyfeed.loading_data')}
-              ...</p>
+              <p className="mt-2">{t("dailyfeed.loading_data")}...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.farmer')}
-                </label>
-                <select
-                  name="farmerId"
-                  value={form.farmerId}
-                  onChange={handleChange}
-                  className={`form-select ${farmerError ? "is-invalid" : ""}`}
-                  required
-                  disabled={farmerError || farmers.length === 0}
-                >
-                  <option value="">{t('dailyfeed.select_farmer')}
-                  </option>
-                  {farmers.map((farmer) => (
-                    <option key={farmer.id} value={farmer.id}>
-                      {farmer.first_name} {farmer.last_name}
-                    </option>
-                  ))}
-                </select>
-                {farmerError && (
-                  <div className="invalid-feedback d-block">
-                    {t('dailyfeed.failed_load_farmer')}
-
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.cow')}
-                </label>
+                <label className="form-label fw-bold">{t("dailyfeed.cow")}</label>
                 <select
                   name="cowId"
                   value={form.cowId}
@@ -238,8 +187,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                   required
                   disabled={cowError || cows.length === 0}
                 >
-                  <option value="">{t('dailyfeed.select_cow')}
-                  </option>
+                  <option value="">{t("dailyfeed.select_cow")}</option>
                   {cows.map((cow) => (
                     <option key={cow.id} value={cow.id}>
                       {cow.name}
@@ -248,15 +196,13 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                 </select>
                 {cowError && (
                   <div className="invalid-feedback d-block">
-                    {t('dailyfeed.failed_load_cow')}
-
+                    {t("dailyfeed.failed_load_cow")}
                   </div>
                 )}
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.date')}
-                </label>
+                <label className="form-label fw-bold">{t("dailyfeed.date")}</label>
                 <input
                   type="date"
                   name="feedDate"
@@ -268,8 +214,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">{t('dailyfeed.session')}
-                </label>
+                <label className="form-label fw-bold">{t("dailyfeed.session")}</label>
                 <select
                   name="session"
                   value={form.session}
@@ -277,12 +222,9 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                   className="form-select"
                   required
                 >
-                  <option value="Pagi">{t('dailyfeed.morning')}
-                  </option>
-                  <option value="Siang">{t('dailyfeed.afternoon')}
-                  </option>
-                  <option value="Sore">{t('dailyfeed.evening')}
-                  </option>
+                  <option value="Pagi">{t("dailyfeed.morning")}</option>
+                  <option value="Siang">{t("dailyfeed.afternoon")}</option>
+                  <option value="Sore">{t("dailyfeed.evening")}</option>
                 </select>
               </div>
 
@@ -293,13 +235,12 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                   onClick={handleClose}
                   disabled={submitting}
                 >
-                  {t('dailyfeed.cancel')}
-
+                  {t("dailyfeed.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="btn btn-info"
-                  disabled={submitting || farmerError || cowError}
+                  disabled={submitting || cowError}
                 >
                   {submitting ? (
                     <>
@@ -308,10 +249,10 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      Menyimpan...
+                      {t("dailyfeed.saving")}
                     </>
                   ) : (
-                    "SIMPAN"
+                    t("dailyfeed.save")
                   )}
                 </button>
               </div>

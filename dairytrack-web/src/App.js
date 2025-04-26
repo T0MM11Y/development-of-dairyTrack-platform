@@ -38,7 +38,7 @@ import DetailPakanHarian from "./admin/pages/pakan/DailyFeed/DetailDailyFeed.js"
 import ItemPakanHarian from "./admin/pages/pakan/DailyFeedItem/DailyFeedItem.js";
 import TambahItemPakan from "./admin/pages/pakan/DailyFeedItem/CreateDailyFeedItem.js";
 
-import Nutrisi from "./admin/pages/pakan/Nutrition/ListNutrisi.js";
+import NutrisiHarian from "./admin/pages/pakan/DailyNutrition/dailyNutritionDashboard.js";
 import DashboardPakan from "./admin/pages/pakan/Dashboard/FeedDashboard.js";
 
 import DataProduksiSusu from "./admin/pages/produktivitas/MilkProductionLogs/DataProduksiSusu";
@@ -336,7 +336,9 @@ function App() {
       />
       <Route
         path="/admin/nutrisi-pakan-harian"
-        element={<ProtectedRoute>{withAdminLayout(Nutrisi)}</ProtectedRoute>}
+        element={
+          <ProtectedRoute>{withAdminLayout(NutrisiHarian)}</ProtectedRoute>
+        }
       />
       <Route
         path="/admin/susu/produksi"
