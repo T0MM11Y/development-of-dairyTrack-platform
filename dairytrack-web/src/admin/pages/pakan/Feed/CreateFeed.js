@@ -13,8 +13,8 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
     min_stock: 0,
     price: 0,
   });
-  const [selectedNutrients, setSelectedNutrients] = useState([]); // [{ nutrisiId, amount }]
-  const [nutrientToAdd, setNutrientToAdd] = useState(""); // Selected nutrient ID from dropdown
+  const [selectedNutrients, setSelectedNutrients] = useState([]);
+  const [nutrientToAdd, setNutrientToAdd] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -22,18 +22,14 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch feed types
         const typeResponse = await getFeedTypes();
-        console.log("getFeedTypes Response:", typeResponse);
         if (typeResponse.success && (typeResponse.feedTypes || typeResponse.jenisPakan)) {
           setFeedTypes(typeResponse.feedTypes || typeResponse.jenisPakan);
         } else {
           throw new Error("Jenis pakan tidak tersedia.");
         }
 
-        // Fetch nutritions
         const nutritionResponse = await getNutritions();
-        console.log("getNutritions Response:", nutritionResponse);
         if (nutritionResponse.success && nutritionResponse.nutrisi) {
           setNutritions(nutritionResponse.nutrisi);
         } else {
@@ -52,21 +48,36 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]:
-        name === "typeId"
-          ? value
-          : name === "min_stock" || name === "price"
-          ? Number(value) || 0
-          : value,
+      [name]: name === "typeId" ? value : name === "min_stock" || name === "price" ? Number(value) || 0 : value,
+    }));
+  };
+
+  const handleFocus = (e) => {
+    if (e.target.value === "0" || e.target.value === "0.00") {
+      e.target.value = "";
+    }
+  };
+
+  const formatPrice = (value) => {
+    if (!value) return "";
+    const numberValue = parseInt(value.toString().replace(/\D/g, ""), 10);
+    if (isNaN(numberValue)) return "";
+    return numberValue.toLocaleString("id-ID");
+  };
+
+  const handlePriceChange = (e) => {
+    const rawValue = e.target.value.replace(/\./g, "");
+    const numberValue = Number(rawValue);
+    setForm((prev) => ({
+      ...prev,
+      price: isNaN(numberValue) ? 0 : numberValue,
     }));
   };
 
   const handleNutrientChange = (nutrisiId, value) => {
     setSelectedNutrients((prev) =>
       prev.map((nutrient) =>
-        nutrient.nutrisiId === nutrisiId
-          ? { ...nutrient, amount: value ? Number(value) : "" }
-          : nutrient
+        nutrient.nutrisiId === nutrisiId ? { ...nutrient, amount: value ? Number(value) : "" } : nutrient
       )
     );
   };
@@ -85,7 +96,12 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
     if (nutrient) {
       setSelectedNutrients((prev) => [
         ...prev,
-        { nutrisiId: nutrient.id, amount: "", name: nutrient.name, unit: nutrient.unit },
+        {
+          nutrisiId: nutrient.id,
+          amount: "",
+          name: nutrient.name,
+          unit: nutrient.unit,
+        },
       ]);
       setNutrientToAdd("");
       setError("");
@@ -100,17 +116,16 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
     e.preventDefault();
     setError("");
 
-    // Validate required fields
     if (!form.typeId || !form.name || form.min_stock < 0 || form.price < 0) {
       setError("Jenis pakan, nama, stok minimum, dan harga wajib diisi dengan nilai valid.");
       return;
     }
 
-    // Validate nutrients
     if (selectedNutrients.length === 0) {
       setError("Setidaknya satu nutrisi harus ditambahkan.");
       return;
     }
+
     const invalidNutrient = selectedNutrients.find(
       (n) => n.amount === "" || n.amount === null || n.amount < 0
     );
@@ -133,16 +148,16 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
 
     try {
       const nutrientRecords = selectedNutrients.map((n) => ({
-        nutrisiId: n.nutrisiId,
+        nutrisi_id: n.nutrisiId, // ✅ sesuai dengan backend
         amount: Number(n.amount),
       }));
 
       const feedData = {
         typeId: Number(form.typeId),
-        name: form.name,
+        name: form.name.trim(),
         min_stock: Number(form.min_stock),
         price: Number(form.price),
-        nutrients: nutrientRecords,
+        nutrisiList: nutrientRecords, // ✅ ubah dari "nutrients"
       };
 
       const response = await createFeed(feedData);
@@ -157,13 +172,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
           showConfirmButton: false,
         });
 
-        // Reset form
-        setForm({
-          typeId: "",
-          name: "",
-          min_stock: 0,
-          price: 0,
-        });
+        setForm({ typeId: "", name: "", min_stock: 0, price: 0 });
         setSelectedNutrients([]);
         setNutrientToAdd("");
         onFeedAdded();
@@ -189,12 +198,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Tambah Pakan</h5>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-              aria-label="Close"
-            ></button>
+            <button className="btn-close" onClick={onClose} disabled={submitting} aria-label="Close"></button>
           </div>
           <div className="modal-body">
             {error && <div className="alert alert-danger">{error}</div>}
@@ -207,13 +211,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label fw-bold">Jenis Pakan</label>
-                  <select
-                    name="typeId"
-                    value={form.typeId}
-                    onChange={handleChange}
-                    className="form-select"
-                    required
-                  >
+                  <select name="typeId" value={form.typeId} onChange={handleChange} className="form-select" required>
                     <option value="">Pilih Jenis</option>
                     {feedTypes.map((ft) => (
                       <option key={ft.id} value={ft.id}>
@@ -239,8 +237,9 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                   <input
                     type="number"
                     name="min_stock"
-                    value={form.min_stock}
+                    value={form.min_stock === 0 ? "" : form.min_stock}
                     onChange={handleChange}
+                    onFocus={handleFocus}
                     className="form-control"
                     min="0"
                     placeholder="0"
@@ -250,14 +249,13 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                 <div className="mb-3">
                   <label className="form-label fw-bold">Harga (Rp)</label>
                   <input
-                    type="number"
+                    type="text"
                     name="price"
-                    value={form.price}
-                    onChange={handleChange}
+                    value={formatPrice(form.price)}
+                    onChange={handlePriceChange}
+                    onFocus={handleFocus}
                     className="form-control"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
+                    placeholder="0"
                     required
                   />
                 </div>
@@ -272,9 +270,7 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                     >
                       <option value="">Pilih Nutrisi</option>
                       {nutritions
-                        .filter(
-                          (n) => !selectedNutrients.some((sn) => sn.nutrisiId === n.id)
-                        )
+                        .filter((n) => !selectedNutrients.some((sn) => sn.nutrisiId === n.id))
                         .map((n) => (
                           <option key={n.id} value={n.id}>
                             {n.name} ({n.unit})
@@ -294,34 +290,32 @@ const CreateFeedPage = ({ onFeedAdded, onClose }) => {
                 {selectedNutrients.length > 0 && (
                   <div className="mb-3">
                     {selectedNutrients.map((nutrient) => (
-                      <div key={nutrient.nutrisiId} className="mb-2 d-flex align-items-center">
+                      <div key={nutrient.nutrisiId} className="mb-2 d-flex align-items-end gap-2">
                         <div className="flex-grow-1">
-                          <label
-                            htmlFor={`nutrient-${nutrient.nutrisiId}`}
-                            className="form-label fw-bold"
-                          >
+                          <label htmlFor={`nutrient-${nutrient.nutrisiId}`} className="form-label fw-bold">
                             {nutrient.name} ({nutrient.unit})
                           </label>
                           <input
                             type="number"
                             id={`nutrient-${nutrient.nutrisiId}`}
                             value={nutrient.amount}
-                            onChange={(e) =>
-                              handleNutrientChange(nutrient.nutrisiId, e.target.value)
-                            }
+                            onChange={(e) => handleNutrientChange(nutrient.nutrisiId, e.target.value)}
                             className="form-control"
                             placeholder={`Masukkan jumlah ${nutrient.name}`}
                             min="0"
                             required
                           />
                         </div>
-                        <button
-                          type="button"
-                          className="btn btn-danger ms-2"
-                          onClick={() => handleRemoveNutrient(nutrient.nutrisiId)}
-                        >
-                          Hapus
-                        </button>
+                        <div>
+                          <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={() => handleRemoveNutrient(nutrient.nutrisiId)}
+                            style={{ height: "38px" }}
+                          >
+                            Hapus
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
