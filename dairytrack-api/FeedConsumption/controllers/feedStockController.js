@@ -4,14 +4,16 @@ const Feed = require("../models/feedModel");
 // Get all feed stocks
 exports.getAllFeedStocks = async (req, res) => {
   try {
-    const stocks = await FeedStock.findAll({
+    const feeds = await Feed.findAll({
+      attributes: ["id", "name"],
       include: {
-        model: Feed,
-        as: "Feed", // Corrected alias to match association
-        attributes: ["id", "name"],
+        model: FeedStock,
+        as: "FeedStock", // sesuai alias di hasOne!
+        required: false, // supaya meskipun stoknya NULL tetap keluar
       },
     });
-    res.status(200).json({ success: true, stocks });
+
+    res.status(200).json({ success: true, feeds });
   } catch (err) {
     console.error("Error fetching feed stocks:", err);
     res.status(500).json({ success: false, message: err.message || "Internal server error" });

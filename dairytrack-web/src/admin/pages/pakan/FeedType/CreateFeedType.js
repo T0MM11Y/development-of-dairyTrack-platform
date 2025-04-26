@@ -8,7 +8,7 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!name.trim()) {
       Swal.fire({
         title: "Error!",
@@ -18,7 +18,7 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
       });
       return;
     }
-
+  
     const confirm = await Swal.fire({
       title: "Apakah Anda yakin?",
       text: "Jenis pakan akan ditambahkan.",
@@ -29,14 +29,14 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
       confirmButtonText: "Ya, tambahkan!",
       cancelButtonText: "Batal",
     });
-
+  
     if (!confirm.isConfirmed) return;
-
+  
     setLoading(true);
     try {
       const response = await createFeedType({ name });
-      console.log("API Response:", response);
-
+      console.log("API Response:", JSON.stringify(response, null, 2)); // Log full response
+  
       if (response?.success) {
         Swal.fire({
           title: "Sukses!",
@@ -44,7 +44,7 @@ const CreateFeedTypeModal = ({ onClose, onSuccess }) => {
           icon: "success",
           confirmButtonText: "OK",
         });
-
+  
         onSuccess(response.data); // Kirim data baru ke parent
         setName(""); // Reset form
       } else {

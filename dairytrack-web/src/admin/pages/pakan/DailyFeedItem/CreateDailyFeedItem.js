@@ -43,7 +43,7 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
           }),
           getFeedStock().catch((err) => {
             console.error("getFeedStock error:", err);
-            return { success: false, stocks: [] };
+            return { success: false, feeds: [] };
           }),
           getCows().catch((err) => {
             console.error("getCows error:", err);
@@ -101,10 +101,18 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
         }
 
         // Handle feed stocks
-        if (stockResponse.success && Array.isArray(stockResponse.stocks)) {
-          setFeedStocks(stockResponse.stocks);
-          console.log("feedStocks:", stockResponse.stocks);
-          if (stockResponse.stocks.length === 0) {
+        if (stockResponse.success && Array.isArray(stockResponse.feeds)) {
+          // Map feeds to extract FeedStock entries, filter out null FeedStock
+          const stockEntries = stockResponse.feeds
+            .filter((feed) => feed.FeedStock !== null)
+            .map((feed) => ({
+              feedId: feed.id,
+              stock: Number(feed.FeedStock.stock) || 0,
+              FeedStock: feed.FeedStock,
+            }));
+          setFeedStocks(stockEntries);
+          console.log("Processed feedStocks:", stockEntries);
+          if (stockEntries.length === 0) {
             setError(
               (prev) =>
                 prev + " Tidak ada data stok pakan tersedia. Silakan tambahkan stok pakan."
@@ -253,13 +261,10 @@ const FeedItemFormPage = ({ onFeedItemAdded, onClose }) => {
   };
 
   const getFeedStockInfo = (feedId) => {
-    const feedStock = feedStocks.find((stock) => {
-      const match = stock.Feed?.id === parseInt(feedId);
-      console.log(`Checking feedId ${feedId} against stock:`, stock, `Match: ${match}`);
-      return match;
-    });
+    if (!feedId) return 0;
+    const feedStock = feedStocks.find((stock) => stock.feedId === parseInt(feedId));
     console.log(`FeedStock for feedId ${feedId}:`, feedStock);
-    return feedStock?.stock || 0; // Ganti dengan feedStock?.quantity jika kolom stok bernama 'quantity'
+    return feedStock?.stock || 0;
   };
 
   const getAvailableFeedsForRow = (currentIndex) => {

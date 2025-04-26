@@ -115,6 +115,7 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       };
 
       const response = await updateDailyFeed(feedId, dailyFeedData);
+      console.log("API Response:", JSON.stringify(response, null, 2));
 
       if (response && response.success) {
         Swal.fire({
@@ -134,10 +135,19 @@ const DailyFeedDetailEdit = ({ feedId, onClose, onDailyFeedUpdated }) => {
       }
     } catch (err) {
       console.error("Failed to update daily feed:", err);
-      const errorMessage =
-        err.response?.status === 409
-          ? err.response.data.message
-          : err.message || t("dailyfeed.error_try_again");
+      let errorMessage = err.message;
+
+      if (err.message.includes("sudah ada")) {
+        // Cari nama sapi berdasarkan cowId
+        const errorCowId = Number(form.cowId);
+        const selectedCow = cows.find((cow) => cow.id === errorCowId);
+        const cowName = selectedCow ? selectedCow.name : `ID ${errorCowId}`;
+        // Format pesan error sesuai permintaan
+        errorMessage = `Untuk sapi ${cowName} tanggal ${form.feedDate} sesi ${form.session} sudah ada. Silahkan cek kembali data yang ingin diperbarui.`;
+      } else {
+        errorMessage = err.message || t("dailyfeed.error_try_again");
+      }
+
       setError(errorMessage);
       Swal.fire({
         title: t("dailyfeed.error_title"),

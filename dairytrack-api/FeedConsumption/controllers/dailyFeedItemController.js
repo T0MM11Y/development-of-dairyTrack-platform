@@ -165,10 +165,15 @@ exports.addFeedItem = async (req, res) => {
         }));
 
         const createdItem = {
-          ...newItem.get({ plain: true }),
+          id: newItem.id,
+          daily_feed_id: newItem.daily_feed_id,
+          feed_id: newItem.feed_id,
+          quantity: newItem.quantity,
+          createdAt: newItem.createdAt,
+          updatedAt: newItem.updatedAt,
           feed: {
             name: feedData.name,
-            nutrients, // Sertakan semua nutrisi dari FeedNutrisi
+            nutrients,
           },
         };
 
@@ -189,41 +194,13 @@ exports.addFeedItem = async (req, res) => {
 
     await t.commit();
 
-    // Ambil data sesi yang diperbarui
-    const updatedFeed = await DailyFeedSchedule.findByPk(daily_feed_id, {
-      include: [
-        {
-          model: DailyFeedItems,
-          as: "DailyFeedItems",
-          include: [
-            {
-              model: Feed,
-              as: "Feed",
-              attributes: ["name"],
-              include: [
-                {
-                  model: FeedNutrisi,
-                  as: "FeedNutrisiRecords",
-                  include: [
-                    {
-                      model: Nutrisi,
-                      as: "Nutrisi",
-                      attributes: ["id", "name", "unit"],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
     return res.status(201).json({
       success: true,
       message: `${addedItems.length} jenis pakan berhasil ditambahkan`,
       errors: errors.length > 0 ? errors : undefined,
-      data: updatedFeed,
+      data: {
+        feedItems: addedItems,
+      },
     });
   } catch (error) {
     if (t) await t.rollback();
