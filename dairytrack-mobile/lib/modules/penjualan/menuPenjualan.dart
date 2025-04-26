@@ -40,7 +40,7 @@ class MenuPenjualan extends StatelessWidget {
                 Icons.history,
                 Colors.orange,
                 onTap: () {
-                  Navigator.pushNamed(context, '/all-peternak');
+                  Navigator.pushNamed(context, '/product-history');
                 },
               ),
               _buildMenuContainer(

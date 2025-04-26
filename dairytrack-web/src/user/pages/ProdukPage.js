@@ -60,65 +60,62 @@ const ProdukPage = () => {
     return grouped;
   };
 
+  // Function to truncate text
+  const truncateText = (text, maxLength = 100) => {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength) + "...";
+    }
+    return text;
+  };
+
   // Render content based on loading/error state
   const renderContent = () => {
     if (loading) {
       return (
-        <div
-          className="container mx-auto py-5 text-center"
-          style={{ marginBottom: "100px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Loading...</span>
+        <div className="text-center py-5">
+          <div
+            className="spinner-border text-primary"
+            style={{ width: "3rem", height: "3rem" }}
+            role="status"
+          >
+            <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-3">Loading products...</p>
+          <p className="mt-3 fs-5">Loading products...</p>
         </div>
       );
     }
 
     if (error) {
-      return (
-        <div
-          className="container mx-auto py-5"
-          style={{ marginBottom: "100px" }}
-        >
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        </div>
-      );
+      return <div className="alert alert-danger text-center fs-5">{error}</div>;
     }
 
     return (
-      <div className="container mx-auto py-5" style={{ marginBottom: "100px" }}>
-        {/* <h2 className="text-2xl font-bold mb-6 text-center">Our Products</h2> */}
-
-        {/* Display message if no products available */}
-        {Object.keys(groupedProducts).length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-gray-500">
-              No products available at the moment.
-            </p>
-          </div>
-        )}
-
-        {/* Grid layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-          {Object.values(groupedProducts).map((group, index) => (
-            <ProdukItem
-              key={index}
-              productType={group.typeDetails}
-              availableQuantity={group.totalAvailableQuantity}
-            />
-          ))}
+      <section className="py-5" style={{ backgroundColor: "#f8f9fa" }}>
+        <div className="container py-5">
+          {Object.keys(groupedProducts).length === 0 ? (
+            <div className="text-center py-5">
+              <p className="fs-5">No products available at the moment.</p>
+            </div>
+          ) : (
+            <div className="row g-4">
+              {Object.values(groupedProducts).map((group, index) => (
+                <ProdukItem
+                  key={index}
+                  productType={group.typeDetails}
+                  availableQuantity={group.totalAvailableQuantity}
+                  truncateText={truncateText}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     );
   };
 
   return (
     <>
-      {/* Breadcrumb Section - Always visible regardless of loading state */}
+      {/* Breadcrumb Section */}
       <section className="breadcrumb__wrap">
         <div className="container custom-container">
           <div className="row justify-content-center">
@@ -147,47 +144,47 @@ const ProdukPage = () => {
   );
 };
 
-const ProdukItem = ({ productType, availableQuantity }) => {
+const ProdukItem = ({ productType, availableQuantity, truncateText }) => {
   const formatPrice = (price) => {
     return `Rp ${parseFloat(price).toLocaleString("id-ID")}`;
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-      {/* Product Image */}
-      <img
-        src={productType.image || "/placeholder-image.jpg"}
-        alt={productType.product_name}
-        className="w-full h-48 object-cover"
-      />
-
-      {/* Product Details */}
-      <div className="p-4">
-        <h5 className="product-name">{productType.product_name}</h5>
-
-        {/* Description */}
-        <p className="text-gray-600 mt-2">
-          {productType.product_description.length > 100
-            ? `${productType.product_description.substring(0, 100)}...`
-            : productType.product_description}
-        </p>
-
-        {/* Price and Unit */}
-        <div className="product-price">
-          {formatPrice(productType.price)} / {productType.unit}
+    <div className="col-md-4">
+      <div className="card h-100 border-0 shadow-sm overflow-hidden">
+        <div className="position-relative">
+          <img
+            src={productType.image || "/placeholder-image.jpg"}
+            alt={productType.product_name}
+            className="card-img-top"
+            style={{ height: "250px", objectFit: "cover" }}
+          />
+          <div className="position-absolute top-0 end-0 m-3">
+            <span className="badge bg-success px-3 py-2 rounded-pill">
+              {availableQuantity} {productType.unit} available
+            </span>
+          </div>
         </div>
-
-        {/* Available Stock */}
-        <div className="mt-2 flex items-center text-gray-700 text-sm">
-          <span className="font-medium">
-            {availableQuantity} {productType.unit} available
-          </span>
+        <div className="card-body p-4">
+          <h5 className="card-title fw-bold" style={{ color: "#2c3e50" }}>
+            {productType.product_name}
+          </h5>
+          <p className="card-text text-muted mb-4">
+            {truncateText(productType.product_description)}
+          </p>
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="text-primary fw-bold fs-5">
+              {formatPrice(productType.price)} / {productType.unit}
+            </span>
+          </div>
         </div>
-
-        {/* View Details Button */}
-        <div className="mt-4 text-center">
-          <Link to={`/pemesanan`} className="view-details-btn">
-            Pesan
+        <div className="card-footer bg-transparent border-0 p-4 pt-0">
+          <Link
+            to="/pemesanan"
+            className="btn btn-primary w-100 py-2 rounded-pill"
+            style={{ fontWeight: "500" }}
+          >
+            Order Now
           </Link>
         </div>
       </div>
