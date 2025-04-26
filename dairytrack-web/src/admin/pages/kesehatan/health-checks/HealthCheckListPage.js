@@ -66,8 +66,11 @@ const HealthCheckListPage = () => {
         timer: 1500,
         showConfirmButton: false,
       });
+  
+      // ✅ HAPUS DATA DI STATE TANPA FETCH ULANG
+      setData(prevData => prevData.filter(item => item.id !== deleteId));
+      
       setDeleteId(null);
-      fetchData();
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -78,6 +81,7 @@ const HealthCheckListPage = () => {
       setSubmitting(false);
     }
   };
+  
   
 
   useEffect(() => {
@@ -160,21 +164,22 @@ const HealthCheckListPage = () => {
       <td>{item.rumination} {t('healthcheck.contraction')}
       </td>
       <td>
-  <span
-    className={`badge fw-semibold ${
-      item.needs_attention === false
-        ? "bg-primary"
-        : item.status === "handled"
-        ? "bg-success"
-        : "bg-warning text-dark"
-    }`}
-  >
-    {item.needs_attention === false
-      ? "Sehat"
+      <span
+  className={`badge fw-semibold ${
+    item.status === "healthy"
+      ? "bg-primary"
       : item.status === "handled"
-      ? "Sudah ditangani"
-      : "Belum ditangani"}
-  </span>
+      ? "bg-success"
+      : "bg-warning text-dark"
+  }`}
+>
+  {item.status === "healthy"
+    ? "Sehat"
+    : item.status === "handled"
+    ? "Sudah ditangani"
+    : "Belum ditangani"}
+</span>
+
 </td>
 
       <td>
@@ -183,36 +188,36 @@ const HealthCheckListPage = () => {
   onClick={() => {
     if (isSupervisor) return;
 
-    if (item.needs_attention === false) {
-      Swal.fire({
-        icon: "info",
-        title: "Tidak Bisa Diedit",
-        text: "Data ini menunjukkan kondisi sehat dan tidak perlu diedit.",
-        confirmButtonText: "Mengerti",
-      });
-    } else if (item.status === "handled") {
-      Swal.fire({
-        icon: "info",
-        title: "Tidak Bisa Diedit",
-        text: "Data ini sudah ditangani dan tidak bisa diedit.",
-        confirmButtonText: "Mengerti",
-      });
-    } else {
-      Swal.fire({
-        title: "Edit Pemeriksaan?",
-        text: "Anda akan membuka form edit data pemeriksaan.",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Ya, edit",
-        cancelButtonText: "Batal",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          setEditId(item.id);
-          setModalType("edit");
-        }
-      });
+  if (item.status === "healthy") {
+    Swal.fire({
+      icon: "info",
+      title: "Tidak Bisa Diedit",
+      text: "Data ini menunjukkan kondisi sehat dan tidak perlu diedit.",
+      confirmButtonText: "Mengerti",
+    });
+  } else if (item.status === "handled") {
+    Swal.fire({
+      icon: "info",
+      title: "Tidak Bisa Diedit",
+      text: "Data ini sudah ditangani dan tidak bisa diedit.",
+      confirmButtonText: "Mengerti",
+    });
+  } else {
+    Swal.fire({
+      title: "Edit Pemeriksaan?",
+      text: "Anda akan membuka form edit data pemeriksaan.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, edit",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setEditId(item.id);
+        setModalType("edit");
+      }
+    });
     }
   }}
   {...disableIfSupervisor}

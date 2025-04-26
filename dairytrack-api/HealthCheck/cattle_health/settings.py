@@ -29,6 +29,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '172.20.10.2',  # ✅ Tambahkan IP kamu di sini (IP laptop / device / emulator)
+    '192.168.1.22',
         '*',   # ✅ ini biar semua host diterima sementara
 
 ]

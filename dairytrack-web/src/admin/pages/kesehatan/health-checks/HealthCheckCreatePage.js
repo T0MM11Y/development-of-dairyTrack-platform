@@ -1,40 +1,47 @@
 import { useEffect, useState } from "react";
 import { createHealthCheck } from "../../../../api/kesehatan/healthCheck";
+import { getHealthChecks } from "../../../../api/kesehatan/healthCheck";
+
 import { getCows } from "../../../../api/peternakan/cow";
-import Swal from "sweetalert2"; // Pastikan sudah import
+import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 
-
 const HealthCheckCreatePage = ({ onClose, onSaved }) => {
+  const { t } = useTranslation();
+  
   const [cows, setCows] = useState([]);
+  const [healthChecks, setHealthChecks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const { t } = useTranslation();
-
+  
   const [form, setForm] = useState({
-    cow_id: "", // sesuai field di backend
+    cow_id: "",
     rectal_temperature: "",
     heart_rate: "",
     respiration_rate: "",
     rumination: "",
   });
 
-  useEffect(() => {
-    const fetchCows = async () => {
-      try {
-        const res = await getCows();
-        setCows(res);
-      } catch (err) {
-        setError("Gagal mengambil data sapi.");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCows();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const [cowsRes, healthChecksRes] = await Promise.all([
+        getCows(),
+        getHealthChecks(),
+      ]);
+      setCows(cowsRes);
+      setHealthChecks(healthChecksRes);
+    } catch (err) {
+      setError("Gagal mengambil data sapi atau pemeriksaan.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -42,12 +49,11 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
       [name]: value,
     }));
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-  
+
     try {
       await createHealthCheck(form);
       Swal.fire({
@@ -57,17 +63,22 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
         timer: 1500,
         showConfirmButton: false,
       });
-  
+
       if (onSaved) onSaved();
+      await fetchData(); // refresh data after submit
+      setForm({
+        cow_id: "",
+        rectal_temperature: "",
+        heart_rate: "",
+        respiration_rate: "",
+        rumination: "",
+      });
     } catch (err) {
       let message = "Gagal menyimpan data pemeriksaan.";
-  
       if (err.response && err.response.data) {
         message = err.response.data.message || message;
       }
-  
       setError(message);
-  
       Swal.fire({
         icon: "error",
         title: "Gagal Menyimpan",
@@ -77,8 +88,16 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
       setSubmitting(false);
     }
   };
-  
 
+  // ✨ Ini filter cows yang bener kayak Flutter
+  const availableCows = cows.filter((cow) => {
+    const hasUnfinished = healthChecks.some(
+      (h) => h?.cow?.id === cow.id && (h?.status || '').toLowerCase() !== 'handled'
+    );
+    return !hasUnfinished;
+  });
+  
+  
   return (
     <div
       className="modal show d-block"
@@ -91,8 +110,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">{t('healthcheck.add')}
-            </h4>
+            <h4 className="modal-title text-info fw-bold">{t('healthcheck.add')}</h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -100,14 +118,12 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status" />
-                <p className="mt-2">{t('healthcheck.loading_cows')}
-                ...</p>
+                <p className="mt-2">{t('healthcheck.loading_cows')}...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label fw-bold">{t('healthcheck.cow')}
-                  </label>
+                  <label className="form-label fw-bold">{t('healthcheck.cow')}</label>
                   <select
   name="cow_id"
   value={form.cow_id}
@@ -115,21 +131,31 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
   className="form-select"
   required
 >
-  <option value="">-- {t('healthcheck.select_cow')}
-  --</option>
-  {cows.map((cow) => (
+  <option value="">-- {t('healthcheck.select_cow')} --</option>
+  {availableCows.map((cow) => (
     <option key={cow.id} value={cow.id}>
       {cow.name} ({cow.breed})
     </option>
   ))}
 </select>
 
+{/* Tambahkan pesan kalau kosong */}
+{availableCows.length === 0 && (
+  <div className="text-warning mt-2">
+    Semua sapi sudah dalam pemeriksaan aktif.
+  </div>
+)}
+
+                  {availableCows.length === 0 && (
+                    <p className="text-warning mt-2">
+                      Semua sapi sudah dalam pemeriksaan aktif.
+                    </p>
+                  )}
                 </div>
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">{t('healthcheck.rectal_temperature')}
-                    (°C)</label>
+                    <label className="form-label fw-bold">{t('healthcheck.rectal_temperature')} (°C)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -141,8 +167,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">{t('healthcheck.heart_rate')}
-                    </label>
+                    <label className="form-label fw-bold">{t('healthcheck.heart_rate')}</label>
                     <input
                       type="number"
                       name="heart_rate"
@@ -156,8 +181,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">{t('healthcheck.respiration_rate')}
-                    </label>
+                    <label className="form-label fw-bold">{t('healthcheck.respiration_rate')}</label>
                     <input
                       type="number"
                       name="respiration_rate"
@@ -168,8 +192,7 @@ const HealthCheckCreatePage = ({ onClose, onSaved }) => {
                     />
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">{t('healthcheck.rumination')}
-                    </label>
+                    <label className="form-label fw-bold">{t('healthcheck.rumination')}</label>
                     <input
                       type="number"
                       step="0.1"

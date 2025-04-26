@@ -1,5 +1,6 @@
 import 'package:dairy_track/config/api/kesehatan/health_check.dart';
 import 'package:dairy_track/config/api/peternakan/cow.dart';
+import 'package:dairy_track/model/kesehatan/health_check.dart';
 import 'package:dairy_track/model/peternakan/cow.dart';
 import 'package:flutter/material.dart';
 
@@ -12,13 +13,16 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
   final _formKey = GlobalKey<FormState>();
 
   List<Cow> cows = [];
+  List<HealthCheck> healthChecks = [];
+
   String? selectedCowId;
   double? rectalTemperature;
   int? heartRate;
   int? respirationRate;
   double? rumination;
 
-  bool isLoading = true;
+  bool isLoadingCows = true;
+  bool isLoadingHealthChecks = true;
   bool isSubmitting = false;
   String? error;
 
@@ -26,68 +30,92 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
   void initState() {
     super.initState();
     fetchCows();
+    fetchHealthChecks();
   }
 
- Future<void> fetchCows() async {
-  try {
-    final cowList = await getCows();
-    if (!mounted) return; // ✅ Cek dulu
-    setState(() {
-      cows = cowList;
-      isLoading = false;
-    });
-  } catch (e) {
-    if (!mounted) return; // ✅ Cek dulu
-    setState(() {
-      error = 'Gagal memuat data sapi.';
-      isLoading = false;
-    });
+  Future<void> fetchCows() async {
+    try {
+      final cowList = await getCows();
+      if (!mounted) return;
+      setState(() {
+        cows = cowList;
+        isLoadingCows = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        error = 'Gagal memuat data sapi.';
+        isLoadingCows = false;
+      });
+    }
   }
-}
 
+  Future<void> fetchHealthChecks() async {
+    try {
+      final result = await getHealthChecks();
+      if (!mounted) return;
+      setState(() {
+        healthChecks = result;
+        isLoadingHealthChecks = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        error = 'Gagal memuat data pemeriksaan.';
+        isLoadingHealthChecks = false;
+      });
+    }
+  }
 
   Future<void> handleSubmit() async {
-  if (!_formKey.currentState!.validate() || selectedCowId == null) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
-      );
+    if (!_formKey.currentState!.validate() || selectedCowId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pastikan semua field diisi dengan benar')),
+        );
+      }
+      return;
     }
-    return;
-  }
 
-  if (mounted) setState(() => isSubmitting = true);
+    setState(() => isSubmitting = true);
 
-  try {
-    await createHealthCheck({
-      'cow_id': int.parse(selectedCowId!),
-      'rectal_temperature': rectalTemperature ?? 0.0,
-      'heart_rate': heartRate ?? 0,
-      'respiration_rate': respirationRate ?? 0,
-      'rumination': rumination ?? 0.0,
-    });
+    try {
+      await createHealthCheck({
+        'cow_id': int.parse(selectedCowId!),
+        'rectal_temperature': rectalTemperature ?? 0.0,
+        'heart_rate': heartRate ?? 0,
+        'respiration_rate': respirationRate ?? 0,
+        'rumination': rumination ?? 0.0,
+      });
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data pemeriksaan berhasil disimpan')),
-    );
-
-    Navigator.of(context).pop(true);
-  } catch (e) {
-    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
+        const SnackBar(content: Text('Data pemeriksaan berhasil disimpan')),
       );
-    }
-  } finally {
-    if (mounted) setState(() => isSubmitting = false);
-  }
-}
 
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menyimpan data pemeriksaan')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = isLoadingCows || isLoadingHealthChecks;
+
+    final availableCows = cows.where((cow) {
+      final hasUnfinished = healthChecks.any((h) =>
+          h.cowId != null && h.cowId == cow.id && h.status != 'handled');
+      return !hasUnfinished;
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Pemeriksaan Sapi'),
@@ -110,15 +138,26 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
                             border: OutlineInputBorder(),
                           ),
                           value: selectedCowId,
-                          items: cows.map((cow) {
-                            return DropdownMenuItem<String>(
-                              value: cow.id.toString(),
-                              child: Text('${cow.name} (${cow.breed})'),
-                            );
-                          }).toList(),
+                          isExpanded: true,
+                          items: availableCows
+                              .map((cow) => DropdownMenuItem<String>(
+                                    value: cow.id.toString(),
+                                    child: Text('${cow.name} (${cow.breed})'),
+                                  ))
+                              .toList(),
                           onChanged: (value) => setState(() => selectedCowId = value),
                           validator: (value) => value == null ? 'Pilih sapi' : null,
                         ),
+
+                        if (availableCows.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 12),
+                            child: Text(
+                              'Semua sapi sudah dalam pemeriksaan aktif.',
+                              style: TextStyle(color: Colors.orange),
+                            ),
+                          ),
+
                         const SizedBox(height: 16),
 
                         TextFormField(
@@ -128,9 +167,7 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
                           ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) => rectalTemperature = double.tryParse(value),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Isi suhu rektal'
-                              : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Isi suhu rektal' : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -141,9 +178,7 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) => heartRate = int.tryParse(value),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Isi detak jantung'
-                              : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Isi detak jantung' : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -154,9 +189,7 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) => respirationRate = int.tryParse(value),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Isi laju pernapasan'
-                              : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Isi laju pernapasan' : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -167,9 +200,7 @@ class _AddPemeriksaanPenyakitSapiState extends State<AddPemeriksaanPenyakitSapi>
                           ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (value) => rumination = double.tryParse(value),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Isi ruminasi'
-                              : null,
+                          validator: (value) => value == null || value.isEmpty ? 'Isi ruminasi' : null,
                         ),
                         const SizedBox(height: 24),
 

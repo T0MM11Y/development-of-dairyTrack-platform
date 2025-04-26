@@ -68,6 +68,8 @@ i18n.use(initReactI18next).init({
           rectal_temperature: "Rectal Temperature",
           all_normal: "All conditions normal",
           edit_disease_history: "Edit Disease History",
+          respiration_rate: "Respiration Rate"
+
         },
         healthcheck: {
           add: "Add Health Check",
@@ -398,6 +400,8 @@ i18n.use(initReactI18next).init({
           rectal_temperature: "Suhu Rektal",
           all_normal: "Semua kondisi normal",
           edit_disease_history: "Edit Riwayat Penyakit",
+          respiration_rate: "Laju Pernapasan"
+
         },
         healthcheck: {
           add: "Tambah Pemeriksaan",

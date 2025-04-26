@@ -44,7 +44,20 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await updateHealthCheck(healthCheckId, form);
+      const payload = {
+        rectal_temperature: form.rectal_temperature,
+        heart_rate: form.heart_rate,
+        respiration_rate: form.respiration_rate,
+        rumination: form.rumination,
+      };
+  
+      console.log("Payload Update:", payload);
+  
+      await updateHealthCheck(healthCheckId, payload);
+  
+      // 🔥 Ambil data terbaru supaya up-to-date
+      const updated = await getHealthCheckById(healthCheckId);
+  
       Swal.fire({
         icon: "success",
         title: "Berhasil",
@@ -52,7 +65,9 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
         timer: 1500,
         showConfirmButton: false,
       });
-      if (onSaved) onSaved();
+  
+      if (onSaved) onSaved(updated); // 🔥 kirim updated item
+      onClose(); // Tutup modal
     } catch (err) {
       console.error(err);
       setError("Gagal memperbarui data.");
@@ -65,6 +80,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
       setSubmitting(false);
     }
   };
+  
 
   return (
     <div
