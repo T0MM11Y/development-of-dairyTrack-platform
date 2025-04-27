@@ -179,6 +179,14 @@ class _AddFeedPageState extends State<AddFeedPage> {
     });
   }
 
+  // Get filtered nutrisi options excluding already selected ones
+  List<Nutrisi> get _filteredNutrisiOptions {
+    return _nutrisiOptions.where((nutrisi) {
+      // Exclude nutrisi that are already in the list
+      return !_nutrisiList.any((item) => item.nutrisiId == nutrisi.id);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,30 +246,47 @@ class _AddFeedPageState extends State<AddFeedPage> {
                                   _selectedTypeId = feedTypes.first.id;
                                 }
 
-                                return DropdownButtonFormField<int>(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Jenis Pakan',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.category),
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.grey.shade400,
+                                    ),
                                   ),
-                                  value: _selectedTypeId,
-                                  items: feedTypes.map((type) {
-                                    return DropdownMenuItem<int>(
-                                      value: type.id,
-                                      child: Text(type.name),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedTypeId = value;
-                                    });
-                                  },
-                                  validator: (value) {
-                                    if (value == null) {
-                                      return 'Pilih jenis pakan';
-                                    }
-                                    return null;
-                                  },
+                                  child: DropdownButtonFormField<int>(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Jenis Pakan',
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      border: InputBorder.none,
+                                      prefixIcon: Icon(Icons.category),
+                                    ),
+                                    isExpanded: true,
+                                    value: _selectedTypeId,
+                                    icon: const Icon(Icons.arrow_drop_down),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 16,
+                                    ),
+                                    dropdownColor: Colors.white,
+                                    items: feedTypes.map((type) {
+                                      return DropdownMenuItem<int>(
+                                        value: type.id,
+                                        child: Text(type.name),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedTypeId = value;
+                                      });
+                                    },
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Pilih jenis pakan';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                                 );
                               },
                             ),
@@ -376,28 +401,52 @@ class _AddFeedPageState extends State<AddFeedPage> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          // Kolom Kiri: Dropdown Nutrisi
+                                          // Kolom Kiri: Dropdown Nutrisi - IMPROVED STYLING
                                           Expanded(
-                                            child: DropdownButtonFormField<int>(
-                                              decoration: const InputDecoration(
-                                                labelText: 'Nutrisi',
-                                                border: OutlineInputBorder(),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: Colors.grey.shade400,
+                                                ),
                                               ),
-                                              value: _selectedNutrisiId,
-                                              items: _nutrisiOptions
-                                                  .where((n) => n.id != null)
-                                                  .map((nutrisi) {
-                                                return DropdownMenuItem<int>(
-                                                  value: nutrisi.id,
-                                                  child: Text(nutrisi.name),
-                                                );
-                                              }).toList(),
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _selectedNutrisiId = value;
-                                                  _amountError = null;
-                                                });
-                                              },
+                                              child: DropdownButtonFormField<int>(
+                                                decoration: const InputDecoration(
+                                                  labelText: 'Nutrisi',
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 8),
+                                                  border: InputBorder.none,
+                                                ),
+                                                isExpanded: true,
+                                                value: _selectedNutrisiId,
+                                                icon: const Icon(
+                                                    Icons.arrow_drop_down),
+                                                style: const TextStyle(
+                                                  color: Colors.black87,
+                                                  fontSize: 16,
+                                                ),
+                                                dropdownColor: Colors.white,
+                                                hint: const Text(
+                                                    'Pilih nutrisi'),
+                                                // Use filtered options instead of all options
+                                                items: _filteredNutrisiOptions
+                                                    .where((n) => n.id != null)
+                                                    .map((nutrisi) {
+                                                  return DropdownMenuItem<int>(
+                                                    value: nutrisi.id,
+                                                    child: Text(nutrisi.name),
+                                                  );
+                                                }).toList(),
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    _selectedNutrisiId = value;
+                                                    _amountError = null;
+                                                  });
+                                                },
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 16),
@@ -512,5 +561,3 @@ class _AddFeedPageState extends State<AddFeedPage> {
     );
   }
 }
-
-// Updated createFeed function
