@@ -1,9 +1,7 @@
 import 'package:dairy_track/config/api/pakan/dailyFeedSchedule.dart';
 import 'package:dairy_track/config/api/peternakan/cow.dart';
-import 'package:dairy_track/config/api/peternakan/farmer.dart';
 import 'package:dairy_track/model/pakan/dailyFeedSchedule.dart';
 import 'package:dairy_track/model/peternakan/cow.dart';
-import 'package:dairy_track/model/peternakan/farmer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -16,9 +14,9 @@ class AllDailyFeedSchedules extends StatefulWidget {
 
 class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
   String? searchQuery;
-  Map<int, String> farmerNames = {};
   Map<int, String> cowNames = {};
-  Future<List<DailyFeedSchedule>>? _dailyFeedSchedulesFuture;
+  Future<List<Map<String, dynamic>>>? _flattenedFeedsFuture;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -26,14 +24,29 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
     _refreshDailyFeedSchedules();
   }
 
-  Future<List<DailyFeedSchedule>> fetchDailyFeedSchedules() async {
+  // Format session and weather text like in the web version
+  String _formatText(String? text) {
+    if (text == null || text.isEmpty) return 'Tidak ada';
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  // Format date to match web display
+  String _formatDate(String dateStr) {
+    try {
+      // Parse the date string to DateTime
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return dateStr; // Return original if parsing fails
+    }
+  }
+
+  // Fetch and process data in a way similar to the web implementation
+  Future<List<Map<String, dynamic>>> fetchAndProcessFeeds() async {
     try {
       final results = await Future.wait([
-        getDailyFeedSchedules().catchError((e) {
+        getAllDailyFeeds().catchError((e) {
           throw Exception('Failed to fetch daily feed schedules: $e');
-        }),
-        getFarmers().catchError((e) {
-          throw Exception('Failed to fetch farmers: $e');
         }),
         getCows().catchError((e) {
           throw Exception('Failed to fetch cows: $e');
@@ -41,31 +54,15 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
       ]);
 
       final dailyFeeds = results[0] as List<DailyFeedSchedule>;
-      List<Peternak> farmers;
       List<Cow> cows;
 
-      // Safely handle farmers
       try {
-        farmers = results[1] as List<Peternak>;
-      } catch (e) {
-        print('Error parsing farmers: $e');
-        farmers = [];
-      }
-
-      // Safely handle cows
-      try {
-        cows = results[2] as List<Cow>;
+        cows = results[1] as List<Cow>;
       } catch (e) {
         print('Error parsing cows: $e');
         cows = [];
       }
 
-      farmerNames = {};
-      for (var farmer in farmers) {
-        if (farmer.id != null && farmer.id != 0) {
-          farmerNames[farmer.id!] = '${farmer.firstName} ${farmer.lastName}';
-        }
-      }
       cowNames = {};
       for (var cow in cows) {
         if (cow.id != null && cow.id != 0) {
@@ -73,78 +70,75 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
         }
       }
 
-      return dailyFeeds.where((dailyFeed) {
+      // Filter by search query
+      var filteredFeeds = dailyFeeds.where((feed) {
         final matchesSearchQuery = searchQuery == null ||
             searchQuery!.isEmpty ||
-            (farmerNames[dailyFeed.farmerId]?.toLowerCase() ?? '')
+            (cowNames[feed.cowId]?.toLowerCase() ?? '')
                 .contains(searchQuery!.toLowerCase()) ||
-            (cowNames[dailyFeed.cowId]?.toLowerCase() ?? '')
-                .contains(searchQuery!.toLowerCase()) ||
-            DateFormat('dd MMM yyyy')
-                .format(dailyFeed.date)
-                .toLowerCase()
-                .contains(searchQuery!.toLowerCase()) ||
-            dailyFeed.session
-                .toLowerCase()
-                .contains(searchQuery!.toLowerCase()) ||
-            (dailyFeed.weather?.toLowerCase() ?? '')
-                .contains(searchQuery!.toLowerCase()) ||
-            dailyFeed.totalProtein
-                .toString()
-                .contains(searchQuery!.toLowerCase()) ||
-            dailyFeed.totalEnergy
-                .toString()
-                .contains(searchQuery!.toLowerCase()) ||
-            dailyFeed.totalFiber
-                .toString()
-                .contains(searchQuery!.toLowerCase()) ||
-            dailyFeed.feedItems.any((item) =>
-                item.feed?.name
-                    .toLowerCase()
-                    .contains(searchQuery!.toLowerCase()) ??
-                false);
+            feed.date.toLowerCase().contains(searchQuery!.toLowerCase()) ||
+            feed.session.toLowerCase().contains(searchQuery!.toLowerCase()) ||
+            (feed.weather?.toLowerCase() ?? '')
+                .contains(searchQuery!.toLowerCase());
 
         return matchesSearchQuery;
       }).toList();
+
+      // Group feeds by date and cow like in the web version
+      Map<String, Map<String, dynamic>> groupedFeeds = {};
+
+      for (var feed in filteredFeeds) {
+        final key = '${feed.date}_${feed.cowId}';
+
+        if (!groupedFeeds.containsKey(key)) {
+          groupedFeeds[key] = {
+            'cowId': feed.cowId,
+            'date': feed.date,
+            'sessions': <Map<String, dynamic>>[],
+          };
+        }
+
+        groupedFeeds[key]!['sessions']!.add({
+          'id': feed.id,
+          'session': feed.session,
+          'weather': feed.weather ?? 'Tidak ada',
+        });
+      }
+
+      // Create flattened rows for display in card format
+      List<Map<String, dynamic>> groupedRows = [];
+      groupedFeeds.forEach((key, group) {
+        groupedRows.add({
+          'cowId': group['cowId'],
+          'date': group['date'],
+          'sessions': group['sessions'],
+        });
+      });
+
+      return groupedRows;
     } catch (e) {
+      print('Error fetching data: $e');
       throw Exception('Failed to fetch data: $e');
     }
   }
 
   void _refreshDailyFeedSchedules() {
     setState(() {
-      _dailyFeedSchedulesFuture = fetchDailyFeedSchedules().catchError((error) {
+      isLoading = true;
+      _flattenedFeedsFuture = fetchAndProcessFeeds().catchError((error) {
+        print('Error in future: $error');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('$error')),
           );
         }
-        return <DailyFeedSchedule>[]; // Return empty list on error
+        return <Map<String, dynamic>>[];
+      }).whenComplete(() {
+        setState(() {
+          isLoading = false;
+        });
       });
     });
-  }
-
-  String _formatSession(String session) {
-    return session.isNotEmpty
-        ? session[0].toUpperCase() + session.substring(1)
-        : session;
-  }
-
-  // Group daily feeds by cowId and date
-  Map<String, List<DailyFeedSchedule>> _groupByCowAndDate(
-      List<DailyFeedSchedule> dailyFeeds) {
-    Map<String, List<DailyFeedSchedule>> grouped = {};
-
-    for (var feed in dailyFeeds) {
-      String key =
-          '${feed.cowId}_${DateFormat('yyyy-MM-dd').format(feed.date)}';
-      if (!grouped.containsKey(key)) {
-        grouped[key] = [];
-      }
-      grouped[key]!.add(feed);
-    }
-
-    return grouped;
   }
 
   @override
@@ -179,13 +173,10 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: FutureBuilder<List<DailyFeedSchedule>>(
-                future: _dailyFeedSchedulesFuture,
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _flattenedFeedsFuture,
                 builder: (context, snapshot) {
-                  if (_dailyFeedSchedulesFuture == null) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (isLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -199,16 +190,15 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                     );
                   }
 
-                  final dailyFeeds = snapshot.data!;
-                  // Group by cow and date
-                  final groupedFeeds = _groupByCowAndDate(dailyFeeds);
+                  final feedGroups = snapshot.data!;
 
                   return ListView.builder(
-                    itemCount: groupedFeeds.length,
+                    itemCount: feedGroups.length,
                     itemBuilder: (context, index) {
-                      final key = groupedFeeds.keys.elementAt(index);
-                      final feedsForGroup = groupedFeeds[key]!;
-                      final firstFeed = feedsForGroup.first;
+                      final group = feedGroups[index];
+                      final sessions =
+                          group['sessions'] as List<Map<String, dynamic>>;
+                      final firstSession = sessions.first;
 
                       return Card(
                         elevation: 2,
@@ -221,22 +211,21 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header: Cow Name, Date, Farmer
+                              // Header: Cow Name, Date
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    cowNames[firstFeed.cowId] ??
-                                        'Sapi #${firstFeed.cowId}',
+                                    cowNames[group['cowId']] ??
+                                        'Sapi #${group['cowId']}',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   Text(
-                                    DateFormat('dd MMM yyyy')
-                                        .format(firstFeed.date),
+                                    _formatDate(group['date']),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey,
@@ -244,18 +233,10 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Petani: ${farmerNames[firstFeed.farmerId] ?? 'Petani #${firstFeed.farmerId}'}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
                               const SizedBox(height: 12),
                               // Sessions List
                               Column(
-                                children: feedsForGroup.map((feed) {
+                                children: sessions.map((session) {
                                   return Container(
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 8),
@@ -276,14 +257,14 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Sesi: ${_formatSession(feed.session)}',
+                                              'Sesi: ${_formatText(session['session'])}',
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             Text(
-                                              'Cuaca: ${feed.weather != null ? _formatSession(feed.weather!) : 'Tidak ada'}',
+                                              'Cuaca: ${_formatText(session['weather'])}',
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 color: Colors.black54,
@@ -302,13 +283,10 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                                               onPressed: () {
                                                 Navigator.pushNamed(
                                                   context,
-                                                  '/edit-jadwal-pakan',
-                                                  arguments: feed,
-                                                ).then((result) {
-                                                  if (result == true &&
-                                                      mounted) {
-                                                    _refreshDailyFeedSchedules();
-                                                  }
+                                                  '/editDailyFeedSchedule',
+                                                  arguments: session['id'],
+                                                ).then((_) {
+                                                  _refreshDailyFeedSchedules();
                                                 });
                                               },
                                               tooltip: 'Edit',
@@ -318,67 +296,9 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                                                 Icons.delete,
                                                 color: Colors.red,
                                               ),
-                                              onPressed: () async {
-                                                final confirm =
-                                                    await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: const Text(
-                                                        'Hapus Pemberian Pakan'),
-                                                    content: Text(
-                                                      'Anda yakin ingin menghapus sesi "${feed.session}" pada ${DateFormat('dd MMM yyyy').format(feed.date)} untuk sapi ${cowNames[feed.cowId] ?? feed.cowId}?',
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                                context, false),
-                                                        child:
-                                                            const Text('Batal'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                                context, true),
-                                                        child: const Text(
-                                                          'Hapus',
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.red),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-
-                                                if (confirm == true) {
-                                                  try {
-                                                    await deleteDailyFeedSchedule(
-                                                        feed.id);
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        const SnackBar(
-                                                          content: Text(
-                                                              'Pemberian pakan berhasil dihapus'),
-                                                        ),
-                                                      );
-                                                    }
-                                                    _refreshDailyFeedSchedules();
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Gagal menghapus: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                }
+                                              onPressed: () {
+                                                _showDeleteConfirmation(
+                                                    session['id']);
                                               },
                                               tooltip: 'Hapus',
                                             ),
@@ -403,14 +323,44 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, '/tambah-jadwal-pakan').then((result) {
-            if (result == true && mounted) {
-              _refreshDailyFeedSchedules();
-            }
-          });
+          Navigator.pushNamed(context, '/createDailyFeedSchedule')
+              .then((_) => _refreshDailyFeedSchedules());
         },
         backgroundColor: const Color(0xFF17A2B8),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah kamu yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await deleteDailyFeed(id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Data berhasil dihapus')),
+                );
+                _refreshDailyFeedSchedules();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal menghapus data: $e')),
+                );
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

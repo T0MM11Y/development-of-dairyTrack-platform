@@ -16,20 +16,33 @@ class DailyFeedItemsPage extends StatefulWidget {
 
 class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy');
+  final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd'); // Format tanggal API
   bool _isLoading = true;
   List<DailyFeedSchedule> _feedSchedules = [];
   List<FeedItem> _feedItems = [];
   Map<int, Cow> _cowsMap = {};
 
-  // Filters
-  DateTime? _startDate;
-  DateTime? _endDate;
+  // Filter
+  DateTime? _selectedDate; // Tanggal spesifik yang dipilih
+  int? _selectedDay; // Hari dalam seminggu (0=Ahad, 1=Senin, ..., 6=Sabtu)
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  // Daftar nama hari untuk dropdown
+  final List<String> _dayNames = [
+    'Ahad',
+    'Senin',
+    'Selasa',
+    'Rabu',
+    'Kamis',
+    'Jumat',
+    'Sabtu'
+  ];
 
   @override
   void initState() {
     super.initState();
+    _selectedDate = DateTime.now(); // Default ke hari ini
     _loadData();
   }
 
@@ -39,34 +52,31 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     });
 
     try {
-      // Load all schedules, feed items, and cows
-      final schedules = await getDailyFeedSchedules();
+      // Load semua jadwal, item pakan, dan sapi
+      final schedulesResponse = await getAllDailyFeeds();
       final cowsList = await getCows();
-      final feedItems = await getDailyFeedItems();
+      final feedItemsResponse = await FeedItemService.getAllFeedItems();
 
       setState(() {
-        _feedSchedules = schedules;
-        _feedItems = feedItems;
+        _feedSchedules = schedulesResponse;
+        _feedItems = (feedItemsResponse['success'] == true)
+            ? (feedItemsResponse['data'] as List<dynamic>)
+                .map((item) => FeedItem.fromJson(item))
+                .toList()
+            : [];
 
-        // Create a map for faster cow lookups
-        final Map<int, Cow> cowsMap = {};
+        // Buat map untuk pencarian sapi lebih cepat
+        _cowsMap = {};
         for (var cow in cowsList) {
           if (cow.id != null) {
-            if (cowsMap.containsKey(cow.id)) {
-              // Handle duplicate IDs (optional)
-              print('Warning: Duplicate cow ID found: ${cow.id}');
-            }
-            cowsMap[cow.id!] = cow;
-          } else {
-            // Log or handle cows with null IDs (optional)
-            print('Warning: Cow with null ID found: ${cow.name}');
+            _cowsMap[cow.id!] = cow;
           }
         }
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading data: $e')),
+          SnackBar(content: Text('Gagal memuat data: $e')),
         );
       }
     } finally {
@@ -78,7 +88,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     }
   }
 
-  // Group feed items by dailyFeedId
+  // Kelompokkan item pakan berdasarkan dailyFeedId
   Map<int, List<FeedItem>> _getGroupedFeedItems() {
     final Map<int, List<FeedItem>> grouped = {};
     for (var item in _feedItems) {
@@ -90,19 +100,42 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     return grouped;
   }
 
-  // Get filtered feed schedules
+  // Filter jadwal berdasarkan tanggal/hari dan pencarian
   List<DailyFeedSchedule> get _filteredSchedules {
     return _feedSchedules.where((schedule) {
-      // Date filtering
-      final scheduleDate = schedule.date;
-      if (_startDate != null && scheduleDate.isBefore(_startDate!)) {
-        return false;
-      }
-      if (_endDate != null && scheduleDate.isAfter(_endDate!)) {
-        return false;
+      // Parse schedule.date (String) ke DateTime
+      DateTime scheduleDate;
+      try {
+        scheduleDate = _apiDateFormat.parse(schedule.date);
+      } catch (e) {
+        return false; // Lewati tanggal yang tidak valid
       }
 
-      // Text search
+      // Filter tanggal atau hari
+      if (_selectedDate != null) {
+        // Filter berdasarkan tanggal spesifik
+        final selectedDate = _selectedDate!;
+        if (scheduleDate.year != selectedDate.year ||
+            scheduleDate.month != selectedDate.month ||
+            scheduleDate.day != selectedDate.day) {
+          return false;
+        }
+      } else if (_selectedDay != null) {
+        // Filter berdasarkan hari dalam seminggu
+        if (scheduleDate.weekday != _selectedDay) {
+          return false;
+        }
+      } else {
+        // Default: hanya hari ini
+        final today = DateTime.now();
+        if (scheduleDate.year != today.year ||
+            scheduleDate.month != today.month ||
+            scheduleDate.day != today.day) {
+          return false;
+        }
+      }
+
+      // Pencarian teks
       if (_searchQuery.isEmpty) {
         return true;
       }
@@ -110,11 +143,10 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
       final query = _searchQuery.toLowerCase();
       final cow = _cowsMap[schedule.cowId];
 
-      // Get feed items for this schedule
+      // Pencarian di berbagai field
       final items =
           _feedItems.where((item) => item.dailyFeedId == schedule.id).toList();
 
-      // Search in various fields
       return (cow?.name.toLowerCase().contains(query) ?? false) ||
           schedule.session.toLowerCase().contains(query) ||
           (schedule.weather?.toLowerCase().contains(query) ?? false) ||
@@ -124,14 +156,13 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     }).toList();
   }
 
-  // Group schedules by cow and date
+  // Kelompokkan jadwal berdasarkan sapi dan tanggal
   Map<String, List<DailyFeedSchedule>> _groupedSchedules() {
     final Map<String, List<DailyFeedSchedule>> groupedSchedules = {};
 
     for (var schedule in _filteredSchedules) {
       String key =
-          '${schedule.cowId}_${_dateFormat.format(schedule.date)}'; // Key combining cow ID and date
-
+          '${schedule.cowId}_${_dateFormat.format(_apiDateFormat.parse(schedule.date))}';
       if (!groupedSchedules.containsKey(key)) {
         groupedSchedules[key] = [];
       }
@@ -141,92 +172,128 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
   }
 
   void _showFilterDialog() {
+    String? tempFilterType = _selectedDate != null
+        ? 'date'
+        : _selectedDay != null
+            ? 'day'
+            : 'today'; // Tipe filter sementara
+    DateTime? tempSelectedDate = _selectedDate;
+    int? tempSelectedDay = _selectedDay;
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Filter Data'),
+            title: const Text('Pilih Filter'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _startDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _startDate = picked;
-                      });
-                    }
+                // Pilih tipe filter (Tanggal atau Hari)
+                DropdownButton<String>(
+                  value: tempFilterType,
+                  isExpanded: true,
+                  hint: const Text('Pilih Tipe Filter'),
+                  items: const [
+                    DropdownMenuItem(value: 'today', child: Text('Hari Ini')),
+                    DropdownMenuItem(value: 'date', child: Text('Tanggal Spesifik')),
+                    DropdownMenuItem(value: 'day', child: Text('Hari dalam Seminggu')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      tempFilterType = value;
+                      if (value == 'today') {
+                        tempSelectedDate = DateTime.now();
+                        tempSelectedDay = null;
+                      } else if (value == 'date') {
+                        tempSelectedDate = tempSelectedDate ?? DateTime.now();
+                        tempSelectedDay = null;
+                      } else if (value == 'day') {
+                        tempSelectedDate = null;
+                        tempSelectedDay = tempSelectedDay ?? 1; // Default: Senin
+                      }
+                    });
                   },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Tanggal Mulai',
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_startDate != null
-                            ? _dateFormat.format(_startDate!)
-                            : 'Pilih Tanggal'),
-                        const Icon(Icons.calendar_today, size: 20),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _endDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _endDate = picked;
-                      });
-                    }
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Tanggal Akhir',
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_endDate != null
-                            ? _dateFormat.format(_endDate!)
-                            : 'Pilih Tanggal'),
-                        const Icon(Icons.calendar_today, size: 20),
-                      ],
+                // Filter tanggal spesifik
+                if (tempFilterType == 'date')
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: tempSelectedDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          tempSelectedDate = picked;
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(tempSelectedDate != null
+                              ? _dateFormat.format(tempSelectedDate!)
+                              : 'Pilih Tanggal'),
+                          const Icon(Icons.calendar_today, size: 20),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                // Filter hari dalam seminggu
+                if (tempFilterType == 'day')
+                  DropdownButton<int>(
+                    value: tempSelectedDay,
+                    isExpanded: true,
+                    hint: const Text('Pilih Hari'),
+                    items: _dayNames.asMap().entries.map((entry) {
+                      return DropdownMenuItem(
+                        value: entry.key,
+                        child: Text(entry.value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        tempSelectedDay = value;
+                      });
+                    },
+                  ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _startDate = null;
-                    _endDate = null;
+                    tempFilterType = 'today';
+                    tempSelectedDate = DateTime.now();
+                    tempSelectedDay = null;
                   });
                 },
-                child: const Text('Reset'),
+                child: const Text('Hari Ini'),
               ),
               TextButton(
                 onPressed: () {
+                  setState(() {
+                    if (tempFilterType == 'today') {
+                      _selectedDate = DateTime.now();
+                      _selectedDay = null;
+                    } else if (tempFilterType == 'date') {
+                      _selectedDate = tempSelectedDate;
+                      _selectedDay = null;
+                    } else if (tempFilterType == 'day') {
+                      _selectedDate = null;
+                      _selectedDay = tempSelectedDay;
+                    }
+                  });
                   Navigator.pop(context);
-                  setState(() {}); // Refresh main state to apply filters
                 },
                 child: const Text('Terapkan'),
               ),
@@ -241,11 +308,10 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     Navigator.pushNamed(
       context,
       '/edit-item-pakan',
-      arguments: schedule
-          .id, // Pass the dailyFeedId (int) instead of the schedule object
+      arguments: schedule.id,
     ).then((result) {
-      if (result == true) {
-        _loadData(); // Reload data when returning from detail page
+      if (result == true && mounted) {
+        _loadData();
       }
     });
   }
@@ -255,8 +321,8 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
       context,
       '/tambah-item-pakan',
     ).then((result) {
-      if (result == true) {
-        _loadData(); // Reload data when returning from add page
+      if (result == true && mounted) {
+        _loadData();
       }
     });
   }
@@ -269,7 +335,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Hapus'),
         content: Text(
-            'Apakah Anda yakin ingin menghapus semua data pakan untuk sapi ${cow?.name ?? 'ID: ${schedule.cowId}'} pada tanggal ${_dateFormat.format(schedule.date)} sesi ${schedule.session}?'),
+            'Apakah Anda yakin ingin menghapus semua data pakan untuk sapi ${cow?.name ?? 'ID: ${schedule.cowId}'} pada tanggal ${_dateFormat.format(_apiDateFormat.parse(schedule.date))} sesi ${schedule.session}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -294,28 +360,32 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
     });
 
     try {
-      // Find all feed items for this schedule and delete them first
+      // Hapus semua item pakan untuk jadwal ini
       final itemsToDelete =
           _feedItems.where((item) => item.dailyFeedId == schedule.id).toList();
 
       if (itemsToDelete.isNotEmpty) {
         for (var item in itemsToDelete) {
-          await deleteFeedItem(item.id);
+          final deleteResponse = await FeedItemService.deleteFeedItem(item.id);
+          if (deleteResponse['success'] != true) {
+            throw Exception(
+                deleteResponse['message'] ?? 'Gagal menghapus item pakan');
+          }
         }
       }
 
-      // Then delete the schedule itself
-      await deleteDailyFeedSchedule(schedule.id);
+      // Hapus jadwal itu sendiri
+      await deleteDailyFeed(schedule.id);
 
-      // Show success message
+      // Tampilkan pesan sukses
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Data pakan berhasil dihapus')),
         );
       }
 
-      // Reload data
-      _loadData();
+      // Muat ulang data
+      await _loadData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -339,7 +409,6 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Group schedules and grouped items
     final groupedSchedules = _groupedSchedules();
     final groupedItems = _getGroupedFeedItems();
 
@@ -399,48 +468,53 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                     ),
                   ),
 
-                  // Filter indicators
-                  if (_startDate != null || _endDate != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.filter_list,
-                              size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Tanggal: ${_startDate != null ? _dateFormat.format(_startDate!) : 'Awal'} - ${_endDate != null ? _dateFormat.format(_endDate!) : 'Akhir'}',
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 12),
+                  // Indikator filter
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.filter_list,
+                            size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          _selectedDate != null
+                              ? 'Tanggal: ${_dateFormat.format(_selectedDate!)}'
+                              : _selectedDay != null
+                                  ? 'Hari: ${_dayNames[_selectedDay!]}'
+                                  : 'Tanggal: ${_dateFormat.format(DateTime.now())}',
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedDate = DateTime.now(); // Reset ke hari ini
+                              _selectedDay = null;
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(48, 24),
                           ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _startDate = null;
-                                _endDate = null;
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(48, 24),
-                            ),
-                            child: const Text('Reset',
-                                style: TextStyle(fontSize: 12)),
-                          ),
-                        ],
-                      ),
+                          child: const Text('Hari Ini',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
                     ),
+                  ),
 
-                  // List of schedules with their feed items
+                  // Daftar jadwal dengan item pakan
                   Expanded(
                     child: groupedSchedules.isEmpty
                         ? Center(
                             child: Text(
                               _searchQuery.isNotEmpty
                                   ? 'Tidak ada data yang sesuai dengan pencarian Anda'
-                                  : 'Tidak ada data pakan harian tersedia',
+                                  : _selectedDay != null
+                                      ? 'Tidak ada data pakan harian untuk hari ${_dayNames[_selectedDay!]}'
+                                      : 'Tidak ada data pakan harian untuk tanggal ini',
                               style: const TextStyle(color: Colors.grey),
                             ),
                           )
@@ -451,8 +525,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                               final key =
                                   groupedSchedules.keys.elementAt(index);
                               final schedules = groupedSchedules[key]!;
-                              final cowId = schedules.first
-                                  .cowId; // Assume same cowId for grouped sessions
+                              final cowId = schedules.first.cowId;
                               final cow = _cowsMap[cowId];
 
                               return Card(
@@ -461,7 +534,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                                 elevation: 2.0,
                                 child: Column(
                                   children: [
-                                    // Header with cow name and date
+                                    // Header dengan nama sapi dan tanggal
                                     ListTile(
                                       title: Text(
                                         cow?.name ?? 'Sapi #${cowId}',
@@ -469,9 +542,9 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                                             fontWeight: FontWeight.bold),
                                       ),
                                       subtitle: Text(
-                                          'Tanggal: ${_dateFormat.format(schedules.first.date)}'),
+                                          'Tanggal: ${_dateFormat.format(_apiDateFormat.parse(schedules.first.date))}'),
                                     ),
-                                    // For each session and its feed items
+                                    // Untuk setiap sesi dan item pakan
                                     for (var schedule in schedules) ...[
                                       ListTile(
                                         title: Text(
@@ -495,7 +568,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                                           ],
                                         ),
                                       ),
-                                      // Display the feed items for this session
+                                      // Tampilkan item pakan untuk sesi ini
                                       if (groupedItems[schedule.id]?.isEmpty ??
                                           true)
                                         const Padding(
@@ -524,7 +597,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage> {
                                               title: Text(item.feed?.name ??
                                                   'Unknown Feed'),
                                               subtitle: Text(
-                                                  'Quantity: ${item.quantity} kg'),
+                                                  'Jumlah: ${item.quantity} kg'),
                                             );
                                           },
                                         ),

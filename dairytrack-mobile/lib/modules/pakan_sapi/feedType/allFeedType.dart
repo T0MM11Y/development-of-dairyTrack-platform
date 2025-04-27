@@ -15,24 +15,25 @@ class _AllFeedTypesState extends State<AllFeedTypes> {
   DateTime? selectedCreatedDate;
 
   Future<List<FeedType>> fetchFeedTypes() async {
-  try {
-    final response = await getFeedTypes();
-    // The API response is already a List<FeedType> from getFeedTypes
-    return response.where((feedType) {
-      final matchesSearchQuery = searchQuery == null ||
-          searchQuery!.isEmpty ||
-          feedType.name.toLowerCase().contains(searchQuery!.toLowerCase());
+    try {
+      // Changed from getFeedTypes() to getAllFeedTypes() to match the API function name
+      final response = await getAllFeedTypes();
+      
+      return response.where((feedType) {
+        final matchesSearchQuery = searchQuery == null ||
+            searchQuery!.isEmpty ||
+            feedType.name.toLowerCase().contains(searchQuery!.toLowerCase());
 
-      final matchesCreatedDate = selectedCreatedDate == null ||
-          DateFormat('yyyy-MM-dd').format(feedType.createdAt) ==
-              DateFormat('yyyy-MM-dd').format(selectedCreatedDate!);
+        final matchesCreatedDate = selectedCreatedDate == null ||
+            DateFormat('yyyy-MM-dd').format(feedType.createdAt) ==
+                DateFormat('yyyy-MM-dd').format(selectedCreatedDate!);
 
-      return matchesSearchQuery && matchesCreatedDate;
-    }).toList();
-  } catch (e) {
-    throw Exception('Failed to fetch data: $e');
+        return matchesSearchQuery && matchesCreatedDate;
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch data: $e');
+    }
   }
-}
 
   Future<void> _exportToPDF() async {
     // Implementasi ekspor ke PDF
@@ -259,14 +260,19 @@ class _AllFeedTypesState extends State<AllFeedTypes> {
 
                                         if (confirm == true) {
                                           try {
-                                            await deleteFeedType(feedType.id);
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                  content: Text(
-                                                      'Jenis pakan berhasil dihapus')),
-                                            );
-                                            setState(() {});
+                                            // Make sure to properly handle null or undefined ID
+                                            if (feedType.id != null) {
+                                              await deleteFeedType(feedType.id!);
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Jenis pakan berhasil dihapus')),
+                                              );
+                                              setState(() {});
+                                            } else {
+                                              throw Exception('ID tidak valid');
+                                            }
                                           } catch (e) {
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(

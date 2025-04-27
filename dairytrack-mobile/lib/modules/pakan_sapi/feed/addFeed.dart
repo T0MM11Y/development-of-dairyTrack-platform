@@ -1,13 +1,16 @@
 import 'package:dairy_track/config/api/pakan/feed.dart';
 import 'package:dairy_track/config/api/pakan/feedType.dart';
+import 'package:dairy_track/config/api/pakan/nutrition.dart';
 import 'package:dairy_track/model/pakan/feed.dart';
+import 'package:dairy_track/model/pakan/feedNutrition.dart';
 import 'package:dairy_track/model/pakan/feedType.dart';
+import 'package:dairy_track/model/pakan/nutrition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class AddFeedPage extends StatefulWidget {
-  const AddFeedPage({super.key});
+  const AddFeedPage({Key? key}) : super(key: key);
 
   @override
   _AddFeedPageState createState() => _AddFeedPageState();
@@ -16,484 +19,498 @@ class AddFeedPage extends StatefulWidget {
 class _AddFeedPageState extends State<AddFeedPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _energyController = TextEditingController();
-  final _fiberController = TextEditingController();
   final _minStockController = TextEditingController();
   final _priceController = TextEditingController();
-  final _feedTypeController = TextEditingController();
-  FeedType? _selectedFeedType;
-  final _formatCurrency = NumberFormat('#,###', 'id');
+
+  // Nutrisi variables
+  final _amountController = TextEditingController();
+  int? _selectedNutrisiId;
+  String? _amountError;
+
+  int? _selectedTypeId;
+  List<FeedNutrisi> _nutrisiList = [];
+  List<Nutrisi> _nutrisiOptions = [];
+  bool _isLoading = false;
+  bool _isLoadingNutrisi = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNutrisiOptions();
+  }
+
+  Future<void> _loadNutrisiOptions() async {
+    try {
+      setState(() {
+        _isLoadingNutrisi = true;
+      });
+
+      final nutrisiData = await getAllNutrisi();
+
+      setState(() {
+        _nutrisiOptions = nutrisiData;
+        _isLoadingNutrisi = false;
+      });
+    } catch (e) {
+      print('Error loading nutrisi options: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat data nutrisi: $e')),
+      );
+      setState(() {
+        _isLoadingNutrisi = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _proteinController.dispose();
-    _energyController.dispose();
-    _fiberController.dispose();
     _minStockController.dispose();
     _priceController.dispose();
-    _feedTypeController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
-  // Format price with thousand separators
-  String _formatPrice(String text) {
-    if (text.isEmpty) return '';
-    final value = int.tryParse(text.replaceAll('.', '')) ?? 0;
-    return _formatCurrency.format(value);
-  }
+  Future<void> _saveFeed() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-  // Only allow digits in price field
-  String _digitsOnly(String text) {
-    return text.replaceAll(RegExp(r'[^\d]'), '');
-  }
+    if (_selectedTypeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih jenis pakan terlebih dahulu')),
+      );
+      return;
+    }
 
-  void _showFeedTypeDropdown(BuildContext context, List<FeedType> feedTypes) {
-    // Get the render box of the current widget
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final Offset offset = box.localToGlobal(Offset.zero);
-    
-    // Calculate positioning relative to the text field
-    double left = 65.0; // Same as form padding
-    double top = offset.dy + 150.0; // Positioned just below the field
-    double width = box.size.width - 32.0; // Same width as form minus padding
-    
-    showMenu<FeedType>(
-      context: context,
-      position: RelativeRect.fromLTRB(left, top, left + 16, 0),  // Left aligned with form, right side has 16px margin
-      items: feedTypes.asMap().entries.map((entry) {
-        final index = entry.key;
-        final feedType = entry.value;
-        
-        // Use alternating background colors
-        final bool useGrayBackground = index % 2 == 1;
-        
-        return PopupMenuItem<FeedType>(
-          value: feedType,
-          child: Container(
-            width: width - 32.0,  // Make items slightly less wide than the dropdown
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: useGrayBackground ? Colors.grey[100] : Colors.white,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                feedType.name,
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: _selectedFeedType == feedType 
-                      ? FontWeight.bold 
-                      : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    ).then((selectedValue) {
-      if (selectedValue != null) {
-        setState(() {
-          _selectedFeedType = selectedValue;
-          _feedTypeController.text = selectedValue.name;
-        });
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print(
+          'Sending feed data: typeId=$_selectedTypeId, name=${_nameController.text}, minStock=${int.parse(_minStockController.text)}, price=${double.parse(_priceController.text.replaceAll('.', ''))}');
+
+      if (_nutrisiList.isNotEmpty) {
+        print(
+            'With nutrients: ${_nutrisiList.map((n) => '${n.nutrisiId}:${n.amount}').join(', ')}');
       }
+
+      // Prepare nutrisi data for API
+      final apiNutrisiList = _nutrisiList
+          .map((item) => {
+                'nutrisi_id': item.nutrisiId,
+                'amount': item.amount,
+              })
+          .toList();
+
+      final newFeed = await createFeed(
+        typeId: _selectedTypeId!,
+        name: _nameController.text,
+        minStock: int.parse(_minStockController.text),
+        price: double.parse(_priceController.text.replaceAll('.', '')),
+        nutrisiList: _nutrisiList, // Ensure this is List<FeedNutrisi>
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pakan berhasil ditambahkan')),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      print('Error saving feed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menambahkan pakan: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _addNutrisi() {
+    if (_selectedNutrisiId == null) {
+      setState(() {
+        _amountError = 'Pilih nutrisi terlebih dahulu';
+      });
+      return;
+    }
+
+    final amountText = _amountController.text.trim();
+    final amount = double.tryParse(amountText);
+
+    if (amount == null || amount <= 0) {
+      setState(() {
+        _amountError = 'Masukkan jumlah yang valid';
+      });
+      return;
+    }
+
+    // Check if nutrisi already exists in the list
+    if (_nutrisiList.any((n) => n.nutrisiId == _selectedNutrisiId)) {
+      setState(() {
+        _amountError = 'Nutrisi ini sudah ditambahkan';
+      });
+      return;
+    }
+
+    final nutrisi = _nutrisiOptions.firstWhere(
+      (n) => n.id == _selectedNutrisiId,
+      orElse: () => Nutrisi(id: _selectedNutrisiId!, name: 'Unknown'),
+    );
+
+    setState(() {
+      _nutrisiList.add(FeedNutrisi(
+        feedId: 0,
+        nutrisiId: _selectedNutrisiId!,
+        amount: amount,
+        nutrisi: nutrisi,
+      ));
+      _amountController.clear();
+      _selectedNutrisiId = null;
+      _amountError = null;
     });
   }
 
-  Future<void> _saveFeed() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        // Revalidate the selected FeedType by fetching the latest list
-        if (_selectedFeedType != null) {
-          final feedTypes = await getFeedTypes();
-          final isValidFeedType = feedTypes.any((feedType) => feedType.id == _selectedFeedType!.id);
-          if (!isValidFeedType) {
-            throw Exception('Selected feed type is no longer available. Please select a different type.');
-          }
-        }
-
-        final newFeed = Feed(
-          id: 0,
-          typeId: _selectedFeedType?.id,
-          name: _nameController.text.trim(),
-          protein: double.parse(_proteinController.text),
-          energy: double.parse(_energyController.text),
-          fiber: double.parse(_fiberController.text),
-          minStock: int.parse(_minStockController.text),
-          // Parse price value after removing thousand separators
-          price: double.parse(_priceController.text.replaceAll('.', '')),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        print('Submitting Feed: ${newFeed.toJson()}'); // Debugging
-
-        await addFeed(newFeed);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pakan berhasil ditambahkan')),
-        );
-
-        Navigator.pop(context, true); // Return true to trigger refresh
-      } catch (e) {
-        print('Error in _saveFeed: $e'); // Debugging
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menambahkan pakan: $e')),
-        );
-      }
-    }
+  void _removeNutrisi(int index) {
+    setState(() {
+      _nutrisiList.removeAt(index);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Pakan'),
-        backgroundColor: const Color.fromARGB(255, 93, 144, 231),
-        elevation: 0,
+        title: const Text('Tambah Pakan Baru'),
+        backgroundColor: const Color(0xFF5D90E7),
       ),
-      body: FutureBuilder<List<FeedType>>(
-        future: getFeedTypes(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 16),
-                  Text('Memuat jenis pakan...'),
-                ],
-              ),
-            );
-          } else if (snapshot.hasError || snapshot.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Gagal memuat jenis pakan: ${snapshot.error ?? 'Unknown error'}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {}); // Retry fetching
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Coba Lagi'),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Kembali'),
-                  ),
-                ],
-              ),
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.grey, size: 48),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Tidak ada jenis pakan tersedia.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {}); // Retry fetching
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Coba Lagi'),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Kembali'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final feedTypes = snapshot.data!;
-          
-          // Remove duplicates from feedTypes
-          final uniqueFeedTypes = <FeedType>{};
-          for (var feedType in feedTypes) {
-            uniqueFeedTypes.add(feedType);
-          }
-          final List<FeedType> finalFeedTypes = uniqueFeedTypes.toList();
-
-          // If _selectedFeedType is not in finalFeedTypes, reset it to null
-          if (_selectedFeedType != null &&
-              !finalFeedTypes.contains(_selectedFeedType)) {
-            _selectedFeedType = null;
-            _feedTypeController.text = '';
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Name Field
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nama Pakan',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      prefixIcon: const Icon(Icons.feed),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Nama tidak boleh kosong';
-                      }
-                      if (value.trim().length < 3) {
-                        return 'Nama harus minimal 3 karakter';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Feed Type Field - Custom implementation
-                  TextFormField(
-                    controller: _feedTypeController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: 'Jenis Pakan',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.category),
-                      suffixIcon: const Icon(Icons.arrow_drop_down),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    onTap: () {
-                      _showFeedTypeDropdown(context, finalFeedTypes);
-                    },
-                    validator: (value) {
-                      if (_selectedFeedType == null) {
-                        return 'Pilih jenis pakan';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Protein Field
-                  TextFormField(
-                    controller: _proteinController,
-                    decoration: InputDecoration(
-                      labelText: 'Protein (%)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.science),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Protein tidak boleh kosong';
-                      }
-                      final numValue = double.tryParse(value);
-                      if (numValue == null || numValue < 0) {
-                        return 'Masukkan nilai yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Energy Field
-                  TextFormField(
-                    controller: _energyController,
-                    decoration: InputDecoration(
-                      labelText: 'Energi (kcal)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.bolt),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Energi tidak boleh kosong';
-                      }
-                      final numValue = double.tryParse(value);
-                      if (numValue == null || numValue < 0) {
-                        return 'Masukkan nilai yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Fiber Field
-                  TextFormField(
-                    controller: _fiberController,
-                    decoration: InputDecoration(
-                      labelText: 'Serat (%)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.grass),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Serat tidak boleh kosong';
-                      }
-                      final numValue = double.tryParse(value);
-                      if (numValue == null || numValue < 0) {
-                        return 'Masukkan nilai yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Min Stock Field
-                  TextFormField(
-                    controller: _minStockController,
-                    decoration: InputDecoration(
-                      labelText: 'Stok Minimum',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.inventory),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Stok minimum tidak boleh kosong';
-                      }
-                      final numValue = int.tryParse(value);
-                      if (numValue == null || numValue < 0) {
-                        return 'Masukkan nilai yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Price Field with formatting
-                  TextFormField(
-                    controller: _priceController,
-                    decoration: InputDecoration(
-                      labelText: 'Harga',
-                      prefixIcon: const Icon(Icons.money),
-                      prefixText: 'Rp ',
-                      suffixText: ',-',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      // Make sure label doesn't disappear when focused
-                      floatingLabelBehavior: FloatingLabelBehavior.always, 
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly
-                    ],
-                    onChanged: (value) {
-                      // Format the value with thousand separators
-                      final formattedValue = _formatPrice(_digitsOnly(value));
-                      _priceController.value = TextEditingValue(
-                        text: formattedValue,
-                        selection: TextSelection.collapsed(offset: formattedValue.length),
-                      );
-                    },
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Harga tidak boleh kosong';
-                      }
-                      final numValue = double.tryParse(_digitsOnly(value));
-                      if (numValue == null || numValue < 0) {
-                        return 'Masukkan harga yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.blue[700],
-                          side: BorderSide(color: Colors.blue[700]!),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Batal'),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: _saveFeed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.save),
-                            SizedBox(width: 8),
-                            Text('Simpan'),
+                            const Text(
+                              'Informasi Pakan',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FutureBuilder<List<FeedType>>(
+                              future: getAllFeedTypes(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                } else if (snapshot.hasError) {
+                                  print(
+                                      'Error loading feed types: ${snapshot.error}');
+                                  return Text(
+                                      'Gagal memuat jenis pakan: ${snapshot.error}');
+                                } else if (!snapshot.hasData ||
+                                    snapshot.data!.isEmpty) {
+                                  return const Text(
+                                      'Tidak ada jenis pakan tersedia');
+                                }
+
+                                final feedTypes = snapshot.data!;
+                                if (_selectedTypeId == null &&
+                                    feedTypes.isNotEmpty) {
+                                  _selectedTypeId = feedTypes.first.id;
+                                }
+
+                                return DropdownButtonFormField<int>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Jenis Pakan',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.category),
+                                  ),
+                                  value: _selectedTypeId,
+                                  items: feedTypes.map((type) {
+                                    return DropdownMenuItem<int>(
+                                      value: type.id,
+                                      child: Text(type.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedTypeId = value;
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Pilih jenis pakan';
+                                    }
+                                    return null;
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nama Pakan',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.food_bank),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nama pakan tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _minStockController,
+                              decoration: const InputDecoration(
+                                labelText: 'Stok Minimum',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.inventory),
+                                suffixText: 'kg',
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Stok minimum tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _priceController,
+                              decoration: const InputDecoration(
+                                labelText: 'Harga Per Kg',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.attach_money),
+                                prefixText: 'Rp ',
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                TextInputFormatter.withFunction(
+                                    (oldValue, newValue) {
+                                  if (newValue.text.isEmpty) {
+                                    return newValue;
+                                  }
+                                  final number = int.parse(newValue.text);
+                                  final formattedText =
+                                      NumberFormat("#,###", "id_ID")
+                                          .format(number)
+                                          .replaceAll(',', '.');
+                                  return TextEditingValue(
+                                    text: formattedText,
+                                    selection: TextSelection.collapsed(
+                                      offset: formattedText.length,
+                                    ),
+                                  );
+                                }),
+                              ],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Harga tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Kandungan Nutrisi',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Nutrisi form integrated directly into the page
+                            _isLoadingNutrisi
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : Column(
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Kolom Kiri: Dropdown Nutrisi
+                                          Expanded(
+                                            child: DropdownButtonFormField<int>(
+                                              decoration: const InputDecoration(
+                                                labelText: 'Nutrisi',
+                                                border: OutlineInputBorder(),
+                                              ),
+                                              value: _selectedNutrisiId,
+                                              items: _nutrisiOptions
+                                                  .where((n) => n.id != null)
+                                                  .map((nutrisi) {
+                                                return DropdownMenuItem<int>(
+                                                  value: nutrisi.id,
+                                                  child: Text(nutrisi.name),
+                                                );
+                                              }).toList(),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  _selectedNutrisiId = value;
+                                                  _amountError = null;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          // Kolom Kanan: Input Jumlah
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller: _amountController,
+                                              decoration: InputDecoration(
+                                                labelText: 'Jumlah',
+                                                border:
+                                                    const OutlineInputBorder(),
+                                                suffixText: 'gram',
+                                                errorText: _amountError,
+                                              ),
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter
+                                                    .allow(
+                                                        RegExp(r'^\d*.?\d*$')),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      // Tombol Tambah
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: ElevatedButton(
+                                          onPressed: _addNutrisi,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: const Text('Tambah Nutrisi'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                            const SizedBox(height: 16),
+                            // Daftar Nutrisi
+                            if (_nutrisiList.isEmpty)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'Belum ada nutrisi yang ditambahkan',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _nutrisiList.length,
+                                itemBuilder: (context, index) {
+                                  final nutrisi = _nutrisiList[index];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    color: Colors.grey[50],
+                                    child: ListTile(
+                                      title: Text(
+                                        nutrisi.nutrisi?.name ??
+                                            'Nutrisi #${index + 1}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                          'Jumlah: ${nutrisi.amount} gram'),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () => _removeNutrisi(index),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _saveFeed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1565C0),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Simpan Pakan',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          );
-        },
-      ),
     );
   }
 }
+
+// Updated createFeed function

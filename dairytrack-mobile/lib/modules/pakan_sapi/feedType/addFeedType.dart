@@ -1,5 +1,4 @@
 import 'package:dairy_track/config/api/pakan/feedType.dart';
-import 'package:dairy_track/model/pakan/feedType.dart';
 import 'package:flutter/material.dart';
 
 class AddFeedType extends StatefulWidget {
@@ -21,14 +20,10 @@ class _AddFeedTypeState extends State<AddFeedType> {
       });
 
       try {
-        final newFeedType = FeedType(
-          id: 0, // Temporary ID, backend will assign the actual ID
+        // Call the addFeedType API function with the required name parameter
+        await addFeedType(
           name: _nameController.text.trim(),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
         );
-
-        await addFeedType(newFeedType);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Jenis pakan berhasil ditambahkan')),

@@ -1,7 +1,10 @@
 import 'package:dairy_track/config/api/pakan/feed.dart';
 import 'package:dairy_track/config/api/pakan/feedType.dart';
+import 'package:dairy_track/config/api/pakan/nutrition.dart';
 import 'package:dairy_track/model/pakan/feed.dart';
 import 'package:dairy_track/model/pakan/feedType.dart';
+import 'package:dairy_track/model/pakan/feedNutrition.dart';
+import 'package:dairy_track/model/pakan/nutrition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -18,86 +21,71 @@ class EditFeedPage extends StatefulWidget {
 class _EditFeedPageState extends State<EditFeedPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _energyController = TextEditingController();
-  final _fiberController = TextEditingController();
   final _minStockController = TextEditingController();
   final _priceController = TextEditingController();
   final _feedTypeController = TextEditingController();
   final _formatCurrency = NumberFormat('#,###', 'id');
   FeedType? _selectedFeedType;
+  List<FeedNutrisi> _nutrisiList = [];
+  List<Nutrisi> _nutritions = [];
+  List<TextEditingController> _amountControllers = [];
+  List<TextEditingController> _nutrisiControllers = [];
 
-  // New state variables for feed types
   List<FeedType> _feedTypes = [];
   bool _isLoading = true;
   String? _loadError;
+  bool _isFeedValid = true;
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate the form fields with the existing Feed data
-    _nameController.text = widget.feed.name;
-
-    // Format numeric values without decimal places for whole numbers
-    if (widget.feed.protein != null) {
-      final proteinValue = widget.feed.protein!;
-      _proteinController.text = proteinValue == proteinValue.truncateToDouble()
-          ? proteinValue.toInt().toString()
-          : proteinValue.toString();
+    // Validate feed ID
+    if (widget.feed.id == null) {
+      _isFeedValid = false;
+      _loadError = 'ID pakan tidak valid';
+      _isLoading = false;
+    } else {
+      // Pre-populate form fields
+      _nameController.text = widget.feed.name;
+      _minStockController.text = widget.feed.minStock?.toString() ?? '0';
+      if (widget.feed.price != null) {
+        _priceController.text = _formatPrice(widget.feed.price!);
+      }
+      _selectedFeedType = widget.feed.feedType;
+      if (_selectedFeedType != null) {
+        _feedTypeController.text = _selectedFeedType!.name;
+      }
+      // Create a deep copy of feedNutrisiRecords to avoid modifying original
+      _nutrisiList = (widget.feed.feedNutrisiRecords ?? [])
+          .map((n) => FeedNutrisi(
+                feedId: n.feedId,
+                nutrisiId: n.nutrisiId,
+                amount: n.amount,
+              ))
+          .toList();
+      // Initialize amount and nutrisi controllers
+      _amountControllers = _nutrisiList
+          .map((n) => TextEditingController(text: _formatNumber(n.amount)))
+          .toList();
+      _nutrisiControllers = _nutrisiList
+          .map((n) => TextEditingController(text: _getNutrisiName(n.nutrisiId)))
+          .toList();
+      _loadFeedTypes();
+      _loadNutritions();
     }
-
-    if (widget.feed.energy != null) {
-      final energyValue = widget.feed.energy!;
-      _energyController.text = energyValue == energyValue.truncateToDouble()
-          ? energyValue.toInt().toString()
-          : energyValue.toString();
-    }
-
-    if (widget.feed.fiber != null) {
-      final fiberValue = widget.feed.fiber!;
-      _fiberController.text = fiberValue == fiberValue.truncateToDouble()
-          ? fiberValue.toInt().toString()
-          : fiberValue.toString();
-    }
-
-    _minStockController.text = widget.feed.minStock?.toString() ?? '';
-
-    // Format price with thousand separators
-    if (widget.feed.price != null) {
-      _priceController.text =
-          _formatPrice(widget.feed.price!.toInt().toString());
-    }
-
-    _selectedFeedType = widget.feed.feedType;
-    if (_selectedFeedType != null) {
-      _feedTypeController.text = _selectedFeedType!.name;
-    }
-
-    // Load feed types just once when the page initializes
-    _loadFeedTypes();
   }
 
-  // New method to load feed types only once
   Future<void> _loadFeedTypes() async {
     try {
       setState(() {
         _isLoading = true;
         _loadError = null;
       });
-
-      final feedTypes = await getFeedTypes();
-
-      // Remove duplicates if any
-      final uniqueFeedTypes = <FeedType>{};
-      for (var feedType in feedTypes) {
-        uniqueFeedTypes.add(feedType);
-      }
-
+      final feedTypes = await getAllFeedTypes();
+      final uniqueFeedTypes = <FeedType>{...feedTypes}.toList();
       setState(() {
-        _feedTypes = uniqueFeedTypes.toList();
+        _feedTypes = uniqueFeedTypes;
         _isLoading = false;
-
-        // If _selectedFeedType is not in _feedTypes, reset it to null
         if (_selectedFeedType != null &&
             !_feedTypes.any((ft) => ft.id == _selectedFeedType!.id)) {
           _selectedFeedType = null;
@@ -107,7 +95,30 @@ class _EditFeedPageState extends State<EditFeedPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _loadError = e.toString();
+        _loadError = 'Gagal memuat jenis pakan: $e';
+      });
+    }
+  }
+
+  Future<void> _loadNutritions() async {
+    try {
+      final nutritions = await getAllNutrisi();
+      print('Raw nutritions data: $nutritions');
+      setState(() {
+        // Filter out nutritions with null or invalid IDs or names
+        _nutritions = nutritions
+            .where((n) => n.id != null && n.id! > 0 && n.name != null && n.name!.isNotEmpty)
+            .toList();
+        print('Filtered nutritions: ${_nutritions.map((n) => 'ID: ${n.id}, Name: ${n.name}').toList()}');
+        // Update controllers with correct names
+        for (int i = 0; i < _nutrisiList.length; i++) {
+          _nutrisiControllers[i].text = _getNutrisiName(_nutrisiList[i].nutrisiId);
+        }
+      });
+    } catch (e) {
+      print('Error loading nutritions: $e');
+      setState(() {
+        _loadError = 'Gagal memuat nutrisi: $e';
       });
     }
   }
@@ -115,54 +126,64 @@ class _EditFeedPageState extends State<EditFeedPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _proteinController.dispose();
-    _energyController.dispose();
-    _fiberController.dispose();
     _minStockController.dispose();
     _priceController.dispose();
     _feedTypeController.dispose();
+    for (var controller in _amountControllers) {
+      controller.dispose();
+    }
+    for (var controller in _nutrisiControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  // Format price with thousand separators
-  String _formatPrice(String text) {
-    if (text.isEmpty) return '';
-    final value = int.tryParse(text.replaceAll('.', '')) ?? 0;
-    return _formatCurrency.format(value);
+  String _formatPrice(double price) {
+    String formatted = price.toStringAsFixed(0); // Whole numbers only
+    return _formatCurrency.format(int.parse(formatted));
   }
 
-  // Only allow digits in price field
   String _digitsOnly(String text) {
     return text.replaceAll(RegExp(r'[^\d]'), '');
   }
 
+  String _formatNumber(double number) {
+    // Remove trailing zeros and decimal point if unnecessary
+    String formatted = number.toString();
+    if (formatted.contains('.')) {
+      formatted = formatted.replaceAll(RegExp(r'0+$'), '');
+      formatted = formatted.replaceAll(RegExp(r'\.$'), '');
+    }
+    return formatted.isEmpty ? '0' : formatted;
+  }
+
+  String _getNutrisiName(int nutrisiId) {
+    if (nutrisiId == 0) return 'Pilih Nutrisi';
+    final nutrisi = _nutritions.firstWhere(
+      (n) => n.id == nutrisiId,
+      orElse: () => Nutrisi(id: nutrisiId, name: 'Nutrisi Tidak Diketahui ($nutrisiId)'),
+    );
+    return nutrisi.name ?? 'Nutrisi #${nutrisiId}';
+  }
+
   void _showFeedTypeDropdown(BuildContext context) {
-    // Get the render box of the current widget
     final RenderBox box = context.findRenderObject() as RenderBox;
     final Offset offset = box.localToGlobal(Offset.zero);
-
-    // Calculate positioning relative to the text field
-    // Reduced the top offset to position it closer to the field
-    double left = 65.0; // Same as form padding
-    double top = offset.dy + 230.0; // Positioned just below the field
-    double width = box.size.width - 32.0; // Same width as form minus padding
+    double left = 16.0;
+    double top = offset.dy + box.size.height;
+    double width = box.size.width - 32.0;
 
     showMenu<FeedType>(
       context: context,
-      position: RelativeRect.fromLTRB(
-          left, top, left + 16, 0), // Left aligned with form
+      position: RelativeRect.fromLTRB(left, top, left + 16, 0),
       items: _feedTypes.asMap().entries.map((entry) {
         final index = entry.key;
         final feedType = entry.value;
-
-        // Use alternating background colors
         final bool useGrayBackground = index % 2 == 1;
-
         return PopupMenuItem<FeedType>(
           value: feedType,
           child: Container(
-            width:
-                width - 32.0, // Make items slightly less wide than the dropdown
+            width: width,
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: useGrayBackground ? Colors.grey[100] : Colors.white,
@@ -193,129 +214,273 @@ class _EditFeedPageState extends State<EditFeedPage> {
     });
   }
 
-  // New method to show confirmation dialog with changes
-  Future<void> _showConfirmationDialog() async {
-    if (!_formKey.currentState!.validate()) {
+  void _showNutrisiDropdown(BuildContext context, int index) {
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final Offset offset = box.localToGlobal(Offset.zero);
+    double left = offset.dx + 16.0;
+    double top = offset.dy + box.size.height; // Position below the field
+    double width = box.size.width - 32.0;
+
+    // Filter out already selected nutrisiIds (except for the current index)
+    final selectedNutrisiIds = _nutrisiList
+        .asMap()
+        .entries
+        .where((entry) => entry.key != index)
+        .map((entry) => entry.value.nutrisiId)
+        .toSet();
+    final availableNutritions =
+        _nutritions.where((n) => !selectedNutrisiIds.contains(n.id)).toList();
+
+    print('Showing dropdown for index $index at position (left: $left, top: $top)');
+
+    showMenu<Nutrisi>(
+      context: context,
+      position: RelativeRect.fromLTRB(left, top, left + 16, 0),
+      items: [
+        PopupMenuItem<Nutrisi>(
+          value: Nutrisi(id: 0, name: 'Pilih Nutrisi'),
+          child: Container(
+            width: width,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                'Pilih Nutrisi',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: _nutrisiList[index].nutrisiId == 0
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
+            ),
+          ),
+        ),
+        ...availableNutritions.asMap().entries.map((entry) {
+          final menuIndex = entry.key + 1; // Offset by 1 for 'Pilih Nutrisi'
+          final nutrisi = entry.value;
+          final bool useGrayBackground = menuIndex % 2 == 1;
+          return PopupMenuItem<Nutrisi>(
+            value: nutrisi,
+            child: Container(
+              width: width,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: useGrayBackground ? Colors.grey[100] : Colors.white,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  nutrisi.name ?? 'Nutrisi #${nutrisi.id}',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: _nutrisiList[index].nutrisiId == nutrisi.id
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    ).then((selectedValue) {
+      if (selectedValue != null) {
+        setState(() {
+          _nutrisiList[index] = FeedNutrisi(
+            feedId: widget.feed.id!,
+            nutrisiId: selectedValue.id!,
+            amount: double.tryParse(_amountControllers[index].text) ?? 0.0,
+          );
+          _nutrisiControllers[index].text =
+              selectedValue.id == 0 ? 'Pilih Nutrisi' : _getNutrisiName(selectedValue.id!);
+          print('Selected nutrisi for index $index: ${selectedValue.name} (ID: ${selectedValue.id})');
+        });
+      }
+    });
+  }
+
+  void _addNutritionRow() {
+    if (_nutritions.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak ada nutrisi valid tersedia'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
+    setState(() {
+      _nutrisiList.add(FeedNutrisi(
+        feedId: widget.feed.id!,
+        nutrisiId: 0, // Placeholder ID for 'Pilih Nutrisi'
+        amount: 0.0,
+      ));
+      _amountControllers.add(TextEditingController(text: '0'));
+      _nutrisiControllers.add(TextEditingController(text: 'Pilih Nutrisi'));
+    });
+  }
 
-    // Create updated feed object to compare values
-    final updatedFeed = Feed(
-      id: widget.feed.id,
-      typeId: _selectedFeedType?.id,
-      name: _nameController.text.trim(),
-      protein: double.parse(_proteinController.text),
-      energy: double.parse(_energyController.text),
-      fiber: double.parse(_fiberController.text),
-      minStock: int.parse(_minStockController.text),
-      price: double.parse(_priceController.text.replaceAll('.', '')),
-      createdAt: widget.feed.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+  void _removeNutritionRow(int index) {
+    setState(() {
+      _nutrisiList.removeAt(index);
+      _amountControllers[index].dispose();
+      _amountControllers.removeAt(index);
+      _nutrisiControllers[index].dispose();
+      _nutrisiControllers.removeAt(index);
+    });
+  }
 
-    // Build a list of changes
-    final List<Map<String, dynamic>> changes = [];
+  Future<void> _showConfirmationDialog() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    // Check name
-    if (updatedFeed.name != widget.feed.name) {
+    final priceText = _digitsOnly(_priceController.text);
+    final price = priceText.isNotEmpty ? double.tryParse(priceText) : null;
+
+    final updatedFeed = {
+      'name': _nameController.text.trim(),
+      'typeId': _selectedFeedType?.id,
+      'minStock': int.tryParse(_minStockController.text) ?? 0,
+      'price': price,
+      'nutrisiList': _nutrisiList
+          .map((n) => {
+                'nutrisi_id': n.nutrisiId,
+                'amount': n.amount,
+              })
+          .toList(),
+    };
+
+    final changes = <Map<String, dynamic>>[];
+    if (updatedFeed['name'] != widget.feed.name) {
       changes.add({
         'field': 'Nama Pakan',
         'old': widget.feed.name,
-        'new': updatedFeed.name,
+        'new': updatedFeed['name'],
       });
     }
-
-    // Check feed type
-    if ((updatedFeed.typeId ?? '') != (widget.feed.typeId ?? '')) {
+    if (updatedFeed['typeId'] != widget.feed.typeId) {
       changes.add({
         'field': 'Jenis Pakan',
         'old': widget.feed.feedType?.name ?? 'Tidak ada',
         'new': _selectedFeedType?.name ?? 'Tidak ada',
       });
     }
-
-    // Check protein
-    if (updatedFeed.protein != widget.feed.protein) {
-      changes.add({
-        'field': 'Protein',
-        'old': '${widget.feed.protein}%',
-        'new': '${updatedFeed.protein}%',
-      });
-    }
-
-    // Check energy
-    if (updatedFeed.energy != widget.feed.energy) {
-      changes.add({
-        'field': 'Energi',
-        'old': '${widget.feed.energy} kcal',
-        'new': '${updatedFeed.energy} kcal',
-      });
-    }
-
-    // Check fiber
-    if (updatedFeed.fiber != widget.feed.fiber) {
-      changes.add({
-        'field': 'Serat',
-        'old': '${widget.feed.fiber}%',
-        'new': '${updatedFeed.fiber}%',
-      });
-    }
-
-    // Check min stock
-    if (updatedFeed.minStock != widget.feed.minStock) {
+    if (updatedFeed['minStock'] != widget.feed.minStock) {
       changes.add({
         'field': 'Stok Minimum',
-        'old': '${widget.feed.minStock}',
-        'new': '${updatedFeed.minStock}',
+        'old': '${widget.feed.minStock ?? 0}',
+        'new': '${updatedFeed['minStock']}',
       });
     }
-
-    if (updatedFeed.price != widget.feed.price) {
+    if (updatedFeed['price'] != widget.feed.price) {
       changes.add({
         'field': 'Harga',
-        'old':
-            'Rp ${_formatPrice(widget.feed.price?.toInt().toString() ?? "0")},-',
-        'new':
-            'Rp ${_formatPrice(updatedFeed.price?.toInt().toString() ?? "0")},-',
+        'old': widget.feed.price != null
+            ? 'Rp ${_formatPrice(widget.feed.price!)},-'
+            : 'Tidak ada',
+        'new': updatedFeed['price'] != null
+            ? 'Rp ${_formatPrice(updatedFeed['price']! as double)},-'
+            : 'Tidak ada',
       });
     }
 
-    // If no changes were made, inform the user
+    // Detect specific nutrition changes
+    final originalNutrisiList = widget.feed.feedNutrisiRecords ?? [];
+    final nutrisiChanges = <String, String>{};
+
+    // Map nutritions by nutrisiId for comparison
+    final originalMap = {
+      for (var n in originalNutrisiList) n.nutrisiId: n.amount,
+    };
+    final updatedMap = {
+      for (var n in _nutrisiList) n.nutrisiId: n.amount,
+    };
+
+    // Find added and modified nutritions
+    for (var entry in updatedMap.entries) {
+      final nutrisiId = entry.key;
+      final newAmount = entry.value;
+      final oldAmount = originalMap[nutrisiId];
+      final nutrisiName = _getNutrisiName(nutrisiId);
+      if (nutrisiId == 0) continue; // Skip placeholder
+      if (oldAmount == null) {
+        nutrisiChanges['Ditambahkan'] =
+            '${nutrisiChanges['Ditambahkan'] ?? ''}$nutrisiName: ${_formatNumber(newAmount)}; ';
+      } else if ((newAmount - oldAmount).abs() > 0.0001) {
+        nutrisiChanges['Diubah'] =
+            '${nutrisiChanges['Diubah'] ?? ''}$nutrisiName: ${_formatNumber(oldAmount)} → ${_formatNumber(newAmount)}; ';
+      }
+    }
+
+    // Find removed nutritions
+    for (var entry in originalMap.entries) {
+      final nutrisiId = entry.key;
+      final oldAmount = entry.value;
+      if (!updatedMap.containsKey(nutrisiId)) {
+        final nutrisiName = _getNutrisiName(nutrisiId);
+        nutrisiChanges['Dihapus'] =
+            '${nutrisiChanges['Dihapus'] ?? ''}$nutrisiName: ${_formatNumber(oldAmount)}; ';
+      }
+    }
+
+    // Add nutrition changes to dialog
+    if (nutrisiChanges.isNotEmpty) {
+      String changeDescription = '';
+      if (nutrisiChanges.containsKey('Ditambahkan')) {
+        changeDescription += 'Ditambahkan: ${nutrisiChanges['Ditambahkan']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+      }
+      if (nutrisiChanges.containsKey('Diubah')) {
+        changeDescription += 'Diubah: ${nutrisiChanges['Diubah']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+      }
+      if (nutrisiChanges.containsKey('Dihapus')) {
+        changeDescription += 'Dihapus: ${nutrisiChanges['Dihapus']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+      }
+      changes.add({
+        'field': 'Nutrisi',
+        'old': '',
+        'new': changeDescription.trim(),
+      });
+    }
+
     if (changes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak ada perubahan yang dilakukan')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak ada perubahan yang dilakukan')),
+        );
+      }
       return;
     }
 
-    // Show confirmation dialog
     final bool? confirm = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Row(
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.edit, color: Colors.orange),
+            SizedBox(width: 10),
+            Text('Konfirmasi Perubahan'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.edit, color: Colors.orange),
-              SizedBox(width: 10),
-              Text('Konfirmasi Perubahan'),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Apakah Anda yakin ingin menyimpan perubahan berikut?',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ...changes.map((change) {
-                  return Padding(
+              const Text(
+                'Apakah Anda yakin ingin menyimpan perubahan berikut?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...changes.map((change) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,27 +492,26 @@ class _EditFeedPageState extends State<EditFeedPage> {
                             color: Colors.blue,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.arrow_back,
-                                size: 16, color: Colors.red),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${change['old']}',
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  decoration: TextDecoration.lineThrough,
+                        if (change['old'].isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(Icons.arrow_back, size: 16, color: Colors.red),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${change['old']}',
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                         Row(
                           children: [
-                            const Icon(Icons.arrow_forward,
-                                size: 16, color: Colors.green),
+                            const Icon(
+                                Icons.arrow_forward, size: 16, color: Colors.green),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -362,66 +526,85 @@ class _EditFeedPageState extends State<EditFeedPage> {
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
-              ],
-            ),
+                  )),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text(
-                'BATAL',
-                style: TextStyle(color: Colors.grey),
-              ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('BATAL', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[700],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[700],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('SIMPAN'),
-            ),
-          ],
-        );
-      },
+            child: const Text('SIMPAN'),
+          ),
+        ],
+      ),
     );
 
-    // If confirmed, proceed with update
     if (confirm == true) {
-      await _updateFeed(updatedFeed);
+      await _updateFeed();
     }
   }
 
-  Future<void> _updateFeed(Feed updatedFeed) async {
+  Future<void> _updateFeed() async {
     try {
-      // Pass both the ID and the updatedFeed object to updateFeed
-      await updateFeed(widget.feed.id, updatedFeed);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Menyimpan...')),
+        );
+      }
+      final priceText = _digitsOnly(_priceController.text);
+      final price = priceText.isNotEmpty ? double.parse(priceText) : null;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pakan berhasil diperbarui'),
-          backgroundColor: Colors.green,
-        ),
+      // Validate no placeholder nutrisiIds
+      if (_nutrisiList.any((n) => n.nutrisiId == 0)) {
+        throw Exception('Pilih nutrisi untuk semua baris');
+      }
+
+      final feed = await updateFeed(
+        id: widget.feed.id!,
+        typeId: _selectedFeedType?.id,
+        name: _nameController.text.trim(),
+        minStock: int.parse(_minStockController.text),
+        price: price,
+        nutrisiList: _nutrisiList.isNotEmpty ? _nutrisiList : null,
       );
-
-      // Return true to trigger refresh on the calling page
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pakan berhasil diperbarui'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      if (mounted) {
+        Navigator.pop(context, feed);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memperbarui pakan: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      String errorMessage = 'Gagal memperbarui pakan: $e';
+      if (e.toString().contains('not found')) {
+        errorMessage = 'Salah satu nutrisi tidak ditemukan';
+      } else if (e.toString().contains('sudah ada')) {
+        errorMessage = 'Nama pakan sudah digunakan';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  // Widget to show while loading feed types
   Widget _buildLoadingView() {
     return const Center(
       child: Row(
@@ -429,13 +612,12 @@ class _EditFeedPageState extends State<EditFeedPage> {
         children: [
           CircularProgressIndicator(),
           SizedBox(width: 16),
-          Text('Memuat jenis pakan...'),
+          Text('Memuat data...'),
         ],
       ),
     );
   }
 
-  // Widget to show when there's an error loading feed types
   Widget _buildErrorView() {
     return Center(
       child: Column(
@@ -444,13 +626,13 @@ class _EditFeedPageState extends State<EditFeedPage> {
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
           Text(
-            'Gagal memuat jenis pakan: ${_loadError ?? 'Unknown error'}',
+            _loadError ?? 'Unknown error',
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.red),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadFeedTypes, // Retry loading feed types
+            onPressed: _isFeedValid ? _loadFeedTypes : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
               foregroundColor: Colors.white,
@@ -467,7 +649,6 @@ class _EditFeedPageState extends State<EditFeedPage> {
     );
   }
 
-  // Widget to show when no feed types are available
   Widget _buildEmptyView() {
     return Center(
       child: Column(
@@ -475,13 +656,10 @@ class _EditFeedPageState extends State<EditFeedPage> {
         children: [
           const Icon(Icons.info_outline, color: Colors.grey, size: 48),
           const SizedBox(height: 16),
-          const Text(
-            'Tidak ada jenis pakan tersedia.',
-            textAlign: TextAlign.center,
-          ),
+          const Text('Tidak ada jenis pakan tersedia.', textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadFeedTypes, // Retry loading feed types
+            onPressed: _loadFeedTypes,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
               foregroundColor: Colors.white,
@@ -498,7 +676,6 @@ class _EditFeedPageState extends State<EditFeedPage> {
     );
   }
 
-  // Widget to show the edit form
   Widget _buildForm() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -507,14 +684,11 @@ class _EditFeedPageState extends State<EditFeedPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Name Field
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Nama Pakan',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.feed),
                 filled: true,
                 fillColor: Colors.white,
@@ -530,124 +704,33 @@ class _EditFeedPageState extends State<EditFeedPage> {
               },
             ),
             const SizedBox(height: 16),
-
-            // Feed Type Field - Custom implementation
             TextFormField(
               controller: _feedTypeController,
               readOnly: true,
               decoration: InputDecoration(
                 labelText: 'Jenis Pakan',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.category),
                 suffixIcon: const Icon(Icons.arrow_drop_down),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              onTap: () {
-                _showFeedTypeDropdown(context);
-              },
-              validator: (value) {
-                if (_selectedFeedType == null) {
-                  return 'Pilih jenis pakan';
-                }
-                return null;
-              },
+              onTap: () => _showFeedTypeDropdown(context),
+              validator: (value) =>
+                  _selectedFeedType == null ? 'Pilih jenis pakan' : null,
             ),
             const SizedBox(height: 16),
-
-            // Protein Field
-            TextFormField(
-              controller: _proteinController,
-              decoration: InputDecoration(
-                labelText: 'Protein (%)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.science),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Protein tidak boleh kosong';
-                }
-                final numValue = double.tryParse(value);
-                if (numValue == null || numValue < 0) {
-                  return 'Masukkan nilai yang valid';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Energy Field
-            TextFormField(
-              controller: _energyController,
-              decoration: InputDecoration(
-                labelText: 'Energi (kcal)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.bolt),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Energi tidak boleh kosong';
-                }
-                final numValue = double.tryParse(value);
-                if (numValue == null || numValue < 0) {
-                  return 'Masukkan nilai yang valid';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Fiber Field
-            TextFormField(
-              controller: _fiberController,
-              decoration: InputDecoration(
-                labelText: 'Serat (%)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.grass),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Serat tidak boleh kosong';
-                }
-                final numValue = double.tryParse(value);
-                if (numValue == null || numValue < 0) {
-                  return 'Masukkan nilai yang valid';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Min Stock Field
             TextFormField(
               controller: _minStockController,
               decoration: InputDecoration(
                 labelText: 'Stok Minimum',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.inventory),
                 filled: true,
                 fillColor: Colors.white,
               ),
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Stok minimum tidak boleh kosong';
@@ -660,8 +743,6 @@ class _EditFeedPageState extends State<EditFeedPage> {
               },
             ),
             const SizedBox(height: 16),
-
-            // Price Field with formatting
             TextFormField(
               controller: _priceController,
               decoration: InputDecoration(
@@ -669,23 +750,19 @@ class _EditFeedPageState extends State<EditFeedPage> {
                 prefixIcon: const Icon(Icons.money),
                 prefixText: 'Rp ',
                 suffixText: ',-',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 filled: true,
                 fillColor: Colors.white,
-                // Make sure label doesn't disappear when focused
                 floatingLabelBehavior: FloatingLabelBehavior.always,
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
-                // Format the value with thousand separators
-                final formattedValue = _formatPrice(_digitsOnly(value));
+                final formattedValue =
+                    _formatPrice(double.tryParse(_digitsOnly(value)) ?? 0);
                 _priceController.value = TextEditingValue(
                   text: formattedValue,
-                  selection:
-                      TextSelection.collapsed(offset: formattedValue.length),
+                  selection: TextSelection.collapsed(offset: formattedValue.length),
                 );
               },
               validator: (value) {
@@ -700,8 +777,103 @@ class _EditFeedPageState extends State<EditFeedPage> {
               },
             ),
             const SizedBox(height: 24),
-
-            // Buttons
+            const Text(
+              'Nutrisi',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (_nutritions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Tidak ada nutrisi tersedia. Silakan tambahkan nutrisi terlebih dahulu.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ..._nutrisiList.asMap().entries.map((entry) {
+              final index = entry.key;
+              final nutrisi = entry.value;
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _nutrisiControllers[index],
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Nutrisi',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            suffixIcon: const Icon(Icons.arrow_drop_down),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          onTap: () => _showNutrisiDropdown(context, index),
+                          validator: (value) =>
+                              nutrisi.nutrisiId == 0 ? 'Pilih nutrisi' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _amountControllers[index],
+                          decoration: InputDecoration(
+                            labelText: 'Jumlah',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                          ],
+                          onTap: () {
+                            // Clear default '0' when user starts typing
+                            if (_amountControllers[index].text == '0') {
+                              _amountControllers[index].clear();
+                            }
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              _nutrisiList[index] = FeedNutrisi(
+                                feedId: widget.feed.id!,
+                                nutrisiId: nutrisi.nutrisiId,
+                                amount:
+                                    double.tryParse(value.isEmpty ? '0' : value) ??
+                                        0.0,
+                              );
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Jumlah tidak boleh kosong';
+                            }
+                            final amount = double.tryParse(value);
+                            if (amount == null || amount < 0) {
+                              return 'Masukkan jumlah yang valid';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _removeNutritionRow(index),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            TextButton.icon(
+              onPressed: _nutritions.isEmpty ? null : _addNutritionRow,
+              icon: const Icon(Icons.add, color: Colors.blue),
+              label: const Text('Tambah Nutrisi', style: TextStyle(color: Colors.blue)),
+            ),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -710,26 +882,19 @@ class _EditFeedPageState extends State<EditFeedPage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.blue[700],
                     side: BorderSide(color: Colors.blue[700]!),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text('Batal'),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  // Change here to show confirmation first
                   onPressed: _showConfirmationDialog,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -760,7 +925,7 @@ class _EditFeedPageState extends State<EditFeedPage> {
           ? _buildLoadingView()
           : _loadError != null
               ? _buildErrorView()
-              : _feedTypes.isEmpty
+              : _feedTypes.isEmpty && _isFeedValid
                   ? _buildEmptyView()
                   : _buildForm(),
     );

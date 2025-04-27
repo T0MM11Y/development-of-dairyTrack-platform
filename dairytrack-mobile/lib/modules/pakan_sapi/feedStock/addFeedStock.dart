@@ -33,7 +33,7 @@ class _AddFeedStockState extends State<AddFeedStock> {
       _isLoading = true;
     });
     try {
-      final feeds = await getFeeds();
+      final feeds = await getAllFeeds(); // Perbaiki: gunakan getAllFeeds
       setState(() {
         _feeds = feeds;
       });
@@ -52,7 +52,7 @@ class _AddFeedStockState extends State<AddFeedStock> {
 
   Future<void> _saveFeedStock() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedFeed == null && widget.preSelectedFeed == null) {
+      if (_selectedFeed == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pakan harus dipilih')),
         );
@@ -64,12 +64,10 @@ class _AddFeedStockState extends State<AddFeedStock> {
       });
 
       try {
-        final payload = {
-          'feedId': (_selectedFeed ?? widget.preSelectedFeed)!.id,
-          'additionalStock': double.parse(_stockController.text),
-        };
-
-        await addFeedStock(payload);
+        await addFeedStock(
+          feedId: _selectedFeed!.id!,
+          additionalStock: double.parse(_stockController.text),
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Stok pakan berhasil ditambahkan')),
@@ -79,7 +77,7 @@ class _AddFeedStockState extends State<AddFeedStock> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menambahkan: $e')),
+            SnackBar(content: Text('Gagal menambah stok: $e')),
           );
         }
       } finally {

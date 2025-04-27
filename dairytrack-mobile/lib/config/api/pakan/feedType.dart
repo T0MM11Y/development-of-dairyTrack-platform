@@ -1,90 +1,82 @@
 import 'package:dairy_track/config/configApi5003.dart';
 import 'package:dairy_track/model/pakan/feedType.dart';
 
-// GET semua data jenis pakan
-Future<List<FeedType>> getFeedTypes() async {
-  try {
-    final response = await fetchAPI("feedType");
-    print('getFeedTypes response: $response'); // Debugging
+/// Fetches all feed types.
+Future<List<FeedType>> getAllFeedTypes() async {
+  final response = await fetchAPI("feedType");
 
-    if (response is Map<String, dynamic>) {
-      if (response['success'] == true) {
-        final data = response['feedTypes'] as List<dynamic>? ?? [];
-        print('Feed types data: $data'); // Debugging
-        return data.map((json) {
-          try {
-            return FeedType.fromJson(json);
-          } catch (e) {
-            print('Error parsing FeedType: $e, JSON: $json'); // Debugging
-            throw Exception('Failed to parse feed type: $e');
-          }
-        }).toList();
-      } else {
-        final message = response['message'] ?? 'Unknown error';
-        print('API error: $message'); // Debugging
-        throw Exception('API error: $message');
-      }
-    } else {
-      print('Invalid response format: $response'); // Debugging
-      throw Exception('Unexpected response format: $response');
-    }
-  } catch (e) {
-    print('Error in getFeedTypes: $e'); // Debugging
-    throw Exception('Failed to fetch feed types: $e');
+  if (response is Map<String, dynamic> && response['success'] == true) {
+    final data = response['feedTypes'] as List<dynamic>? ?? [];
+    return data.map((json) => FeedType.fromJson(json)).toList();
+  } else {
+    throw Exception(response['message'] ?? 'Gagal mengambil daftar jenis pakan');
   }
 }
 
-// GET satu jenis pakan by ID
+/// Fetches a single feed type by ID.
 Future<FeedType> getFeedTypeById(int id) async {
   final response = await fetchAPI("feedType/$id");
-  if (response is Map && response['status'] == 200) {
-    // Jika data ditemukan
-    return FeedType.fromJson(response['data']);
+
+  if (response is Map<String, dynamic>) {
+    return FeedType.fromJson(response['feedType']);
   } else {
-    throw Exception(response['message'] ?? 'Failed to fetch feed type by ID');
+    throw Exception(response['message'] ?? 'Gagal mengambil jenis pakan berdasarkan ID');
   }
 }
 
-// CREATE jenis pakan baru
-Future<bool> addFeedType(FeedType feedType) async {
+/// Creates a new feed type.
+Future<FeedType> addFeedType({
+  required String name,
+}) async {
+  final data = {
+    'name': name.trim(),
+  };
+
   final response = await fetchAPI(
     "feedType",
     method: "POST",
-    data: feedType.toJson(),
+    data: data,
   );
-  if (response is Map && response['status'] == 201) {
-    // Jika data berhasil ditambahkan
-    return true;
+
+  if (response is Map<String, dynamic> && response['success'] == true) {
+    return FeedType.fromJson(response['data']);
   } else {
-    // Jika terjadi kesalahan
-    throw Exception(response['message'] ?? 'Failed to add feed type');
+    throw Exception(response['message'] ?? 'Gagal membuat jenis pakan baru');
   }
 }
 
-// UPDATE jenis pakan
-Future<bool> updateFeedType(int id, FeedType feedType) async {
+/// Updates an existing feed type.
+Future<FeedType> updateFeedType({
+  required int id,
+  required String name,
+}) async {
+  final data = {
+    'name': name.trim(),
+  };
+
   final response = await fetchAPI(
     "feedType/$id",
     method: "PUT",
-    data: feedType.toJson(),
+    data: data,
   );
-  if (response is Map && response['status'] == 200) {
-    // Jika data berhasil diperbarui
-    return true;
+
+  if (response is Map<String, dynamic> && response['success'] == true) {
+    return FeedType.fromJson(response['data']);
   } else {
-    // Jika terjadi kesalahan
-    throw Exception(response['message'] ?? 'Failed to update feed type');
+    throw Exception(response['message'] ?? 'Gagal memperbarui jenis pakan');
   }
 }
 
-// DELETE jenis pakan
+/// Deletes a feed type by ID.
 Future<bool> deleteFeedType(int id) async {
-  final response = await fetchAPI("feedType/$id", method: "DELETE");
-  if (response is Map && response['status'] == 204) {
-    // Jika data berhasil dihapus
+  final response = await fetchAPI(
+    "feedType/$id",
+    method: "DELETE",
+  );
+
+  if (response is Map<String, dynamic>) {
     return true;
   } else {
-    // Jika terjadi kesalahan
-    throw Exception(response['message'] ?? 'Failed to delete feed type');
+    throw Exception(response['message'] ?? 'Gagal menghapus jenis pakan');
   }
 }

@@ -10,6 +10,7 @@ import 'package:dairy_track/modules/pakan_sapi/menuPakan.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedType/allFeedType.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedType/addFeedType.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedType/editFeedType.dart';
+import 'package:dairy_track/modules/pakan_sapi/Nutrition/listNutrition.dart';
 import 'package:dairy_track/modules/pakan_sapi/feed/allFeed.dart';
 import 'package:dairy_track/modules/pakan_sapi/feed/editFeed.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedStock/allFeedStock.dart';
@@ -21,9 +22,6 @@ import 'package:dairy_track/modules/pakan_sapi/dailyFeedSchedule/editSchedule.da
 import 'package:dairy_track/modules/pakan_sapi/feedItem/listFeedItem.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedItem/addFeedItem.dart';
 import 'package:dairy_track/modules/pakan_sapi/feedItem/editFeedItem.dart';
-
-//penjualan
-import 'package:dairy_track/modules/penjualan/menuPenjualan.dart';
 
 //susu dan peternakan
 import 'package:dairy_track/modules/peternakan/blog/allBlog.dart';
@@ -88,6 +86,7 @@ class Routes {
   static const String feedType = '/jenis-pakan';
   static const String addfeedType = '/tambah-jenis-pakan';
   static const String editFeedType = '/edit-feed-type';
+  static const String listNutrisi = '/list-nutrisi';
   static const String feed = '/daftar-pakan';
   static const String editFeed = '/edit-pakan';
   static const String feedStock = '/stok-pakan';
@@ -101,7 +100,6 @@ class Routes {
   static const String editfeedItem = '/edit-item-pakan';
 
   static const String penjualan = '/penjualan';
-  // Pemeriksaan kesehatan (menu)
   static const String pemeriksaanKesehatan = '/pemeriksaan-kesehatan';
 
   // Pemeriksaan Penyakit Sapi
@@ -165,6 +163,7 @@ class Routes {
       editFeedType: (context) => EditFeedType(
             feedType: ModalRoute.of(context)!.settings.arguments as FeedType,
           ),
+      listNutrisi :(context) => NutritionListPage(),
       feed: (context) => AllFeeds(),
       editFeed: (context) => EditFeedPage(
             feed: ModalRoute.of(context)!.settings.arguments as Feed,
@@ -182,16 +181,16 @@ class Routes {
       editFeedSchedule: (context) => EditDailyFeedSchedule(),
 
       feedItem: (context) => DailyFeedItemsPage(),
-      addfeedItem: (context) => AddFeedItemPage(),
-      editfeedItem: (context) {
-        final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
-        if (dailyFeedId == null) {
-          return const Scaffold(
-            body: Center(child: Text('Error: Daily Feed ID not provided')),
-          );
-        }
-        return EditFeedItemPage(dailyFeedId: dailyFeedId);
-      },
+      // addfeedItem: (context) => AddFeedItemPage(),
+      // editfeedItem: (context) {
+      //   final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
+      //   if (dailyFeedId == null) {
+      //     return const Scaffold(
+      //       body: Center(child: Text('Error: Daily Feed ID not provided')),
+      //     );
+      //   }
+      //   return EditFeedItemPage(dailyFeedId: dailyFeedId);
+      // },
 
       // Penjualan route
       penjualan: (context) => MenuPenjualan(),

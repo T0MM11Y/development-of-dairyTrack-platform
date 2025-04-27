@@ -26,7 +26,6 @@ const NutritionRoutes = require("./routes/nutritionRoutes");
 const FeedStockRoutes = require("./routes/feedStockRoutes");
 const DailyFeedScheduleRoutes = require("./routes/dailyFeedScheduleRoutes");
 const DailyFeedItemsRoutes = require("./routes/dailyFeedItemRoutes");
-const DailyFeedNutrientsRoutes = require("./routes/dailyFeedNutrientsRoutes");
 const NotificationRoutes = require("./routes/notificationRoutes");
 
 // Jalankan asosiasi
@@ -101,7 +100,6 @@ app.use("/api/nutrition", NutritionRoutes);
 app.use("/api/feedStock", FeedStockRoutes);
 app.use("/api/dailyFeedSchedule", DailyFeedScheduleRoutes);
 app.use("/api/dailyFeedItem", DailyFeedItemsRoutes);
-app.use("/api/dailyFeedNutrients", DailyFeedNutrientsRoutes);
 app.use("/api/notification", NotificationRoutes);
 
 // Middleware untuk menangani endpoint yang tidak ditemukan

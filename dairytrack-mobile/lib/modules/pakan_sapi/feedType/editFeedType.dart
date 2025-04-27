@@ -30,14 +30,16 @@ class _EditFeedTypeState extends State<EditFeedType> {
       });
 
       try {
-        final updatedFeedType = FeedType(
-          id: widget.feedType.id,
-          name: _nameController.text.trim(),
-          createdAt: widget.feedType.createdAt,
-          updatedAt: DateTime.now(),
-        );
+        // Make sure the ID is not null before updating
+        if (widget.feedType.id == null) {
+          throw Exception('ID tidak valid');
+        }
 
-        await updateFeedType(widget.feedType.id, updatedFeedType);
+        // Call the API function with named parameters to match the API function signature
+        await updateFeedType(
+          id: widget.feedType.id!,
+          name: _nameController.text.trim(),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Jenis pakan berhasil diperbarui')),

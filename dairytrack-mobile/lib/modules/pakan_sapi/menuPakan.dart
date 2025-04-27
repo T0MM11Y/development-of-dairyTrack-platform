@@ -36,6 +36,15 @@ class MenuPakan extends StatelessWidget {
                   Navigator.pushNamed(context, '/jenis-pakan');
                 },
               ),
+              _buildWideMenuContainer(
+                context,
+                'Jenis Nutrisi',
+                Icons.abc_rounded,
+                Colors.amber,
+                () {
+                  Navigator.pushNamed(context, '/list-nutrisi');
+                },
+              ),
               _buildMenuContainer(
                 context,
                 'Pakan',
@@ -74,8 +83,8 @@ class MenuPakan extends StatelessWidget {
               ),
               _buildWideMenuContainer(
                 context,
-                'Nutrisi',
-                Icons.abc_rounded,
+                'Nutrisi Harian Sapi',
+                Icons.local_dining,
                 Colors.amber,
                 () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -90,13 +99,8 @@ class MenuPakan extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuContainer(
-    BuildContext context, 
-    String title, 
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap
-  ) {
+  Widget _buildMenuContainer(BuildContext context, String title, IconData icon,
+      Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -125,13 +129,8 @@ class MenuPakan extends StatelessWidget {
     );
   }
 
-  Widget _buildWideMenuContainer(
-    BuildContext context, 
-    String title, 
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap
-  ) {
+  Widget _buildWideMenuContainer(BuildContext context, String title,
+      IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -167,7 +166,8 @@ void main() {
   runApp(MaterialApp(
     home: MenuPakan(),
     routes: {
-      '/jenis-pakan': (context) => Text('Halaman Jenis Pakan'),  // Ganti dengan halaman AllFeedTypes
+      '/jenis-pakan': (context) =>
+          Text('Halaman Jenis Pakan'), // Ganti dengan halaman AllFeedTypes
     },
   ));
 }

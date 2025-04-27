@@ -24,29 +24,34 @@ class _EditFeedStockState extends State<EditFeedStock> {
 
   Future<void> _saveFeedStock() async {
     if (_formKey.currentState!.validate()) {
+      if (widget.feedStock.id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID stok pakan tidak valid')),
+        );
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
 
       try {
-        final feedStock = FeedStock(
-          id: widget.feedStock.id,
-          feedId: widget.feedStock.feedId,
+        await updateFeedStock(
+          id: widget.feedStock.id!,
           stock: double.parse(_stockController.text),
-          createdAt: widget.feedStock.createdAt,
-          updatedAt: DateTime.now(),
-          feed: widget.feedStock.feed,
         );
-
-        await updateFeedStock(widget.feedStock.id, feedStock);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Stok pakan berhasil diperbarui')),
-        );
-        Navigator.pop(context, true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Stok pakan berhasil diperbarui')),
+          );
+          Navigator.pop(context, true);
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memperbarui: $e')),
+          );
+        }
       } finally {
         setState(() {
           _isLoading = false;
@@ -71,7 +76,7 @@ class _EditFeedStockState extends State<EditFeedStock> {
                 child: Column(
                   children: [
                     TextFormField(
-                      initialValue: widget.feedStock.feed?.name ?? '',
+                      initialValue: widget.feedStock.feed?.name ?? 'Unknown',
                       decoration: const InputDecoration(
                         labelText: 'Pakan',
                         border: OutlineInputBorder(),

@@ -1,144 +1,229 @@
 import 'package:dairy_track/config/configApi5003.dart';
-import 'package:dairy_track/model/pakan/dailyFeedItem.dart';
+import 'package:dairy_track/model/pakan/feed.dart';
+import 'package:dairy_track/model/pakan/feedNutrition.dart';
 
-/// Fetches all daily feed items with optional filters.
-Future<List<FeedItem>> getDailyFeedItems({int? dailyFeedId, int? feedId}) async {
-  final queryParams = <String, String>{};
-  if (dailyFeedId != null) queryParams['daily_feed_id'] = dailyFeedId.toString();
-  if (feedId != null) queryParams['feed_id'] = feedId.toString();
-
-  final response = await fetchAPI(
-    "dailyFeedItem",
-    queryParams: queryParams.isEmpty ? null : queryParams,
-  );
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    final data = response['data'] as List<dynamic>? ?? [];
-    return data.map((json) => FeedItem.fromJson(json)).toList();
-  } else {
-    throw Exception(response['message'] ?? 'Failed to fetch daily feed items');
-  }
-}
-
-/// Fetches feed items for a specific daily feed schedule.
-Future<List<FeedItem>> getFeedItemsByScheduleId(int dailyFeedId) async {
-  final response = await fetchAPI("dailyFeedItem/daily-feeds/$dailyFeedId");
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    final data = response['data'] as List<dynamic>? ?? [];
-    return data.map((json) => FeedItem.fromJson(json)).toList();
-  } else {
-    throw Exception(response['message'] ?? 'Failed to fetch feed items for schedule');
-  }
-}
-
-/// Adds multiple feed items for a daily feed session.
-Future<bool> addFeedItems(int dailyFeedId, List<FeedItem> feedItems) async {
-  // Client-side validation
-  if (feedItems.isEmpty) {
-    throw Exception('At least one feed item is required');
-  }
-  if (feedItems.length > 3) {
-    throw Exception('Maximum 3 feed items allowed per session');
-  }
-
-  // Check for duplicate feed_ids
-  final feedIds = feedItems.map((item) => item.feedId).toList();
-  final uniqueFeedIds = feedIds.toSet();
-  if (feedIds.length != uniqueFeedIds.length) {
-    final duplicates = feedIds
-        .asMap()
-        .entries
-        .where((entry) => feedIds.indexOf(entry.value) != entry.key)
-        .map((entry) => entry.value)
-        .toSet();
-    throw Exception('Duplicate feed types detected: $duplicates');
-  }
-
-  final response = await fetchAPI(
-    "dailyFeedItem",
-    method: "POST",
-    data: {
-      "daily_feed_id": dailyFeedId,
-      "feed_items": feedItems.map((item) => {
-        "feed_id": item.feedId,
-        "quantity": item.quantity,
-      }).toList(),
-    },
-  );
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    if (response['errors'] != null && (response['errors'] as List).isNotEmpty) {
-      // Handle partial success
-      final errors = response['errors'] as List<dynamic>;
-      throw Exception(
-        'Some feed items failed to be added: ${errors.map((e) => e['error']).join(', ')}',
+class FeedItemService {
+  /// Adds multiple feed items to a daily feed schedule
+  static Future<Map<String, dynamic>> addFeedItems({
+    required int dailyFeedId,
+    required List<Map<String, dynamic>> feedItems,
+  }) async {
+    try {
+      final response = await fetchAPI(
+        "dailyFeedItem",
+        method: "POST",
+        data: {
+          'daily_feed_id': dailyFeedId,
+          'feed_items': feedItems,
+        },
       );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Feed items added successfully',
+          'data': response['data'],
+          'errors': response['errors'] ?? [],
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to add feed items');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
     }
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to add feed items');
-  }
-}
-
-/// Updates a single feed item.
-Future<bool> updateFeedItem(int id, FeedItem feedItem) async {
-  final response = await fetchAPI(
-    "dailyFeedItem/$id",
-    method: "PUT",
-    data: {
-      "quantity": feedItem.quantity,
-    },
-  );
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to update feed item');
-  }
-}
-
-/// Deletes a feed item.
-Future<bool> deleteFeedItem(int id) async {
-  final response = await fetchAPI(
-    "dailyFeedItem/$id",
-    method: "DELETE",
-  );
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to delete feed item');
-  }
-}
-
-/// Bulk updates multiple feed items.
-Future<bool> bulkUpdateFeedItems(List<FeedItem> feedItems) async {
-  if (feedItems.isEmpty) {
-    throw Exception('At least one feed item is required for bulk update');
   }
 
-  final response = await fetchAPI(
-    "dailyFeedItem/bulk-update",
-    method: "POST",
-    data: {
-      "items": feedItems.map((item) => {
-        "id": item.id,
-        "quantity": item.quantity,
-      }).toList(),
-    },
-  );
-
-  if (response is Map<String, dynamic> && response['success'] == true) {
-    final results = response['results'] as List<dynamic>? ?? [];
-    final failedUpdates = results.where((r) => !(r['success'] as bool)).toList();
-    if (failedUpdates.isNotEmpty) {
-      throw Exception(
-        'Some feed items failed to update: ${failedUpdates.map((r) => r['message']).join(', ')}',
+  /// Updates a single feed item
+  static Future<Map<String, dynamic>> updateFeedItem({
+    required int id,
+    required double quantity,
+  }) async {
+    try {
+      final response = await fetchAPI(
+        "dailyFeedItem/$id",
+        method: "PUT",
+        data: {
+          'quantity': quantity,
+        },
       );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Feed item updated successfully',
+          'data': response['data'],
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to update feed item');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
     }
-    return true;
-  } else {
-    throw Exception(response['message'] ?? 'Failed to bulk update feed items');
+  }
+
+  /// Deletes a feed item
+  static Future<Map<String, dynamic>> deleteFeedItem(int id) async {
+    try {
+      final response = await fetchAPI(
+        "dailyFeedItem/$id",
+        method: "DELETE",
+      );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Feed item deleted successfully',
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to delete feed item');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Bulk updates multiple feed items
+  static Future<Map<String, dynamic>> bulkUpdateFeedItems({
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      final response = await fetchAPI(
+        "dailyFeedItem/bulk-update",
+        method: "PUT",
+        data: {
+          'items': items,
+        },
+      );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'message': response['message'] ?? 'Feed items updated successfully',
+          'results': response['results'] ?? [],
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to update feed items');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Gets all feed items with optional filters
+  static Future<Map<String, dynamic>> getAllFeedItems({
+    int? dailyFeedId,
+    int? feedId,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (dailyFeedId != null) queryParams['daily_feed_id'] = dailyFeedId.toString();
+      if (feedId != null) queryParams['feed_id'] = feedId.toString();
+
+      final response = await fetchAPI(
+        "dailyFeedItem",
+        queryParams: queryParams.isEmpty ? null : queryParams,
+      );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+          'count': response['count'] ?? 0,
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to fetch feed items');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Gets a single feed item by ID
+  static Future<Map<String, dynamic>> getFeedItemById(int id) async {
+    try {
+      final response = await fetchAPI("dailyFeedItem/$id");
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to fetch feed item');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Gets all feed items for a specific daily feed schedule
+  static Future<Map<String, dynamic>> getFeedItemsByDailyFeedId(int dailyFeedId) async {
+    try {
+      final response = await fetchAPI("dailyFeedItem/daily-feed/$dailyFeedId");
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+          'count': response['count'] ?? 0,
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to fetch feed items');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Gets feed usage statistics by date range
+  static Future<Map<String, dynamic>> getFeedUsageByDate({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (startDate != null) queryParams['start_date'] = startDate;
+      if (endDate != null) queryParams['end_date'] = endDate;
+
+      final response = await fetchAPI(
+        "dailyFeedItem/usage",
+        queryParams: queryParams.isEmpty ? null : queryParams,
+      );
+
+      if (response is Map<String, dynamic> && response['success'] == true) {
+        return {
+          'success': true,
+          'data': response['data'],
+        };
+      } else {
+        throw Exception(response['message'] ?? 'Failed to fetch feed usage');
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
   }
 }

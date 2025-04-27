@@ -1,9 +1,7 @@
 import 'package:dairy_track/config/api/pakan/dailyFeedSchedule.dart';
 import 'package:dairy_track/config/api/peternakan/cow.dart';
-import 'package:dairy_track/config/api/peternakan/farmer.dart';
 import 'package:dairy_track/model/pakan/dailyFeedSchedule.dart';
 import 'package:dairy_track/model/peternakan/cow.dart';
-import 'package:dairy_track/model/peternakan/farmer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -24,14 +22,12 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
   DateTime _selectedDate = DateTime.now();
 
   // Form field controllers
-  int? _selectedFarmerId;
   int? _selectedCowId;
-  String _selectedSession = 'pagi'; // Default value
+  String _selectedSession = 'Pagi'; // Default value
 
   // Data lists
-  List<Peternak> _farmers = [];
   List<Cow> _cows = [];
-  final List<String> _sessions = ['pagi', 'siang', 'sore', 'malam'];
+  final List<String> _sessions = ['Pagi', 'Siang', 'Sore'];
 
   @override
   void didChangeDependencies() {
@@ -51,18 +47,15 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
       _dailyFeedSchedule =
           ModalRoute.of(context)!.settings.arguments as DailyFeedSchedule;
 
-      // Load farmers and cows data
-      final farmersData = await getFarmers();
+      // Load cows data
       final cowsData = await getCows();
 
       setState(() {
-        _farmers = farmersData;
         _cows = cowsData;
 
         // Set values from the daily feed schedule
-        _selectedFarmerId = _dailyFeedSchedule.farmerId;
         _selectedCowId = _dailyFeedSchedule.cowId;
-        _selectedDate = _dailyFeedSchedule.date;
+        _selectedDate = DateTime.parse(_dailyFeedSchedule.date);
         _selectedSession = _dailyFeedSchedule.session;
         _isInitializing = false;
       });
@@ -83,6 +76,17 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF17A2B8),
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null && picked != _selectedDate) {
@@ -94,9 +98,9 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
 
   Future<void> _updateDailyFeedSchedule() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedFarmerId == null || _selectedCowId == null) {
+      if (_selectedCowId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Harap pilih petani dan sapi')),
+          const SnackBar(content: Text('Harap pilih sapi')),
         );
         return;
       }
@@ -106,29 +110,21 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
       });
 
       try {
-        // Create updated daily feed schedule object
-        final updatedSchedule = DailyFeedSchedule(
-          id: _dailyFeedSchedule.id,
-          farmerId: _selectedFarmerId!,
-          cowId: _selectedCowId!,
-          date: _selectedDate,
-          session: _selectedSession,
-          weather: _dailyFeedSchedule.weather,
-          totalProtein: _dailyFeedSchedule.totalProtein,
-          totalEnergy: _dailyFeedSchedule.totalEnergy,
-          totalFiber: _dailyFeedSchedule.totalFiber,
-          createdAt: _dailyFeedSchedule.createdAt,
-          updatedAt: DateTime.now(),
-          feedItems: _dailyFeedSchedule.feedItems,
-        );
-
         // Call API to update
-        await updateDailyFeedSchedule(_dailyFeedSchedule.id, updatedSchedule);
+        await updateDailyFeed(
+          id: _dailyFeedSchedule.id,
+          cowId: _selectedCowId,
+          date: DateFormat('yyyy-MM-dd').format(_selectedDate),
+          session: _selectedSession,
+        );
 
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Jadwal pakan berhasil diperbarui')),
+            const SnackBar(
+              content: Text('Jadwal pakan berhasil diperbarui'),
+              backgroundColor: Colors.green,
+            ),
           );
           // Return to previous screen with success result
           Navigator.pop(context, true);
@@ -138,14 +134,16 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
         if (e.toString().contains('sudah ada')) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text('${e.toString()}. Silakan gunakan sesi yang berbeda.'),
+              content: Text('${e.toString()}. Silakan gunakan sesi yang berbeda.'),
               backgroundColor: Colors.orange,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal memperbarui jadwal: $e')),
+            SnackBar(
+              content: Text('Gagal memperbarui jadwal: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } finally {
@@ -156,12 +154,6 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
     }
   }
 
-  String _formatSessionDisplay(String session) {
-    return session.isNotEmpty
-        ? session[0].toUpperCase() + session.substring(1)
-        : session;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,7 +162,16 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
         backgroundColor: const Color(0xFF17A2B8),
       ),
       body: _isLoading || _isInitializing
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF17A2B8)),
+                  SizedBox(height: 16),
+                  Text('Memuat data...', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -178,42 +179,6 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Farmer selection
-                    const Text(
-                      'Pilih Peternak',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      value: _selectedFarmerId,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      items: _farmers.map((farmer) {
-                        return DropdownMenuItem<int>(
-                          value: farmer.id,
-                          child: Text('${farmer.firstName} ${farmer.lastName}'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedFarmerId = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Harap pilih peternak';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
                     // Cow selection
                     const Text(
                       'Pilih Sapi',
@@ -301,7 +266,7 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
                       items: _sessions.map((session) {
                         return DropdownMenuItem<String>(
                           value: session,
-                          child: Text(_formatSessionDisplay(session)),
+                          child: Text(session),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -312,21 +277,44 @@ class _EditDailyFeedScheduleState extends State<EditDailyFeedSchedule> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Submit button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _updateDailyFeedSchedule,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF17A2B8),
-                          foregroundColor: Colors.white,
+                    // Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.grey),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: const Text('Batal', style: TextStyle(fontSize: 16)),
+                          ),
                         ),
-                        child: const Text(
-                          'Perbarui',
-                          style: TextStyle(fontSize: 16),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _updateDailyFeedSchedule,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF17A2B8),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Perbarui', style: TextStyle(fontSize: 16)),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
