@@ -79,6 +79,8 @@ class HealthCheck(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Belum Ditangani'),
         ('handled', 'Sudah Ditangani'),
+        ('healthy', 'Sehat'),  # ✅ Tambahan status baru
+
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
@@ -118,7 +120,7 @@ class DiseaseHistory(models.Model):
 
     disease_name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    treatment_done = models.BooleanField(default=False)
+    treatment_done = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

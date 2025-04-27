@@ -128,31 +128,30 @@ const DiseaseHistoryCreatePage = ({ onClose, onSaved }) => {
                   <label className="form-label fw-bold">{t('disease_history.select_checkup')}
                   </label>
                   <select
-                    name="health_check"
-                    value={form.health_check}
-                    onChange={handleChange}
-                    className="form-select"
-                    required
-                  >
-                <option value="">-- {t('disease_history.select_checkup')}
-                --</option>
-{symptoms
-  .filter((sym) => {
-    const check = healthChecks.find((c) => c.id === sym.health_check);
-    return check && check.status !== "handled"; // ✅ hanya tampilkan jika belum handled
-  })
-  .map((sym) => {
-    const check = healthChecks.find((c) => c.id === sym.health_check);
-    const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
-    const cow = cows.find((c) => c.id === cowId);
-    return (
-      <option key={sym.id} value={check?.id}>
-        {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"}
-      </option>
-    );
-  })}
+  name="health_check"
+  value={form.health_check}
+  onChange={handleChange}
+  className="form-select"
+  required
+>
+  <option value="">-- {t('disease_history.select_checkup')} --</option>
 
-                  </select>
+  {healthChecks
+    .filter((check) => {
+      const status = (check.status || "").toLowerCase();
+      return status !== "handled" && status !== "healthy"; // ✅ Filter handled & healthy
+    })
+    .map((check) => {
+      const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
+      const cow = cows.find((c) => c.id === cowId);
+      return (
+        <option key={check.id} value={check.id}>
+          {cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan"}
+        </option>
+      );
+    })}
+</select>
+
                 </div>
 
                 {/* Info Pemeriksaan */}
