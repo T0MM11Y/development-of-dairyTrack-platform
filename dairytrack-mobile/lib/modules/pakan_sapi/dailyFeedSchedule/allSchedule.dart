@@ -33,7 +33,6 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
   // Format date to match web display
   String _formatDate(String dateStr) {
     try {
-      // Parse the date string to DateTime
       final date = DateTime.parse(dateStr);
       return DateFormat('dd MMM yyyy').format(date);
     } catch (e) {
@@ -41,7 +40,7 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
     }
   }
 
-  // Fetch and process data in a way similar to the web implementation
+  // Fetch and process data
   Future<List<Map<String, dynamic>>> fetchAndProcessFeeds() async {
     try {
       final results = await Future.wait([
@@ -84,7 +83,7 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
         return matchesSearchQuery;
       }).toList();
 
-      // Group feeds by date and cow like in the web version
+      // Group feeds by date and cow
       Map<String, Map<String, dynamic>> groupedFeeds = {};
 
       for (var feed in filteredFeeds) {
@@ -105,7 +104,7 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
         });
       }
 
-      // Create flattened rows for display in card format
+      // Create flattened rows for display
       List<Map<String, dynamic>> groupedRows = [];
       groupedFeeds.forEach((key, group) {
         groupedRows.add({
@@ -123,22 +122,74 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
   }
 
   void _refreshDailyFeedSchedules() {
-    setState(() {
-      isLoading = true;
-      _flattenedFeedsFuture = fetchAndProcessFeeds().catchError((error) {
-        print('Error in future: $error');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$error')),
-          );
-        }
-        return <Map<String, dynamic>>[];
-      }).whenComplete(() {
-        setState(() {
-          isLoading = false;
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        _flattenedFeedsFuture = fetchAndProcessFeeds().catchError((error) {
+          print('Error in future: $error');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$error')),
+            );
+          }
+          return <Map<String, dynamic>>[];
+        }).whenComplete(() {
+          if (mounted) {
+            setState(() {
+              isLoading = false;
+            });
+          }
         });
       });
-    });
+    }
+  }
+
+  void _showDeleteConfirmation(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah kamu yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (mounted) {
+                setState(() {
+                  isLoading = true;
+                });
+              }
+              try {
+                await deleteDailyFeed(id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data berhasil dihapus')),
+                  );
+                  _refreshDailyFeedSchedules();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus data: $e')),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -164,10 +215,12 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                   contentPadding: EdgeInsets.symmetric(horizontal: 12),
                 ),
                 onChanged: (value) {
-                  setState(() {
-                    searchQuery = value.trim();
-                    _refreshDailyFeedSchedules();
-                  });
+                  if (mounted) {
+                    setState(() {
+                      searchQuery = value.trim();
+                      _refreshDailyFeedSchedules();
+                    });
+                  }
                 },
               ),
             ),
@@ -198,7 +251,6 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                       final group = feedGroups[index];
                       final sessions =
                           group['sessions'] as List<Map<String, dynamic>>;
-                      final firstSession = sessions.first;
 
                       return Card(
                         elevation: 2,
@@ -283,10 +335,12 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
                                               onPressed: () {
                                                 Navigator.pushNamed(
                                                   context,
-                                                  '/editDailyFeedSchedule',
+                                                  '/edit-jadwal-pakan',
                                                   arguments: session['id'],
                                                 ).then((_) {
-                                                  _refreshDailyFeedSchedules();
+                                                  if (mounted) {
+                                                    _refreshDailyFeedSchedules();
+                                                  }
                                                 });
                                               },
                                               tooltip: 'Edit',
@@ -323,44 +377,14 @@ class _AllDailyFeedSchedulesState extends State<AllDailyFeedSchedules> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, '/createDailyFeedSchedule')
-              .then((_) => _refreshDailyFeedSchedules());
+          Navigator.pushNamed(context, '/tambah-jadwal-pakan').then((_) {
+            if (mounted) {
+              _refreshDailyFeedSchedules();
+            }
+          }); // Removed the stray comma
         },
         backgroundColor: const Color(0xFF17A2B8),
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(int id) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Konfirmasi'),
-        content: const Text('Apakah kamu yakin ingin menghapus data ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await deleteDailyFeed(id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Data berhasil dihapus')),
-                );
-                _refreshDailyFeedSchedules();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Gagal menghapus data: $e')),
-                );
-              }
-            },
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-          ),
-        ],
       ),
     );
   }

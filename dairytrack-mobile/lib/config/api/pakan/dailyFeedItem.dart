@@ -4,37 +4,38 @@ import 'package:dairy_track/model/pakan/feedNutrition.dart';
 
 class FeedItemService {
   /// Adds multiple feed items to a daily feed schedule
-  static Future<Map<String, dynamic>> addFeedItems({
-    required int dailyFeedId,
-    required List<Map<String, dynamic>> feedItems,
-  }) async {
-    try {
-      final response = await fetchAPI(
-        "dailyFeedItem",
-        method: "POST",
-        data: {
-          'daily_feed_id': dailyFeedId,
-          'feed_items': feedItems,
-        },
-      );
+  // In config/api/pakan/dailyFeedItem.dart
+Future<Map<String, dynamic>> addFeedItems({
+  required int dailyFeedId,
+  required List<Map<String, dynamic>> feedItems,
+}) async {
+  try {
+    final response = await fetchAPI(
+      "dailyFeedItem",
+      method: "POST",
+      data: {
+        'daily_feed_id': dailyFeedId,
+        'feed_items': feedItems,
+      },
+    );
 
-      if (response is Map<String, dynamic> && response['success'] == true) {
-        return {
-          'success': true,
-          'message': response['message'] ?? 'Feed items added successfully',
-          'data': response['data'],
-          'errors': response['errors'] ?? [],
-        };
-      } else {
-        throw Exception(response['message'] ?? 'Failed to add feed items');
-      }
-    } catch (e) {
+    if (response is Map<String, dynamic> && response['success'] == true) {
       return {
-        'success': false,
-        'message': e.toString(),
+        'success': true,
+        'message': response['message'] ?? 'Feed items added successfully',
+        'data': response['data'],
+        'errors': response['errors'] ?? [],
       };
+    } else {
+      throw Exception(response['message'] ?? 'Failed to add feed items');
     }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': e.toString(),
+    };
   }
+}
 
   /// Updates a single feed item
   static Future<Map<String, dynamic>> updateFeedItem({
