@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 
+
 class AddFeedItemPage extends StatefulWidget {
   const AddFeedItemPage({super.key});
 
@@ -22,7 +23,6 @@ class AddFeedItemPage extends StatefulWidget {
 class _AddFeedItemPageState extends State<AddFeedItemPage> {
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy');
   final _formKey = GlobalKey<FormState>();
-  final FeedItemService feedItemService = FeedItemService(); // Create instance
 
   bool _isLoading = true;
   String _errorMessage = '';
@@ -63,12 +63,10 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         getAllFeedStocks(),
       ]);
 
-      final List<DailyFeedSchedule> schedules =
-          results[0] as List<DailyFeedSchedule>;
+      final List<DailyFeedSchedule> schedules = results[0] as List<DailyFeedSchedule>;
       final List<Cow> cowsList = results[1] as List<Cow>;
       final List<Feed> feedsList = results[2] as List<Feed>;
-      final Map<String, dynamic> feedItemsResponse =
-          results[3] as Map<String, dynamic>;
+      final Map<String, dynamic> feedItemsResponse = results[3] as Map<String, dynamic>;
       final List<FeedStock> feedStocksList = results[4] as List<FeedStock>;
 
       final List<FeedItem> feedItemsList = feedItemsResponse['success'] == true
@@ -119,8 +117,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
 
     final Map<int, int> feedItemCounts = {};
     for (var item in _feedItems) {
-      feedItemCounts[item.dailyFeedId] =
-          (feedItemCounts[item.dailyFeedId] ?? 0) + 1;
+      feedItemCounts[item.dailyFeedId] = (feedItemCounts[item.dailyFeedId] ?? 0) + 1;
     }
 
     final validDailyFeeds = _dailyFeeds.where((feed) {
@@ -156,6 +153,19 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
   void _handleFormChange(int index, String field, dynamic value) {
     if (mounted) {
       setState(() {
+        if (field == 'feed_id') {
+          final selectedFeedIds = _formList
+              .asMap()
+              .entries
+              .where((entry) => entry.key != index && entry.value['feed_id'] != null)
+              .map((entry) => entry.value['feed_id'] as int)
+              .toSet();
+          if (selectedFeedIds.contains(value)) {
+            _showErrorDialog('Perhatian',
+                'Jenis pakan ini sudah dipilih. Silakan pilih jenis pakan lain.');
+            return;
+          }
+        }
         _formList[index][field] = value;
       });
     }
@@ -188,8 +198,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
     final selectedFeedIds = _formList
         .asMap()
         .entries
-        .where((entry) =>
-            entry.key != currentIndex && entry.value['feed_id'] != null)
+        .where((entry) => entry.key != currentIndex && entry.value['feed_id'] != null)
         .map((entry) => entry.value['feed_id'] as int)
         .toList();
 
@@ -201,14 +210,13 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
       return 0.0;
     }
 
-    final matchingStocks =
-        _feedStocks.where((stock) => stock.feedId == feedId).toList();
+    final matchingStocks = _feedStocks.where((stock) => stock.feedId == feedId).toList();
     if (matchingStocks.isEmpty) {
       return 0.0;
     }
 
     matchingStocks.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    return matchingStocks.first.stock;
+    return matchingStocks.first.stock ?? 0.0; // Added null safety
   }
 
   Future<void> _submitForm() async {
@@ -218,24 +226,22 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
 
     if (_selectedDailyFeedId == null) {
       if (mounted) {
-        _showErrorDialog(
-            'Error', 'Silakan pilih sesi pakan harian terlebih dahulu.');
+        _showErrorDialog('Error', 'Silakan pilih sesi pakan harian terlebih dahulu.');
       }
       return;
     }
 
     final List<Map<String, dynamic>> newItems = [];
     for (var item in _formList) {
-      if (item['feed_id'] == null ||
-          item['quantity'].toString().trim().isEmpty) {
+      final feedId = item['feed_id'] as int?;
+      final quantityStr = item['quantity']?.toString();
+      if (feedId == null || quantityStr == null || quantityStr.trim().isEmpty) {
         if (mounted) {
           _showErrorDialog('Error', 'Semua field harus diisi.');
         }
         return;
       }
 
-      final feedId = item['feed_id'] as int;
-      final quantityStr = item['quantity'].toString();
       final requestedQuantity = double.tryParse(quantityStr) ?? 0.0;
       final availableStock = _getFeedStock(feedId);
 
@@ -262,28 +268,6 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         'quantity': requestedQuantity,
         'feed_name': _feeds.firstWhere((feed) => feed.id == feedId).name,
       });
-    }
-
-    // Check for duplicate feed IDs
-    final feedIdCounts = <int, int>{};
-    for (var item in newItems) {
-      final feedId = item['feed_id'] as int;
-      feedIdCounts[feedId] = (feedIdCounts[feedId] ?? 0) + 1;
-    }
-    final duplicateFeedIds = feedIdCounts.entries
-        .where((entry) => entry.value > 1)
-        .map((e) => e.key);
-    if (duplicateFeedIds.isNotEmpty) {
-      final duplicateFeedNames = duplicateFeedIds
-          .map((id) => _feeds.firstWhere((feed) => feed.id == id).name)
-          .join(', ');
-      if (mounted) {
-        _showErrorDialog(
-          'Pakan Duplikat',
-          '$duplicateFeedNames sudah dipilih lebih dari satu kali. Silakan pilih jenis pakan yang berbeda.',
-        );
-      }
-      return;
     }
 
     // Show confirmation dialog
@@ -337,7 +321,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
               })
           .toList();
 
-      final response = await feedItemService.addFeedItems(
+      final response = await FeedItemService.addFeedItems(
         dailyFeedId: _selectedDailyFeedId!,
         feedItems: feedItems,
       );
@@ -348,8 +332,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
             'Berhasil!',
             'Berhasil menambahkan pakan untuk $sessionInfo:\n${itemDescriptions.join('\n')}',
           );
-          await Future.delayed(
-              const Duration(seconds: 2)); // Allow dialog to be seen
+          await Future.delayed(const Duration(seconds: 2)); // Allow dialog to be seen
           if (mounted) {
             Navigator.pop(context, true);
           }
@@ -411,9 +394,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
   }
 
   String _formatSession(String session) {
-    return session.isNotEmpty
-        ? session[0].toUpperCase() + session.substring(1)
-        : session;
+    return session.isNotEmpty ? session[0].toUpperCase() + session.substring(1) : session;
   }
 
   @override
@@ -424,8 +405,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         backgroundColor: const Color(0xFF17A2B8),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF17A2B8)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF17A2B8)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
@@ -448,8 +428,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                       ),
                     const Text(
                       'Sesi Pemberian Pakan',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16.0),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
                     ),
                     const SizedBox(height: 8.0),
                     DropdownButtonFormField<String>(
@@ -457,14 +436,12 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 16.0),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
                       ),
                       value: _selectedDailyFeedId?.toString(),
                       hint: const Text('Pilih sesi pemberian pakan'),
                       isExpanded: true,
-                      validator: (value) =>
-                          value == null ? 'Harap pilih sesi pakan' : null,
+                      validator: (value) => value == null ? 'Harap pilih sesi pakan' : null,
                       items: _dailyFeeds.isEmpty
                           ? [
                               const DropdownMenuItem(
@@ -476,8 +453,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                               final itemCount = _feedItems
                                   .where((item) => item.dailyFeedId == feed.id)
                                   .length;
-                              final cowName = _cowsMap[feed.cowId]?.name ??
-                                  'Sapi #${feed.cowId}';
+                              final cowName = _cowsMap[feed.cowId]?.name ?? 'Sapi #${feed.cowId}';
                               return DropdownMenuItem(
                                 value: feed.id.toString(),
                                 child: Text(
@@ -500,8 +476,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                     if (_selectedDailyFeedDetails != null) ...[
                       const Text(
                         'Detail Sesi',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16.0),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
                       ),
                       const SizedBox(height: 8.0),
                       Container(
@@ -519,8 +494,8 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   const Text('Tanggal',
                                       style: TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 4.0),
-                                  Text(_dateFormat.format(DateTime.parse(
-                                      _selectedDailyFeedDetails!.date))),
+                                  Text(_dateFormat
+                                      .format(DateTime.parse(_selectedDailyFeedDetails!.date))),
                                 ],
                               ),
                             ),
@@ -531,8 +506,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   const Text('Sesi',
                                       style: TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 4.0),
-                                  Text(_formatSession(
-                                      _selectedDailyFeedDetails!.session)),
+                                  Text(_formatSession(_selectedDailyFeedDetails!.session)),
                                 ],
                               ),
                             ),
@@ -543,9 +517,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   const Text('Sapi',
                                       style: TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 4.0),
-                                  Text(_cowsMap[
-                                              _selectedDailyFeedDetails!.cowId]
-                                          ?.name ??
+                                  Text(_cowsMap[_selectedDailyFeedDetails!.cowId]?.name ??
                                       'Sapi #${_selectedDailyFeedDetails!.cowId}'),
                                 ],
                               ),
@@ -567,16 +539,13 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                               Text(
                                 'Jenis Pakan #${index + 1}',
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16.0),
+                                    fontWeight: FontWeight.bold, fontSize: 16.0),
                               ),
                               if (_formList.length > 1)
                                 TextButton.icon(
                                   onPressed: () => _removeFeedItemRow(index),
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.red),
-                                  label: const Text('Hapus',
-                                      style: TextStyle(color: Colors.red)),
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  label: const Text('Hapus', style: TextStyle(color: Colors.red)),
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.zero,
                                     minimumSize: const Size(0, 0),
@@ -597,25 +566,22 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                       decoration: InputDecoration(
                                         labelText: 'Jenis Pakan',
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
+                                          borderRadius: BorderRadius.circular(8.0),
                                         ),
                                       ),
                                       value: item['feed_id'] as int?,
                                       hint: const Text('Pilih pakan'),
                                       isExpanded: true,
-                                      validator: (value) => value == null
-                                          ? 'Harap pilih jenis pakan'
-                                          : null,
-                                      items: _getAvailableFeedsForRow(index)
-                                          .map((feed) {
+                                      validator: (value) =>
+                                          value == null ? 'Harap pilih jenis pakan' : null,
+                                      items: _getAvailableFeedsForRow(index).map((feed) {
                                         return DropdownMenuItem(
                                           value: feed.id,
                                           child: Text(feed.name),
                                         );
                                       }).toList(),
-                                      onChanged: (value) => _handleFormChange(
-                                          index, 'feed_id', value),
+                                      onChanged: (value) =>
+                                          _handleFormChange(index, 'feed_id', value),
                                     ),
                                     if (item['feed_id'] != null) ...[
                                       const SizedBox(height: 8.0),
@@ -640,9 +606,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
                                   ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   initialValue: item['quantity'].toString(),
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
@@ -653,16 +617,15 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                       return 'Jumlah harus lebih dari 0';
                                     }
                                     if (item['feed_id'] != null) {
-                                      final availableStock =
-                                          _getFeedStock(item['feed_id']);
+                                      final availableStock = _getFeedStock(item['feed_id']);
                                       if (qty > availableStock) {
                                         return 'Stok hanya $availableStock kg';
                                       }
                                     }
                                     return null;
                                   },
-                                  onChanged: (value) => _handleFormChange(
-                                      index, 'quantity', value),
+                                  onChanged: (value) =>
+                                      _handleFormChange(index, 'quantity', value),
                                 ),
                               ),
                             ],

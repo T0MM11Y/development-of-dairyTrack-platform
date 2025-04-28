@@ -182,15 +182,15 @@ class Routes {
 
       feedItem: (context) => DailyFeedItemsPage(),
       addfeedItem: (context) => AddFeedItemPage(),
-      // editfeedItem: (context) {
-      //   final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
-      //   if (dailyFeedId == null) {
-      //     return const Scaffold(
-      //       body: Center(child: Text('Error: Daily Feed ID not provided')),
-      //     );
-      //   }
-      //   return EditFeedItemPage(dailyFeedId: dailyFeedId);
-      // },
+      editfeedItem: (context) {
+        final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
+        if (dailyFeedId == null) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Daily Feed ID not provided')),
+          );
+        }
+        return EditFeedItemPage(dailyFeedId: dailyFeedId);
+      },
 
       // Penjualan route
       penjualan: (context) => MenuPenjualan(),
