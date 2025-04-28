@@ -58,7 +58,18 @@ const DiseaseHistoryListPage = () => {
     setLoading(false); // ✅ selesai loading
     }
   };
+  const PAGE_SIZE = 3; // ⬅️ Mau 5/10/20 baris per halaman? Ubah ini saja
 
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Hitung total halaman
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+  
+  // Data yang tampil sesuai halaman
+  const paginatedData = data.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
   useEffect(() => {
     fetchData();
   }, []);
@@ -150,7 +161,7 @@ const DiseaseHistoryListPage = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => {
+          {paginatedData.map((item, idx) => {
               const hcId = resolveCheck(item.health_check);
               const check = checks.find((c) => c.id === hcId);
               const symptom = symptoms.find((s) => resolveCheck(s.health_check) === hcId);
@@ -159,8 +170,8 @@ const DiseaseHistoryListPage = () => {
 
               return (
                 <tr key={item.id}>
-                  <td>{idx + 1}</td>
-                  <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
+      <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+      <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
                   <td>{item.disease_name}</td>
                   <td>{cow ? `${cow.name} (${cow.breed})` : <em>-</em>}</td>
                   <td>
@@ -249,6 +260,27 @@ const DiseaseHistoryListPage = () => {
             })}
           </tbody>
         </table>
+        {totalPages > 1 && (
+  <div className="d-flex justify-content-center align-items-center mt-3">
+    <button
+      className="btn btn-outline-primary btn-sm me-2"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+    >
+      Prev
+    </button>
+    <span className="fw-semibold">
+      Page {currentPage} of {totalPages}
+    </span>
+    <button
+      className="btn btn-outline-primary btn-sm ms-2"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage(currentPage + 1)}
+    >
+      Next
+    </button>
+  </div>
+)}
       </div>
     </div>
   </div>

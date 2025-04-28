@@ -58,7 +58,18 @@ const SymptomListPage = () => {
       setLoading(false);
     }
   };
+  const PAGE_SIZE = 6; // ⬅️ Mau 5/10/20 baris per halaman? Ubah ini saja
 
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Hitung total halaman
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+  
+  // Data yang tampil sesuai halaman
+  const paginatedData = data.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
   const getCowName = (hcId) => {
     const hc = healthChecks.find((h) => h.id === hcId);
     const cow = cows.find((c) => c.id === hc?.cow);
@@ -309,7 +320,7 @@ const SymptomListPage = () => {
   </tr>
 </thead>
 <tbody>
-  {data.map((item, index) => {
+  {paginatedData.map((item, idx) => {
     const hc = healthChecks.find((h) => h.id === item.health_check);
     const cow = cows.find((c) => c.id === hc?.cow || c.id === hc?.cow?.id);
     const cowName = cow ? `${cow.name} (${cow.breed})` : "Sapi tidak ditemukan";
@@ -320,8 +331,8 @@ const SymptomListPage = () => {
 
     return (
       <tr key={item.id}>
-        <td>{index + 1}</td>
-        <td>{cowName}</td>
+      <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+      <td>{cowName}</td>
         <td>{statusBadge}</td>
         <td>
           <button
@@ -403,6 +414,28 @@ const SymptomListPage = () => {
 </tbody>
 
               </table>
+              {totalPages > 1 && (
+  <div className="d-flex justify-content-center align-items-center mt-3">
+    <button
+      className="btn btn-outline-primary btn-sm me-2"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+    >
+      Prev
+    </button>
+    <span className="fw-semibold">
+      Page {currentPage} of {totalPages}
+    </span>
+    <button
+      className="btn btn-outline-primary btn-sm ms-2"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage(currentPage + 1)}
+    >
+      Next
+    </button>
+  </div>
+)}
+
             </div>
           </div>
         </div>

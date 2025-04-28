@@ -47,7 +47,18 @@ const ReproductionListPage = () => {
       setLoading(false); // Selesai loading
     }
   };
+  const PAGE_SIZE = 3; // ⬅️ Mau 5/10/20 baris per halaman? Ubah ini saja
+
+  const [currentPage, setCurrentPage] = useState(1);
   
+  // Hitung total halaman
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+  
+  // Data yang tampil sesuai halaman
+  const paginatedData = data.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   const handleDelete = async (id) => {
     if (!id) return;
@@ -133,10 +144,10 @@ const ReproductionListPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((item, idx) => (
+                  {paginatedData.map((item, idx) => (
                     <tr key={item.id}>
-                      <td>{idx + 1}</td>
-                      <td>{getCowName(item.cow)}</td>
+      <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+      <td>{getCowName(item.cow)}</td>
                       <td>{item.calving_interval || "-"}</td>
                       <td>{item.service_period || "-"}</td>
                       <td>{item.conception_rate != null ? item.conception_rate + " %" : "-"}</td>
@@ -207,6 +218,27 @@ const ReproductionListPage = () => {
                   ))}
                 </tbody>
               </table>
+              {totalPages > 1 && (
+  <div className="d-flex justify-content-center align-items-center mt-3">
+    <button
+      className="btn btn-outline-primary btn-sm me-2"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+    >
+      Prev
+    </button>
+    <span className="fw-semibold">
+      Page {currentPage} of {totalPages}
+    </span>
+    <button
+      className="btn btn-outline-primary btn-sm ms-2"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage(currentPage + 1)}
+    >
+      Next
+    </button>
+  </div>
+)}
             </div>
           </div>
         </div>
