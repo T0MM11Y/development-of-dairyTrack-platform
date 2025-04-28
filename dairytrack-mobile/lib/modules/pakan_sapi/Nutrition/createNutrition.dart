@@ -26,21 +26,59 @@ class _AddNutritionState extends State<AddNutrition> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    final name = _nameController.text.trim();
+    final unit = _unitController.text.isNotEmpty ? _unitController.text.trim() : null;
 
+    // Tampilkan dialog konfirmasi
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi'),
+          content: Text(
+            'Apakah Anda yakin ingin menambah nutrisi "$name"${unit != null ? ' dengan satuan "$unit"' : ''}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false), // Cancel
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true), // Lanjut
+              child: const Text('Ya, Tambah'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Jika pengguna memilih "Batal", hentikan proses
+    if (confirm != true) {
+      return;
+    }
+
+    // Hanya panggil setState jika widget masih mounted
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    bool success = false;
     try {
       await addNutrisi(
-        name: _nameController.text,
-        unit: _unitController.text.isNotEmpty ? _unitController.text : null,
+        name: name,
+        unit: unit,
       );
-
+      success = true;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nutrisi baru berhasil ditambahkan')),
+          SnackBar(
+            content: Text(
+              'Berhasil menambah nutrisi "$name"${unit != null ? ' dengan satuan "$unit"' : ''}',
+            ),
+          ),
         );
-        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -49,10 +87,15 @@ class _AddNutritionState extends State<AddNutrition> {
         );
       }
     } finally {
+      // Hanya panggil setState jika widget masih mounted
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+      }
+      // Pindahkan Navigator.pop ke sini untuk memastikan widget tetap ada
+      if (success && mounted) {
+        Navigator.pop(context, true);
       }
     }
   }
@@ -100,7 +143,7 @@ class _AddNutritionState extends State<AddNutrition> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: _saveNutrition,
+                      onPressed: _isLoading ? null : _saveNutrition,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 93, 144, 231),
                         padding: const EdgeInsets.symmetric(vertical: 12),

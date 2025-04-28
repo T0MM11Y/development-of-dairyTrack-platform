@@ -15,29 +15,71 @@ class _AddFeedTypeState extends State<AddFeedType> {
 
   Future<void> _submitFeedType() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      final feedName = _nameController.text.trim();
 
-      try {
-        // Call the addFeedType API function with the required name parameter
-        await addFeedType(
-          name: _nameController.text.trim(),
-        );
+      // Tampilkan dialog konfirmasi
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Konfirmasi'),
+            content: Text(
+              'Apakah Anda yakin ingin menambah jenis pakan "$feedName"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), // Cancel
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), // Lanjut
+                child: const Text('Ya, Tambah'),
+              ),
+            ],
+          );
+        },
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jenis pakan berhasil ditambahkan')),
-        );
+      // Jika pengguna memilih "Batal", hentikan proses
+      if (confirm != true) {
+        return;
+      }
 
-        Navigator.pop(context, true); // Return true to trigger refresh on previous page
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menambahkan jenis pakan: $e')),
-        );
-      } finally {
+      // Hanya panggil setState jika widget masih mounted
+      if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isLoading = true;
         });
+      }
+
+      bool success = false;
+      try {
+        await addFeedType(
+          name: feedName,
+        );
+        success = true;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Berhasil menambah jenis pakan "$feedName"')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal menambahkan jenis pakan: $e')),
+          );
+        }
+      } finally {
+        // Hanya panggil setState jika widget masih mounted
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        // Pindahkan Navigator.pop ke sini untuk memastikan widget tetap ada
+        if (success && mounted) {
+          Navigator.pop(context, true);
+        }
       }
     }
   }

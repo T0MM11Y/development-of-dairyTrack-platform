@@ -1,5 +1,5 @@
 import 'package:dairy_track/modules/pakan_sapi/Nutrition/createNutrition.dart';
-import 'package:dairy_track/modules/pakan_sapi/Nutrition/editNutrition.dart'; // Add this import
+import 'package:dairy_track/modules/pakan_sapi/Nutrition/editNutrition.dart';
 import 'package:flutter/material.dart';
 import 'package:dairy_track/model/pakan/nutrition.dart';
 import 'package:dairy_track/config/api/pakan/nutrition.dart';
@@ -27,25 +27,33 @@ class _NutritionListPageState extends State<NutritionListPage> {
   }
 
   Future<void> _fetchNutritionList() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final nutritionList = await getAllNutrisi();
-      setState(() {
-        _nutritionList = nutritionList;
-        _filteredList = nutritionList;
-        _applySortAndFilter();
-      });
+      if (mounted) {
+        setState(() {
+          _nutritionList = nutritionList;
+          _filteredList = nutritionList;
+          _applySortAndFilter();
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data nutrisi: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat data nutrisi: ${e.toString()}')),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -97,29 +105,31 @@ class _NutritionListPageState extends State<NutritionListPage> {
                 value: 'name',
                 groupValue: _sortBy,
                 onChanged: (String? value) {
-                  setState(() {
-                    _sortBy = value!;
-                    _applySortAndFilter();
-                    Navigator.pop(context);
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _sortBy = value!;
+                      _applySortAndFilter();
+                      Navigator.pop(context);
+                    });
+                  }
                 },
               ),
               trailing: _sortBy == 'name'
                   ? Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward)
                   : null,
               onTap: () {
-                if (_sortBy == 'name') {
+                if (mounted) {
                   setState(() {
-                    _ascending = !_ascending;
-                  });
-                } else {
-                  setState(() {
-                    _sortBy = 'name';
-                    _ascending = true;
+                    if (_sortBy == 'name') {
+                      _ascending = !_ascending;
+                    } else {
+                      _sortBy = 'name';
+                      _ascending = true;
+                    }
+                    _applySortAndFilter();
+                    Navigator.pop(context);
                   });
                 }
-                _applySortAndFilter();
-                Navigator.pop(context);
               },
             ),
             ListTile(
@@ -128,29 +138,31 @@ class _NutritionListPageState extends State<NutritionListPage> {
                 value: 'unit',
                 groupValue: _sortBy,
                 onChanged: (String? value) {
-                  setState(() {
-                    _sortBy = value!;
-                    _applySortAndFilter();
-                    Navigator.pop(context);
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _sortBy = value!;
+                      _applySortAndFilter();
+                      Navigator.pop(context);
+                    });
+                  }
                 },
               ),
               trailing: _sortBy == 'unit'
                   ? Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward)
                   : null,
               onTap: () {
-                if (_sortBy == 'unit') {
+                if (mounted) {
                   setState(() {
-                    _ascending = !_ascending;
-                  });
-                } else {
-                  setState(() {
-                    _sortBy = 'unit';
-                    _ascending = true;
+                    if (_sortBy == 'unit') {
+                      _ascending = !_ascending;
+                    } else {
+                      _sortBy = 'unit';
+                      _ascending = true;
+                    }
+                    _applySortAndFilter();
+                    Navigator.pop(context);
                   });
                 }
-                _applySortAndFilter();
-                Navigator.pop(context);
               },
             ),
             ListTile(
@@ -159,29 +171,31 @@ class _NutritionListPageState extends State<NutritionListPage> {
                 value: 'date',
                 groupValue: _sortBy,
                 onChanged: (String? value) {
-                  setState(() {
-                    _sortBy = value!;
-                    _applySortAndFilter();
-                    Navigator.pop(context);
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _sortBy = value!;
+                      _applySortAndFilter();
+                      Navigator.pop(context);
+                    });
+                  }
                 },
               ),
               trailing: _sortBy == 'date'
                   ? Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward)
                   : null,
               onTap: () {
-                if (_sortBy == 'date') {
+                if (mounted) {
                   setState(() {
-                    _ascending = !_ascending;
-                  });
-                } else {
-                  setState(() {
-                    _sortBy = 'date';
-                    _ascending = true;
+                    if (_sortBy == 'date') {
+                      _ascending = !_ascending;
+                    } else {
+                      _sortBy = 'date';
+                      _ascending = true;
+                    }
+                    _applySortAndFilter();
+                    Navigator.pop(context);
                   });
                 }
-                _applySortAndFilter();
-                Navigator.pop(context);
               },
             ),
           ],
@@ -196,7 +210,7 @@ class _NutritionListPageState extends State<NutritionListPage> {
       MaterialPageRoute(builder: (context) => const AddNutrition()),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       _fetchNutritionList();
     }
   }
@@ -209,7 +223,7 @@ class _NutritionListPageState extends State<NutritionListPage> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       _fetchNutritionList();
     }
   }
@@ -221,7 +235,7 @@ class _NutritionListPageState extends State<NutritionListPage> {
         return AlertDialog(
           title: const Text('Konfirmasi'),
           content: Text(
-              'Apakah Anda yakin ingin menghapus nutrisi ${nutrition.name}?'),
+              'Apakah Anda yakin ingin menghapus nutrisi "${nutrition.name}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -229,28 +243,40 @@ class _NutritionListPageState extends State<NutritionListPage> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
-                setState(() {
-                  _isLoading = true;
-                });
+                Navigator.of(context).pop(); // Close the dialog
+                if (mounted) {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                }
 
+                bool success = false;
                 try {
                   await deleteNutrisi(nutrition.id!);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Nutrisi berhasil dihapus')),
-                  );
-
-                  _fetchNutritionList();
+                  success = true;
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Berhasil menghapus nutrisi "${nutrition.name}"')),
+                    );
+                  }
+                  // Fetch the updated list only on success
+                  if (mounted) {
+                    await _fetchNutritionList();
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content:
-                            Text('Gagal menghapus nutrisi: ${e.toString()}')),
-                  );
-                  setState(() {
-                    _isLoading = false;
-                  });
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Gagal menghapus nutrisi: ${e.toString()}')),
+                    );
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
                 }
               },
               child: const Text('Hapus', style: TextStyle(color: Colors.red)),
@@ -290,10 +316,12 @@ class _NutritionListPageState extends State<NutritionListPage> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _applySortAndFilter();
-                });
+                if (mounted) {
+                  setState(() {
+                    _searchQuery = value;
+                    _applySortAndFilter();
+                  });
+                }
               },
             ),
           ),

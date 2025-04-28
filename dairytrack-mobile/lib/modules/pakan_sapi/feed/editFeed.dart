@@ -107,12 +107,18 @@ class _EditFeedPageState extends State<EditFeedPage> {
       setState(() {
         // Filter out nutritions with null or invalid IDs or names
         _nutritions = nutritions
-            .where((n) => n.id != null && n.id! > 0 && n.name != null && n.name!.isNotEmpty)
+            .where((n) =>
+                n.id != null &&
+                n.id! > 0 &&
+                n.name != null &&
+                n.name!.isNotEmpty)
             .toList();
-        print('Filtered nutritions: ${_nutritions.map((n) => 'ID: ${n.id}, Name: ${n.name}').toList()}');
+        print(
+            'Filtered nutritions: ${_nutritions.map((n) => 'ID: ${n.id}, Name: ${n.name}').toList()}');
         // Update controllers with correct names
         for (int i = 0; i < _nutrisiList.length; i++) {
-          _nutrisiControllers[i].text = _getNutrisiName(_nutrisiList[i].nutrisiId);
+          _nutrisiControllers[i].text =
+              _getNutrisiName(_nutrisiList[i].nutrisiId);
         }
       });
     } catch (e) {
@@ -161,7 +167,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
     if (nutrisiId == 0) return 'Pilih Nutrisi';
     final nutrisi = _nutritions.firstWhere(
       (n) => n.id == nutrisiId,
-      orElse: () => Nutrisi(id: nutrisiId, name: 'Nutrisi Tidak Diketahui ($nutrisiId)'),
+      orElse: () =>
+          Nutrisi(id: nutrisiId, name: 'Nutrisi Tidak Diketahui ($nutrisiId)'),
     );
     return nutrisi.name ?? 'Nutrisi #${nutrisiId}';
   }
@@ -231,7 +238,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
     final availableNutritions =
         _nutritions.where((n) => !selectedNutrisiIds.contains(n.id)).toList();
 
-    print('Showing dropdown for index $index at position (left: $left, top: $top)');
+    print(
+        'Showing dropdown for index $index at position (left: $left, top: $top)');
 
     showMenu<Nutrisi>(
       context: context,
@@ -297,9 +305,11 @@ class _EditFeedPageState extends State<EditFeedPage> {
             nutrisiId: selectedValue.id!,
             amount: double.tryParse(_amountControllers[index].text) ?? 0.0,
           );
-          _nutrisiControllers[index].text =
-              selectedValue.id == 0 ? 'Pilih Nutrisi' : _getNutrisiName(selectedValue.id!);
-          print('Selected nutrisi for index $index: ${selectedValue.name} (ID: ${selectedValue.id})');
+          _nutrisiControllers[index].text = selectedValue.id == 0
+              ? 'Pilih Nutrisi'
+              : _getNutrisiName(selectedValue.id!);
+          print(
+              'Selected nutrisi for index $index: ${selectedValue.name} (ID: ${selectedValue.id})');
         });
       }
     });
@@ -434,13 +444,16 @@ class _EditFeedPageState extends State<EditFeedPage> {
     if (nutrisiChanges.isNotEmpty) {
       String changeDescription = '';
       if (nutrisiChanges.containsKey('Ditambahkan')) {
-        changeDescription += 'Ditambahkan: ${nutrisiChanges['Ditambahkan']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+        changeDescription +=
+            'Ditambahkan: ${nutrisiChanges['Ditambahkan']!.trim().replaceAll(RegExp(r';$'), '')}\n';
       }
       if (nutrisiChanges.containsKey('Diubah')) {
-        changeDescription += 'Diubah: ${nutrisiChanges['Diubah']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+        changeDescription +=
+            'Diubah: ${nutrisiChanges['Diubah']!.trim().replaceAll(RegExp(r';$'), '')}\n';
       }
       if (nutrisiChanges.containsKey('Dihapus')) {
-        changeDescription += 'Dihapus: ${nutrisiChanges['Dihapus']!.trim().replaceAll(RegExp(r';$'), '')}\n';
+        changeDescription +=
+            'Dihapus: ${nutrisiChanges['Dihapus']!.trim().replaceAll(RegExp(r';$'), '')}\n';
       }
       changes.add({
         'field': 'Nutrisi',
@@ -467,7 +480,7 @@ class _EditFeedPageState extends State<EditFeedPage> {
           children: [
             Icon(Icons.edit, color: Colors.orange),
             SizedBox(width: 10),
-            Text('Konfirmasi Perubahan'),
+            Text('Konfirmasi'),
           ],
         ),
         content: SingleChildScrollView(
@@ -495,7 +508,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                         if (change['old'].isNotEmpty)
                           Row(
                             children: [
-                              const Icon(Icons.arrow_back, size: 16, color: Colors.red),
+                              const Icon(Icons.arrow_back,
+                                  size: 16, color: Colors.red),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -510,8 +524,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                           ),
                         Row(
                           children: [
-                            const Icon(
-                                Icons.arrow_forward, size: 16, color: Colors.green),
+                            const Icon(Icons.arrow_forward,
+                                size: 16, color: Colors.green),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -540,7 +554,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('SIMPAN'),
           ),
@@ -656,7 +671,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
         children: [
           const Icon(Icons.info_outline, color: Colors.grey, size: 48),
           const SizedBox(height: 16),
-          const Text('Tidak ada jenis pakan tersedia.', textAlign: TextAlign.center),
+          const Text('Tidak ada jenis pakan tersedia.',
+              textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadFeedTypes,
@@ -688,7 +704,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Nama Pakan',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.feed),
                 filled: true,
                 fillColor: Colors.white,
@@ -709,7 +726,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
               readOnly: true,
               decoration: InputDecoration(
                 labelText: 'Jenis Pakan',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.category),
                 suffixIcon: const Icon(Icons.arrow_drop_down),
                 filled: true,
@@ -724,7 +742,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
               controller: _minStockController,
               decoration: InputDecoration(
                 labelText: 'Stok Minimum',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 prefixIcon: const Icon(Icons.inventory),
                 filled: true,
                 fillColor: Colors.white,
@@ -750,7 +769,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                 prefixIcon: const Icon(Icons.money),
                 prefixText: 'Rp ',
                 suffixText: ',-',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 filled: true,
                 fillColor: Colors.white,
                 floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -762,7 +782,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                     _formatPrice(double.tryParse(_digitsOnly(value)) ?? 0);
                 _priceController.value = TextEditingValue(
                   text: formattedValue,
-                  selection: TextSelection.collapsed(offset: formattedValue.length),
+                  selection:
+                      TextSelection.collapsed(offset: formattedValue.length),
                 );
               },
               validator: (value) {
@@ -799,6 +820,7 @@ class _EditFeedPageState extends State<EditFeedPage> {
                   child: Row(
                     children: [
                       Expanded(
+                        flex: 2, // Nutrition field takes twice the space
                         child: TextFormField(
                           controller: _nutrisiControllers[index],
                           readOnly: true,
@@ -817,6 +839,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
+                        flex:
+                            1, // Amount field takes half the space of nutrition
                         child: TextFormField(
                           controller: _amountControllers[index],
                           decoration: InputDecoration(
@@ -828,7 +852,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d*\.?\d*$')),
                           ],
                           onTap: () {
                             // Clear default '0' when user starts typing
@@ -841,9 +866,9 @@ class _EditFeedPageState extends State<EditFeedPage> {
                               _nutrisiList[index] = FeedNutrisi(
                                 feedId: widget.feed.id!,
                                 nutrisiId: nutrisi.nutrisiId,
-                                amount:
-                                    double.tryParse(value.isEmpty ? '0' : value) ??
-                                        0.0,
+                                amount: double.tryParse(
+                                        value.isEmpty ? '0' : value) ??
+                                    0.0,
                               );
                             });
                           },
@@ -871,7 +896,8 @@ class _EditFeedPageState extends State<EditFeedPage> {
             TextButton.icon(
               onPressed: _nutritions.isEmpty ? null : _addNutritionRow,
               icon: const Icon(Icons.add, color: Colors.blue),
-              label: const Text('Tambah Nutrisi', style: TextStyle(color: Colors.blue)),
+              label: const Text('Tambah Nutrisi',
+                  style: TextStyle(color: Colors.blue)),
             ),
             const SizedBox(height: 24),
             Row(
@@ -882,8 +908,10 @@ class _EditFeedPageState extends State<EditFeedPage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.blue[700],
                     side: BorderSide(color: Colors.blue[700]!),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text('Batal'),
                 ),
@@ -893,8 +921,10 @@ class _EditFeedPageState extends State<EditFeedPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

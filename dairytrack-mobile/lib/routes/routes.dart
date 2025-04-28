@@ -181,7 +181,7 @@ class Routes {
       editFeedSchedule: (context) => EditDailyFeedSchedule(),
 
       feedItem: (context) => DailyFeedItemsPage(),
-      // addfeedItem: (context) => AddFeedItemPage(),
+      addfeedItem: (context) => AddFeedItemPage(),
       // editfeedItem: (context) {
       //   final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
       //   if (dailyFeedId == null) {

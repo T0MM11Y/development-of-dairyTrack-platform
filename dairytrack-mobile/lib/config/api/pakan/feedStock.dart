@@ -62,7 +62,7 @@ Future<FeedStock> addFeedStock({
   };
 
   final response = await fetchAPI(
-    "feedStock",
+    "feedStock/add",
     method: "POST",
     data: data,
   );
