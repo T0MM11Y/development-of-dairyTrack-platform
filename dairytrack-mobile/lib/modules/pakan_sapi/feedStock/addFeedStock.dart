@@ -59,6 +59,34 @@ class _AddFeedStockState extends State<AddFeedStock> {
         return;
       }
 
+      // Tampilkan dialog konfirmasi
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Konfirmasi'),
+            content: Text(
+              'Apakah Anda yakin ingin menambah stok pakan ${_selectedFeed!.name} sebanyak ${_stockController.text} kg?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), // Cancel
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), // Lanjut
+                child: const Text('Ya, Tambah'),
+              ),
+            ],
+          );
+        },
+      );
+
+      // Jika pengguna memilih "Batal", hentikan proses
+      if (confirm != true) {
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
@@ -69,8 +97,13 @@ class _AddFeedStockState extends State<AddFeedStock> {
           additionalStock: double.parse(_stockController.text),
         );
         if (mounted) {
+          // Tampilkan snackbar sukses dengan jumlah stok yang ditambahkan
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Stok pakan berhasil ditambahkan')),
+            SnackBar(
+              content: Text(
+                'Berhasil menambah stok pakan ${_selectedFeed!.name} sebanyak ${_stockController.text} kg',
+              ),
+            ),
           );
           Navigator.pop(context, true);
         }

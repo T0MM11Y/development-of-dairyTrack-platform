@@ -25,35 +25,82 @@ class _EditFeedTypeState extends State<EditFeedType> {
 
   Future<void> _updateFeedType() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      final oldName = widget.feedType.name;
+      final newName = _nameController.text.trim();
 
+      // Tampilkan dialog konfirmasi
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Konfirmasi'),
+            content: Text(
+              'Apakah Anda yakin ingin mengubah jenis pakan dari "$oldName" menjadi "$newName"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), // Cancel
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), // Lanjut
+                child: const Text('Ya, Simpan'),
+              ),
+            ],
+          );
+        },
+      );
+
+      // Jika pengguna memilih "Batal", hentikan proses
+      if (confirm != true) {
+        return;
+      }
+
+      // Hanya panggil setState jika widget masih mounted
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      bool success = false;
       try {
         // Make sure the ID is not null before updating
         if (widget.feedType.id == null) {
           throw Exception('ID tidak valid');
         }
 
-        // Call the API function with named parameters to match the API function signature
         await updateFeedType(
           id: widget.feedType.id!,
-          name: _nameController.text.trim(),
+          name: newName,
         );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Jenis pakan berhasil diperbarui')),
-        );
-
-        Navigator.pop(context, true); // Return true to trigger refresh on previous page
+        success = true;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Berhasil mengubah jenis pakan dari "$oldName" menjadi "$newName"',
+              ),
+            ),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui jenis pakan: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memperbarui jenis pakan: $e')),
+          );
+        }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        // Hanya panggil setState jika widget masih mounted
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        // Pindahkan Navigator.pop ke sini untuk memastikan widget tetap ada
+        if (success && mounted) {
+          Navigator.pop(context, true);
+        }
       }
     }
   }

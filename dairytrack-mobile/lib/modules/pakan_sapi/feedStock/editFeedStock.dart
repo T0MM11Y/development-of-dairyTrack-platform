@@ -16,35 +16,91 @@ class _EditFeedStockState extends State<EditFeedStock> {
   final _stockController = TextEditingController();
   bool _isLoading = false;
 
+  // Fungsi untuk memformat angka
+  String formatNumber(double number) {
+    if (number % 1 == 0) {
+      return number.toInt().toString(); // Jika bilangan bulat, hapus desimal
+    } else {
+      return number
+          .toStringAsFixed(1)
+          .replaceAll(RegExp(r'\.0$'), ''); // Hapus .0 jika tidak perlu
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _stockController.text = widget.feedStock.stock.toString();
+    // Format stok awal untuk kolom input
+    _stockController.text = formatNumber(widget.feedStock.stock);
   }
 
   Future<void> _saveFeedStock() async {
     if (_formKey.currentState!.validate()) {
       if (widget.feedStock.id == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ID stok pakan tidak valid')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ID stok pakan tidak valid')),
+          );
+        }
         return;
       }
 
-      setState(() {
-        _isLoading = true;
-      });
+      // Ambil stok awal dan stok baru
+      final initialStock = widget.feedStock.stock;
+      final newStock = double.parse(_stockController.text);
 
+      // Tampilkan dialog konfirmasi
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Konfirmasi'),
+            content: Text(
+              'Apakah Anda yakin ingin mengubah stok pakan ${widget.feedStock.feed?.name ?? 'Unknown'} '
+              'dari ${formatNumber(initialStock)} kg menjadi ${formatNumber(newStock)} kg?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), // Cancel
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), // Lanjut
+                child: const Text('Ya, Simpan'),
+              ),
+            ],
+          );
+        },
+      );
+
+      // Jika pengguna memilih "Batal", hentikan proses
+      if (confirm != true) {
+        return;
+      }
+
+      // Hanya panggil setState jika widget masih mounted
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      bool success = false;
       try {
         await updateFeedStock(
           id: widget.feedStock.id!,
-          stock: double.parse(_stockController.text),
+          stock: newStock,
         );
+        success = true;
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Stok pakan berhasil diperbarui')),
+            SnackBar(
+              content: Text(
+                'Berhasil mengubah stok pakan ${widget.feedStock.feed?.name ?? 'Unknown'} '
+                'dari ${formatNumber(initialStock)} kg menjadi ${formatNumber(newStock)} kg',
+              ),
+            ),
           );
-          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
@@ -53,9 +109,16 @@ class _EditFeedStockState extends State<EditFeedStock> {
           );
         }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        // Hanya panggil setState jika widget masih mounted
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        // Pindahkan Navigator.pop ke sini untuk memastikan widget tetap ada selama operasi
+        if (success && mounted) {
+          Navigator.pop(context, true);
+        }
       }
     }
   }
