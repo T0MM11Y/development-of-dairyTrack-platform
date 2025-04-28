@@ -29,21 +29,25 @@ const HealthCheckListPage = () => {
     : {};
   
 
-  const fetchData = async () => {
-    setLoading(true); // Mulai loading
-    try {
-      const res = await getHealthChecks();
-      const cowList = await getCows();
-      setData(res);
-      setCows(cowList);
-      setError("");
-    } catch (err) {
-      console.error("Gagal mengambil data:", err.message);
-      setError("Gagal mengambil data. Pastikan server API aktif.");
-    } finally {
-      setLoading(false); // Selesai loading
-    }
-  };
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [resHealthChecks, resCows] = await Promise.all([
+          getHealthChecks(),
+          getCows(),
+        ]);
+    
+        setData(resHealthChecks);
+        setCows(resCows);
+        setError("");
+      } catch (err) {
+        console.error("Gagal mengambil data:", err.message);
+        setError("Gagal mengambil data. Pastikan server API aktif.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
   const getCowName = (cow) => {
     if (!cow) return "Tidak diketahui";
     if (typeof cow === "object") return cow.name || "Tidak diketahui";
@@ -82,7 +86,18 @@ const HealthCheckListPage = () => {
     }
   };
   
-  
+  const PAGE_SIZE = 6; 
+
+const [currentPage, setCurrentPage] = useState(1);
+
+// Hitung total halaman
+const totalPages = Math.ceil(data.length / PAGE_SIZE);
+
+// Data yang tampil sesuai halaman
+const paginatedData = data.slice(
+  (currentPage - 1) * PAGE_SIZE,
+  currentPage * PAGE_SIZE
+);
 
   useEffect(() => {
     fetchData();
@@ -151,9 +166,9 @@ const HealthCheckListPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-  {data.map((item, idx) => (
+                {paginatedData.map((item, idx) => (
     <tr key={item.id}>
-      <td>{idx + 1}</td>
+      <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
       <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
       <td>{getCowName(item.cow)}</td>
       <td>{item.rectal_temperature}°C</td>
@@ -246,6 +261,28 @@ const HealthCheckListPage = () => {
 
 
               </table>
+              {totalPages > 1 && (
+  <div className="d-flex justify-content-center align-items-center mt-3">
+    <button
+      className="btn btn-outline-primary btn-sm me-2"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+    >
+      Prev
+    </button>
+    <span className="fw-semibold">
+      Page {currentPage} of {totalPages}
+    </span>
+    <button
+      className="btn btn-outline-primary btn-sm ms-2"
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage(currentPage + 1)}
+    >
+      Next
+    </button>
+  </div>
+)}
+
             </div>
           </div>
         </div>
