@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -51,6 +53,13 @@ class ProductType(models.Model):
 
     def __str__(self):
         return f"{self.product_name}"
+    
+    def delete(self, *args, **kwargs):
+        if self.image:
+            image_path = os.path.join(settings.MEDIA_ROOT, str(self.image))
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+        super().delete(*args, **kwargs)
 
 
 # Model Stok Produk
@@ -103,19 +112,6 @@ class ProductStock(models.Model):
 
                 entry.save()
 
-    # def save(self, *args, **kwargs):
-    #     """ Periksa apakah produk sudah expired saat disimpan """
-    #     if self.expiry_at < timezone.now():
-    #         self.status = "expired"
-    #         # raise ValidationError("Tanggal kedaluwarsa tidak boleh lebih kecil dari waktu sekarang.")
-    #         # self.quantity = 0  # Set stok menjadi 0 jika expired
-    #         # StockHistory.objects.create(
-    #         #     product_stock=self,
-    #         #     change_type="expired",
-    #         #     quantity_change=self.quantity
-    #         # )
-
-    #     super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         previous = None
