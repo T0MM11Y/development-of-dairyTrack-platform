@@ -89,7 +89,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-const String BASE_URL = "http://172.20.10.3:5001";
+const String BASE_URL = "http://172.27.69.232:5001";
 const String CONTENT_TYPE_JSON = 'application/json';
 
 /// Fetch API Helper Function

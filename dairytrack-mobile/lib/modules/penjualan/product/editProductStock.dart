@@ -44,17 +44,21 @@ class _EditProductStockState extends State<EditProductStock> {
   Future<void> _fetchProductTypes() async {
     try {
       final productTypes = await getProductTypes();
-      setState(() {
-        _productTypes = productTypes;
-        _selectedProductType = productTypes.firstWhere(
-          (type) => type.id == widget.productStock.productType,
-          orElse: () => widget.productStock.productTypeDetail,
-        );
-      });
+      if (mounted) {
+        setState(() {
+          _productTypes = productTypes;
+          _selectedProductType = productTypes.firstWhere(
+            (type) => type.id == widget.productStock.productType,
+            orElse: () => widget.productStock.productTypeDetail,
+          );
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat jenis produk: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat jenis produk: $e')),
+        );
+      }
     }
   }
 
@@ -66,7 +70,7 @@ class _EditProductStockState extends State<EditProductStock> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         controller.text = DateFormat('yyyy-MM-dd').format(picked);
       });
@@ -90,20 +94,25 @@ class _EditProductStockState extends State<EditProductStock> {
           totalMilkUsed: double.parse(_totalMilkUsedController.text.trim()),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Stok produk berhasil diperbarui')),
-        );
-
-        Navigator.pop(context, true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Stok produk berhasil diperbarui')),
+          );
+          Navigator.pop(context, true);
+        }
       } catch (e) {
         print('Error in _submitProductStock: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui stok produk: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memperbarui stok produk: $e')),
+          );
+        }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }

@@ -18,7 +18,7 @@ class _CreateProductStockState extends State<CreateProductStock> {
   final _productionAtController = TextEditingController();
   final _expiryAtController = TextEditingController();
   ProdukType? _selectedProductType;
-  String _status = 'available'; 
+  String _status = 'available';
   bool _isLoading = false;
   List<ProdukType> _productTypes = [];
 

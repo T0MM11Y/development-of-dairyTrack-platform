@@ -182,15 +182,54 @@ class _ListProductStocksState extends State<ListProductStocks> {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 100,
-                                height: 100,
-                                child: Center(
-                                  child:
-                                      stock.productTypeDetail.image.isNotEmpty
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Remaining Stock',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.normal,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${stock.quantity} Liters',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 17,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    stock.status,
+                                    style: TextStyle(
+                                      color: stock.status == 'available'
+                                          ? Colors.green
+                                          : Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 100,
+                                    height: 100,
+                                    child: Center(
+                                      child: stock.productTypeDetail.image
+                                              .isNotEmpty
                                           ? Image.network(
                                               stock.productTypeDetail.image,
                                               fit: BoxFit.cover,
@@ -214,90 +253,133 @@ class _ListProductStocksState extends State<ListProductStocks> {
                                               size: 50,
                                               color: Colors.grey,
                                             ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Flexible(
-                                          child: Text(
-                                            stock.productTypeDetail.productName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 18,
-                                              color: Colors.blue,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
+                                        const SizedBox(height: 10),
                                         Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit,
-                                                  color: Colors.blue),
-                                              onPressed: () {
-                                                Navigator.pushNamed(
-                                                  context,
-                                                  '/edit-product-stock',
-                                                  arguments: stock,
-                                                ).then((result) {
-                                                  if (result == true) {
-                                                    _refreshData();
-                                                  }
-                                                });
-                                              },
-                                              tooltip: 'Edit',
+                                            const Text(
+                                              'Type: ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
                                             ),
-                                            isDeleting
-                                                ? const SizedBox(
-                                                    width: 24,
-                                                    height: 24,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                                  )
-                                                : IconButton(
-                                                    icon: const Icon(
-                                                        Icons.delete,
-                                                        color: Colors.red),
-                                                    onPressed: () =>
-                                                        _deleteProductStock(
-                                                            stock.id,
-                                                            stock
-                                                                .productTypeDetail
-                                                                .productName),
-                                                    tooltip: 'Hapus',
-                                                  ),
+                                            Expanded(
+                                              child: Text(
+                                                stock.productTypeDetail
+                                                    .productName,
+                                                style: TextStyle(
+                                                    color: Colors.grey[600]),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const Divider(
+                                            height: 16,
+                                            thickness: 1,
+                                            color: Colors.grey),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Text(
+                                              'Production: ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                DateFormat('dd MMM yyyy')
+                                                    .format(stock.productionAt),
+                                                style: TextStyle(
+                                                    color: Colors.grey[600]),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const Divider(
+                                            height: 16,
+                                            thickness: 1,
+                                            color: Colors.grey),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Text(
+                                              'Expired: ',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                DateFormat('dd MMM yyyy')
+                                                    .format(stock.expiryAt),
+                                                style: TextStyle(
+                                                    color: Colors.grey[600]),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Jumlah: ${stock.quantity} ${stock.productTypeDetail.unit}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                      overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/edit-product-stock',
+                                        arguments: stock,
+                                      ).then((result) {
+                                        if (result == true) {
+                                          _refreshData();
+                                        }
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.yellow,
+                                      foregroundColor: Colors.black,
                                     ),
-                                    Text(
-                                      'Kadaluarsa: ${DateFormat('dd MMM yyyy').format(stock.expiryAt)}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Status: ${stock.status}',
-                                      style: TextStyle(color: Colors.grey[600]),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
+                                    child: const Text('Edit'),
+                                  ),
+                                  const SizedBox(width: 15),
+                                  isDeleting
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : ElevatedButton(
+                                          onPressed: () => _deleteProductStock(
+                                              stock.id,
+                                              stock.productTypeDetail
+                                                  .productName),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                ],
                               ),
                             ],
                           ),
