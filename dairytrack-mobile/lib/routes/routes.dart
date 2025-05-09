@@ -61,6 +61,9 @@ import 'package:dairy_track/modules/penjualan/product/createProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/editProductStock.dart';
 import 'package:dairy_track/modules/penjualan/product/productHistory.dart';
 import 'package:dairy_track/modules/penjualan/finance/listFinance.dart';
+import 'package:dairy_track/modules/penjualan/finance/createIncome.dart';
+import 'package:dairy_track/modules/penjualan/finance/createExpense.dart';
+import 'package:dairy_track/modules/penjualan/finance/finance_statistics.dart';
 
 class Routes {
   // Route constants
@@ -130,6 +133,9 @@ class Routes {
   static const String productHistory = '/product-history';
 
   static const String listFinance = '/finance';
+  static const String createExpense = '/create-expense';
+  static const String createIncome = '/create-income';
+  static const String financeStatistics = '/finance-statistics';
   // Sales And Financial =======================================================
 
   // Route mapping
@@ -163,7 +169,7 @@ class Routes {
       editFeedType: (context) => EditFeedType(
             feedType: ModalRoute.of(context)!.settings.arguments as FeedType,
           ),
-      listNutrisi :(context) => NutritionListPage(),
+      listNutrisi: (context) => NutritionListPage(),
       feed: (context) => AllFeeds(),
       editFeed: (context) => EditFeedPage(
             feed: ModalRoute.of(context)!.settings.arguments as Feed,
@@ -182,15 +188,15 @@ class Routes {
 
       feedItem: (context) => DailyFeedItemsPage(),
       addfeedItem: (context) => AddFeedItemPage(),
-      editfeedItem: (context) {
-        final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
-        if (dailyFeedId == null) {
-          return const Scaffold(
-            body: Center(child: Text('Error: Daily Feed ID not provided')),
-          );
-        }
-        return EditFeedItemPage(dailyFeedId: dailyFeedId);
-      },
+      // editfeedItem: (context) {
+      //   final dailyFeedId = ModalRoute.of(context)!.settings.arguments as int?;
+      //   if (dailyFeedId == null) {
+      //     return const Scaffold(
+      //       body: Center(child: Text('Error: Daily Feed ID not provided')),
+      //     );
+      //   }
+      //   return EditFeedItemPage(dailyFeedId: dailyFeedId);
+      // },
 
       // Penjualan route
       penjualan: (context) => MenuPenjualan(),
@@ -231,8 +237,11 @@ class Routes {
             ModalRoute.of(context)!.settings.arguments as ProductStock;
         return EditProductStock(productStock: productStock);
       },
-      listFinance: (context) => FinanceList(),
       productHistory: (context) => ProductHistoryList(),
+      listFinance: (context) => FinanceList(),
+      createIncome: (context) => CreateIncomePage(),
+      createExpense: (context) => CreateExpensePage(),
+      financeStatistics: (context) => FinanceStatistics(),
       // Sales And Financial ===================================================================
     };
   }

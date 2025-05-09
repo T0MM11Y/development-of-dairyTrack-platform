@@ -13,6 +13,7 @@ class ListProductStocks extends StatefulWidget {
 class _ListProductStocksState extends State<ListProductStocks> {
   String? searchQuery;
   String? _selectedStatus; // null untuk "Semua"
+  String? _selectedProductType; // null untuk "Semua"
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
   int? _deletingId;
@@ -28,11 +29,26 @@ class _ListProductStocksState extends State<ListProductStocks> {
                 .contains(searchQuery!.toLowerCase());
         final matchesStatus =
             _selectedStatus == null || stock.status == _selectedStatus;
-        return matchesSearchQuery && matchesStatus;
+        final matchesProductType = _selectedProductType == null ||
+            stock.productTypeDetail.productName == _selectedProductType;
+        return matchesSearchQuery && matchesStatus && matchesProductType;
       }).toList();
     } catch (e) {
       print('Error fetching product stocks: $e');
       throw Exception('Failed to fetch product stocks: $e');
+    }
+  }
+
+  Future<List<String>> _fetchProductTypes() async {
+    try {
+      final productStocks = await getProductStocks();
+      return productStocks
+          .map((stock) => stock.productTypeDetail.productName)
+          .toSet()
+          .toList();
+    } catch (e) {
+      print('Error fetching product types: $e');
+      return [];
     }
   }
 
@@ -147,6 +163,48 @@ class _ListProductStocksState extends State<ListProductStocks> {
                         setState(() {
                           _selectedStatus = newValue;
                         });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<List<String>>(
+                      future: _fetchProductTypes(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          return const Text('Gagal memuat tipe produk');
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Text('Tidak ada tipe produk ditemukan');
+                        }
+
+                        final productTypes = snapshot.data!;
+                        return DropdownButtonFormField<String?>(
+                          value: _selectedProductType,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter Tipe Produk',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.category),
+                          ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('Semua'),
+                            ),
+                            ...productTypes.map((String type) {
+                              return DropdownMenuItem<String>(
+                                value: type,
+                                child: Text(type),
+                              );
+                            }).toList(),
+                          ],
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedProductType = newValue;
+                            });
+                          },
+                        );
                       },
                     ),
                   ],

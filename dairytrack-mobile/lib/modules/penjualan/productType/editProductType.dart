@@ -26,7 +26,6 @@ class _EditProductTypeState extends State<EditProductType> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi controller dengan data produk
     _nameController.text = widget.productType.productName;
     _descriptionController.text = widget.productType.productDescription;
     _priceController.text = widget.productType.price;
@@ -75,7 +74,7 @@ class _EditProductTypeState extends State<EditProductType> {
           const SnackBar(content: Text('Jenis produk berhasil diperbarui')),
         );
 
-        Navigator.pop(context, true); // Return true to trigger refresh
+        Navigator.pop(context, true);
       } catch (e) {
         print('Error in _submitProductType: $e');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,99 +105,107 @@ class _EditProductTypeState extends State<EditProductType> {
         backgroundColor: const Color.fromARGB(255, 93, 144, 231),
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nama Produk',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.label),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+      body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama Produk',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.label),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Nama produk tidak boleh kosong';
+                            }
+                            if (value.trim().length < 3) {
+                              return 'Nama harus minimal 3 karakter';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Nama produk tidak boleh kosong';
-                          }
-                          if (value.trim().length < 3) {
-                            return 'Nama harus minimal 3 karakter';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Deskripsi Produk',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.description),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _descriptionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Deskripsi Produk',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.description),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          minLines: 3,
+                          maxLines: null, // Allows dynamic expansion
+                          keyboardType: TextInputType.multiline,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Deskripsi tidak boleh kosong';
+                            }
+                            return null;
+                          },
                         ),
-                        maxLines: 3,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Deskripsi tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _priceController,
-                        decoration: const InputDecoration(
-                          labelText: 'Harga (Rp)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.attach_money),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _priceController,
+                          decoration: const InputDecoration(
+                            labelText: 'Harga (Rp)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.attach_money),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Harga tidak boleh kosong';
+                            }
+                            final parsed = double.tryParse(value.trim());
+                            if (parsed == null || parsed <= 0) {
+                              return 'Harga harus berupa angka positif';
+                            }
+                            return null;
+                          },
                         ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Harga tidak boleh kosong';
-                          }
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null || parsed <= 0) {
-                            return 'Harga harus berupa angka positif';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _unitController,
-                        decoration: const InputDecoration(
-                          labelText: 'Satuan (e.g., Liter, Kg)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.scale),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _unitController,
+                          decoration: const InputDecoration(
+                            labelText: 'Satuan (e.g., Liter, Kg)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.scale),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Satuan tidak boleh kosong';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Satuan tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
+                        const SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
                               _selectedImage == null
                                   ? (_existingImageUrl != null
                                       ? 'Gambar saat ini: ${_existingImageUrl!.split('/').last}'
@@ -206,73 +213,74 @@ class _EditProductTypeState extends State<EditProductType> {
                                   : 'Gambar baru: ${_selectedImage!.name}',
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: _pickImage,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[700],
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Pilih Gambar'),
+                            ),
+                          ],
+                        ),
+                        if (_selectedImage != null) ...[
+                          const SizedBox(height: 16),
+                          Image.file(
+                            File(_selectedImage!.path),
+                            height: 100,
+                            width: 100,
+                            fit: BoxFit.cover,
                           ),
-                          ElevatedButton(
-                            onPressed: _pickImage,
+                        ] else if (_existingImageUrl != null) ...[
+                          const SizedBox(height: 16),
+                          Image.network(
+                            _existingImageUrl!,
+                            height: 100,
+                            width: 100,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const CircularProgressIndicator();
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitProductType,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue[700],
                               foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                            child: const Text('Pilih Gambar'),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'Simpan',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
                           ),
-                        ],
-                      ),
-                      if (_selectedImage != null) ...[
-                        const SizedBox(height: 16),
-                        Image.file(
-                          File(_selectedImage!.path),
-                          height: 100,
-                          width: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ] else if (_existingImageUrl != null) ...[
-                        const SizedBox(height: 16),
-                        Image.network(
-                          _existingImageUrl!,
-                          height: 100,
-                          width: 100,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const CircularProgressIndicator();
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.broken_image,
-                              size: 50,
-                              color: Colors.grey,
-                            );
-                          },
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _submitProductType,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[700],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Simpan',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

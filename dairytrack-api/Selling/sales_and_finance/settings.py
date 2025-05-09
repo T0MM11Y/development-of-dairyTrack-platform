@@ -137,33 +137,33 @@ CORS_ALLOW_HEADERS = [
 # }
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'sales_and_finance_db',  # Ganti dengan nama database MySQL
-#         'USER': 'root',  # Ganti dengan username MySQL
-#         'PASSWORD': '',  # Ganti dengan password MySQL
-#         'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan
-#         'PORT': '3306',  # Port default MySQL
-#         'OPTIONS': {
-#             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
-#         },
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairytrack_operation',  # Ganti dengan nama database MySQL
-        'USER': 'dairytrack_operation',  # Ganti dengan username MySQL
-        'PASSWORD': 'c89d2e129b1b9d76b283c5989a33ef05f9cb88d2',  # Ganti dengan password MySQL
-        'HOST': 'd2pug.h.filess.io',  # Jika menggunakan server lain, ganti sesuai kebutuhan
-        'PORT': '61002',  # Port default MySQL
+        'NAME': 'db_dairytrack',  # Ganti dengan nama database MySQL
+        'USER': 'root',  # Ganti dengan username MySQL
+        'PASSWORD': '',  # Ganti dengan password MySQL
+        'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan
+        'PORT': '3306',  # Port default MySQL
         'OPTIONS': {
             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
         },
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'dairytrack_operation',  # Ganti dengan nama database MySQL
+#         'USER': 'dairytrack_operation',  # Ganti dengan username MySQL
+#         'PASSWORD': 'c89d2e129b1b9d76b283c5989a33ef05f9cb88d2',  # Ganti dengan password MySQL
+#         'HOST': 'd2pug.h.filess.io',  # Jika menggunakan server lain, ganti sesuai kebutuhan
+#         'PORT': '61002',  # Port default MySQL
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
+#         },
+#     }
+# }
 
 
 # Password validation
