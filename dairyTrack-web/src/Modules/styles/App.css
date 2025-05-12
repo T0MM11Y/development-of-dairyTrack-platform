@@ -1,0 +1,311 @@
+/* Header customization - Enhanced */
+#mainNav {
+    background-color: #343a40;
+    padding: 1rem 0;
+    transition: all 0.4s ease-in-out;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+#mainNav.scrolled {
+    padding: 0.5rem 0;
+    background-color: rgba(52, 58, 64, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+#mainNav .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+#mainNav .navbar-brand::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background-color: #ffdd57;
+    transition: width 0.3s ease;
+}
+
+#mainNav .navbar-brand:hover::after {
+    width: 100%;
+}
+
+#mainNav .nav-link {
+    color: #ffffff;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    font-weight: 500;
+}
+
+#mainNav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: #ffdd57;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+#mainNav .nav-link:hover {
+    color: #ffdd57;
+    transform: translateY(-2px);
+}
+
+#mainNav .nav-link:hover::after {
+    width: 80%;
+}
+
+#mainNav .nav-item.active .nav-link {
+    color: #ffdd57;
+}
+
+#mainNav .nav-item.active .nav-link::after {
+    width: 80%;
+}
+
+#mainNav .btn-primary {
+    background-color: #ffdd57;
+    border: none;
+    color: #343a40;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+    padding: 0.6rem 1.5rem;
+    border-radius: 30px;
+    box-shadow: 0 4px 8px rgba(255, 221, 87, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#mainNav .btn-primary:hover {
+    background-color: #ffc107;
+    color: #343a40;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(255, 221, 87, 0.4);
+}
+
+#mainNav .btn-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 221, 87, 0.3);
+}
+
+.logo-bg-white {
+    margin-right: 8px;
+    background-color: #ffffff;
+    padding: 3px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    width: 38px;
+    height: 38px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-bg-white:hover {
+    transform: rotate(5deg) scale(1.05);
+    box-shadow: 0 5px 10px rgba(102, 102, 102, 0.3);
+}
+
+/* Material Design Modal - Enhanced */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(56, 56, 56, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+    backdrop-filter: blur(5px);
+    transition: all 0.4s ease;
+}
+
+.modal-dialog {
+    max-width: 1000px;
+    width: 95%;
+    margin: 0 auto;
+    perspective: 1000px;
+}
+
+.material-modal {
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: modalFadeIn 0.5s ease-in-out;
+    background-color: #343a40;
+    color: #ffffff;
+    transform-origin: top center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.material-modal .modal-header {
+    background-color: #343a40;
+    color: #ffffff;
+    padding: 1.2rem 1.5rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    border-bottom: 2px solid #ffdd57;
+    display: flex;
+    align-items: center;
+}
+
+.material-modal .modal-header::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #ffdd57;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.material-modal .modal-body {
+    padding: 2rem;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+.material-modal .modal-footer {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.material-modal .btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 30px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.material-modal .btn-primary {
+    background-color: #ffdd57;
+    border: none;
+    color: #343a40;
+    box-shadow: 0 4px 8px rgba(255, 221, 87, 0.3);
+}
+
+.material-modal .btn-primary:hover {
+    background-color: #ffc107;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 221, 87, 0.5);
+}
+
+.material-modal .btn-primary:active {
+    transform: translateY(0);
+}
+
+.material-modal .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.material-modal .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.material-modal .btn-secondary:active {
+    transform: translateY(0);
+}
+
+/* Enhanced animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) rotateX(-10deg);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) rotateX(0);
+    }
+}
+
+/* Tambahan untuk fitur scrolling */
+@media (max-width: 992px) {
+    #mainNav .navbar-collapse {
+        background-color: rgba(52, 58, 64, 0.98);
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    #mainNav .nav-item {
+        margin: 0.5rem 0;
+    }
+}
+
+/* Efek hover untuk tombol dan elemen interaktif */
+.hover-effect {
+    transition: all 0.3s ease;
+}
+
+.hover-effect:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Efek pulse untuk elemen yang ingin ditonjolkan */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 221, 87, 0.4);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(255, 221, 87, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 221, 87, 0);
+    }
+}
+
+/* Custom scrollbar untuk modal body */
+.material-modal .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.material-modal .modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.material-modal .modal-body::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 221, 87, 0.5);
+    border-radius: 3px;
+}
+
+.material-modal .modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 221, 87, 0.8);
+}
