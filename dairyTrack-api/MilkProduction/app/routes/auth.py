@@ -35,7 +35,9 @@ def login():
         return jsonify({
             "success": True,
             "message": "Login successful",
+            "user_id": user.id,
             "username": username,
+            "name": user.name,
             "token": token,
             "role": user.role.name,
             "email": user.email,
@@ -43,8 +45,6 @@ def login():
         }), 200
 
     return jsonify({"success": False, "message": "Invalid credentials"}), 401
-
-
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
@@ -56,11 +56,32 @@ def logout():
 
     user = User.query.filter_by(token=token).first()
 
+    # Jika user dengan token ditemukan
     if user:
         user.token = None
         user.token_created_at = None
         db.session.commit()
         return jsonify({"success": True, "message": "Logout successful"}), 200
     
-    return jsonify({"success": False, "message": "Invalid token"}), 401
+    # Jika token tidak ditemukan, mencoba mencari user berdasarkan token dari request
+    # untuk menangani kasus di mana token di database kosong tapi user masih mencoba logout
+    # dengan token lama yang tersimpan di client
+    try:
+        # Ambil informasi dari token (misalnya, jika token berisi informasi yang bisa digunakan)
+        # Ini hanya contoh, Anda mungkin perlu menyesuaikan dengan format token Anda
+        # Atau menggunakan cara lain untuk mengidentifikasi user
+        user_id = request.get_json().get('user_id')  # Misalnya jika client juga mengirim user_id
 
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                # Pastikan token dan token_created_at kosong untuk berjaga-jaga
+                user.token = None
+                user.token_created_at = None
+                db.session.commit()
+                return jsonify({"success": True, "message": "User already logged out, session cleared"}), 200
+    except:
+        pass
+    
+    # Jika tidak ada cara untuk mengidentifikasi user atau terjadi error
+    return jsonify({"success": True, "message": "No active session found, considered as logged out"}), 200

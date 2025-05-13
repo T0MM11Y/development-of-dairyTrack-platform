@@ -20,6 +20,7 @@ import CreateCows from "./pages/Admin/CowManagement/CreateCows";
 import EditCow from "./pages/Admin/CowManagement/EditCows";
 import ListOfGallery from "./pages/Admin/HighlightsManagement/Gallery/ListOfGallery";
 import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
+import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -128,6 +129,11 @@ function App() {
           <ProtectedRoute path="/admin/list-of-blog">
             <AdminLayout>
               <ListOfBlog />
+            </AdminLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/admin/list-milking">
+            <AdminLayout>
+              <ListMilking />
             </AdminLayout>
           </ProtectedRoute>
         </Switch>

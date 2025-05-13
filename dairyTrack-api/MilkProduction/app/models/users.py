@@ -8,13 +8,13 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False)  # Tambahkan kolom name
+    name = Column(String(100), nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     contact = Column(String(15), nullable=True)
     religion = Column(String(50), nullable=True)
-    birth = Column(Date, nullable=True)  # Tambahkan kolom birth
+    birth = Column(Date, nullable=True)
     role_id = Column(Integer, ForeignKey('roles.id'), nullable=False)
     token = Column(String(255), nullable=True)
     token_created_at = Column(DateTime, nullable=True)
@@ -29,6 +29,9 @@ class User(db.Model):
         back_populates='managers',
         lazy='dynamic'
     )
+    
+    # New relationship with milking sessions
+    milking_sessions = relationship('MilkingSession', back_populates='milker')
 
     def __repr__(self):
         return (f"<User(name='{self.name}', username='{self.username}', email='{self.email}', "
