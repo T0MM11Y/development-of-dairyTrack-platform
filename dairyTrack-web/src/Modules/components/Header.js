@@ -13,14 +13,6 @@ const Header = () => {
   const history = useHistory();
 
   const toggleModal = () => {
-    // Check if user is already logged in
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      // User is already logged in, redirect directly to admin page
-      history.push("/admin");
-      return;
-    }
-
     // User is not logged in, show the login modal
     setShowModal(!showModal);
     setErrorMessage(""); // Clear error message when modal is toggled
