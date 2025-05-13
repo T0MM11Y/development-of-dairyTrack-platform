@@ -72,6 +72,16 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       link: "/admin/list-milking",
       showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
     },
+
+    {
+      id: "analytics",
+      title: "Analytics",
+      icon: "far fa-chart-line", // Using chart icon
+      submenu: [
+        { id: "milk-trend", title: "Milk Trend", link: "/admin/milk-trend" },
+      ],
+      showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
+    },
   ];
 
   // Filter menu items based on user role

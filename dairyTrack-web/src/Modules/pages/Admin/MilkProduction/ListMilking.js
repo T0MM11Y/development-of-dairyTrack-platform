@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import Swal from "sweetalert2";
 import { listCows } from "../../../../Modules/controllers/cowsController";
 import { listCowsByUser } from "../../../../Modules/controllers/cattleDistributionController";
+import { getAllFarmers } from "../../../../Modules/controllers/usersController";
 
 import {
   Button,
@@ -24,6 +25,8 @@ import {
   addMilkingSession,
   exportMilkProductionToPDF,
   exportMilkProductionToExcel,
+  editMilkingSession,
+  deleteMilkingSession, // Add this import
 } from "../../../../Modules/controllers/milkProductionController";
 
 const ListMilking = () => {
@@ -38,6 +41,8 @@ const ListMilking = () => {
   const [userManagedCows, setUserManagedCows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [farmers, setFarmers] = useState([]);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -52,7 +57,9 @@ const ListMilking = () => {
   const [selectedMilker, setSelectedMilker] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const sessionsPerPage = 8;
-
+  // Add near other state declarations
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewSession, setViewSession] = useState(null);
   // Add this near other useEffect hooks
   useEffect(() => {
     const fetchUserManagedCows = async () => {
@@ -71,6 +78,44 @@ const ListMilking = () => {
     fetchUserManagedCows();
   }, [currentUser]);
 
+  // Add this after getting user data from localStorage in useEffect
+  useEffect(() => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (userData) {
+        setCurrentUser(userData);
+        // Add console.log here
+        console.log("Logged in user role_id:", userData.role_id);
+        console.log("Current User Data:", userData);
+
+        setNewSession((prev) => ({
+          ...prev,
+          milker_id: userData.user_id || userData.id || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Error parsing user data from localStorage:", error);
+    }
+  }, []);
+  // Add this useEffect after other useEffects
+  useEffect(() => {
+    const fetchFarmers = async () => {
+      try {
+        const response = await getAllFarmers();
+        if (response.success) {
+          setFarmers(response.farmers || []);
+        } else {
+          console.error("Error fetching farmers:", response.message);
+        }
+      } catch (err) {
+        console.error("Error fetching farmers:", err);
+      }
+    };
+
+    if (currentUser?.role_id === 1) {
+      fetchFarmers();
+    }
+  }, [currentUser]);
   useEffect(() => {
     const fetchCows = async () => {
       try {
@@ -106,6 +151,8 @@ const ListMilking = () => {
   // Fetch milking sessions
   useEffect(() => {
     const fetchMilkingSessions = async () => {
+      setLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate loading delay
       try {
         const response = await getMilkingSessions();
         if (response.success && response.sessions) {
@@ -131,6 +178,22 @@ const ListMilking = () => {
 
     fetchMilkingSessions();
   }, []);
+  const milkingTimeInfo = {
+    Morning:
+      "Milking session conducted in the morning (before 12 PM), typically yields higher milk volume.",
+    Afternoon:
+      "Milking session during afternoon hours (12 PM - 6 PM), moderate milk production.",
+    Evening:
+      "Evening milking session (after 6 PM), usually the last session of the day.",
+  };
+
+  const openViewModal = (session) => {
+    setViewSession({
+      ...session,
+      milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
+    });
+    setShowViewModal(true);
+  };
 
   // Generate unique lists of cows and milkers for filtering
   const { uniqueCows, uniqueMilkers } = useMemo(() => {
@@ -155,6 +218,21 @@ const ListMilking = () => {
       uniqueMilkers: milkers,
     };
   }, [sessions]);
+
+  const handleDeleteSession = async (sessionId) => {
+    try {
+      const response = await deleteMilkingSession(sessionId);
+      if (response.success) {
+        // Refresh the sessions list after successful deletion
+        const sessionsResponse = await getMilkingSessions();
+        if (sessionsResponse.success && sessionsResponse.sessions) {
+          setSessions(sessionsResponse.sessions);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
+  };
 
   // Function to prepare modal for adding new session
   const handleOpenAddModal = () => {
@@ -323,16 +401,31 @@ const ListMilking = () => {
     }
   };
 
-  // Handle editing a milking session
   const handleEditSession = async (e) => {
     e.preventDefault();
-    // For now this is a placeholder - you'll need to implement an updateMilkingSession function
-    Swal.fire({
-      icon: "info",
-      title: "Feature Coming Soon",
-      text: "Editing milking sessions will be available soon.",
-    });
-    setShowEditModal(false);
+    try {
+      const response = await editMilkingSession(
+        selectedSession.id,
+        selectedSession
+      );
+
+      if (response.success) {
+        setShowEditModal(false);
+        // Refresh sessions list
+        const sessionsResponse = await getMilkingSessions();
+        if (sessionsResponse.success && sessionsResponse.sessions) {
+          setSessions(sessionsResponse.sessions);
+        }
+        setSelectedSession(null);
+      }
+    } catch (error) {
+      console.error("Error editing session:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to edit milking session",
+      });
+    }
   };
 
   const handleExportToPDF = async () => {
@@ -350,6 +443,7 @@ const ListMilking = () => {
   const openEditModal = (session) => {
     setSelectedSession({
       ...session,
+      cow_id: String(session.cow_id), // Konversi ke string
       milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
     });
     setShowEditModal(true);
@@ -377,7 +471,7 @@ const ListMilking = () => {
       );
     } else {
       periodBadge = (
-        <Badge bg="dark" className="ms-2">
+        <Badge bg="secondary" className="ms-2">
           Evening
         </Badge>
       );
@@ -427,36 +521,95 @@ const ListMilking = () => {
             <i className="fas fa-cow me-2" /> Milk Production Management
           </h4>
         </Card.Header>
+        <Card.Body className="border-bottom">
+          <div className="mb-3">
+            <h6 className="text-muted mb-2">
+              <i className="fas fa-info-circle me-1"></i>
+              Milking Time Information
+            </h6>
+            <div className="row g-2">
+              {Object.entries(milkingTimeInfo).map(([period, description]) => {
+                const periodColors = {
+                  Morning: "#fff3cd", // Light yellow for morning
+                  Afternoon: "#d1ecf1", // Light blue for afternoon
+                  Evening: "#f8d7da", // Light red for evening
+                };
 
-        <Card.Body>
-          <div className="d-flex justify-content-end mb-3">
-            <Button
-              variant="primary"
-              className="me-2"
-              onClick={handleOpenAddModal}
-            >
-              <i className="fas fa-plus me-2" /> Add Milking Session
-            </Button>
-            <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
-              <Button
-                variant="danger"
-                className="me-2"
-                onClick={handleExportToPDF}
-              >
-                <i className="fas fa-file-pdf me-2" /> PDF
-              </Button>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
-              <Button variant="success" onClick={handleExportToExcel}>
-                <i className="fas fa-file-excel me-2" /> Excel
-              </Button>
-            </OverlayTrigger>
+                return (
+                  <div className="col-md-4" key={period}>
+                    <div
+                      className="p-2 border rounded"
+                      style={{
+                        backgroundColor: periodColors[period] || "#f8f9fa",
+                        borderLeft: `4px solid ${
+                          periodColors[period]?.replace("f", "c") || "#0d6efd"
+                        }`,
+                      }}
+                    >
+                      <h6
+                        className="text-primary mb-1"
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "14px",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {period} Session
+                      </h6>
+                      <p
+                        className="text-muted mb-0"
+                        style={{ fontSize: "12px" }}
+                      >
+                        {description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        </Card.Body>
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <Button
+                variant="primary shadow-sm opacity-35"
+                onClick={handleOpenAddModal}
+                style={{
+                  opacity: 0.98,
+                  letterSpacing: "1.3px",
+                  fontWeight: "600",
+                  fontSize: "0.8rem",
+                }}
+              >
+                <i className="fas fa-plus me-2" /> Add Milking Session
+              </Button>
+            </div>
 
+            <div className="d-flex gap-2">
+              <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
+                <Button
+                  variant="danger shadow-sm opacity-35"
+                  onClick={handleExportToPDF}
+                >
+                  <i className="fas fa-file-pdf me-2" /> PDF
+                </Button>
+              </OverlayTrigger>
+
+              <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
+                <Button
+                  variant="success shadow-sm opacity-35"
+                  onClick={handleExportToExcel}
+                >
+                  <i className="fas fa-file-excel me-2" /> Excel
+                </Button>
+              </OverlayTrigger>
+            </div>
+          </div>
           {/* Stats Cards */}
           <Row className="mb-4">
             <Col md={3}>
-              <Card className="bg-primary text-white mb-3 shadow-sm">
+              <Card className="bg-primary text-white mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -471,7 +624,7 @@ const ListMilking = () => {
               </Card>
             </Col>
             <Col md={3}>
-              <Card className="bg-success text-white mb-3 shadow-sm">
+              <Card className="bg-success text-white mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -501,7 +654,7 @@ const ListMilking = () => {
               </Card>
             </Col>
             <Col md={3}>
-              <Card className="bg-warning text-dark mb-3 shadow-sm">
+              <Card className="bg-warning text-dark mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -523,7 +676,7 @@ const ListMilking = () => {
           <Row className="mb-4">
             <Col md={6} lg={4}>
               <InputGroup className="shadow-sm mb-3">
-                <InputGroup.Text className="bg-primary text-white border-0">
+                <InputGroup.Text className="bg-primary text-white border-0 opacity-75">
                   <i className="fas fa-search" />
                 </InputGroup.Text>
                 <FormControl
@@ -597,76 +750,251 @@ const ListMilking = () => {
 
           {/* Milking Sessions Table */}
           <div className="table-responsive">
-            <table className="table table-hover border">
-              <thead className="table-light">
-                <tr>
-                  <th style={{ width: "5%" }}>#</th>
-                  <th style={{ width: "15%" }}>Cow</th>
-                  <th style={{ width: "12%" }}>Milker</th>
-                  <th style={{ width: "10%" }}>Volume (L)</th>
-                  <th style={{ width: "18%" }}>Milking Time</th>
-                  <th style={{ width: "25%" }}>Notes</th>
-                  <th style={{ width: "15%" }}>Actions</th>
+            <table
+              className="table table-hover border rounded shadow-sm"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              <thead className="bg-gradient-light">
+                <tr
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  <th
+                    className="py-3 text-center"
+                    style={{
+                      width: "5%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    #
+                  </th>
+                  <th
+                    className="py-3"
+                    style={{
+                      width: "15%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Cow
+                  </th>
+                  <th
+                    className="py-3"
+                    style={{
+                      width: "12%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Milker
+                  </th>
+                  <th
+                    className="py-3"
+                    style={{
+                      width: "10%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Volume (L)
+                  </th>
+                  <th
+                    className="py-3"
+                    style={{
+                      width: "18%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Milking Time
+                  </th>
+                  <th
+                    className="py-3"
+                    style={{
+                      width: "25%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Notes
+                  </th>
+                  <th
+                    className="py-3 text-center"
+                    style={{
+                      width: "15%",
+                      fontWeight: "550",
+                      fontSize: "0.95rem",
+                      color: "#444",
+                    }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAndPaginatedSessions.currentSessions.map(
                   (session, index) => (
-                    <tr key={session.id}>
-                      <td>{(currentPage - 1) * sessionsPerPage + index + 1}</td>
-                      <td>
-                        <Badge bg="primary" pill className="me-2">
-                          {session.cow_id}
-                        </Badge>
-                        {session.cow_name || `-`}
+                    <tr
+                      key={session.id}
+                      className="align-middle"
+                      style={{ transition: "all 0.2s" }}
+                    >
+                      <td className="fw-bold text-center">
+                        {(currentPage - 1) * sessionsPerPage + index + 1}
                       </td>
-                      <td>{session.milker_name || `-`}</td>
                       <td>
-                        <Badge bg="success" pill>
+                        <div className="d-flex align-items-center">
+                          <Badge
+                            bg="info"
+                            pill
+                            className="me-1 px-1 py-1"
+                            style={{ letterSpacing: "0.5px" }}
+                          >
+                            ID : {session.cow_id}
+                          </Badge>
+                          <span
+                            className="fw-medium"
+                            style={{ letterSpacing: "0.3px" }}
+                          >
+                            {session.cow_name || `-`}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ letterSpacing: "0.3px", fontWeight: "500" }}>
+                        {session.milker_name || `-`}
+                      </td>
+                      <td>
+                        <Badge
+                          bg="success text-white shadow-sm opacity-75"
+                          className="px-1 py-1"
+                          style={{
+                            fontSize: "0.9rem",
+                            fontWeight: "500",
+                            letterSpacing: "0.8px",
+                            fontFamily: "'Roboto Mono', monospace",
+                          }}
+                        >
                           {parseFloat(session.volume).toFixed(2)} L
                         </Badge>
                       </td>
                       <td>
-                        {format(new Date(session.milking_time), "yyyy-MM-dd")}{" "}
-                        {getMilkingTimeLabel(session.milking_time)}
+                        <div
+                          style={{
+                            fontFamily: "'Roboto Mono', monospace",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          <span className="fw-bold">
+                            {format(
+                              new Date(session.milking_time),
+                              "yyyy-MM-dd"
+                            )}
+                          </span>{" "}
+                          {getMilkingTimeLabel(session.milking_time)}
+                        </div>
                       </td>
                       <td>
                         {session.notes ? (
                           <OverlayTrigger
                             placement="top"
-                            overlay={<Tooltip>{session.notes}</Tooltip>}
+                            overlay={
+                              <Tooltip
+                                style={{ fontFamily: "'Nunito', sans-serif" }}
+                              >
+                                {session.notes}
+                              </Tooltip>
+                            }
                           >
                             <span
-                              className="text-truncate d-inline-block"
-                              style={{ maxWidth: "200px" }}
+                              className="text-truncate d-inline-block fst-italic"
+                              style={{
+                                maxWidth: "400px",
+                                letterSpacing: "0.2px",
+                                color: "#555",
+                                fontSize: "0.9rem",
+                                borderLeft: "3px solid #eaeaea",
+                                paddingLeft: "8px",
+                              }}
                             >
                               {session.notes}
                             </span>
                           </OverlayTrigger>
                         ) : (
-                          "-"
+                          <span className="text-muted fst-italic">
+                            No notes provided
+                          </span>
                         )}
                       </td>
                       <td>
-                        <OverlayTrigger
-                          overlay={<Tooltip>Edit Session</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => openEditModal(session)}
+                        <div className="d-flex gap-2 justify-content-center">
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Edit Session</Tooltip>}
                           >
-                            <i className="fas fa-edit" />
-                          </Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger
-                          overlay={<Tooltip>View Details</Tooltip>}
-                        >
-                          <Button variant="outline-info" size="sm">
-                            <i className="fas fa-eye" />
-                          </Button>
-                        </OverlayTrigger>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="d-flex align-items-center justify-content-center shadow-sm"
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "8px",
+                                transition: "all 0.2s",
+                              }}
+                              onClick={() => openEditModal(session)}
+                            >
+                              <i className="fas fa-edit" />
+                            </Button>
+                          </OverlayTrigger>
+
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>View Details</Tooltip>}
+                          >
+                            <Button
+                              variant="outline-info"
+                              size="sm"
+                              className="d-flex align-items-center justify-content-center shadow-sm"
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "8px",
+                                transition: "all 0.2s",
+                              }}
+                              onClick={() => openViewModal(session)}
+                            >
+                              <i className="fas fa-eye" />
+                            </Button>
+                          </OverlayTrigger>
+
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Delete Session</Tooltip>}
+                          >
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              className="d-flex align-items-center justify-content-center shadow-sm"
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "8px",
+                                transition: "all 0.2s",
+                              }}
+                              onClick={() => handleDeleteSession(session.id)}
+                            >
+                              <i className="fas fa-trash-alt" />
+                            </Button>
+                          </OverlayTrigger>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -676,11 +1004,31 @@ const ListMilking = () => {
           </div>
 
           {filteredAndPaginatedSessions.totalItems === 0 && (
-            <div className="text-center py-4">
-              <i className="fas fa-search fa-3x text-muted mb-3"></i>
-              <p className="lead text-muted">
+            <div
+              className="text-center py-5 my-4"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              <i className="fas fa-search fa-3x text-muted mb-4 opacity-50"></i>
+              <p
+                className="lead text-muted"
+                style={{ letterSpacing: "0.5px", fontWeight: "500" }}
+              >
                 No milking sessions found matching your criteria.
               </p>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCow("");
+                  setSelectedMilker("");
+                  setSelectedDate("");
+                }}
+                style={{ letterSpacing: "0.5px" }}
+              >
+                <i className="fas fa-sync-alt me-2"></i> Reset Filters
+              </Button>
             </div>
           )}
 
@@ -800,6 +1148,178 @@ const ListMilking = () => {
         </Card.Body>
       </Card>
 
+      {/* View Milking Session Modal */}
+      <Modal
+        show={showViewModal}
+        onHide={() => setShowViewModal(false)}
+        size="lg"
+      >
+        <Modal.Header closeButton className="bg-light">
+          <Modal.Title
+            style={{
+              fontFamily: "'Roboto', sans-serif",
+              fontSize: "1.5rem",
+              letterSpacing: "0.5px",
+            }}
+          >
+            <i className="fas fa-eye me-2 text-info"></i>
+            View Milking Session Details
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {viewSession && (
+            <div className="p-3">
+              <Row className="mb-4">
+                <Col md={6}>
+                  <h6 className="text-muted mb-2 section-title">
+                    Cow Information
+                  </h6>
+                  <div className="info-section border-start ps-3">
+                    <p className="detail-row">
+                      <span className="label">Cow ID:</span>
+                      <span className="value">{viewSession.cow_id}</span>
+                    </p>
+                    <p className="detail-row">
+                      <span className="label">Cow Name:</span>
+                      <span className="value">
+                        {viewSession.cow_name || "N/A"}
+                      </span>
+                    </p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <h6 className="text-muted mb-2 section-title">
+                    Milker Information
+                  </h6>
+                  <div className="info-section border-start ps-3">
+                    <p className="detail-row">
+                      <span className="label">Milker ID:</span>
+                      <span className="value">{viewSession.milker_id}</span>
+                    </p>
+                    <p className="detail-row">
+                      <span className="label">Milker Name:</span>
+                      <span className="value">
+                        {viewSession.milker_name || "N/A"}
+                      </span>
+                    </p>
+                  </div>
+                </Col>
+              </Row>
+
+              <Row className="mb-4">
+                <Col md={6}>
+                  <h6 className="text-muted mb-2 section-title">
+                    Milking Details
+                  </h6>
+                  <div className="info-section border-start ps-3">
+                    <p className="detail-row">
+                      <span className="label">Volume:</span>
+                      <Badge
+                        bg="success"
+                        className="px-2 ms-2"
+                        style={{
+                          fontSize: "0.9rem",
+                          letterSpacing: "0.5px",
+                          fontFamily: "'Roboto Mono', monospace",
+                        }}
+                      >
+                        {parseFloat(viewSession.volume).toFixed(2)} L
+                      </Badge>
+                    </p>
+                    <p className="detail-row">
+                      <span className="label">Date:</span>
+                      <span className="value">
+                        {format(
+                          new Date(viewSession.milking_time),
+                          "yyyy-MM-dd"
+                        )}
+                      </span>
+                    </p>
+                    <p className="detail-row">
+                      <span className="label">Time:</span>
+                      <span className="value">
+                        {getMilkingTimeLabel(viewSession.milking_time)}
+                      </span>
+                    </p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <h6 className="text-muted mb-2 section-title">
+                    Additional Information
+                  </h6>
+                  <div className="info-section border-start ps-3">
+                    <p className="detail-row">
+                      <span className="label">Notes:</span>
+                    </p>
+                    <p className="notes-text fst-italic text-muted">
+                      {viewSession.notes || "No notes provided"}
+                    </p>
+                  </div>
+                </Col>
+              </Row>
+
+              <style jsx>{`
+                .section-title {
+                  font-family: "Nunito", sans-serif;
+                  font-size: 1rem;
+                  letter-spacing: 0.3px;
+                  font-weight: 600;
+                }
+
+                .info-section {
+                  border-left: 3px solid #eaeaea;
+                }
+
+                .detail-row {
+                  margin-bottom: 0.5rem;
+                  font-family: "Roboto", sans-serif;
+                  font-size: 0.95rem;
+                  letter-spacing: 0.2px;
+                }
+
+                .label {
+                  color: #666;
+                  min-width: 100px;
+                  display: inline-block;
+                  position: relative;
+                  margin-right: 8px;
+                }
+
+                .label::after {
+                  content: ":";
+                  position: absolute;
+                  right: 0;
+                }
+
+                .value {
+                  color: #333;
+                }
+
+                .notes-text {
+                  font-family: "Nunito", sans-serif;
+                  font-size: 0.9rem;
+                  letter-spacing: 0.2px;
+                  color: #666;
+                }
+              `}</style>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowViewModal(false)}
+            style={{
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: "0.9rem",
+              letterSpacing: "0.5px",
+              fontWeight: "500",
+            }}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       {/* Add Milking Session Modal */}
       <Modal
         show={showAddModal}
@@ -827,7 +1347,7 @@ const ListMilking = () => {
                     className="shadow-sm border-primary"
                   >
                     <option value="">-- Select Cow --</option>
-                    {/* Determine which list to use based on user role */}
+                    {/* If admin (role_id === 1), show all cows, else show only managed cows */}
                     {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                       .filter((cow) => cow.gender?.toLowerCase() === "female")
                       .map((cow) => (
@@ -838,27 +1358,60 @@ const ListMilking = () => {
                       ))}
                   </Form.Select>
                   <Form.Text className="text-muted">
-                    Select the female cow for this milking session
+                    {currentUser?.role_id === 1
+                      ? "Select any female cow from the herd"
+                      : "Select from your managed female cows"}
                   </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Milker</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={
-                      currentUser
-                        ? `${currentUser.name} (ID: ${currentUser.user_id})`
-                        : ""
-                    }
-                    disabled
-                    className="bg-light"
-                  />
-                  <Form.Text className="text-muted">
-                    Recording as current logged-in user
-                  </Form.Text>
-                  <Form.Control type="hidden" value={newSession.milker_id} />
+                  {currentUser?.role_id === 1 ? (
+                    <>
+                      <Form.Select
+                        value={newSession.milker_id}
+                        onChange={(e) =>
+                          setNewSession({
+                            ...newSession,
+                            milker_id: e.target.value,
+                          })
+                        }
+                        required
+                        className="shadow-sm"
+                      >
+                        <option value="">-- Select Milker --</option>
+                        {farmers.map((farmer) => (
+                          <option key={farmer.user_id} value={farmer.user_id}>
+                            {farmer.name} (ID: {farmer.user_id})
+                          </option>
+                        ))}
+                      </Form.Select>
+                      <Form.Text className="text-muted">
+                        Select the farmer who performed the milking
+                      </Form.Text>
+                    </>
+                  ) : (
+                    <>
+                      <Form.Control
+                        type="text"
+                        value={
+                          currentUser
+                            ? `${currentUser.name} (ID: ${currentUser.user_id})`
+                            : ""
+                        }
+                        disabled
+                        className="bg-light"
+                      />
+                      <Form.Text className="text-muted">
+                        Recording as current logged-in user
+                      </Form.Text>
+                      <Form.Control
+                        type="hidden"
+                        value={newSession.milker_id}
+                      />
+                    </>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -947,7 +1500,7 @@ const ListMilking = () => {
                   <Form.Group className="mb-3">
                     <Form.Label>Cow</Form.Label>
                     <Form.Select
-                      value={selectedSession.cow_id}
+                      value={String(selectedSession.cow_id)}
                       onChange={(e) =>
                         setSelectedSession({
                           ...selectedSession,
@@ -955,38 +1508,74 @@ const ListMilking = () => {
                         })
                       }
                       required
+                      className="shadow-sm border-primary"
                     >
                       <option value="">-- Select Cow --</option>
+                      {/* If admin (role_id === 1), show all cows, else show only managed cows */}
                       {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                         .filter((cow) => cow.gender?.toLowerCase() === "female")
                         .map((cow) => (
-                          <option key={cow.id} value={cow.id}>
-                            {cow.name} (ID: {cow.id})
+                          <option key={cow.id} value={String(cow.id)}>
+                            {cow.name} (ID: {cow.id}) -{" "}
+                            {cow.lactation_phase || "Unknown"}
                           </option>
                         ))}
                     </Form.Select>
+                    <Form.Text className="text-muted">
+                      {currentUser?.role_id === 1
+                        ? "Select any female cow from the herd"
+                        : "Select from your managed female cows"}
+                    </Form.Text>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Milker</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={
-                        currentUser
-                          ? `${currentUser.name} (ID: ${currentUser.user_id})`
-                          : ""
-                      }
-                      disabled
-                      className="bg-light"
-                    />
-                    <Form.Text className="text-muted">
-                      Recording as current logged-in user
-                    </Form.Text>
-                    <Form.Control
-                      type="hidden"
-                      value={selectedSession.milker_id}
-                    />
+                    {currentUser?.role_id === 1 ? (
+                      <>
+                        <Form.Select
+                          value={selectedSession.milker_id}
+                          onChange={(e) =>
+                            setSelectedSession({
+                              ...selectedSession,
+                              milker_id: e.target.value,
+                            })
+                          }
+                          required
+                          className="shadow-sm"
+                        >
+                          <option value="">-- Select Milker --</option>
+                          {farmers.map((farmer) => (
+                            <option key={farmer.user_id} value={farmer.user_id}>
+                              {farmer.name} (ID: {farmer.user_id})
+                            </option>
+                          ))}
+                        </Form.Select>
+                        <Form.Text className="text-muted">
+                          Select the farmer who performed the milking
+                        </Form.Text>
+                      </>
+                    ) : (
+                      <>
+                        <Form.Control
+                          type="text"
+                          value={
+                            currentUser
+                              ? `${currentUser.name} (ID: ${currentUser.user_id})`
+                              : ""
+                          }
+                          disabled
+                          className="bg-light"
+                        />
+                        <Form.Text className="text-muted">
+                          Recording as current logged-in user
+                        </Form.Text>
+                        <Form.Control
+                          type="hidden"
+                          value={selectedSession.milker_id}
+                        />
+                      </>
+                    )}
                   </Form.Group>
                 </Col>
               </Row>

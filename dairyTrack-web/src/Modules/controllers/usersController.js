@@ -226,3 +226,67 @@ export const exportUsersToExcel = async () => {
     console.error("Error exporting users to Excel:", error);
   }
 };
+
+// Function to get all farmers
+export const getAllFarmers = async () => {
+  try {
+    const response = await fetch(`${API_URL1}/user/farmers`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === "success") {
+        return {
+          success: true,
+          farmers: data.farmers.map((farmer) => ({
+            user_id: farmer.id,
+            name: farmer.name,
+            username: farmer.username,
+            email: farmer.email,
+            contact: farmer.contact,
+            religion: farmer.religion,
+            birth: farmer.birth,
+            role: farmer.role_name,
+          })),
+          totalFarmers: data.total_farmers,
+        };
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.message || "Failed to fetch farmers.",
+        });
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+    } else {
+      const error = await response.json();
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to fetch farmers.",
+      });
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An error occurred while fetching farmers.",
+    });
+    console.error("Error fetching farmers:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching farmers.",
+    };
+  }
+};

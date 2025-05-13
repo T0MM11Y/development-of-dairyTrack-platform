@@ -40,6 +40,7 @@ def login():
             "name": user.name,
             "token": token,
             "role": user.role.name,
+            "role_id": user.role.id,
             "email": user.email,
             "expires_in": TOKEN_EXPIRATION
         }), 200

@@ -276,3 +276,47 @@ def update_user(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+
+
+@user_bp.route('/farmers', methods=['GET'])
+def get_all_farmers():
+    try:
+        # Get all users with farmer role by joining User and Role tables
+        farmers = User.query.join(Role, User.role_id == Role.id).filter(
+            Role.name == 'farmer'  # Assuming 'farmer' is the role name for farmers
+        ).add_columns(
+            User.id,
+            User.name,
+            User.username,
+            User.email,
+            User.contact,
+            User.religion,
+            User.birth,
+            Role.name.label('role_name')
+        ).all()
+
+        # Format farmers data into list of dictionaries
+        farmers_list = [{
+            "id": farmer.id,
+            "name": farmer.name,
+            "username": farmer.username,
+            "email": farmer.email,
+            "contact": farmer.contact,
+            "religion": farmer.religion,
+            "birth": farmer.birth,
+            "role": farmer.role_name
+        } for farmer in farmers]
+
+        return jsonify({
+            "status": "success",
+            "message": "Farmers retrieved successfully",
+            "total_farmers": len(farmers_list),
+            "farmers": farmers_list
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500

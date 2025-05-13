@@ -180,3 +180,4 @@ def get_all_users_and_all_cows():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    

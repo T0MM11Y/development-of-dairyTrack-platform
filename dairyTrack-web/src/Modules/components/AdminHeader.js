@@ -132,8 +132,8 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
             style={{
               fontFamily: "Roboto, monospace",
               letterSpacing: "1.5px",
-              fontSize: "16px",
-              fontWeight: "bold",
+              fontSize: "15px",
+              fontWeight: "400",
               color: "#8F87F1",
               marginLeft: "10vh",
             }}
