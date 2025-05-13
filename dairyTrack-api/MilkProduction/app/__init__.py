@@ -12,6 +12,7 @@ from app.database.database import db
 from flask_migrate import Migrate
 from app.routes.category import category_bp
 from app.routes.blog_category import blog_category_bp
+from app.routes.milk_production import milk_production_bp
 import os
 
 
@@ -42,5 +43,6 @@ def create_app():
     app.register_blueprint(category_bp, url_prefix='/category')
     app.register_blueprint(blog_category_bp, url_prefix='/blog-category')
     app.register_blueprint(blog_bp, url_prefix='/blog')
-
+    app.register_blueprint(milk_production_bp, url_prefix='/milk-production')
+    
     return app

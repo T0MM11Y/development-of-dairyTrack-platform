@@ -17,12 +17,15 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       }
     }
   }, []);
-  const menuItems = [
+
+  // Define all menu items
+  const allMenuItems = [
     {
       id: "dashboard",
       title: "Dashboard",
       icon: "far fa-tachometer-alt", // Ikon regular tanpa fill
       link: "/admin",
+      showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
     },
     {
       id: "users",
@@ -32,12 +35,14 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         { id: "list-users", title: "List of Users", link: "/admin/list-users" },
         { id: "add-users", title: "Adding User", link: "/admin/add-users" },
       ],
+      showForRoles: ["admin", "supervisor"], // Not visible for farmers
     },
     {
       id: "cattle",
       title: "Cattle Distribution",
       icon: "far fa-link", // Ikon regular tanpa fill
       link: "/admin/cattle-distribution",
+      showForRoles: ["admin", "supervisor"], // Not visible for farmers
     },
     {
       id: "highlights",
@@ -47,8 +52,8 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         { id: "gallery", title: "Gallery", link: "/admin/list-of-gallery" },
         { id: "blog", title: "Blog", link: "/admin/list-of-blog" },
       ],
+      showForRoles: ["admin", "supervisor"], // Not visible for farmers
     },
-
     {
       id: "cow",
       title: "Cow Management",
@@ -57,15 +62,24 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         { id: "list-cows", title: "All Cows", link: "/admin/list-cows" },
         { id: "add-cow", title: "Add Cow", link: "/admin/add-cow" },
       ],
+      showForRoles: ["admin", "supervisor"], // Visible for farmers
     },
 
     {
-      id: "analytics",
-      title: "Analytics",
-      icon: "far fa-chart-line", // Ikon regular tanpa fill
-      link: "/admin/analytics",
+      id: "milking",
+      title: "Milking",
+      icon: "far fa-mug-hot", // Ikon regular tanpa fill
+      link: "/admin/list-milking",
+      showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
     },
   ];
+
+  // Filter menu items based on user role
+  const userRole = userData?.role?.toLowerCase() || "";
+  const menuItems = allMenuItems.filter(
+    (item) => item.showForRoles.includes(userRole) || userRole === "admin" // Admin sees everything
+  );
+
   return (
     <aside className={`admin-sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="profile">

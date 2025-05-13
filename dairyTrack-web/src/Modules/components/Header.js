@@ -29,10 +29,13 @@ const Header = () => {
   const handleLogin = async () => {
     const result = await login(username, password);
     if (result.success) {
+      // Get the user's role from the login result
+      const userRole = result.data?.role || "user";
+
       Swal.fire({
         icon: "success",
         title: "Login Successful",
-        text: "Welcome to the admin page!",
+        text: `Welcome to the ${userRole} page!`,
       });
       toggleModal(); // Close modal on successful login
       history.push("/admin"); // Redirect to admin page

@@ -71,8 +71,9 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       if (!userData?.token) {
         throw new Error("No token found in user data");
       }
+      console.log("User data:", userData);
+      const response = await logout(userData.token, userData.user_id);
 
-      const response = await logout(userData.token);
       if (!response.success) {
         throw new Error(response.message || "Logout failed");
       }

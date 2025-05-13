@@ -7,12 +7,12 @@ from app.models.user_cow_association import user_cow_association
 class Cow(db.Model):
     __tablename__ = 'cows'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # Fixed: removed db.Column
-    name = Column(String(50), nullable=False)  # Fixed: removed db.Column
-    birth = Column(Date, nullable=False)  # Fixed: removed db.Column
-    breed = Column(String(50), nullable=False)  # Fixed: removed db.Column
-    lactation_phase = Column(String(50), nullable=True)  # Fixed: removed db.Column
-    weight = Column(Float, nullable=True)  # Fixed: removed db.Column
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False)
+    birth = Column(Date, nullable=False)
+    breed = Column(String(50), nullable=False)
+    lactation_phase = Column(String(50), nullable=True)
+    weight = Column(Float, nullable=True)
     gender = Column(String(10), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -22,8 +22,12 @@ class Cow(db.Model):
         'User', 
         secondary=user_cow_association, 
         back_populates='managed_cows',
-        lazy='dynamic'  # Changed to dynamic for better query control
+        lazy='dynamic'
     )
+    
+    # New relationships
+    milking_sessions = relationship('MilkingSession', back_populates='cow')
+    daily_summaries = relationship('DailyMilkSummary', back_populates='cow')
 
     def __repr__(self):
         return (f"<Cow(name='{self.name}', birth={self.birth}, breed='{self.breed}', "
