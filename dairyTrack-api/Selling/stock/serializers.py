@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from django.conf import settings  # Untuk mengakses settings.MEDIA_URL
-from .models import RawMilk, ProductType, ProductStock, StockHistory
+from .models import RawMilk, ProductType, ProductStock, StockHistory, User
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'name', 'role_id']  # Sesuaikan field yang ingin ditampilkan
 
 class RawMilkSerializer(serializers.ModelSerializer):
 
@@ -10,33 +15,48 @@ class RawMilkSerializer(serializers.ModelSerializer):
 
 
 class ProductTypeSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), allow_null=True)
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
 
     class Meta:
         model = ProductType
-        fields = '__all__'
+        fields = ['id', 'product_name', 'product_description', 'image', 'price', 'unit', 
+                  'created_at', 'updated_at', 'created_by', 'updated_by', 
+                  'created_by_detail', 'updated_by_detail']
+
+    def validate_created_by(self, value):
+        if not User.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("User does not exist!")
+        return value
 
     def to_representation(self, instance):
-        # Override untuk menangani image URL dengan domain lengkap
         representation = super().to_representation(instance)
         request = self.context.get('request')
         if instance.image and request:
             representation['image'] = request.build_absolute_uri(f"{settings.MEDIA_URL}{instance.image}")
         else:
             representation['image'] = None
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
         return representation
-
 
 class ProductStockSerializer(serializers.ModelSerializer):
     product_type_detail = serializers.SerializerMethodField()
-    
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())  # Diubah agar bisa diisi
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), allow_null=True)  # Nullable
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
     class Meta:
         model = ProductStock
-        fields = ['id', 'product_type', 'product_type_detail', 'initial_quantity', 'quantity', 
-                  'production_at', 'expiry_at', 'status', 'total_milk_used', 'created_at', 'updated_at']
-        read_only_fields = ['quantity']  # Quantity tidak perlu diisi user
+        fields = ['id', 'product_type', 'product_type_detail', 'initial_quantity', 'quantity',
+                  'production_at', 'expiry_at', 'status', 'total_milk_used', 'created_at', 
+                  'updated_at', 'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail']
+        read_only_fields = ['quantity']
 
     def get_product_type_detail(self, obj):
-        # Mengembalikan data ProductType yang terkait dengan penanganan image URL
         product_type = obj.product_type
         request = self.context.get('request')
         image_url = None
@@ -51,10 +71,16 @@ class ProductStockSerializer(serializers.ModelSerializer):
             'unit': product_type.unit,
             'image': image_url
         }
+
     def create(self, validated_data):
-        # Set quantity sama dengan initial_quantity
         validated_data['quantity'] = validated_data['initial_quantity']
         return super().create(validated_data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
 
 class StockHistorySerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product_stock.product_type.product_name', read_only=True)
@@ -71,9 +97,3 @@ class StockHistorySerializer(serializers.ModelSerializer):
             'total_price',
             'change_date'
         ]
-
-
-# class StockHistorySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = StockHistory
-#         fields = ['change_type', 'quantity_change', 'product_stock', 'total_price', 'change_date']
