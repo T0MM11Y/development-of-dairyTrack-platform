@@ -102,6 +102,7 @@ WSGI_APPLICATION = 'sales_and_finance.wsgi.application'
 # Mengizinkan akses dari frontend React
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://172.20.10.3:5001"
 ]
 

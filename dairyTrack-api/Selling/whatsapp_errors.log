@@ -5328,3 +5328,164 @@ None
 Col widths: [None, None, None, None, None]
 Validation error creating IncomeType: {'name': [ErrorDetail(string='income type with this name already exists.', code='unique')]}
 Bad Request: /finance/income-types/
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\finance\views.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\sales_and_finance\settings.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /product-type/6
+Traceback (most recent call last):
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\utils\deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via PUT, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining PUT data. Change your form to point to localhost:5001/product-type/6/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Internal Server Error: /product-type/6
+Traceback (most recent call last):
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\utils\deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via PUT, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining PUT data. Change your form to point to localhost:5001/product-type/6/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Internal Server Error: /product-type/3
+Traceback (most recent call last):
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\utils\deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via DELETE, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining DELETE data. Change your form to point to localhost:5001/product-type/3/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Internal Server Error: /product-type/3
+Traceback (most recent call last):
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\utils\deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via DELETE, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining DELETE data. Change your form to point to localhost:5001/product-type/3/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Bad Request: /product-type
+Bad Request: /product-type
+Bad Request: /product-type
+Bad Request: /product-type
+Internal Server Error: /product-type/9
+Traceback (most recent call last):
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\utils\deprecation.py", line 131, in __call__
+    response = self.process_response(request, response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\khens\Envs\notesenv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via PUT, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining PUT data. Change your form to point to localhost:5001/product-type/9/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Bad Request: /product-type/9/
+Bad Request: /product-type/1/
+Bad Request: /product-type/1/
+Bad Request: /product-type/1/
+Bad Request: /product-type/1/
+Bad Request: /product-type/5/
+Bad Request: /product-type/5/
+Bad Request: /product-type/5/
+Bad Request: /product-type/5/
+Bad Request: /product-type/5/
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\stock\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\stock\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+Bad Request: /product-type/5/
+Bad Request: /product-type/5/
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\stock\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+Importing BlpImagePlugin
+Importing BmpImagePlugin
+Importing BufrStubImagePlugin
+Importing CurImagePlugin
+Importing DcxImagePlugin
+Importing DdsImagePlugin
+Importing EpsImagePlugin
+Importing FitsImagePlugin
+Importing FliImagePlugin
+Importing FpxImagePlugin
+Importing FtexImagePlugin
+Importing GbrImagePlugin
+Importing GifImagePlugin
+Importing GribStubImagePlugin
+Importing Hdf5StubImagePlugin
+Importing IcnsImagePlugin
+Importing IcoImagePlugin
+Importing ImImagePlugin
+Importing ImtImagePlugin
+Importing IptcImagePlugin
+Importing JpegImagePlugin
+Importing Jpeg2KImagePlugin
+Importing McIdasImagePlugin
+Importing MicImagePlugin
+Importing MpegImagePlugin
+Importing MpoImagePlugin
+Importing MspImagePlugin
+Importing PalmImagePlugin
+Importing PcdImagePlugin
+Importing PcxImagePlugin
+Importing PdfImagePlugin
+Importing PixarImagePlugin
+Importing PngImagePlugin
+Importing PpmImagePlugin
+Importing PsdImagePlugin
+Importing QoiImagePlugin
+Importing SgiImagePlugin
+Importing SpiderImagePlugin
+Importing SunImagePlugin
+Importing TgaImagePlugin
+Importing TiffImagePlugin
+Importing WebPImagePlugin
+Importing WmfImagePlugin
+Importing XbmImagePlugin
+Importing XpmImagePlugin
+Importing XVThumbImagePlugin
+Not Found: /product-type/3/
+STREAM b'IHDR' 16 13
+STREAM b'sRGB' 41 1
+STREAM b'gAMA' 54 4
+STREAM b'pHYs' 70 9
+STREAM b'IDAT' 91 22594
+Not Found: /product-type/9/
+Bad Request: /product-stock

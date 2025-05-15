@@ -22,6 +22,7 @@ import ListOfGallery from "./pages/Admin/HighlightsManagement/Gallery/ListOfGall
 import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
 import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
 import MilkTrend from "./pages/Admin/MilkProduction/MilkTrend";
+import ProductType from "./pages/Admin/ProductType/listProductType";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -141,6 +142,13 @@ function App() {
           <ProtectedRoute path="/admin/milk-trend">
             <AdminLayout>
               <MilkTrend />
+            </AdminLayout>
+          </ProtectedRoute>
+
+          {/* Saless and Fincancial Section */}
+          <ProtectedRoute path="/admin/product-type">
+            <AdminLayout>
+              <ProductType />
             </AdminLayout>
           </ProtectedRoute>
         </Switch>

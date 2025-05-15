@@ -26,8 +26,33 @@ class ProductTypeSerializer(serializers.ModelSerializer):
                   'created_at', 'updated_at', 'created_by', 'updated_by', 
                   'created_by_detail', 'updated_by_detail']
 
+    def to_internal_value(self, data):
+        # Salin data agar tidak mengubah input asli
+        data = data.copy()
+        
+        # Konversi created_by dari string ke integer jika string
+        if 'created_by' in data and isinstance(data['created_by'], str):
+            try:
+                data['created_by'] = int(data['created_by'])
+            except ValueError:
+                raise serializers.ValidationError({"created_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+
+        # Konversi updated_by dari string ke integer jika string
+        if 'updated_by' in data and isinstance(data['updated_by'], str):
+            try:
+                data['updated_by'] = int(data['updated_by']) if data['updated_by'] else None
+            except ValueError:
+                raise serializers.ValidationError({"updated_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+
+        return super().to_internal_value(data)
+
     def validate_created_by(self, value):
         if not User.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("User does not exist!")
+        return value
+
+    def validate_updated_by(self, value):
+        if value and not User.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("User does not exist!")
         return value
 
@@ -44,8 +69,8 @@ class ProductTypeSerializer(serializers.ModelSerializer):
 
 class ProductStockSerializer(serializers.ModelSerializer):
     product_type_detail = serializers.SerializerMethodField()
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())  # Diubah agar bisa diisi
-    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), allow_null=True)  # Nullable
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), allow_null=True)
     created_by_detail = UserSerializer(source='created_by', read_only=True)
     updated_by_detail = UserSerializer(source='updated_by', read_only=True)
 
@@ -55,6 +80,33 @@ class ProductStockSerializer(serializers.ModelSerializer):
                   'production_at', 'expiry_at', 'status', 'total_milk_used', 'created_at', 
                   'updated_at', 'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail']
         read_only_fields = ['quantity']
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        
+        if 'created_by' in data and isinstance(data['created_by'], str):
+            try:
+                data['created_by'] = int(data['created_by'])
+            except ValueError:
+                raise serializers.ValidationError({"created_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+
+        if 'updated_by' in data and isinstance(data['updated_by'], str):
+            try:
+                data['updated_by'] = int(data['updated_by']) if data['updated_by'] else None
+            except ValueError:
+                raise serializers.ValidationError({"updated_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+
+        return super().to_internal_value(data)
+
+    def validate_created_by(self, value):
+        if not User.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("User does not exist!")
+        return value
+
+    def validate_updated_by(self, value):
+        if value and not User.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("User does not exist!")
+        return value
 
     def get_product_type_detail(self, obj):
         product_type = obj.product_type

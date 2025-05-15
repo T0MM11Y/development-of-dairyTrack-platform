@@ -7,7 +7,7 @@ from .serializers import (
     ExpenseTypeSerializer, IncomeTypeSerializer, SalesTransactionSerializer
 )
 from sales.models import SalesTransaction
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
 from rest_framework import filters
 from .filters import FinanceFilter
 import logging
