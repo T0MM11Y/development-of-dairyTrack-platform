@@ -10,7 +10,7 @@ class Notification(models.Model):
 
     # Hanya pakai IntegerField untuk cow_id
     objects = models.Manager()
-    cow_id = models.IntegerField(null=True, blank=True)  # Tanpa relasi
+    cow_id = models.IntegerField(null=True, blank=True)
     date = models.DateField()
     message = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)

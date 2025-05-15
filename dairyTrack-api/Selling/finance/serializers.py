@@ -1,65 +1,157 @@
 from rest_framework import serializers
-from .models import Expense, Income, Finance
+from .models import Expense, Income, Finance, ExpenseType, IncomeType
 from sales.models import SalesTransaction
+from stock.serializers import UserSerializer
+from stock.models import User
+
+class ExpenseTypeSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
+    class Meta:
+        model = ExpenseType
+        fields = [
+            'id', 'name', 'description',
+            'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
+
+class IncomeTypeSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
+    class Meta:
+        model = IncomeType
+        fields = [
+            'id', 'name', 'description',
+            'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
 
 class ExpenseSerializer(serializers.ModelSerializer):
+    expense_type = serializers.PrimaryKeyRelatedField(queryset=ExpenseType.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    expense_type_detail = serializers.SerializerMethodField()
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
     class Meta:
         model = Expense
-        fields = '__all__'
+        fields = [
+            'id', 'expense_type', 'expense_type_detail', 'amount', 'description', 'transaction_date',
+            'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
 
-    # def create(self, validated_data):
-    #     """ Saat Expense dibuat, otomatis catat ke Finance dengan transaction_date yang sama """
-    #     expense = Expense.objects.create(**validated_data)
-    #     Finance.objects.create(
-    #         transaction_type='expense',
-    #         description=expense.description,
-    #         amount=expense.amount,
-    #         transaction_date=expense.transaction_date
-    #     )
-    #     return expense
+    def get_expense_type_detail(self, obj):
+        expense_type = obj.expense_type
+        return {
+            'id': expense_type.id,
+            'name': expense_type.name,
+            'description': expense_type.description
+        }
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
 
 class IncomeSerializer(serializers.ModelSerializer):
+    income_type = serializers.PrimaryKeyRelatedField(queryset=IncomeType.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    income_type_detail = serializers.SerializerMethodField()
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
     class Meta:
         model = Income
-        fields = '__all__'
+        fields = [
+            'id', 'income_type', 'income_type_detail', 'amount', 'description', 'transaction_date',
+            'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
 
-    # def create(self, validated_data):
-    #     """ Saat Income dibuat, otomatis catat ke Finance """
-    #     income = Income.objects.create(**validated_data)
-    #     Finance.objects.create(
-    #         transaction_type='income',
-    #         description=income.description,
-    #         amount=income.amount,
-    #         transaction_date=income.transaction_date
-    #     )
-    #     return income
+    def get_income_type_detail(self, obj):
+        income_type = obj.income_type
+        return {
+            'id': income_type.id,
+            'name': income_type.name,
+            'description': income_type.description
+        }
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
 
 class SalesTransactionSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    created_by_detail = UserSerializer(source='created_by', read_only=True)
+    updated_by_detail = UserSerializer(source='updated_by', read_only=True)
+
     class Meta:
         model = SalesTransaction
-        fields = '__all__'
+        fields = [
+            'id', 'order', 'quantity', 'total_price', 'payment_method', 'transaction_date',
+            'created_by', 'updated_by', 'created_by_detail', 'updated_by_detail',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
 
     def create(self, validated_data):
-        """ Saat SalesTransaction dibuat, otomatis catat ke Income dan Finance """
         sales_transaction = SalesTransaction.objects.create(**validated_data)
-        
         # Buat Income otomatis
-        income = Income.objects.create(
-            income_type='sales',
+        sales_type, _ = IncomeType.objects.get_or_create(
+            name="Sales",
+            defaults={"description": "Revenue from product sales"}
+        )
+        Income.objects.create(
+            income_type=sales_type,
             amount=sales_transaction.total_price,
-            description=f"Sales Transaction {sales_transaction.pk}"
+            description=f"Sales Transaction {sales_transaction.pk}",
+            transaction_date=sales_transaction.transaction_date,
+            created_by=sales_transaction.created_by,
+            updated_by=sales_transaction.updated_by
         )
-
-        # Catat ke Finance
-        Finance.objects.create(
-            transaction_type='income',
-            description=income.description,
-            amount=income.amount
-        )
-
+        # Finance akan dibuat otomatis oleh metode save di Income
         return sales_transaction
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['created_by'] = representation.pop('created_by_detail')
+        representation['updated_by'] = representation.pop('updated_by_detail')
+        return representation
 
 class FinanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Finance
-        fields = '__all__'
+        fields = [
+            'id', 'transaction_date', 'transaction_type', 'description', 'amount',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
