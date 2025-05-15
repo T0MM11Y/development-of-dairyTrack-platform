@@ -80,7 +80,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       submenu: [
         { id: "milk-trend", title: "Milk Trend", link: "/admin/milk-trend" },
       ],
-      showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
+      showForRoles: ["admin", "supervisor", "farmer"], // Only visible for admin, supervisor, and farmer
     },
   ];
 

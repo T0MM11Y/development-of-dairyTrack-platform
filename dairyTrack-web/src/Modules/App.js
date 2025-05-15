@@ -5,9 +5,10 @@ import {
   Redirect,
 } from "react-router-dom";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import About from "./pages/About";
-import Contact from "./pages/Contact";
+import Contact from "./pages/Blog";
 import Admin from "./pages/Admin/Dashboard";
 import ListUsers from "./pages/Admin/UsersManagement/ListUsers";
 import CreateUsers from "./pages/Admin/UsersManagement/CreateUsers";
@@ -22,6 +23,10 @@ import ListOfGallery from "./pages/Admin/HighlightsManagement/Gallery/ListOfGall
 import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
 import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
 import MilkTrend from "./pages/Admin/MilkProduction/MilkTrend";
+import Blog from "./pages/Blog";
+import Gallery from "./pages/Gallery";
+import Product from "./pages/Product";
+import Order from "./pages/Order";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -66,10 +71,32 @@ function App() {
           <Route path="/about">
             <Header />
             <About />
+            <Footer />
           </Route>
           <Route path="/contact">
             <Header />
             <Contact />
+            <Footer />
+          </Route>
+          <Route path="/blog">
+            <Header />
+            <Blog />
+            <Footer />
+          </Route>
+          <Route path="/product">
+            <Header />
+            <Product />
+            <Footer />
+          </Route>
+          <Route path="/gallery">
+            <Header />
+            <Gallery />
+            <Footer />
+          </Route>
+          <Route path="/order">
+            <Header />
+            <Order />
+            <Footer />
           </Route>
 
           {/* Rute untuk halaman admin - with authentication protection */}

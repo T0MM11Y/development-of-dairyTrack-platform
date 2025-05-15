@@ -1,6 +1,16 @@
+/* Theme Colors */
+:root {
+    --warning-color: #ffdd57;
+    --warning-dark: #ffc107;
+    --warning-light: #fff3c8;
+    --warning-hover: #ffd320;
+    --dark-bg: #343a40;
+    --dark-bg-transparent: rgba(52, 58, 64, 0.95);
+}
+
 /* Header customization - Enhanced */
 #mainNav {
-    background-color: #343a40;
+    background-color: var(--dark-bg);
     padding: 1rem 0;
     transition: all 0.4s ease-in-out;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -8,10 +18,17 @@
     top: 0;
     z-index: 1000;
 }
+.brand-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--warning-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
 #mainNav.scrolled {
     padding: 0.5rem 0;
-    background-color: rgba(52, 58, 64, 0.95);
+    background-color: var(--dark-bg-transparent);
     backdrop-filter: blur(10px);
 }
 
@@ -31,7 +48,7 @@
     left: 0;
     width: 0;
     height: 3px;
-    background-color: #ffdd57;
+    background-color: var(--warning-color);
     transition: width 0.3s ease;
 }
 
@@ -55,13 +72,30 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background-color: #ffdd57;
+    background-color: var(--warning-color);
     transition: all 0.3s ease;
     transform: translateX(-50%);
 }
 
+.navbar-toggler-light {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-toggler-light .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.navbar-toggler-dark {
+  color: rgba(0, 0, 0, 0.7);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.navbar-toggler-dark .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0, 0, 0, 0.7)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
 #mainNav .nav-link:hover {
-    color: #ffdd57;
+    color: var(--warning-color);
     transform: translateY(-2px);
 }
 
@@ -70,7 +104,7 @@
 }
 
 #mainNav .nav-item.active .nav-link {
-    color: #ffdd57;
+    color: var(--warning-color);
 }
 
 #mainNav .nav-item.active .nav-link::after {
@@ -78,9 +112,9 @@
 }
 
 #mainNav .btn-primary {
-    background-color: #ffdd57;
+    background-color: var(--warning-color);
     border: none;
-    color: #343a40;
+    color: var(--dark-bg);
     font-weight: bold;
     transition: all 0.3s ease-in-out;
     padding: 0.6rem 1.5rem;
@@ -91,8 +125,8 @@
 }
 
 #mainNav .btn-primary:hover {
-    background-color: #ffc107;
-    color: #343a40;
+    background-color: var(--warning-dark);
+    color: var(--dark-bg);
     transform: translateY(-3px);
     box-shadow: 0 6px 12px rgba(255, 221, 87, 0.4);
 }
@@ -149,19 +183,19 @@
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
     overflow: hidden;
     animation: modalFadeIn 0.5s ease-in-out;
-    background-color: #343a40;
+    background-color: var(--dark-bg);
     color: #ffffff;
     transform-origin: top center;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .material-modal .modal-header {
-    background-color: #343a40;
+    background-color: var(--dark-bg);
     color: #ffffff;
     padding: 1.2rem 1.5rem;
     font-size: 1.3rem;
     font-weight: bold;
-    border-bottom: 2px solid #ffdd57;
+    border-bottom: 2px solid var(--warning-color);
     display: flex;
     align-items: center;
 }
@@ -171,7 +205,7 @@
     display: inline-block;
     width: 10px;
     height: 10px;
-    background-color: #ffdd57;
+    background-color: var(--warning-color);
     border-radius: 50%;
     margin-right: 10px;
 }
@@ -201,14 +235,14 @@
 }
 
 .material-modal .btn-primary {
-    background-color: #ffdd57;
+    background-color: var(--warning-color);
     border: none;
-    color: #343a40;
+    color: var(--dark-bg);
     box-shadow: 0 4px 8px rgba(255, 221, 87, 0.3);
 }
 
 .material-modal .btn-primary:hover {
-    background-color: #ffc107;
+    background-color: var(--warning-dark);
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(255, 221, 87, 0.5);
 }
@@ -246,10 +280,10 @@
     }
 }
 
-/* Tambahan untuk fitur scrolling */
+/* Responsive navbar */
 @media (max-width: 992px) {
     #mainNav .navbar-collapse {
-        background-color: rgba(52, 58, 64, 0.98);
+        background-color: var(--dark-bg-transparent);
         border-radius: 0 0 10px 10px;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         padding: 1rem;
@@ -261,7 +295,7 @@
     }
 }
 
-/* Efek hover untuk tombol dan elemen interaktif */
+/* Hover effects */
 .hover-effect {
     transition: all 0.3s ease;
 }
@@ -271,7 +305,7 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Efek pulse untuk elemen yang ingin ditonjolkan */
+/* Pulse animation */
 .pulse {
     animation: pulse 2s infinite;
 }
@@ -291,7 +325,7 @@
     }
 }
 
-/* Custom scrollbar untuk modal body */
+/* Custom scrollbar */
 .material-modal .modal-body::-webkit-scrollbar {
     width: 6px;
 }
@@ -308,4 +342,138 @@
 
 .material-modal .modal-body::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 221, 87, 0.8);
+}
+
+/* Blog Specific Styles */
+
+/* Blog Hero Section */
+.bg-warning {
+    background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-dark) 100%) !important; opacity: 94%;
+}
+
+/* Blog Cards */
+.hover-shadow {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.hover-shadow:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-5px);
+}
+
+.transition-300 {
+    transition: all 0.3s ease;
+}
+
+.hover-zoom:hover {
+    transform: scale(1.05);
+}
+
+/* Blog Content Styling */
+.blog-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 8px;
+}
+
+.blog-content h1, .blog-content h2, .blog-content h3, 
+.blog-content h4, .blog-content h5, .blog-content h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.blog-content p {
+    line-height: 1.7;
+    margin-bottom: 1.2rem;
+}
+
+.blog-content ul, .blog-content ol {
+    margin-bottom: 1.2rem;
+    padding-left: 2rem;
+}
+
+.blog-content blockquote {
+    border-left: 4px solid var(--warning-dark);
+    padding-left: 1rem;
+    font-style: italic;
+    color: #555;
+    margin: 1.5rem 0;
+}
+
+.blog-content a {
+    color: var(--warning-dark);
+    text-decoration: none;
+}
+
+.blog-content a:hover {
+    text-decoration: underline;
+}
+
+/* Category items */
+.category-item:hover {
+    background-color: var(--warning-light);
+}
+
+.recent-post-item:hover {
+    background-color: var(--warning-light);
+}
+
+/* Bootstrap Component Overrides for Warning Theme */
+.btn-outline-warning {
+    color: var(--warning-dark);
+    border-color: var(--warning-dark);
+}
+
+.btn-outline-warning:hover {
+    background-color: var(--warning-color);
+    color: var(--dark-bg);
+}
+
+.card-header.bg-warning {
+    background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-dark) 100%) !important;
+    color: var(--dark-bg) !important;
+    border: none;
+}
+
+.badge.bg-warning {
+    background-color: var(--warning-color) !important;
+    color: var(--dark-bg);
+}
+
+/* Pagination styling */
+.pagination .page-item.active .page-link {
+    background-color: var(--warning-dark);
+    border-color: var(--warning-dark);
+    color: var(--dark-bg);
+}
+
+.pagination .page-link {
+    color: var(--dark-bg);
+}
+
+.pagination .page-link:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 221, 87, 0.25);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--warning-light);
+}
+
+/* Navbar Blog Specific Styling */
+.navbar-blog {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.navbar-blog-scrolled {
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 10px 0;
+}
+
+/* Blog Sidebar */
+.sticky-top {
+    position: sticky;
+    top: 80px;
+    z-index: 100;
 }

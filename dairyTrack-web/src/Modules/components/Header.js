@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { login } from "../controllers/authController";
 import { useHistory } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -10,7 +10,29 @@ const Header = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [scrolled, setScrolled] = useState(false);
   const history = useHistory();
+  const location = useLocation();
+
+  // Check if current page is blog
+  const isBlogPage =
+    location.pathname === "/blog" || location.pathname.startsWith("/blog/");
+
+  // Add scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const toggleModal = () => {
     // User is not logged in, show the login modal
@@ -40,13 +62,23 @@ const Header = () => {
     }
   };
 
+  // Get header classes based on page and scroll state
+  const getHeaderClasses = () => {
+    const baseClass = "navbar navbar-expand-lg fixed-top";
+
+    if (isBlogPage) {
+      return `${baseClass} ${
+        scrolled ? "navbar-blog-scrolled" : "navbar-blog"
+      }`;
+    }
+
+    return `${baseClass} navbar-dark`;
+  };
+
   return (
     <>
       <header>
-        <nav
-          className="navbar navbar-expand-lg navbar-dark fixed-top"
-          id="mainNav"
-        >
+        <nav className={getHeaderClasses()} id="mainNav">
           <div className="container">
             {/* Logo */}
             <Link className="navbar-brand" to="/">
@@ -58,22 +90,21 @@ const Header = () => {
                 className="d-inline-block align-text-top logo-bg-white"
               />
               <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: "19px",
-                  marginLeft: "2px",
-                  fontFamily: "revert",
-                  letterSpacing: "1.8px",
-                  color: "white",
-                }}
+                className={`brand-text ${
+                  isBlogPage && !scrolled ? "text-light" : ""
+                }`}
               >
                 DairyTrack
-              </span>{" "}
+              </span>
             </Link>
 
             {/* Toggle button for mobile view */}
             <button
-              className="navbar-toggler"
+              className={`navbar-toggler ${
+                isBlogPage && !scrolled
+                  ? "navbar-toggler-light"
+                  : "navbar-toggler-dark"
+              }`}
               type="button"
               data-bs-toggle="collapse"
               data-bs-target="#navbarResponsive"
@@ -88,41 +119,132 @@ const Header = () => {
             <div className="collapse navbar-collapse" id="navbarResponsive">
               <ul className="navbar-nav ms-auto">
                 <li className="nav-item">
-                  <Link className="nav-link" to="/">
-                    Home
+                  <Link
+                    className={`nav-link ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
+                    to="/"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      Home
+                    </div>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/profile">
-                    Profile
+                  <Link
+                    className={`nav-link ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
+                    to="/about"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      About
+                    </div>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/blog">
-                    Blog
+                  <Link
+                    className={`nav-link ${
+                      location.pathname === "/blog" ? "active" : ""
+                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
+                    to="/blog"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      Blog
+                    </div>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/produk">
-                    Produk
+                  <Link
+                    className={`nav-link ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
+                    to="/product"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      Product
+                    </div>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/galeri">
-                    Galeri
+                  <Link
+                    className={`nav-link ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
+                    to="/gallery"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontFamily: "Roboto, sans-serif",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      Gallery
+                    </div>
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/pemesanan">
-                    Pemesanan
+                  <Link
+                    className={`nav-link ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
+                    to="/order"
+                  >
+                    <div
+                      className="nav-link-icon "
+                      style={{
+                        letterSpacing: "0.1rem",
+                        fontSize: "0.9rem",
+                        fontFamily: "Roboto, sans-serif",
+                      }}
+                    >
+                      Order
+                    </div>
                   </Link>
                 </li>
               </ul>
 
-              {/* Login Button */}
+              {/* Login Button - Updated to always use btn-primary styling */}
               <button
-                className="btn btn-primary btn-sm ms-lg-3"
+                className="btn btn-primary ms-lg-3"
                 onClick={toggleModal}
+                style={{
+                  fontFamily: "Roboto, monospace",
+                  fontWeight: "700",
+                  fontSize: "0.8rem",
+                  letterSpacing: "0.1rem",
+                  height: "36px",
+                }}
               >
                 Login
               </button>
