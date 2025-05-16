@@ -7,6 +7,8 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "bootstrap": "^5.3.6",
     "date-fns": "^4.1.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.509.0",
     "react": "^17.0.2",
     "react-bootstrap": "^2.10.9",
@@ -16,7 +18,8 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "^5.0.1",
     "recharts": "^2.15.3",
-    "sweetalert2": "^11.21.0"
+    "sweetalert2": "^11.21.0",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",

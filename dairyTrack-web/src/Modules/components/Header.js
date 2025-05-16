@@ -15,6 +15,7 @@ const Header = () => {
   const toggleModal = () => {
     // Check if user is already logged in
     const userData = localStorage.getItem("user");
+    console.log(userData);
     if (userData) {
       // User is already logged in, redirect directly to admin page
       history.push("/admin");

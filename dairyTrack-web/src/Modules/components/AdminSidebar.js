@@ -49,15 +49,28 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       ],
     },
 
-    {
-      id: "cow",
-      title: "Cow Management",
-      icon: "far fa-paw", // Ikon regular tanpa fill
-      submenu: [
-        { id: "list-cows", title: "All Cows", link: "/admin/list-cows" },
-        { id: "add-cow", title: "Add Cow", link: "/admin/add-cow" },
-      ],
-    },
+
+   {
+  id: "cow",
+  title: "Cow Management",
+  icon: "far fa-paw",
+  submenu: [
+    { id: "list-cows", title: "All Cows", link: "/admin/list-cows" },
+    { id: "add-cow", title: "Add Cow", link: "/admin/add-cow" },
+
+    // Tambahan fitur:
+    { id: "health-checks", title: "Health Checks", link: "/admin/list-health-checks"},
+    { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
+    { id: "disease-history", title: "Disease History", link: "/admin/list-disease-history" },
+    { id: "reproduction", title: "Reproduction", link: "/admin/list-reproduction" },
+
+      // Dashboard Kesehatan
+    { id: "health-dashboard", title: "Health Dashboard", link: "/admin/health-dashboard" }
+
+  ],
+  showForRoles: ["admin", "supervisor", "farmer"],
+},
+
 
     {
       id: "analytics",
