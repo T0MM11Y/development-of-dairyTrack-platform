@@ -6,7 +6,7 @@ const FeedNutrisi = require("./feedNutritionModel");
 const DailyFeedSchedule = require("./dailyFeedSchedule");
 const DailyFeedItems = require("./dailyFeedItemsModel");
 const FeedStock = require("./feedStockModel");
-// const Notification = require("./notificationModel");
+const Notification = require("./notificationModel");
 const User = require("./userModel");
 const Cow = require("./cowModel");
 const UserCowAssociation = require("./userCowAssociationModel");
@@ -42,9 +42,9 @@ function defineAssociations() {
   Feed.hasOne(FeedStock, { foreignKey: "feedId", onDelete: "CASCADE", onUpdate: "CASCADE", as: "FeedStock" });
   FeedStock.belongsTo(Feed, { foreignKey: "feedId", as: "Feed" });
 
-  // // FeedStock ↔ Notification (One-to-Many)
-  // FeedStock.hasMany(Notification, { foreignKey: "feed_stock_id", onDelete: "CASCADE", onUpdate: "CASCADE", as: "Notifications" });
-  // Notification.belongsTo(FeedStock, { foreignKey: "feed_stock_id", as: "FeedStock" });
+  // FeedStock ↔ Notification (One-to-Many)
+  FeedStock.hasMany(Notification, { foreignKey: "feed_stock_id", onDelete: "CASCADE", onUpdate: "CASCADE", as: "Notifications" });
+  Notification.belongsTo(FeedStock, { foreignKey: "feed_stock_id", as: "FeedStock" });
 
   // User ↔ Cow (Many-to-Many via UserCowAssociation)
   User.belongsToMany(Cow, { through: UserCowAssociation, foreignKey: "user_id", as: "managed_cows" });

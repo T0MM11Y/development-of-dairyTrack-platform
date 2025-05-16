@@ -1,5 +1,4 @@
-// models/feedStockModel.js
-const { DataTypes } = require("sequelize");
+const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database");
 
 const FeedStock = sequelize.define(
@@ -82,6 +81,7 @@ const FeedStock = sequelize.define(
     timestamps: true,
     hooks: {
       beforeCreate: async (feedStock, options) => {
+        console.log("beforeCreate hook triggered", { feedStock: feedStock.toJSON(), options });
         if (!options.userId) {
           throw new Error("User ID is required for creating FeedStock");
         }
@@ -90,42 +90,103 @@ const FeedStock = sequelize.define(
         feedStock.updated_by = options.userId;
       },
       beforeUpdate: async (feedStock, options) => {
+        console.log("beforeUpdate hook triggered", { feedStock: feedStock.toJSON(), options });
         if (!options.userId) {
           throw new Error("User ID is required for updating FeedStock");
         }
         feedStock.updated_by = options.userId;
       },
-      afterUpdate: async (feedStock, options) => {
+      afterCreate: async (feedStock, options) => {
         try {
+          console.log("afterCreate hook triggered", { feedStockId: feedStock.id, stock: feedStock.stock });
           const Notification = sequelize.models.Notification;
           const Feed = sequelize.models.Feed;
           const feed = await Feed.findByPk(feedStock.feedId);
-          if (feed && parseFloat(feedStock.stock) <= parseFloat(feed.min_stock)) {
-            const existingNotification = await Notification.findOne({
-              where: { feed_stock_id: feedStock.id },
-              order: [["date", "DESC"]],
+          if (!feed) {
+            console.error("Feed not found for feedId:", feedStock.feedId);
+            return;
+          }
+          console.log("Feed found", { feedId: feed.id, name: feed.name, min_stock: feed.min_stock, unit: feed.unit });
+          const stock = parseFloat(feedStock.stock);
+          const minStock = parseFloat(feed.min_stock);
+          console.log("Stock comparison", { stock, minStock, isLow: stock <= minStock });
+          if (stock <= minStock) {
+            const recentNotification = await Notification.findOne({
+              where: {
+                feed_stock_id: feedStock.id,
+                created_at: {
+                  [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                },
+              },
             });
-
-            const shouldCreateNotification =
-              !existingNotification ||
-              (existingNotification &&
-                new Date() - new Date(existingNotification.date) > 24 * 60 * 60 * 1000);
-
-            if (shouldCreateNotification) {
-              const stockAsInteger = Math.floor(parseFloat(feedStock.stock));
-              const message = `Sisa stok ${feed.name} tinggal ${stockAsInteger}kg, silahkan tambah stok`;
+            if (!recentNotification) {
+              const stockAsInteger = Math.floor(stock);
+              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit} segera tambahkan stok nya`;
               await Notification.create({
                 feed_stock_id: feedStock.id,
                 message,
-                date: new Date(),
+                created_at: new Date(),
+                user_id: feedStock.user_id,
+                type: "FEED_STOCK",
+                is_read: false,
               });
-              console.log(`Created notification for low stock of ${feed.name}`);
+              console.log(`Created notification for low stock of ${feed.name}`, { message });
+            } else {
+              console.log("Recent notification exists, skipping creation", { notificationId: recentNotification.id });
+            }
+          }
+        } catch (error) {
+          console.error("Error in afterCreate hook for FeedStock:", {
+            error: error.message,
+            stack: error.stack,
+            feedStockId: feedStock.id,
+          });
+        }
+      },
+      afterUpdate: async (feedStock, options) => {
+        try {
+          console.log("afterUpdate hook triggered", { feedStockId: feedStock.id, stock: feedStock.stock });
+          const Notification = sequelize.models.Notification;
+          const Feed = sequelize.models.Feed;
+          const feed = await Feed.findByPk(feedStock.feedId);
+          if (!feed) {
+            console.error("Feed not found for feedId:", feedStock.feedId);
+            return;
+          }
+          console.log("Feed found", { feedId: feed.id, name: feed.name, min_stock: feed.min_stock, unit: feed.unit });
+          const stock = parseFloat(feedStock.stock);
+          const minStock = parseFloat(feed.min_stock);
+          console.log("Stock comparison", { stock, minStock, isLow: stock <= minStock });
+          if (stock <= minStock) {
+            const recentNotification = await Notification.findOne({
+              where: {
+                feed_stock_id: feedStock.id,
+                created_at: {
+                  [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                },
+              },
+            });
+            if (!recentNotification) {
+              const stockAsInteger = Math.floor(stock);
+              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit} segera tambahkan stok nya`;
+              await Notification.create({
+                feed_stock_id: feedStock.id,
+                message,
+                created_at: new Date(),
+                user_id: feedStock.user_id,
+                type: "FEED_STOCK",
+                is_read: false,
+              });
+              console.log(`Created notification for low stock of ${feed.name}`, { message });
+            } else {
+              console.log("Recent notification exists, skipping creation", { notificationId: recentNotification.id });
             }
           }
         } catch (error) {
           console.error("Error in afterUpdate hook for FeedStock:", {
             error: error.message,
             stack: error.stack,
+            feedStockId: feedStock.id,
           });
         }
       },
