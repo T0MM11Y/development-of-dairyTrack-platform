@@ -24,7 +24,7 @@ const Home = () => {
   const [featuredBlogs, setFeaturedBlogs] = useState([]);
   const [featuredGalleries, setFeaturedGalleries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [setError] = useState(null);
 
   // Fetch featured content
   useEffect(() => {

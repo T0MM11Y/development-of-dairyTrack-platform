@@ -16,8 +16,6 @@ import {
   OverlayTrigger,
   Tooltip,
   Table,
-  InputGroup,
-  FormControl,
   Alert,
 } from "react-bootstrap";
 import { format, subDays, parseISO, differenceInDays } from "date-fns";
@@ -112,9 +110,9 @@ const MilkTrend = () => {
           setSummaries(response.summaries.summaries);
           setError(null);
         }
-        // Handle the array response format [status, data, count]
+        // Handle the array response format [status, data]
         else if (Array.isArray(response) && response.length >= 2) {
-          const [status, data, count] = response;
+          const [status, data] = response;
           console.log("Extracted data array:", data);
 
           if (status === true && Array.isArray(data)) {

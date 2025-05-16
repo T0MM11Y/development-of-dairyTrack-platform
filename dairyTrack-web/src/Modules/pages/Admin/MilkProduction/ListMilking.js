@@ -18,7 +18,6 @@ import {
   Badge,
   Row,
   Col,
-  Alert,
 } from "react-bootstrap";
 import {
   getMilkingSessions,

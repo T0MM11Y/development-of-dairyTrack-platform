@@ -9,7 +9,6 @@ import {
   InputGroup,
   Modal,
   OverlayTrigger,
-  Pagination,
   Spinner,
   Tooltip,
 } from "react-bootstrap";

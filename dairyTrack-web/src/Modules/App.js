@@ -61,7 +61,6 @@ import ListStock from "./pages/Admin/FeedManagement/FeedStock/FeedStockList";
 import ListDailyFeedSchedule from "./pages/Admin/FeedManagement/DailyFeedSchedule/ListDailyFeedSchedule";
 import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDailyFeedItem";
 
-
 // sales and financial
 import ProductType from "./pages/Admin/ProductType/listProductType";
 import ProductStock from "./pages/Admin/Product/ListProductStock";
