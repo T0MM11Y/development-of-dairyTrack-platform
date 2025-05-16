@@ -34,6 +34,11 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       submenu: [
         { id: "list-users", title: "List of Users", link: "/admin/list-users" },
         { id: "add-users", title: "Adding User", link: "/admin/add-users" },
+        {
+          id: "reset-password",
+          title: "Reset Password",
+          link: "/admin/reset-password",
+        },
       ],
       showForRoles: ["admin", "supervisor"], // Not visible for farmers
     },

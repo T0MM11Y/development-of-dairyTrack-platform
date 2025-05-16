@@ -290,3 +290,48 @@ export const getAllFarmers = async () => {
     };
   }
 };
+
+// Function to reset user password
+export const resetUserPassword = async (userId) => {
+  try {
+    const response = await fetch(`${API_URL1}/user/reset-password/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: data.message, // Success message from server
+      });
+      return {
+        success: true,
+        message: data.message,
+        user: { id: data.user_id, role: data.role },
+      };
+    } else {
+      const error = await response.json();
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.error || error.message || "Failed to reset password.",
+      });
+      return { success: false, message: error.error || error.message };
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An error occurred while resetting the password.",
+    });
+    console.error("Error resetting password:", error);
+    return {
+      success: false,
+      message: "An error occurred while resetting the password.",
+    };
+  }
+};
