@@ -46,10 +46,8 @@ class OrderSerializer(serializers.ModelSerializer):
         if not order_items_data:
             raise serializers.ValidationError({"order_items": "Minimal satu item harus dipesan."})
 
-        # Buat order tanpa memanggil send_order_details_to_whatsapp di save
         order = Order.objects.create(**validated_data)
 
-        # Buat OrderItem
         for item_data in order_items_data:
             product_type_obj = item_data.get('product_type')
             logger.debug(f"Product type: {product_type_obj}, price: {product_type_obj.price}")
@@ -71,12 +69,10 @@ class OrderSerializer(serializers.ModelSerializer):
                 price_per_unit=price_per_unit
             )
 
-        # Update total_price setelah semua OrderItem dibuat
         order.update_total_price()
         order.refresh_from_db()
         logger.info(f"Order created: {order.order_no}, total_price={order.total_price}")
 
-        # Kirim pesan WhatsApp setelah OrderItem dibuat
         if order.phone_number and order.status == 'Requested':
             try:
                 order.send_order_details_to_whatsapp()
@@ -86,13 +82,6 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
     def update(self, instance, validated_data):
-        current_shipping_cost = instance.shipping_cost
-        new_shipping_cost = validated_data.get("shipping_cost", current_shipping_cost)
-        shipping_cost_changed = current_shipping_cost != new_shipping_cost
-
-        if shipping_cost_changed and instance.status == 'Requested':
-            validated_data['status'] = 'Processed'
-
         new_status = validated_data.get("status", instance.status)
         payment_method = validated_data.get("payment_method", instance.payment_method)
 

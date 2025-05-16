@@ -3,47 +3,143 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-# Create your views here.
 from rest_framework import generics, serializers
 from .serializers import RawMilkSerializer, ProductTypeSerializer, ProductStockSerializer, StockHistorySerializer
 from .models import RawMilk, ProductType, ProductStock, StockHistory
-
-# Create filtering
 from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
 from rest_framework import filters
 from .filters import StockHistoryFilter
-
 
 # Untuk list & create RawMilk (tanpa `pk`)
 class RawMilkListCreateView(generics.ListCreateAPIView):
     queryset = RawMilk.objects.all()
     serializer_class = RawMilkSerializer
 
+    def perform_create(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "RawMilk created successfully!",
+                "data": RawMilkSerializer(instance).data
+            }, status=201)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_create(serializer)
+
 # Untuk retrieve, update, dan delete RawMilk (dengan `pk`)
 class RawMilkRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = RawMilk.objects.all()
     serializer_class = RawMilkSerializer
+
+    def perform_update(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "RawMilk updated successfully!",
+                "data": RawMilkSerializer(instance).data
+            }, status=200)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+            return Response({
+                "message": "RawMilk deleted successfully!"
+            }, status=204)
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_update(serializer)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return self.perform_destroy(instance)
 
 # Untuk list & create ProductType (tanpa `pk`)
 class ProductTypeCreateView(generics.ListCreateAPIView):
     queryset = ProductType.objects.all()
     serializer_class = ProductTypeSerializer
 
+    def perform_create(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "ProductType created successfully!",
+                "data": ProductTypeSerializer(instance).data
+            }, status=201)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_create(serializer)
+
 # Untuk retrieve, update, dan delete ProductType (dengan `pk`)
 class ProductTypeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProductType.objects.all()
     serializer_class = ProductTypeSerializer
 
+    def perform_update(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "ProductType updated successfully!",
+                "data": ProductTypeSerializer(instance).data
+            }, status=200)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+            return Response({
+                "message": "ProductType deleted successfully!"
+            }, status=204)
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_update(serializer)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return self.perform_destroy(instance)
+
+# Untuk list & create ProductStock
 class ProductStockCreateView(generics.ListCreateAPIView):
     queryset = ProductStock.objects.all()
     serializer_class = ProductStockSerializer
 
     def perform_create(self, serializer):
-        """Kurangi RawMilk dan cek status expired saat ProductStock dibuat"""
-        product_stock = serializer.save()
-
         try:
+            product_stock = serializer.save()
             product_stock.deduct_raw_milk()
             if product_stock.expiry_at < timezone.now():
                 product_stock.status = "expired"
@@ -54,22 +150,88 @@ class ProductStockCreateView(generics.ListCreateAPIView):
                     quantity_change=product_stock.quantity
                 )
                 product_stock.save()
+                return Response({
+                    "message": "ProductStock created successfully but marked as expired!",
+                    "data": ProductStockSerializer(product_stock).data
+                }, status=201)
+            return Response({
+                "message": "ProductStock created successfully!",
+                "data": ProductStockSerializer(product_stock).data
+            }, status=201)
+        except ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
 
-        except Exception as e:
-            raise serializers.ValidationError({"error": str(e)})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_create(serializer)
 
+# Untuk retrieve, update, dan delete ProductStock
 class ProductStockRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProductStock.objects.all()
     serializer_class = ProductStockSerializer
 
+    def perform_update(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "ProductStock updated successfully!",
+                "data": ProductStockSerializer(instance).data
+            }, status=200)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+            return Response({
+                "message": "ProductStock deleted successfully!"
+            }, status=204)
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_update(serializer)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return self.perform_destroy(instance)
+
+# Untuk list & create StockHistory
 class StockHistoryCreateView(generics.ListCreateAPIView):
     queryset = StockHistory.objects.all()
     serializer_class = StockHistorySerializer
-
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = StockHistoryFilter
     ordering_fields = ['change_date']
-    ordering = ['-change_date']  # default: terbaru duluan
+    ordering = ['-change_date']
+
+    def perform_create(self, serializer):
+        try:
+            instance = serializer.save()
+            return Response({
+                "message": "StockHistory created successfully!",
+                "data": StockHistorySerializer(instance).data
+            }, status=201)
+        except serializers.ValidationError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self.perform_create(serializer)
 
 # API untuk menjual produk
 class SellProductView(APIView):
@@ -77,9 +239,19 @@ class SellProductView(APIView):
         product_type_id = request.data.get("product_type_id")
         quantity = request.data.get("quantity")
 
-        product_type = get_object_or_404(ProductType, id=product_type_id)  # Gunakan get_object_or_404 untuk menangani error
+        if not product_type_id or not quantity:
+            return Response({
+                "error": "product_type_id and quantity are required!"
+            }, status=400)
+
+        product_type = get_object_or_404(ProductType, id=product_type_id)
         try:
-            ProductStock.sell_product(product_type, quantity)
-            return Response({"message": "Produk berhasil dijual!"})
+            stock_usage = ProductStock.sell_product(product_type, quantity)
+            return Response({
+                "message": "Product sold successfully!",
+                "data": stock_usage
+            }, status=200)
         except ValidationError as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({
+                "error": str(e)
+            }, status=400)
