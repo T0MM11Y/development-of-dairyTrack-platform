@@ -14,7 +14,6 @@ import Swal from "sweetalert2";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import ReactApexChart from "react-apexcharts";
-import { useTranslation } from "react-i18next";
 import financeController from "../../../controllers/financeController.js";
 import { format } from "date-fns";
 
@@ -40,8 +39,6 @@ if (
 }
 
 const FinancePage = () => {
-  const { t } = useTranslation();
-
   // Define formatRupiah at the top to avoid TDZ
   const formatRupiah = (value) => {
     if (!value) return "Rp 0";
@@ -403,7 +400,7 @@ const FinancePage = () => {
         setError(response.message);
         Swal.fire({
           icon: "error",
-          title: t("finance.error") || "Error",
+          title: "Finance Error",
           text: response.message,
         });
       }
@@ -412,7 +409,7 @@ const FinancePage = () => {
       setError(errorMessage);
       Swal.fire({
         icon: "error",
-        title: t("finance.error") || "Error",
+        title: "Finance Error",
         text: errorMessage,
       });
     }
@@ -436,7 +433,7 @@ const FinancePage = () => {
         setError(response.message);
         Swal.fire({
           icon: "error",
-          title: t("finance.error") || "Error",
+          title: "Finance Error",
           text: response.message,
         });
       }
@@ -445,7 +442,7 @@ const FinancePage = () => {
       setError(errorMessage);
       Swal.fire({
         icon: "error",
-        title: t("finance.error") || "Error",
+        title: "Finance Error",
         text: errorMessage,
       });
     }
@@ -485,7 +482,7 @@ const FinancePage = () => {
             }}
           >
             <i className="fas fa-wallet me-2" />{" "}
-            {t("finance.finance_title") || "Finance Management"}
+            {"finance.finance_title" || "Finance Management"}
           </h4>
         </Card.Header>
         <Card.Body>
@@ -504,7 +501,7 @@ const FinancePage = () => {
                   }}
                 >
                   <i className="bx bx-plus me-1" />{" "}
-                  {t("finance.add_income") || "Add Income"}
+                  {"finance.add_income" || "Add Income"}
                 </Button>
                 <Button
                   variant="danger"
@@ -518,7 +515,7 @@ const FinancePage = () => {
                   }}
                 >
                   <i className="bx bx-plus me-1" />{" "}
-                  {t("finance.add_expense") || "Add Expense"}
+                  {"finance.add_expense" || "Add Expense"}
                 </Button>
               </div>
             </Col>
@@ -613,8 +610,6 @@ const FinanceSummaryCards = ({
   loading,
   formatRupiah,
 }) => {
-  const { t } = useTranslation();
-
   return (
     <Row className="mb-4">
       <Col md={4}>
@@ -623,7 +618,7 @@ const FinanceSummaryCards = ({
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h6 className="card-title mb-0">
-                  {t("finance.available_balance") || "Available Balance"}
+                  {"finance.available_balance" || "Available Balance"}
                 </h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(currentBalance)}
@@ -642,7 +637,7 @@ const FinanceSummaryCards = ({
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h6 className="card-title mb-0">
-                  {t("finance.total_income") || "Total Income"}
+                  {"finance.total_income" || "Total Income"}
                 </h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(totalIncome)}
@@ -661,7 +656,7 @@ const FinanceSummaryCards = ({
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h6 className="card-title mb-0">
-                  {t("finance.total_expense") || "Total Expense"}
+                  {"finance.total_expense" || "Total Expense"}
                 </h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(totalExpense)}
@@ -693,8 +688,6 @@ const FilterExportPanel = ({
   error,
   loading,
 }) => {
-  const { t } = useTranslation();
-
   return (
     <Card className="shadow-sm border-0 rounded mb-4">
       <Card.Body>
@@ -706,15 +699,13 @@ const FilterExportPanel = ({
             color: "#444",
           }}
         >
-          {t("finance.filter_export") || "Filter & Export"}
+          {"finance.filter_export" || "Filter & Export"}
         </h5>
         <Form onSubmit={handleFilterSubmit}>
           <Row>
             <Col md={3}>
               <Form.Group className="mb-3">
-                <Form.Label>
-                  {t("finance.start_date") || "Start Date"}
-                </Form.Label>
+                <Form.Label>{"finance.start_date" || "Start Date"}</Form.Label>
                 <Form.Control
                   type="date"
                   value={startDate}
@@ -725,7 +716,7 @@ const FilterExportPanel = ({
             </Col>
             <Col md={3}>
               <Form.Group className="mb-3">
-                <Form.Label>{t("finance.end_date") || "End Date"}</Form.Label>
+                <Form.Label>{"finance.end_date" || "End Date"}</Form.Label>
                 <Form.Control
                   type="date"
                   value={endDate}
@@ -737,19 +728,17 @@ const FilterExportPanel = ({
             <Col md={3}>
               <Form.Group className="mb-3">
                 <Form.Label>
-                  {t("finance.finance_type") || "Finance Type"}
+                  {"finance.finance_type" || "Finance Type"}
                 </Form.Label>
                 <Form.Select
                   value={financeType}
                   onChange={(e) => setFinanceType(e.target.value)}
                   disabled={loading}
                 >
-                  <option value="">{t("finance.all") || "All"}</option>
-                  <option value="income">
-                    {t("finance.income") || "Income"}
-                  </option>
+                  <option value="">{"finance.all" || "All"}</option>
+                  <option value="income">{"finance.income" || "Income"}</option>
                   <option value="expense">
-                    {t("finance.expense") || "Expense"}
+                    {"finance.expense" || "Expense"}
                   </option>
                 </Form.Select>
               </Form.Group>
@@ -769,7 +758,7 @@ const FilterExportPanel = ({
                   }}
                 >
                   <i className="bx bx-filter-alt me-1" />{" "}
-                  {t("finance.filter") || "Filter"}
+                  {"finance.filter" || "Filter"}
                 </Button>
                 <Button
                   variant="outline-secondary"
@@ -784,7 +773,7 @@ const FilterExportPanel = ({
                   }}
                 >
                   <i className="bx bx-reset me-1" />{" "}
-                  {t("finance.reset") || "Reset"}
+                  {"finance.reset" || "Reset"}
                 </Button>
               </div>
             </Col>
@@ -805,7 +794,7 @@ const FilterExportPanel = ({
               }}
             >
               <i className="bx bxs-file-excel me-1" />{" "}
-              {t("finance.export_excel") || "Export Excel"}
+              {"finance.export_excel" || "Export Excel"}
             </Button>
             <Button
               variant="danger"
@@ -820,7 +809,7 @@ const FilterExportPanel = ({
               }}
             >
               <i className="bx bxs-file-pdf me-1" />{" "}
-              {t("finance.export_pdf") || "Export PDF"}
+              {"finance.export_pdf" || "Export PDF"}
             </Button>
           </Col>
         </Row>
@@ -836,13 +825,11 @@ const FilterExportPanel = ({
 
 // Finance Charts Component
 const FinanceCharts = ({ chartData, loading }) => {
-  const { t } = useTranslation();
-
   const areaChartOptions = {
     series: [
-      { name: t("finance.income") || "Income", data: chartData.monthly.income },
+      { name: "finance.income" || "Income", data: chartData.monthly.income },
       {
-        name: t("finance.expense") || "Expense",
+        name: "finance.expense" || "Expense",
         data: chartData.monthly.expense,
       },
     ],
@@ -922,7 +909,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {t("finance.income_expense") || "Income vs Expense"}
+              {"finance.income_expense" || "Income vs Expense"}
             </h5>
             {loading ? (
               <div
@@ -953,7 +940,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {t("finance.income_by_category") || "Income by Category"}
+              {"finance.income_by_category" || "Income by Category"}
             </h5>
             {loading || chartData.incomeCategory.labels.length === 0 ? (
               <div
@@ -962,7 +949,7 @@ const FinanceCharts = ({ chartData, loading }) => {
               >
                 <i className="fas fa-chart-pie fa-2x text-muted mb-2"></i>
                 <p>
-                  {t("finance.no_data") || "No income category data available."}
+                  {"finance.no_data" || "No income category data available."}
                 </p>
               </div>
             ) : (
@@ -985,7 +972,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {t("finance.expense_by_category") || "Expense by Category"}
+              {"finance.expense_by_category" || "Expense by Category"}
             </h5>
             {loading || chartData.expenseCategory.labels.length === 0 ? (
               <div
@@ -994,8 +981,7 @@ const FinanceCharts = ({ chartData, loading }) => {
               >
                 <i className="fas fa-chart-pie fa-2x text-muted mb-2"></i>
                 <p>
-                  {t("finance.no_data") ||
-                    "No expense category data available."}
+                  {"finance.no_data" || "No expense category data available."}
                 </p>
               </div>
             ) : (
@@ -1024,8 +1010,6 @@ const RecentTransactions = ({
   formatRupiah,
   loading,
 }) => {
-  const { t } = useTranslation();
-
   const renderTransactionIcon = (transaction) => {
     const desc = transaction.description?.toLowerCase();
     if (desc?.includes("milk")) return "🥛";
@@ -1046,7 +1030,7 @@ const RecentTransactions = ({
             color: "#444",
           }}
         >
-          {t("finance.recent_transactions") || "Recent Transactions"}
+          {"finance.recent_transactions" || "Recent Transactions"}
         </h5>
         {loading && transactions.length === 0 ? (
           <div className="d-flex justify-content-center align-items-center py-4">
@@ -1216,7 +1200,6 @@ const RecentTransactions = ({
                 </tbody>
               </table>
             </div>
-
             {totalItems === 0 && (
               <div
                 className="text-center py-5 my-4"
@@ -1227,12 +1210,11 @@ const RecentTransactions = ({
                   className="lead text-muted"
                   style={{ letterSpacing: "0.5px", fontWeight: "500" }}
                 >
-                  {t("finance.no_transactions") ||
+                  {"finance.no_transactions" ||
                     "No transactions found matching your criteria."}
                 </p>
               </div>
             )}
-
             {totalPages > 1 && (
               <div className="d-flex justify-content-between align-items-center mt-4">
                 <div className="text-muted">
@@ -1338,7 +1320,6 @@ const RecentTransactions = ({
 
 // Add Income Modal Component
 const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
-  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     amount: "",
     income_type: "",
@@ -1366,8 +1347,8 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: t("finance.error") || "Error",
-        text: t("finance.failed_to_save_income") || "Failed to save income.",
+        title: "finance.error" || "Error",
+        text: "finance.failed_to_save_income" || "Failed to save income.",
       });
     } finally {
       setSubmitting(false);
@@ -1378,13 +1359,13 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title style={{ fontFamily: "'Nunito', sans-serif" }}>
-          {t("finance.add_income") || "Add Income"}
+          {"finance.add_income" || "Add Income"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.amount") || "Amount"}</Form.Label>
+            <Form.Label>{"finance.amount" || "Amount"}</Form.Label>
             <InputGroup>
               <InputGroup.Text>Rp</InputGroup.Text>
               <Form.Control
@@ -1399,16 +1380,14 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
             </InputGroup>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.income_type") || "Income Type"}</Form.Label>
+            <Form.Label>{"finance.income_type" || "Income Type"}</Form.Label>
             <Form.Select
               name="income_type"
               value={formData.income_type}
               onChange={handleChange}
               required
             >
-              <option value="">
-                {t("finance.select_type") || "Select Type"}
-              </option>
+              <option value="">{"finance.select_type" || "Select Type"}</option>
               {incomeTypes.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name}
@@ -1417,7 +1396,7 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.date") || "Date"}</Form.Label>
+            <Form.Label>{"finance.date" || "Date"}</Form.Label>
             <Form.Control
               type="date"
               name="transaction_date"
@@ -1427,7 +1406,7 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.description") || "Description"}</Form.Label>
+            <Form.Label>{"finance.description" || "Description"}</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -1447,7 +1426,7 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
                 fontSize: "0.9rem",
               }}
             >
-              {t("finance.cancel") || "Cancel"}
+              {"finance.cancel" || "Cancel"}
             </Button>
             <Button
               type="submit"
@@ -1462,7 +1441,7 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
               {submitting ? (
                 <Spinner size="sm" animation="border" />
               ) : (
-                t("finance.save") || "Save"
+                "finance.save" || "Save"
               )}
             </Button>
           </div>
@@ -1474,7 +1453,6 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
 
 // Add Expense Modal Component
 const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
-  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     amount: "",
     expense_type: "",
@@ -1502,8 +1480,8 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: t("finance.error") || "Error",
-        text: t("finance.failed_to_save_expense") || "Failed to save expense.",
+        title: "finance.error" || "Error",
+        text: "finance.failed_to_save_expense" || "Failed to save expense.",
       });
     } finally {
       setSubmitting(false);
@@ -1514,13 +1492,13 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title style={{ fontFamily: "'Nunito', sans-serif" }}>
-          {t("finance.add_expense") || "Add Expense"}
+          {"finance.add_expense" || "Add Expense"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.amount") || "Amount"}</Form.Label>
+            <Form.Label>{"finance.amount" || "Amount"}</Form.Label>
             <InputGroup>
               <InputGroup.Text>Rp</InputGroup.Text>
               <Form.Control
@@ -1535,18 +1513,14 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
             </InputGroup>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>
-              {t("finance.expense_type") || "Expense Type"}
-            </Form.Label>
+            <Form.Label>{"finance.expense_type" || "Expense Type"}</Form.Label>
             <Form.Select
               name="expense_type"
               value={formData.expense_type}
               onChange={handleChange}
               required
             >
-              <option value="">
-                {t("finance.select_type") || "Select Type"}
-              </option>
+              <option value="">{"finance.select_type" || "Select Type"}</option>
               {expenseTypes.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name}
@@ -1555,7 +1529,7 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.date") || "Date"}</Form.Label>
+            <Form.Label>{"finance.date" || "Date"}</Form.Label>
             <Form.Control
               type="date"
               name="transaction_date"
@@ -1565,7 +1539,7 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{t("finance.description") || "Description"}</Form.Label>
+            <Form.Label>{"finance.description" || "Description"}</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -1585,7 +1559,7 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
                 fontSize: "0.9rem",
               }}
             >
-              {t("finance.cancel") || "Cancel"}
+              {"finance.cancel" || "Cancel"}
             </Button>
             <Button
               type="submit"
@@ -1600,7 +1574,7 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
               {submitting ? (
                 <Spinner size="sm" animation="border" />
               ) : (
-                t("finance.save") || "Save"
+                "finance.save" || "Save"
               )}
             </Button>
           </div>
