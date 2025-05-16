@@ -72,6 +72,20 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       link: "/admin/list-milking",
       showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
     },
+    {
+  id: "health-check",
+  title: "Health Check Management",
+  icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
+  submenu: [
+    { id: "health-checks", title: "Health Checks", link: "/admin/list-health-checks" },
+    { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
+    { id: "disease-history", title: "Disease History", link: "/admin/list-disease-history" },
+    { id: "reproduction", title: "Reproduction", link: "/admin/list-reproduction" },
+    { id: "health-dashboard", title: "Health Dashboard", link: "/admin/health-dashboard" },
+  ],
+  showForRoles: ["admin", "supervisor", "farmer"],
+},
+
 
     {
       id: "analytics",
