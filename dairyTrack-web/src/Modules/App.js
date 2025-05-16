@@ -23,6 +23,9 @@ import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
 import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
 import MilkTrend from "./pages/Admin/MilkProduction/MilkTrend";
 import ProductType from "./pages/Admin/ProductType/listProductType";
+import ProductStock from "./pages/Admin/Product/ListProductStock";
+import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
+import SalesOrder from "./pages/Admin/Order/ListOrder";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -149,6 +152,21 @@ function App() {
           <ProtectedRoute path="/admin/product-type">
             <AdminLayout>
               <ProductType />
+            </AdminLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/admin/product">
+            <AdminLayout>
+              <ProductStock />
+            </AdminLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/admin/product-history">
+            <AdminLayout>
+              <ProductHistory />
+            </AdminLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/admin/sales">
+            <AdminLayout>
+              <SalesOrder />
             </AdminLayout>
           </ProtectedRoute>
         </Switch>

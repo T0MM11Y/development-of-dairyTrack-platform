@@ -5489,3 +5489,159 @@ STREAM b'pHYs' 70 9
 STREAM b'IDAT' 91 22594
 Not Found: /product-type/9/
 Bad Request: /product-stock
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+pisaDocument options:
+  src = '<!DOCTYPE html>\n<html>\n<head>\n    <title>Product History Report</title>\n    <style>\n        body { font-family: Arial, sans-serif; font-size: 12px; }\n        h2, p { text-align: center; }\n        table { border-collapse: collapse; width: 100%; margin-top: 20px; }\n        th, td { border: 1px solid black; padding: 6px; text-align: center; }\n        th { background-color: #f2f2f2; }\n    </style>\n</head>\n<body>\n    <h2>Product History Report</h2>\n\n    \n\n    <table>\n        <thead>\n            <tr>\n                <th>Date & Time</th>\n                <th>Product Type</th>\n                <th>Change Type</th>\n                <th>Quantity</th>\n                <th>Total Price</th>\n            </tr>\n        </thead>\n        <tbody>\n            \n            <tr>\n                <td>May 15, 2025, 5:37 p.m.</td>\n                <td>\n                    \n                        Keju\n                    \n                </td>\n                <td>expired</td>\n                <td>\n                    0\n                    \n                        liter\n                    \n                </td>\n                <td>0.00</td>\n            </tr>\n            \n        </tbody>\n    </table>\n</body>\n</html>\n'
+  dest = <HttpResponse status_code=200, "application/pdf">
+  path = ''
+  link_callback = None
+  xhtml = False
+  context_meta = None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+Col widths: [None, None, None, None, None]
+pisaDocument options:
+  src = '<!DOCTYPE html>\n<html>\n<head>\n    <title>Product History Report</title>\n    <style>\n        body { font-family: Arial, sans-serif; font-size: 12px; }\n        h2, p { text-align: center; }\n        table { border-collapse: collapse; width: 100%; margin-top: 20px; }\n        th, td { border: 1px solid black; padding: 6px; text-align: center; }\n        th { background-color: #f2f2f2; }\n    </style>\n</head>\n<body>\n    <h2>Product History Report</h2>\n\n    \n        <p>Export period: 01 May 2025 00:00 - 02 May 2025 23:59</p>\n    \n\n    <table>\n        <thead>\n            <tr>\n                <th>Date & Time</th>\n                <th>Product Type</th>\n                <th>Change Type</th>\n                <th>Quantity</th>\n                <th>Total Price</th>\n            </tr>\n        </thead>\n        <tbody>\n            \n            <tr>\n                <td colspan="5">No history available for selected period.</td>\n            </tr>\n            \n        </tbody>\n    </table>\n</body>\n</html>\n'
+  dest = <HttpResponse status_code=200, "application/pdf">
+  path = ''
+  link_callback = None
+  xhtml = False
+  context_meta = None
+None
+None
+None
+None
+None
+Col widths: [None, None, None, None, None]
+Bad Request: /sales/orders/
+Validated data: {'customer_name': 'Kenan Tomfie Bukit', 'email': 'kenan@example.com', 'phone_number': '+6285264351660', 'location': 'Jakarta', 'status': 'Requested', 'order_items': [{'product_type': <ProductType: Keju>, 'quantity': 1}]}
+Order items data: [{'product_type': <ProductType: Keju>, 'quantity': 1}]
+Product type: Keju, price: 10000.00
+Validation error during order creation: {'order_items': ErrorDetail(string='Stok untuk Keju tidak mencukupi.', code='invalid')}
+Bad Request: /sales/orders/
+Validated data: {'customer_name': 'Kenan Tomfie Bukit', 'email': 'kenan@example.com', 'phone_number': '+6285264351660', 'location': 'Jakarta', 'status': 'Requested', 'order_items': [{'product_type': <ProductType: Keju>, 'quantity': 0}]}
+Order items data: [{'product_type': <ProductType: Keju>, 'quantity': 0}]
+Product type: Keju, price: 10000.00
+Creating OrderItem: product_type=Keju, price_per_unit=10000.00, quantity=0
+OrderItem saved: 0 x Keju, total_price=0.00
+Order created: ORD3BAE59, total_price=0.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': '763242ef-7cba-446d-9ae5-7848799f922a'}
+Order created successfully: ORD3BAE59
+Bad Request: /sales/orders/
+Bad Request: /sales/orders/
+Successfully imported extension module "markdown.extensions.toc".
+Successfully loaded extension "markdown.extensions.toc.TocExtension".
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Bad Request: /sales/orders/19/
+Order updated successfully: ORD3BAE59
+Order updated successfully: ORD3BAE59
+Order updated successfully: ORD3BAE59
+Validated data: {'customer_name': 'Horas', 'email': 'horas@gmail.com', 'phone_number': '085264351660', 'location': 'medan', 'status': 'Requested', 'payment_method': None, 'order_items': [{'product_type': <ProductType: Susu Strawberry>, 'quantity': 1}], 'notes': 'wwww'}
+Order items data: [{'product_type': <ProductType: Susu Strawberry>, 'quantity': 1}]
+Product type: Susu Strawberry, price: 10000.00
+Creating OrderItem: product_type=Susu Strawberry, price_per_unit=10000.00, quantity=1
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Order created: ORD2744CC, total_price=10000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': 'dc68a157-09a3-4fda-9c0e-1a55b571bcca'}
+Order created successfully: ORD2744CC
+Order updated successfully: ORD2744CC
+Order updated successfully: ORD2744CC
+Order deleted successfully: ORDB3D242
+Order deleted successfully: ORDE3145A
+Order deleted successfully: ORDE9D613
+Order deleted successfully: ORDA9ECF2
+Order deleted successfully: ORDCCD6F2
+Order updated successfully: ORD2744CC
+Order updated successfully: ORD2744CC
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\sales\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+OrderItem saved: 2 x Keju, total_price=20000.00
+Order updated successfully: ORD2744CC
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+OrderItem saved: 2 x Keju, total_price=20000.00
+Order updated successfully: ORD2744CC
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\sales\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+Validated data: {'customer_name': 'Hasan Sinaga', 'email': 'hasan@gmail.com', 'phone_number': '123', 'location': 'Jakarta', 'status': 'Requested', 'payment_method': None, 'order_items': [{'product_type': <ProductType: Keju>, 'quantity': 1}], 'notes': '123'}
+Order items data: [{'product_type': <ProductType: Keju>, 'quantity': 1}]
+Product type: Keju, price: 10000.00
+Creating OrderItem: product_type=Keju, price_per_unit=10000.00, quantity=1
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order created: ORD75648B, total_price=10000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': '8643f86e-0b86-44fa-9e8a-346afa2a7a68'}
+Order created successfully: ORD75648B
+OrderItem saved: 1 x Keju, total_price=10000.00
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Order updated successfully: ORD75648B
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order updated successfully: ORD3BAE59
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order updated successfully: ORD2744CC
+OrderItem saved: 1 x Keju, total_price=10000.00
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Order updated successfully: ORD75648B
+D:\Kuliah\Semester 6\TA\130525\DevelopmentOf-DairyTrack-Platform\dairyTrack-api\Selling\sales\serializers.py changed, reloading.
+Watching for file changes with StatReloader
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order updated successfully: ORD75648B
+Order deleted successfully: ORD75648B
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order updated successfully: ORD2744CC
+Validated data: {'customer_name': 'Airin', 'email': 'airin@example.com', 'phone_number': '+62626262628524', 'location': 'medan', 'shipping_cost': Decimal('0.00'), 'status': 'Requested', 'payment_method': None, 'order_items': [{'product_type': <ProductType: Keju>, 'quantity': 1}], 'notes': '123'}
+Order items data: [{'product_type': <ProductType: Keju>, 'quantity': 1}]
+Product type: Keju, price: 10000.00
+Creating OrderItem: product_type=Keju, price_per_unit=10000.00, quantity=1
+OrderItem saved: 1 x Keju, total_price=10000.00
+Order created: ORD174E04, total_price=10000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': '9263578c-56d3-4fa6-91e6-23ba5ba577ca'}
+Order created successfully: ORD174E04
+Order deleted successfully: ORD174E04
+Validated data: {'customer_name': 'Airin', 'email': 'airin@example.com', 'phone_number': '+6285264351660', 'location': 'Medan', 'shipping_cost': Decimal('0.00'), 'status': 'Requested', 'payment_method': None, 'order_items': [{'product_type': <ProductType: Keju>, 'quantity': 2}, {'product_type': <ProductType: Susu Strawberry>, 'quantity': 1}], 'notes': 'kenan'}
+Order items data: [{'product_type': <ProductType: Keju>, 'quantity': 2}, {'product_type': <ProductType: Susu Strawberry>, 'quantity': 1}]
+Product type: Keju, price: 10000.00
+Creating OrderItem: product_type=Keju, price_per_unit=10000.00, quantity=2
+OrderItem saved: 2 x Keju, total_price=20000.00
+Product type: Susu Strawberry, price: 10000.00
+Creating OrderItem: product_type=Susu Strawberry, price_per_unit=10000.00, quantity=1
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Order created: ORD0396E4, total_price=30000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': '2a5c537e-5fdd-46fe-9fba-efd2c6c1ee3c'}
+Order created successfully: ORD0396E4
+OrderItem saved: 2 x Keju, total_price=20000.00
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': '896942f6-4956-46c7-9aac-94cebc95c994'}
+Order updated successfully: ORD0396E4
+OrderItem saved: 2 x Keju, total_price=20000.00
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Starting new HTTPS connection (1): api.gupshup.io:443
+https://api.gupshup.io:443 "POST /wa/api/v1/msg HTTP/1.1" 202 73
+Gupshup response: {'status': 'submitted', 'messageId': 'eb1ad7b9-46c0-4603-9c70-8496b3d6baa8'}
+Order updated successfully: ORD0396E4
+OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
+Order updated successfully: ORD2744CC

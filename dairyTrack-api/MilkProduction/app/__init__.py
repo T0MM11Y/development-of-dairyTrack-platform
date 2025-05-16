@@ -31,7 +31,8 @@ def create_app():
     migrate = Migrate(app, db)
 
     # Enable CORS
-    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+   # Enable CORS for multiple origins
+    CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3001"]}})
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
