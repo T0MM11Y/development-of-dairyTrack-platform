@@ -73,6 +73,21 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
     },
     {
+      id: "feed-management",
+      title: "Feed Management",
+      icon: "fas fa-seedling",
+      submenu: [
+        { id: "feed-type", title: "Feed Type", link: "/admin/list-feedType" },
+        { id: "nutrition-type", title: "Nutrition Type", link: "/admin/list-nutrition" },
+        { id: "feed", title: "Feed", link: "/admin/list-feed" },
+        { id: "feed-stock", title: "Feed Stock", link: "/admin/list-stock" },
+        { id: "daily-feed-schedule", title: "Daily Feed Schedule", link: "/admin/list-schedule" },
+        { id: "daily-feed-item", title: "Daily Feed Item", link: "/admin/list-feedItem" },
+        { id: "daily-feed-nutrition", title: "Daily Feed Nutrition", link: "/admin/daily-feed-nutrition" },
+      ],
+      showForRoles: ["admin","farmer", "supervisor"],
+    },
+    {
   id: "health-check",
   title: "Health Check Management",
   icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
