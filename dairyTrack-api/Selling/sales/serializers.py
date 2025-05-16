@@ -46,9 +46,22 @@ class OrderSerializer(serializers.ModelSerializer):
         if not order_items_data:
             raise serializers.ValidationError({"order_items": "Minimal satu item harus dipesan."})
 
+        # Merge order_items with the same product_type
+        merged_items = {}
+        for item_data in order_items_data:
+            product_type_id = item_data.get('product_type').id
+            quantity = item_data.get('quantity')
+            if product_type_id in merged_items:
+                merged_items[product_type_id]['quantity'] += quantity
+            else:
+                merged_items[product_type_id] = {
+                    'product_type': item_data.get('product_type'),
+                    'quantity': quantity
+                }
+
         order = Order.objects.create(**validated_data)
 
-        for item_data in order_items_data:
+        for item_data in merged_items.values():
             product_type_obj = item_data.get('product_type')
             logger.debug(f"Product type: {product_type_obj}, price: {product_type_obj.price}")
             if not product_type_obj:
@@ -82,26 +95,62 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
     def update(self, instance, validated_data):
+        # Ambil data order_items dari validated_data jika ada
+        order_items_data = validated_data.pop('order_items', None)
         new_status = validated_data.get("status", instance.status)
         payment_method = validated_data.get("payment_method", instance.payment_method)
 
+        # Validasi status Completed
         if new_status == "Completed" and not payment_method:
             raise serializers.ValidationError(
                 {"payment_method": "Metode pembayaran harus diisi sebelum menyelesaikan pesanan."}
             )
 
-        if new_status == "Completed":
-            for item in instance.order_items.all():
-                total_stock = ProductStock.objects.filter(product_type=item.product_type).aggregate(total=Sum('quantity'))['total'] or 0
-                if item.quantity > total_stock:
+        # Perbarui atribut lain dari Order
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Tangani pembaruan order_items jika ada
+        if order_items_data is not None:
+            # Hapus semua order_items yang ada
+            instance.order_items.all().delete()
+
+            # Gabungkan order_items dengan product_type yang sama
+            merged_items = {}
+            for item_data in order_items_data:
+                product_type_id = item_data.get('product_type').id
+                quantity = item_data.get('quantity')
+                if product_type_id in merged_items:
+                    merged_items[product_type_id]['quantity'] += quantity
+                else:
+                    merged_items[product_type_id] = {
+                        'product_type': item_data.get('product_type'),
+                        'quantity': quantity
+                    }
+
+            # Validasi stok dan buat OrderItem baru
+            for item_data in merged_items.values():
+                product_type_obj = item_data.get('product_type')
+                if not product_type_obj:
+                    raise serializers.ValidationError({"order_items": "Product type tidak valid."})
+
+                # Validasi stok
+                total_stock = ProductStock.objects.filter(product_type=product_type_obj).aggregate(total=Sum('quantity'))['total'] or 0
+                if item_data['quantity'] > total_stock:
                     raise serializers.ValidationError(
-                        {"error": f"Stok untuk {item.product_type.product_name} tidak mencukupi!"}
+                        {"order_items": f"Stok untuk {product_type_obj.product_name} tidak mencukupi."}
                     )
 
-        for attr, value in validated_data.items():
-            if attr != 'order_items':
-                setattr(instance, attr, value)
+                # Buat OrderItem baru
+                price_per_unit = product_type_obj.price
+                OrderItem.objects.create(
+                    order=instance,
+                    product_type=product_type_obj,
+                    quantity=item_data.get('quantity'),
+                    price_per_unit=price_per_unit
+                )
 
         instance.save()
+        instance.update_total_price()
         instance.refresh_from_db()
         return instance
