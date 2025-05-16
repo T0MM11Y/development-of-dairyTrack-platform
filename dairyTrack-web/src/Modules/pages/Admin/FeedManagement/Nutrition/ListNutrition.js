@@ -1,5 +1,4 @@
-// NutritionListPage.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   listNutritions,
   deleteNutrition,
@@ -65,7 +64,8 @@ const NutritionListPage = () => {
     }
   };
 
-  const handleDelete = async () => {
+  // Use useCallback to memoize the handleDelete function
+  const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     try {
       const response = await deleteNutrition(deleteId);
@@ -82,14 +82,18 @@ const NutritionListPage = () => {
           localStorage.removeItem("user");
           window.location.href = "/";
         } else {
-          Swal.fire("Error", response.message || "Gagal menghapus nutrisi.", "error");
+          Swal.fire(
+            "Error",
+            response.message || "Gagal menghapus nutrisi.",
+            "error"
+          );
         }
       }
     } catch (err) {
       Swal.fire("Error", "Terjadi kesalahan saat menghapus nutrisi.", "error");
       console.error(err);
     }
-  };
+  }, [deleteId]); // Add deleteId as dependency
 
   const handleExportPDF = async () => {
     try {
@@ -127,7 +131,7 @@ const NutritionListPage = () => {
     } else {
       fetchData();
     }
-  }, []);
+  }, [user.token]); // Add user.token as dependency
 
   useEffect(() => {
     if (deleteId) {
@@ -148,7 +152,9 @@ const NutritionListPage = () => {
         }
       });
     }
-  }, [deleteId]);
+  }, [deleteId, handleDelete]); // Add handleDelete as dependency
+
+  // Rest of the component remains unchanged
 
   return (
     <div className="container-fluid mt-4">
@@ -244,10 +250,14 @@ const NutritionListPage = () => {
                             : "Tidak diketahui"}
                         </td>
                         <td>
-                          {new Date(item.created_at).toLocaleDateString("id-ID")}
+                          {new Date(item.created_at).toLocaleDateString(
+                            "id-ID"
+                          )}
                         </td>
                         <td>
-                          {new Date(item.updated_at).toLocaleDateString("id-ID")}
+                          {new Date(item.updated_at).toLocaleDateString(
+                            "id-ID"
+                          )}
                         </td>
                         <td>
                           <Button
@@ -266,7 +276,9 @@ const NutritionListPage = () => {
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            onClick={() => !isSupervisor && setDeleteId(item.id)}
+                            onClick={() =>
+                              !isSupervisor && setDeleteId(item.id)
+                            }
                             {...disableIfSupervisor}
                           >
                             <i className="fas fa-trash" />
