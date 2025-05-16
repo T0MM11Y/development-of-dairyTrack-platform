@@ -10,7 +10,6 @@ import { getAllFeedStocks } from "../../../../controllers/feedStockController";
 import { listCows } from "../../../../controllers/cowsController";
 import { getDailyFeedById } from "../../../../controllers/feedScheduleController";
 import Swal from "sweetalert2";
-import { useTranslation } from "react-i18next";
 
 const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   const [dailyFeed, setDailyFeed] = useState(null);
@@ -24,163 +23,165 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   const [itemErrors, setItemErrors] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [formList, setFormList] = useState([]);
-  const { t } = useTranslation();
 
   useEffect(() => {
     console.log("Current feeds state:", feeds);
   }, [feeds]);
 
   useEffect(() => {
-  let isMounted = true;
+    let isMounted = true;
 
-  const fetchData = async () => {
-    if (!dailyFeedId || !isMounted) return;
+    const fetchData = async () => {
+      if (!dailyFeedId || !isMounted) return;
 
-    try {
-      setLoading(true);
-      setError("");
+      try {
+        setLoading(true);
+        setError("");
 
-      const [
-        dailyFeedResponse,
-        allFeedItemsResponse,
-        feedResponse,
-        stockResponse,
-        cowsResponse,
-      ] = await Promise.all([
-        getDailyFeedById(dailyFeedId).catch((err) => {
-          console.error("getDailyFeedById error:", err);
-          return { success: false, data: null };
-        }),
-        getAllFeedItems().catch((err) => {
-          console.error("getAllFeedItems error:", err);
-          return { success: false, data: [] };
-        }),
-        listFeeds().catch((err) => {
-          console.error("listFeeds error:", err);
-          return { success: false, feeds: [] };
-        }),
-        getAllFeedStocks().catch((err) => {
-          console.error("getAllFeedStocks error:", err);
-          return { success: false, data: [] };
-        }),
-        listCows().catch((err) => {
-          console.error("listCows error:", err);
-          return [];
-        }),
-      ]);
+        const [
+          dailyFeedResponse,
+          allFeedItemsResponse,
+          feedResponse,
+          stockResponse,
+          cowsResponse,
+        ] = await Promise.all([
+          getDailyFeedById(dailyFeedId).catch((err) => {
+            console.error("getDailyFeedById error:", err);
+            return { success: false, data: null };
+          }),
+          getAllFeedItems().catch((err) => {
+            console.error("getAllFeedItems error:", err);
+            return { success: false, data: [] };
+          }),
+          listFeeds().catch((err) => {
+            console.error("listFeeds error:", err);
+            return { success: false, feeds: [] };
+          }),
+          getAllFeedStocks().catch((err) => {
+            console.error("getAllFeedStocks error:", err);
+            return { success: false, data: [] };
+          }),
+          listCows().catch((err) => {
+            console.error("listCows error:", err);
+            return [];
+          }),
+        ]);
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      console.log("Raw feedResponse:", JSON.stringify(feedResponse, null, 2));
-      console.log("Raw stockResponse:", JSON.stringify(stockResponse, null, 2));
-
-      // Handle cow data
-      const cowMap = {};
-      if (Array.isArray(cowsResponse)) {
-        cowsResponse.forEach((cow) => {
-          cowMap[cow.id] = cow.name;
-        });
-      }
-      setCowNames(cowMap);
-
-      // Handle daily feed
-      if (dailyFeedResponse?.success && dailyFeedResponse.data) {
-        setDailyFeed(dailyFeedResponse.data);
-      } else {
-        setError("Gagal memuat data sesi pakan harian.");
-      }
-
-      // Handle feed items
-      const feedItemsData = Array.isArray(allFeedItemsResponse?.data)
-        ? allFeedItemsResponse.data
-        : [];
-      const relevantFeedItems = feedItemsData.filter(
-        (item) => item.daily_feed_id === parseInt(dailyFeedId)
-      );
-      setFeedItems(relevantFeedItems);
-      setFormList(
-        relevantFeedItems.map((item) => ({
-          id: item.id,
-          feed_id: item.feed_id?.toString() || "",
-          quantity: formatQuantityForDisplay(item.quantity),
-          daily_feed_id: item.daily_feed_id,
-        }))
-      );
-
-      // Handle feeds
-      if (feedResponse?.success && Array.isArray(feedResponse.feeds)) {
-        const processedFeeds = feedResponse.feeds.map((feed) => ({
-          ...feed,
-          name: feed.name || feed.type_name || `Feed #${feed.id}`,
-        }));
-        setFeeds(processedFeeds);
-        console.log("Processed feeds:", processedFeeds);
-        if (processedFeeds.length === 0) {
-          setError(
-            "Tidak ada data pakan tersedia. Silakan tambahkan pakan terlebih dahulu."
-          );
-        }
-      } else {
-        setFeeds([]);
-        setError(
-          (prev) =>
-            prev +
-            ` Gagal memuat data pakan: ${
-              feedResponse?.message || "Respon tidak valid"
-            }.`
+        console.log("Raw feedResponse:", JSON.stringify(feedResponse, null, 2));
+        console.log(
+          "Raw stockResponse:",
+          JSON.stringify(stockResponse, null, 2)
         );
-      }
 
-      // Handle feed stocks
-      if (stockResponse?.success && Array.isArray(stockResponse.data)) {
-        const stockEntries = stockResponse.data
-          .filter((feed) => feed.stock !== null)
-          .map((feed) => ({
-            feedId: feed.id,
-            stock: parseFloat(feed.stock.stock) || 0,
-            unit: feed.stock.unit || "kg",
-            FeedStock: feed.stock, // Keep for compatibility if needed
+        // Handle cow data
+        const cowMap = {};
+        if (Array.isArray(cowsResponse)) {
+          cowsResponse.forEach((cow) => {
+            cowMap[cow.id] = cow.name;
+          });
+        }
+        setCowNames(cowMap);
+
+        // Handle daily feed
+        if (dailyFeedResponse?.success && dailyFeedResponse.data) {
+          setDailyFeed(dailyFeedResponse.data);
+        } else {
+          setError("Gagal memuat data sesi pakan harian.");
+        }
+
+        // Handle feed items
+        const feedItemsData = Array.isArray(allFeedItemsResponse?.data)
+          ? allFeedItemsResponse.data
+          : [];
+        const relevantFeedItems = feedItemsData.filter(
+          (item) => item.daily_feed_id === parseInt(dailyFeedId)
+        );
+        setFeedItems(relevantFeedItems);
+        setFormList(
+          relevantFeedItems.map((item) => ({
+            id: item.id,
+            feed_id: item.feed_id?.toString() || "",
+            quantity: formatQuantityForDisplay(item.quantity),
+            daily_feed_id: item.daily_feed_id,
+          }))
+        );
+
+        // Handle feeds
+        if (feedResponse?.success && Array.isArray(feedResponse.feeds)) {
+          const processedFeeds = feedResponse.feeds.map((feed) => ({
+            ...feed,
+            name: feed.name || feed.type_name || `Feed #${feed.id}`,
           }));
-        setFeedStocks(stockEntries);
-        console.log("Processed feedStocks:", stockEntries);
-        if (stockEntries.length === 0) {
+          setFeeds(processedFeeds);
+          console.log("Processed feeds:", processedFeeds);
+          if (processedFeeds.length === 0) {
+            setError(
+              "Tidak ada data pakan tersedia. Silakan tambahkan pakan terlebih dahulu."
+            );
+          }
+        } else {
+          setFeeds([]);
           setError(
             (prev) =>
               prev +
-              " Tidak ada stok pakan tersedia. Silakan tambahkan stok pakan."
+              ` Gagal memuat data pakan: ${
+                feedResponse?.message || "Respon tidak valid"
+              }.`
           );
         }
-      } else {
-        setFeedStocks([]);
-        setError(
-          (prev) =>
-            prev +
-            ` Gagal memuat data stok pakan: ${
-              stockResponse?.message || "Respon tidak valid"
-            }.`
-        );
-      }
-    } catch (error) {
-      if (isMounted) {
-        console.error("Error fetching data:", error);
-        let errorMessage = error.message || "Gagal mengambil data";
-        if (error.message.includes("401") || error.message.includes("403")) {
-          errorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
-          localStorage.removeItem("user");
+
+        // Handle feed stocks
+        if (stockResponse?.success && Array.isArray(stockResponse.data)) {
+          const stockEntries = stockResponse.data
+            .filter((feed) => feed.stock !== null)
+            .map((feed) => ({
+              feedId: feed.id,
+              stock: parseFloat(feed.stock.stock) || 0,
+              unit: feed.stock.unit || "kg",
+              FeedStock: feed.stock, // Keep for compatibility if needed
+            }));
+          setFeedStocks(stockEntries);
+          console.log("Processed feedStocks:", stockEntries);
+          if (stockEntries.length === 0) {
+            setError(
+              (prev) =>
+                prev +
+                " Tidak ada stok pakan tersedia. Silakan tambahkan stok pakan."
+            );
+          }
+        } else {
+          setFeedStocks([]);
+          setError(
+            (prev) =>
+              prev +
+              ` Gagal memuat data stok pakan: ${
+                stockResponse?.message || "Respon tidak valid"
+              }.`
+          );
         }
-        setError(errorMessage);
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error fetching data:", error);
+          let errorMessage = error.message || "Gagal mengambil data";
+          if (error.message.includes("401") || error.message.includes("403")) {
+            errorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
+            localStorage.removeItem("user");
+          }
+          setError(errorMessage);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-  };
+    };
 
-  fetchData();
+    fetchData();
 
-  return () => {
-    isMounted = false;
-  };
-}, [dailyFeedId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [dailyFeedId]);
 
   const formatQuantityForDisplay = (quantity) => {
     if (quantity === null || quantity === undefined) return "";
@@ -453,7 +454,9 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                 : feedItem
             );
           } else {
-            throw new Error(updateResponse?.message || "Gagal memperbarui item");
+            throw new Error(
+              updateResponse?.message || "Gagal memperbarui item"
+            );
           }
         }
       }
@@ -531,7 +534,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         <div className="modal-content shadow-lg">
           <div className="modal-header">
             <h5 className="modal-title fw-bold text-info">
-              {t("dailyfeed.daily_feed_details")}
+              Detail Pakan Harian
             </h5>
             <button
               className="btn-close"
@@ -547,7 +550,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                 <div className="spinner-border text-info" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <p className="mt-2">{t("dailyfeed.loading_data")}...</p>
+                <p className="mt-2">Memuat data...</p>
               </div>
             ) : (
               <>
@@ -555,7 +558,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <div className="col-md-4">
                     <div className="form-group">
                       <label className="form-label text-secondary">
-                        {t("dailyfeed.date")}
+                        Tanggal
                       </label>
                       <input
                         type="text"
@@ -567,9 +570,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   </div>
                   <div className="col-md-4">
                     <div className="form-group">
-                      <label className="form-label text-secondary">
-                        {t("dailyfeed.session")}
-                      </label>
+                      <label className="form-label text-secondary">Sesi</label>
                       <input
                         type="text"
                         className="form-control bg-white"
@@ -580,9 +581,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   </div>
                   <div className="col-md-4">
                     <div className="form-group">
-                      <label className="form-label text-secondary">
-                        {t("dailyfeed.cow")}
-                      </label>
+                      <label className="form-label text-secondary">Sapi</label>
                       <input
                         type="text"
                         className="form-control bg-white"
@@ -607,7 +606,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                         >
                           <div className="col-md-5">
                             <label className="form-label fw-bold">
-                              {t("dailyfeed.feed_type")}
+                              Jenis Pakan
                             </label>
                             <select
                               name="feed_id"
@@ -642,7 +641,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                           </div>
                           <div className="col-md-4">
                             <label className="form-label fw-bold">
-                              {t("dailyfeed.quantity")} (kg)
+                              Jumlah (kg)
                             </label>
                             <input
                               type="number"
@@ -675,7 +674,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                                   aria-hidden="true"
                                 ></span>
                               ) : (
-                                t("dailyfeed.delete")
+                                "Hapus"
                               )}
                             </button>
                           </div>
@@ -690,7 +689,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                         onClick={handleAddFeedItem}
                         disabled={feeds.length === 0 || actionLoading}
                       >
-                        + {t("dailyfeed.add_feed")}
+                        + Tambah Pakan
                       </button>
                     </div>
                   </>
@@ -698,8 +697,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                   <>
                     {feedItems.length === 0 ? (
                       <div className="alert alert-info">
-                        <i className="ri-information-line me-2"></i>{" "}
-                        {t("dailyfeed.no_feed_data_for_session")}
+                        <i className="ri-information-line me-2"></i> Tidak ada
+                        data pakan untuk sesi ini
                       </div>
                     ) : (
                       <div className="table-responsive mb-4">
@@ -717,7 +716,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                                 className="text-center"
                                 style={{ width: "20%" }}
                               >
-                                {t("dailyfeed.quantity")} (kg)
+                                Jumlah (kg)
                               </th>
                               <th
                                 className="text-center"
@@ -757,7 +756,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                     onClick={onClose}
                     disabled={loading || actionLoading}
                   >
-                    {t("dailyfeed.back")}
+                    Kembali
                   </button>
 
                   {isEditing ? (
@@ -797,7 +796,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                       onClick={toggleEditMode}
                       disabled={loading || actionLoading}
                     >
-                      {t("dailyfeed.edit")}
+                      Edit
                     </button>
                   )}
                 </div>
