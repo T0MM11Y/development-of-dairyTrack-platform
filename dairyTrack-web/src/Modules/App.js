@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Blog";
 import Admin from "./pages/Admin/Dashboard";
+import ResetPassword from "./pages/Admin/UsersManagement/ResetPassword";
 import ListUsers from "./pages/Admin/UsersManagement/ListUsers";
 import CreateUsers from "./pages/Admin/UsersManagement/CreateUsers";
 import AdminLayout from "./layouts/AdminLayout";
@@ -161,6 +162,11 @@ function App() {
             <ProtectedRoute path="/admin/edit-user/:userId">
               <AdminLayout>
                 <EditUser />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/reset-password">
+              <AdminLayout>
+                <ResetPassword />
               </AdminLayout>
             </ProtectedRoute>
 

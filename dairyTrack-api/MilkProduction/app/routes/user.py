@@ -320,3 +320,47 @@ def get_all_farmers():
             "status": "error",
             "message": str(e)
         }), 500
+    
+
+@user_bp.route('/reset-password/<int:user_id>', methods=['POST'])
+def reset_password(user_id):
+    try:
+        # Find user by ID
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        # Get the user's role
+        role = Role.query.get(user.role_id)
+        if not role:
+            return jsonify({"error": "User role not found"}), 404
+        
+        # Set default password based on role
+        default_password = None
+        if role.name.lower() == 'farmer':
+            default_password = 'farmer123'
+        elif role.name.lower() == 'supervisor':
+            default_password = 'supervisor123'
+        else:
+            return jsonify({"error": f"Password reset not supported for role: {role.name}"}), 400
+        
+        # Hash the default password
+        hashed_password = generate_password_hash(default_password)
+        
+        # Update user password
+        user.password = hashed_password
+        db.session.commit()
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Password reset successfully for {user.name}",
+            "user_id": user.id,
+            "role": role.name
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
