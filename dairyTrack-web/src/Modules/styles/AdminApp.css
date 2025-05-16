@@ -30,7 +30,7 @@ html, body {
 /* Header Styles */
 .admin-header {
   background: #ffffff;
-  box-shadow: 0 0.25rem 3.75rem 0 rgba(84, 105, 102, 0.15);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08); /* Reduced shadow intensity */
   height: 4.375rem;
   padding: 0 1rem;
   display: flex;
@@ -66,25 +66,109 @@ html, body {
   display: flex;
   align-items: center;
 }
-
-.admin-header .notifications {
+/* Bell Animation */
+.notification-bell {
   position: relative;
-  margin-right: 1.5rem;
-  color: #d1d3e2;
-  cursor: pointer;
+  transition: transform 0.2s ease;
+  color: #495057;
 }
 
-.admin-header .notifications .badge {
+.notification-bell:hover {
+  transform: scale(1.15);
+  color: #212529;
+}
+
+.animate-bell {
+  animation: bell-shake 1s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation-iteration-count: 3;
+}
+
+@keyframes bell-shake {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(10deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(5deg); }
+  60% { transform: rotate(-5deg); }
+  75% { transform: rotate(2deg); }
+  85% { transform: rotate(-2deg); }
+  92% { transform: rotate(1deg); }
+  100% { transform: rotate(0); }
+}
+
+/* Badge Animation */
+.pulse-badge {
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 0 rgba(220, 53, 69, 0.7);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Dropdown styling */
+.notification-dropdown {
+  width: 360px;
+  max-height: 500px;
+  padding: 0;
   position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: #e74a3b;
-  color: white;
-  border-radius: 50%;
-  padding: 0.25em 0.45em;
-  font-size: 0.6rem;
+  border-radius: 0.5rem;
+  color: #5c5c5c;
+  border: none;
+  box-shadow: 0 0.25rem 0.5rem rgba(110, 109, 109, 0.08); /* Reduced shadow intensity */
+  overflow: hidden;
+  animation: dropdown-fade 0.3s ease;
+  background-color: #fff; /* Added white background */
 }
 
+@keyframes dropdown-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+.dropdown-menu .dropdown-item:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.dropdown-item.bg-light {
+  position: relative;
+}
+
+.dropdown-item.bg-light::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #007bff;
+}
 .user-dropdown {
   position: relative;
   cursor: pointer;

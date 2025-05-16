@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { logout } from "../controllers/authController";
+import NotificationDropdown from "../components/Notification";
+
 import Swal from "sweetalert2";
 
 const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
@@ -149,9 +151,8 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       </div>
 
       <div className="header-right">
-        <div className="notifications">
-          <i className="fas fa-bell"></i>
-          <span className="badge">3</span>
+        <div className="me-3">
+          <NotificationDropdown />
         </div>
 
         <div

@@ -286,9 +286,27 @@ const ListMilking = () => {
   }, [sessions]);
 
   // Filter, sort and paginate sessions
+  // ...existing code...
+
+  // Filter, sort and paginate sessions
   const filteredAndPaginatedSessions = useMemo(() => {
-    // First, filter sessions
-    let filtered = sessions.filter((session) => {
+    // Filter sessions based on user role
+    let filteredSessions = sessions;
+
+    // If user is farmer (role_id !== 1), show only sessions for cows managed by this farmer
+    if (
+      currentUser &&
+      currentUser.role_id !== 1 &&
+      userManagedCows.length > 0
+    ) {
+      const managedCowIds = userManagedCows.map((cow) => String(cow.id));
+      filteredSessions = filteredSessions.filter((session) =>
+        managedCowIds.includes(String(session.cow_id))
+      );
+    }
+
+    // Apply search and filter logic
+    filteredSessions = filteredSessions.filter((session) => {
       const matchesSearch =
         (session.cow_name?.toLowerCase() || "").includes(
           searchTerm.toLowerCase()
@@ -312,23 +330,23 @@ const ListMilking = () => {
     });
 
     // Sort by milking time, most recent first
-    filtered = [...filtered].sort(
+    filteredSessions = [...filteredSessions].sort(
       (a, b) => new Date(b.milking_time) - new Date(a.milking_time)
     );
 
     // Calculate pagination
-    const totalItems = filtered.length;
+    const totalItems = filteredSessions.length;
     const totalPages = Math.ceil(totalItems / sessionsPerPage);
 
     // Get current page items
     const startIndex = (currentPage - 1) * sessionsPerPage;
-    const paginatedItems = filtered.slice(
+    const paginatedItems = filteredSessions.slice(
       startIndex,
       startIndex + sessionsPerPage
     );
 
     return {
-      filteredSessions: filtered,
+      filteredSessions,
       currentSessions: paginatedItems,
       totalItems,
       totalPages,
@@ -341,7 +359,11 @@ const ListMilking = () => {
     selectedDate,
     currentPage,
     sessionsPerPage,
+    currentUser,
+    userManagedCows,
   ]);
+
+  // ...existing code...
 
   // Handle adding a new milking session
   const handleAddSession = async (e) => {

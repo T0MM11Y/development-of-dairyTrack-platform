@@ -8,6 +8,7 @@ from sqlalchemy import func
 from fpdf import FPDF
 from flask import send_file
 from io import BytesIO
+from app.services.notification import check_milk_production_and_notify
 import pandas as pd
 
 milk_production_bp = Blueprint('milk_production', __name__)
@@ -85,6 +86,10 @@ def add_milking_session():
         summary.total_volume = summary.morning_volume + summary.afternoon_volume + summary.evening_volume
         
         db.session.commit()
+        #cek evening kosong apatidak
+        if summary.evening_volume != 0 or summary.afternoon_volume != 0:
+            check_milk_production_and_notify()
+
         return jsonify({
             "success": True, 
             "message": "Milking session added successfully with new batch", 
@@ -93,7 +98,7 @@ def add_milking_session():
         }), 201
     
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback()   
         return jsonify({"success": False, "error": str(e)}), 400
 
 @milk_production_bp.route('/milking-sessions', methods=['GET'])
@@ -777,3 +782,9 @@ def export_daily_summaries_excel():
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+
+@milk_production_bp.route('/check-production', methods=['POST'])
+def check_production():
+    check_milk_production_and_notify()
+    return jsonify({'message': 'Production check completed'}), 200

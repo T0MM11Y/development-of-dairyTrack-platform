@@ -27,6 +27,7 @@ import Blog from "./pages/Blog";
 import Gallery from "./pages/Gallery";
 import Product from "./pages/Product";
 import Order from "./pages/Order";
+import { SocketProvider } from "../socket/socket";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -61,117 +62,119 @@ const ProtectedRoute = ({ children, ...rest }) => {
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Switch>
-          {/* Rute untuk halaman utama */}
-          <Route path="/" exact>
-            <Header />
-            <Home />
-          </Route>
-          <Route path="/about">
-            <Header />
-            <About />
-            <Footer />
-          </Route>
-          <Route path="/contact">
-            <Header />
-            <Contact />
-            <Footer />
-          </Route>
-          <Route path="/blog">
-            <Header />
-            <Blog />
-            <Footer />
-          </Route>
-          <Route path="/product">
-            <Header />
-            <Product />
-            <Footer />
-          </Route>
-          <Route path="/gallery">
-            <Header />
-            <Gallery />
-            <Footer />
-          </Route>
-          <Route path="/order">
-            <Header />
-            <Order />
-            <Footer />
-          </Route>
+      <SocketProvider>
+        <div className="App">
+          <Switch>
+            {/* Rute untuk halaman utama */}
+            <Route path="/" exact>
+              <Header />
+              <Home />
+            </Route>
+            <Route path="/about">
+              <Header />
+              <About />
+              <Footer />
+            </Route>
+            <Route path="/contact">
+              <Header />
+              <Contact />
+              <Footer />
+            </Route>
+            <Route path="/blog">
+              <Header />
+              <Blog />
+              <Footer />
+            </Route>
+            <Route path="/product">
+              <Header />
+              <Product />
+              <Footer />
+            </Route>
+            <Route path="/gallery">
+              <Header />
+              <Gallery />
+              <Footer />
+            </Route>
+            <Route path="/order">
+              <Header />
+              <Order />
+              <Footer />
+            </Route>
 
-          {/* Rute untuk halaman admin - with authentication protection */}
-          <ProtectedRoute path="/admin" exact>
-            <AdminLayout>
-              <Admin />
-            </AdminLayout>
-          </ProtectedRoute>
+            {/* Rute untuk halaman admin - with authentication protection */}
+            <ProtectedRoute path="/admin" exact>
+              <AdminLayout>
+                <Admin />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/list-users">
-            <AdminLayout>
-              <ListUsers />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-users">
+              <AdminLayout>
+                <ListUsers />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/add-users">
-            <AdminLayout>
-              <CreateUsers />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-users">
+              <AdminLayout>
+                <CreateUsers />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/edit-user/:userId">
-            <AdminLayout>
-              <EditUser />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-user/:userId">
+              <AdminLayout>
+                <EditUser />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/cattle-distribution">
-            <AdminLayout>
-              <CattleDistribution />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/cattle-distribution">
+              <AdminLayout>
+                <CattleDistribution />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/list-cows">
-            <AdminLayout>
-              <ListCows />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-cows">
+              <AdminLayout>
+                <ListCows />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/add-cow">
-            <AdminLayout>
-              <CreateCows />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-cow">
+              <AdminLayout>
+                <CreateCows />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/edit-cow/:cowId">
-            <AdminLayout>
-              <EditCow />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-cow/:cowId">
+              <AdminLayout>
+                <EditCow />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/list-of-gallery">
-            <AdminLayout>
-              <ListOfGallery />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-of-gallery">
+              <AdminLayout>
+                <ListOfGallery />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/list-of-blog">
-            <AdminLayout>
-              <ListOfBlog />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-milking">
-            <AdminLayout>
-              <ListMilking />
-            </AdminLayout>
-          </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-of-blog">
+              <AdminLayout>
+                <ListOfBlog />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-milking">
+              <AdminLayout>
+                <ListMilking />
+              </AdminLayout>
+            </ProtectedRoute>
 
-          <ProtectedRoute path="/admin/milk-trend">
-            <AdminLayout>
-              <MilkTrend />
-            </AdminLayout>
-          </ProtectedRoute>
-        </Switch>
-      </div>
+            <ProtectedRoute path="/admin/milk-trend">
+              <AdminLayout>
+                <MilkTrend />
+              </AdminLayout>
+            </ProtectedRoute>
+          </Switch>
+        </div>{" "}
+      </SocketProvider>
     </Router>
   );
 }

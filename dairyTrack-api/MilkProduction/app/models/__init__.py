@@ -9,3 +9,4 @@ from .blog_category import BlogCategory
 from .milking_sessions import MilkingSession
 from .milk_batches import MilkBatch
 from .daily_milk_summary import DailyMilkSummary
+from .notification import Notification

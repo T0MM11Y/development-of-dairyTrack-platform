@@ -30,8 +30,11 @@ class User(db.Model):
         lazy='dynamic'
     )
     
-    # New relationship with milking sessions
+    # Relationship with milking sessions
     milking_sessions = relationship('MilkingSession', back_populates='milker')
+    
+    # Relationship with notifications
+    notifications = relationship('Notification', back_populates='user')
 
     def __repr__(self):
         return (f"<User(name='{self.name}', username='{self.username}', email='{self.email}', "

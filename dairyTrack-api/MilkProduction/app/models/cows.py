@@ -28,6 +28,8 @@ class Cow(db.Model):
     # New relationships
     milking_sessions = relationship('MilkingSession', back_populates='cow')
     daily_summaries = relationship('DailyMilkSummary', back_populates='cow')
+    notifications = relationship('Notification', back_populates='cow', foreign_keys='Notification.cow_id', 
+                            cascade="all, delete-orphan", lazy='dynamic')
 
     def __repr__(self):
         return (f"<Cow(name='{self.name}', birth={self.birth}, breed='{self.breed}', "

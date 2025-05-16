@@ -13,6 +13,9 @@ from flask_migrate import Migrate
 from app.routes.category import category_bp
 from app.routes.blog_category import blog_category_bp
 from app.routes.milk_production import milk_production_bp
+from app.routes.notification import notification_bp
+from app.socket import init_socketio
+
 import os
 
 
@@ -21,7 +24,6 @@ def create_app():
     app.config.from_object(Config)
 
     # Konfigurasi folder upload dan ekstensi yang diizinkan
-    # Pastikan path ini benar
     app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'app/uploads/gallery')
     app.config['BLOG_UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'app/uploads/blog')
     app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
@@ -32,6 +34,9 @@ def create_app():
 
     # Enable CORS
     CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+    
+    # Initialize Socket.IO
+    socketio = init_socketio(app)
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -44,5 +49,6 @@ def create_app():
     app.register_blueprint(blog_category_bp, url_prefix='/blog-category')
     app.register_blueprint(blog_bp, url_prefix='/blog')
     app.register_blueprint(milk_production_bp, url_prefix='/milk-production')
+    app.register_blueprint(notification_bp, url_prefix='/notification')
     
-    return app
+    return app, socketio

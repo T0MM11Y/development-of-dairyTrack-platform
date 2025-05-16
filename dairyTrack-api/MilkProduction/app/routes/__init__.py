@@ -11,6 +11,7 @@ from .gallery import gallery_bp
 from .blog import blog_bp
 from .category import category_bp
 from .blog_category import blog_category_bp
+from .notification import notification_bp
 
 # Import the authentication routes
 from .auth import *
@@ -23,5 +24,6 @@ routes_bp.register_blueprint(gallery_bp)
 routes_bp.register_blueprint(blog_bp)
 routes_bp.register_blueprint(category_bp)
 routes_bp.register_blueprint(blog_category_bp)
+routes_bp.register_blueprint(notification_bp)
 
 
