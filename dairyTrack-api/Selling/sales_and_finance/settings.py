@@ -102,6 +102,7 @@ WSGI_APPLICATION = 'sales_and_finance.wsgi.application'
 # Mengizinkan akses dari frontend React
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://172.20.10.3:5001"
 ]
 
@@ -140,7 +141,7 @@ CORS_ALLOW_HEADERS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Ganti dengan nama database MySQL
+        'NAME': 'dairy_track2',  # Ganti dengan nama database MySQL
         'USER': 'root',  # Ganti dengan username MySQL
         'PASSWORD': '',  # Ganti dengan password MySQL
         'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan

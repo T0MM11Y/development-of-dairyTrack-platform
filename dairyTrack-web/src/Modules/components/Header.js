@@ -9,6 +9,7 @@ const Header = () => {
   const [showModal, setShowModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const history = useHistory();
@@ -252,14 +253,13 @@ const Header = () => {
           </div>
         </nav>
       </header>
-
       {/* Login Modal */}
       {showModal && (
         <div className="modal-backdrop">
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content material-modal">
-              <div className="modal-header">
-                <h5 className="modal-title">Login</h5>
+            <div className="modal-content material-modal shadow-lg border-0">
+              <div className="modal-header bg-dark border-0 pb-1">
+                <h5 className="modal-title fw-bold">Sign In</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -267,56 +267,82 @@ const Header = () => {
                   aria-label="Close"
                 ></button>
               </div>
-              <div className="modal-body">
-                <form>
-                  <div className="mb-3">
-                    <label htmlFor="username" className="form-label">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="username"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                    />
+              <div className="modal-body px-4 py-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleLogin();
+                  }}
+                >
+                  <div className="mb-4">
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0">
+                        <i className="far fa-user"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control border-start-0"
+                        id="username"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="password" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      id="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0">
+                        <i className="fas fa-lock"></i>
+                      </span>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="form-control border-start-0 border-end-0"
+                        id="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <span
+                        className="input-group-text bg-light border-start-0 cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <i
+                          className={`fas ${
+                            showPassword ? "fa-eye-slash" : "fa-eye"
+                          }`}
+                        ></i>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="rememberMe"
+                      />
+                      <label
+                        className="form-check-label small"
+                        htmlFor="rememberMe"
+                      >
+                        Remember me
+                      </label>
+                    </div>
                   </div>
                   {errorMessage && (
-                    <div className="alert alert-danger" role="alert">
+                    <div className="alert alert-danger py-2 small" role="alert">
+                      <i className="far fa-exclamation-triangle me-2"></i>
                       {errorMessage}
                     </div>
                   )}
+                  <button type="submit" className="btn btn-primary w-100 py-2">
+                    <i className="fa fa-sign-in-alt me-2"></i>
+                    Sign In
+                  </button>
                 </form>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-primary w-100"
-                  onClick={handleLogin}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary w-100 mt-2"
-                  onClick={toggleModal}
-                >
-                  Close
-                </button>
               </div>
             </div>
           </div>

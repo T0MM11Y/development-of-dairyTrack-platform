@@ -1,7 +1,10 @@
 // src/pages/Admin/FeedManagement/Feed/EditFeed.js
 import { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
-import { getFeedById, updateFeed } from "../../../../controllers/feedController";
+import {
+  getFeedById,
+  updateFeed,
+} from "../../../../controllers/feedController";
 import { listFeedTypes } from "../../../../controllers/feedTypeController";
 import { listNutritions } from "../../../../controllers/nutritionController";
 import Swal from "sweetalert2";
@@ -14,7 +17,7 @@ const FeedEditPage = () => {
   const [originalForm, setOriginalForm] = useState(null); // Store original data to compare changes
   const [feedTypes, setFeedTypes] = useState([]);
   const [nutritions, setNutritions] = useState([]);
-  const [originalName, setOriginalName] = useState("");
+  const [setOriginalName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -38,11 +41,12 @@ const FeedEditPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [feedResponse, feedTypeResponse, nutritionResponse] = await Promise.all([
-          getFeedById(id),
-          listFeedTypes(),
-          listNutritions(),
-        ]);
+        const [feedResponse, feedTypeResponse, nutritionResponse] =
+          await Promise.all([
+            getFeedById(id),
+            listFeedTypes(),
+            listNutritions(),
+          ]);
 
         if (feedResponse.success) {
           const feed = feedResponse.feed;
@@ -113,7 +117,12 @@ const FeedEditPage = () => {
     const updatedNutrisiList = [...form.nutrisiList];
     updatedNutrisiList[index] = {
       ...updatedNutrisiList[index],
-      [field]: field === "amount" ? (value === "" ? "" : parseFloat(value) || 0) : value,
+      [field]:
+        field === "amount"
+          ? value === ""
+            ? ""
+            : parseFloat(value) || 0
+          : value,
     };
     setForm((prev) => ({
       ...prev,
@@ -147,21 +156,24 @@ const FeedEditPage = () => {
       .filter((_, index) => index !== currentIndex)
       .map((n) => n.nutrisi_id)
       .filter((id) => id);
-    return nutritions.filter((n) => !selectedNutrisiIds.includes(n.id.toString()));
+    return nutritions.filter(
+      (n) => !selectedNutrisiIds.includes(n.id.toString())
+    );
   };
 
   const hasChanges = () => {
     if (!originalForm || !form) return false;
     // Compare basic fields
-    const basicFieldsChanged = (
+    const basicFieldsChanged =
       form.typeId !== originalForm.typeId ||
       form.name.trim() !== originalForm.name.trim() ||
       form.unit.trim() !== originalForm.unit.trim() ||
       parseFloat(form.min_stock) !== parseFloat(originalForm.min_stock) ||
-      parseFloat(form.price) !== parseFloat(originalForm.price)
-    );
+      parseFloat(form.price) !== parseFloat(originalForm.price);
     // Compare nutrisiList
-    const nutrisiListChanged = JSON.stringify(form.nutrisiList) !== JSON.stringify(originalForm.nutrisiList);
+    const nutrisiListChanged =
+      JSON.stringify(form.nutrisiList) !==
+      JSON.stringify(originalForm.nutrisiList);
     return basicFieldsChanged || nutrisiListChanged;
   };
 
@@ -339,7 +351,9 @@ const FeedEditPage = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Diperbarui oleh</label>
+                    <label className="form-label fw-bold">
+                      Diperbarui oleh
+                    </label>
                     <input
                       type="text"
                       className="form-control bg-light"
@@ -347,13 +361,19 @@ const FeedEditPage = () => {
                       readOnly
                       disabled
                     />
-                    <input type="hidden" name="updated_by" value={form.updated_by} />
+                    <input
+                      type="hidden"
+                      name="updated_by"
+                      value={form.updated_by}
+                    />
                   </div>
                 </div>
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Diperbarui</label>
+                    <label className="form-label fw-bold">
+                      Tanggal Diperbarui
+                    </label>
                     <input
                       type="text"
                       className="form-control bg-light"
@@ -374,13 +394,19 @@ const FeedEditPage = () => {
                     <div key={index} className="row mb-2 align-items-center">
                       <div className="col-md-5">
                         {index === 0 && (
-                          <label className="form-label mb-1">Pilih Nutrisi</label>
+                          <label className="form-label mb-1">
+                            Pilih Nutrisi
+                          </label>
                         )}
                         <select
                           className="form-control"
                           value={nutrisi.nutrisi_id}
                           onChange={(e) =>
-                            handleNutrisiChange(index, "nutrisi_id", e.target.value)
+                            handleNutrisiChange(
+                              index,
+                              "nutrisi_id",
+                              e.target.value
+                            )
                           }
                           required
                         >

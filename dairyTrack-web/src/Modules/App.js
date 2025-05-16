@@ -61,6 +61,13 @@ import ListStock from "./pages/Admin/FeedManagement/FeedStock/FeedStockList";
 import ListDailyFeedSchedule from "./pages/Admin/FeedManagement/DailyFeedSchedule/ListDailyFeedSchedule";
 import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDailyFeedItem";
 
+
+// sales and financial
+import ProductType from "./pages/Admin/ProductType/listProductType";
+import ProductStock from "./pages/Admin/Product/ListProductStock";
+import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
+import SalesOrder from "./pages/Admin/Order/ListOrder";
+
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
   // Check if user data exists in localStorage
@@ -205,94 +212,142 @@ function App() {
               </AdminLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/admin/list-feedType">
-            <AdminLayout>
-              <ListFeedTypes />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/edit-feedType/:id">
-            <AdminLayout>
-              <ListFeedTypes />
-              <EditFeedTypes />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-nutrition">
-            <AdminLayout>
-              <ListNutrition />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-feed">
-            <AdminLayout>
-              <ListFeed />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/edit-feed/:id">
-            <AdminLayout>
-              <ListFeed />
-              <EditFeed />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-stock">
-            <AdminLayout>
-              <ListStock />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-schedule">
-            <AdminLayout>
-              <ListDailyFeedSchedule />
-            </AdminLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/admin/list-feedItem">
-            <AdminLayout>
-              <ListDailyFeedItem />
-            </AdminLayout>
-          </ProtectedRoute>
-             {/* HealthCheck */}
-<ProtectedRoute path="/admin/list-health-checks">
-  <AdminLayout><ListHealthChecks /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/add-health-check">
-  <AdminLayout><CreateHealthCheck /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/edit-health-check/:id">
-  <AdminLayout><EditHealthCheck /></AdminLayout>
-</ProtectedRoute>
+              <AdminLayout>
+                <ListFeedTypes />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-feedType/:id">
+              <AdminLayout>
+                <ListFeedTypes />
+                <EditFeedTypes />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-nutrition">
+              <AdminLayout>
+                <ListNutrition />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-feed">
+              <AdminLayout>
+                <ListFeed />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-feed/:id">
+              <AdminLayout>
+                <ListFeed />
+                <EditFeed />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-stock">
+              <AdminLayout>
+                <ListStock />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-schedule">
+              <AdminLayout>
+                <ListDailyFeedSchedule />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-feedItem">
+              <AdminLayout>
+                <ListDailyFeedItem />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* HealthCheck */}
+            <ProtectedRoute path="/admin/list-health-checks">
+              <AdminLayout>
+                <ListHealthChecks />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-health-check">
+              <AdminLayout>
+                <CreateHealthCheck />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-health-check/:id">
+              <AdminLayout>
+                <EditHealthCheck />
+              </AdminLayout>
+            </ProtectedRoute>
 
-{/* Symptom */}
-<ProtectedRoute path="/admin/list-symptoms">
-  <AdminLayout><ListSymptoms /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/add-symptom">
-  <AdminLayout><CreateSymptom /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/edit-symptom/:id">
-  <AdminLayout><EditSymptom /></AdminLayout>
-</ProtectedRoute>
+            {/* Symptom */}
+            <ProtectedRoute path="/admin/list-symptoms">
+              <AdminLayout>
+                <ListSymptoms />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-symptom">
+              <AdminLayout>
+                <CreateSymptom />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-symptom/:id">
+              <AdminLayout>
+                <EditSymptom />
+              </AdminLayout>
+            </ProtectedRoute>
 
-{/* DiseaseHistory */}
-<ProtectedRoute path="/admin/list-disease-history">
-  <AdminLayout><ListDiseaseHistory /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/add-disease-history">
-  <AdminLayout><CreateDiseaseHistory /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/edit-disease-history/:id">
-  <AdminLayout><EditDiseaseHistory /></AdminLayout>
-</ProtectedRoute>
+            {/* DiseaseHistory */}
+            <ProtectedRoute path="/admin/list-disease-history">
+              <AdminLayout>
+                <ListDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-disease-history">
+              <AdminLayout>
+                <CreateDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-disease-history/:id">
+              <AdminLayout>
+                <EditDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
 
-{/* Reproduction */}
-<ProtectedRoute path="/admin/list-reproduction">
-  <AdminLayout><ListReproduction /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/add-reproduction">
-  <AdminLayout><CreateReproduction /></AdminLayout>
-</ProtectedRoute>
-<ProtectedRoute path="/admin/edit-reproduction/:id">
-  <AdminLayout><EditReproduction /></AdminLayout>
-</ProtectedRoute>
-{/* Health Dashboard */}
-<ProtectedRoute path="/admin/health-dashboard">
-  <AdminLayout><HealthDashboard /></AdminLayout>
-</ProtectedRoute>
+            {/* Reproduction */}
+            <ProtectedRoute path="/admin/list-reproduction">
+              <AdminLayout>
+                <ListReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-reproduction">
+              <AdminLayout>
+                <CreateReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-reproduction/:id">
+              <AdminLayout>
+                <EditReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* Health Dashboard */}
+            <ProtectedRoute path="/admin/health-dashboard">
+              <AdminLayout>
+                <HealthDashboard />
+              </AdminLayout>
+            </ProtectedRoute>
+
+            {/* Saless and Fincancial Section */}
+            <ProtectedRoute path="/admin/product-type">
+              <AdminLayout>
+                <ProductType />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/product">
+              <AdminLayout>
+                <ProductStock />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/product-history">
+              <AdminLayout>
+                <ProductHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/sales">
+              <AdminLayout>
+                <SalesOrder />
+              </AdminLayout>
+            </ProtectedRoute>
           </Switch>
         </div>{" "}
       </SocketProvider>

@@ -1,5 +1,4 @@
 import { API_URL4 } from "../../api/apiController.js";
-import Swal from "sweetalert2";
 
 const getAllFeedStocks = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");

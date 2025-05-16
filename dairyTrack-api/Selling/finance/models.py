@@ -1,28 +1,82 @@
 from django.db import models
-from django.utils.timezone import now  
+from django.utils.timezone import now
+from stock.models import User
 
-# kemudian bagaimana caranya agar ketika ada expense maka data juga akan tertambah ke dalam finance
-class Expense(models.Model):
-    
+class ExpenseType(models.Model):
     class Meta:
-        db_table = "expense"
-    
-    EXPENSE_TYPES = [
-        ('material_purchase', 'Material Purchase'),
-        ('feed_purchase', 'Feed Purchase'),
-        ('medicine_purchase', 'Medicine Purchase'),
-        ('employee_salary', 'Employee Salary'),
-        ('operational', 'Operational'),
-        ('equipment_purchase', 'Equipment Purchase'),
-        ('marketing', 'Marketing'),
-        ('other', 'Other'),
-    ]
+        db_table = "expense_type"
 
     objects = models.Manager()
-    expense_type = models.CharField(max_length=20, choices=EXPENSE_TYPES)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="expense_type_created", null=True, blank=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="expense_type_updated", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"self.name"
+
+class IncomeType(models.Model):
+    class Meta:
+        db_table = "income_type"
+
+    objects = models.Manager()
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="income_type_created", null=True, blank=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="income_type_updated", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"self.name"
+
+class Expense(models.Model):
+    class Meta:
+        db_table = "expense"
+
+    objects = models.Manager()
+    expense_type = models.ForeignKey(ExpenseType, on_delete=models.CASCADE, related_name="expenses")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
     transaction_date = models.DateTimeField(default=now)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="expense_created", null=True, blank=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="expense_updated", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # Tambahkan ke Finance sebagai expense jika belum ada
+        if not Finance.objects.filter(
+            description=self.description,
+            amount=self.amount,
+            transaction_type='expense',
+            transaction_date=self.created_at
+        ).exists():
+            Finance.objects.create(
+                transaction_date=self.created_at,
+                transaction_type='expense',
+                description=f"{self.expense_type.name}: {self.description}",
+                amount=self.amount
+            )
+
+    def __str__(self):
+        return f"{self.expense_type.name} - {self.amount}"
+
+class Income(models.Model):
+    class Meta:
+        db_table = "income"
+
+    objects = models.Manager()
+    income_type = models.ForeignKey(IncomeType, on_delete=models.CASCADE, related_name="incomes")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(blank=True, null=True)
+    transaction_date = models.DateTimeField(default=now)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="income_created", null=True, blank=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="income_updated", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -30,66 +84,33 @@ class Expense(models.Model):
         super().save(*args, **kwargs)
 
         # Tambahkan ke Finance sebagai income jika belum ada
-        if not Finance.objects.filter(description=self.description, amount=self.amount).exists():
+        if not Finance.objects.filter(
+            description=self.description or f"Income from {self.income_type.name}",
+            amount=self.amount,
+            transaction_type='income',
+            transaction_date=self.created_at
+        ).exists():
             Finance.objects.create(
                 transaction_date=self.created_at,
-                transaction_type='expense',
-                description=self.description, 
+                transaction_type='income',
+                description=self.description or f"Income from {self.income_type.name}",
                 amount=self.amount
             )
 
     def __str__(self):
-        return f"{self.expense_type} - {self.amount}"
-
-
-
-class Income(models.Model):
-    
-    class Meta:
-        db_table = "income"
-    
-    INCOME_TYPES = [
-        ('sales', 'Sales'),
-        ('investment', 'Investment'),
-        ('other', 'Other'),
-    ]
-
-    ''' modikasilah berdasarkan deskripsi yang saya berikan ini saya ingin jika terjadi sales transaction maka akan otomatis terhitung sebagai income dan diberi income type sales'''
-    objects = models.Manager()
-    income_type = models.CharField(max_length=20, choices=INCOME_TYPES)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField(blank=True, null=True)
-    transaction_date = models.DateTimeField(default=now)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Tambahkan ke Finance sebagai income
-        Finance.objects.create( # pylint: disable=no-member
-            transaction_date=self.created_at,
-            transaction_type='income',
-            description=self.description if self.description else f"Income from {self.income_type}",
-            amount=self.amount
-        )
-
-    def __str__(self):
-        return f"{self.income_type} - {self.amount}"
-
+        return f"{self.income_type.name} - {self.amount}"
 
 class Finance(models.Model):
-    
     class Meta:
         db_table = "finance"
-    
+
     TRANSACTION_TYPES = [
         ('income', 'Income'),
         ('expense', 'Expense'),
     ]
 
-    ''' modikasilah berdasarkan deskripsi yang saya berikan ini saya ingin di dalam model finance hanya akan ada column transaction_date, transaction_type(incoome or expense), description, amount, created_at and updated_at'''
     objects = models.Manager()
-    transaction_date = models.DateTimeField(auto_now_add=True)
+    transaction_date = models.DateTimeField(default=now)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     description = models.TextField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)

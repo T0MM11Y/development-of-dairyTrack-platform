@@ -1,9 +1,6 @@
 // src/pages/Admin/FeedManagement/Feed/FeedListPage.js
 import React, { useEffect, useState } from "react";
-import {
-  listFeeds,
-  deleteFeed,
-} from "../../../../controllers/feedController";
+import { listFeeds, deleteFeed } from "../../../../controllers/feedController";
 import { listFeedTypes } from "../../../../controllers/feedTypeController";
 import { listNutritions } from "../../../../controllers/nutritionController";
 import FeedCreatePage from "./CreateFeed";
@@ -42,11 +39,8 @@ const FeedListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedResponse, feedTypeResponse, nutritionResponse] = await Promise.all([
-        listFeeds(),
-        listFeedTypes(),
-        listNutritions(),
-      ]);
+      const [feedResponse, feedTypeResponse, nutritionResponse] =
+        await Promise.all([listFeeds(), listFeedTypes(), listNutritions()]);
 
       if (feedResponse.success) {
         setData(feedResponse.feeds || []);
@@ -60,7 +54,11 @@ const FeedListPage = () => {
           localStorage.removeItem("user");
           window.location.href = "/";
         } else {
-          Swal.fire("Error", feedResponse.message || "Gagal memuat data.", "error");
+          Swal.fire(
+            "Error",
+            feedResponse.message || "Gagal memuat data.",
+            "error"
+          );
         }
         setData([]);
       }
@@ -103,7 +101,11 @@ const FeedListPage = () => {
           localStorage.removeItem("user");
           window.location.href = "/";
         } else {
-          Swal.fire("Error", response.message || "Gagal menghapus pakan.", "error");
+          Swal.fire(
+            "Error",
+            response.message || "Gagal menghapus pakan.",
+            "error"
+          );
         }
       }
     } catch (err) {
@@ -238,10 +240,14 @@ const FeedListPage = () => {
                             : "Tidak diketahui"}
                         </td>
                         <td>
-                          {new Date(item.created_at).toLocaleDateString("id-ID")}
+                          {new Date(item.created_at).toLocaleDateString(
+                            "id-ID"
+                          )}
                         </td>
                         <td>
-                          {new Date(item.updated_at).toLocaleDateString("id-ID")}
+                          {new Date(item.updated_at).toLocaleDateString(
+                            "id-ID"
+                          )}
                         </td>
                         <td>
                           {item.nutrisi_records.length > 0
@@ -269,7 +275,9 @@ const FeedListPage = () => {
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            onClick={() => !isSupervisor && setDeleteId(item.id)}
+                            onClick={() =>
+                              !isSupervisor && setDeleteId(item.id)
+                            }
                             {...disableIfSupervisor}
                           >
                             <i className="fas fa-trash" />

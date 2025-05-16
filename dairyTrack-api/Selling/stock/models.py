@@ -6,7 +6,6 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 # from notifications.models import User
 
-# Create your models here.
 # Model Produksi Susu Mentah
 class RawMilk(models.Model):
 
@@ -36,6 +35,27 @@ class RawMilk(models.Model):
     def __str__(self):
         return f"Cow {self.cow_id} - {self.available_stocks}L available"
 
+class User(models.Model):
+    class Meta:
+        db_table = "users"
+        managed = False
+
+    objects = models.Manager()
+    id = models.IntegerField(primary_key=True)
+    username = models.CharField(max_length=50, unique=True)
+    email = models.EmailField(max_length=100, unique=True)
+    password = models.CharField(max_length=255)
+    contact = models.CharField(max_length=15, null=True, blank=True)
+    religion = models.CharField(max_length=50, null=True, blank=True)
+    role_id = models.IntegerField()
+    token = models.CharField(max_length=255, null=True, blank=True)
+    token_created_at = models.DateTimeField(null=True, blank=True)
+    name = models.CharField(max_length=100)
+    birth = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.username}"
+
 
 # Model Tipe Produk
 class ProductType(models.Model):
@@ -44,6 +64,8 @@ class ProductType(models.Model):
         db_table = "product_type"
 
     objects = models.Manager()
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="product_type_created")
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="product_type_updated")
     product_name = models.CharField(max_length=255)
     product_description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
@@ -51,7 +73,6 @@ class ProductType(models.Model):
     unit = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey('notifications.User', on_delete=models.SET_NULL, null=True, blank=True, db_column='created_by')
 
     def __str__(self):
         return f"{self.product_name}"
@@ -73,6 +94,8 @@ class ProductStock(models.Model):
     
     objects = models.Manager()
     product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="product_stock_created")
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="product_stock_updated")
     initial_quantity = models.IntegerField()
     quantity = models.IntegerField()
     production_at = models.DateTimeField(default=timezone.now)
