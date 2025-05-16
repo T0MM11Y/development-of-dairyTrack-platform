@@ -5,6 +5,8 @@ const OrderTable = ({
   orders,
   searchTerm,
   selectedStatus,
+  startDate,
+  endDate,
   currentPage,
   ordersPerPage,
   setCurrentPage,
@@ -32,7 +34,22 @@ const OrderTable = ({
       const matchesStatus = selectedStatus
         ? order.status === selectedStatus
         : true;
-      return matchesSearch && matchesStatus;
+
+      // Date range filtering
+      let matchesDate = true;
+      const orderDate = new Date(order.created_at);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && orderDate >= start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && orderDate <= end;
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
 
     filtered = [...filtered].sort(
@@ -53,7 +70,15 @@ const OrderTable = ({
       totalItems,
       totalPages,
     };
-  }, [orders, searchTerm, selectedStatus, currentPage, ordersPerPage]);
+  }, [
+    orders,
+    searchTerm,
+    selectedStatus,
+    startDate,
+    endDate,
+    currentPage,
+    ordersPerPage,
+  ]);
 
   return (
     <>
@@ -182,6 +207,8 @@ const OrderTable = ({
                     bg={
                       order.status === "Requested"
                         ? "warning"
+                        : order.status === "Processed"
+                        ? "info"
                         : order.status === "Completed"
                         ? "success"
                         : "danger"
@@ -194,7 +221,8 @@ const OrderTable = ({
                       fontFamily: "'Roboto Mono', monospace",
                     }}
                   >
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
                   </Badge>
                 </td>
                 <td style={{ letterSpacing: "0.3px", fontWeight: "500" }}>

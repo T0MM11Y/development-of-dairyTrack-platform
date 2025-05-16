@@ -11,6 +11,7 @@ import {
   updateOrder,
   deleteOrder,
 } from "../../../controllers/orderController";
+import { getProductStocks } from "../../../controllers/productStockController";
 
 const ListOrder = () => {
   const [orders, setOrders] = useState([]);
@@ -18,12 +19,15 @@ const ListOrder = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [availableProducts, setAvailableProducts] = useState([]);
   const [newOrder, setNewOrder] = useState({
     customer_name: "",
     email: "",
@@ -31,7 +35,7 @@ const ListOrder = () => {
     location: "",
     status: "Requested",
     payment_method: "",
-    order_items: [{ product_type_id: "", quantity: "" }],
+    order_items: [],
     notes: "",
   });
   const ordersPerPage = 8;
@@ -88,11 +92,77 @@ const ListOrder = () => {
     fetchOrders();
   }, []);
 
+  // Fetch product stocks
+  useEffect(() => {
+    const loadAvailableStock = async () => {
+      try {
+        console.log("Fetching product stocks...");
+        const response = await getProductStocks();
+        console.log("Product stocks response:", response);
+
+        if (!response || typeof response !== "object") {
+          throw new Error("Invalid response format from getProductStocks");
+        }
+
+        if (!response.success) {
+          throw new Error(response.message || "Failed to fetch product stocks");
+        }
+
+        if (!Array.isArray(response.productStocks)) {
+          throw new Error("Expected productStocks to be an array");
+        }
+
+        // Aggregate available products
+        const groupedProducts = response.productStocks.reduce(
+          (acc, product) => {
+            console.log("Processing product:", product);
+            if (
+              product.status === "available" &&
+              product.product_type_detail &&
+              typeof product.product_type === "number"
+            ) {
+              const type = product.product_type;
+              if (!acc[type]) {
+                acc[type] = {
+                  product_type: type,
+                  product_name:
+                    product.product_type_detail.product_name || "Unknown",
+                  total_quantity: 0,
+                  image: product.product_type_detail.image || "",
+                };
+              }
+              acc[type].total_quantity += Number(product.quantity) || 0;
+            }
+            return acc;
+          },
+          {}
+        );
+
+        const products = Object.values(groupedProducts);
+        console.log("Aggregated available products:", products);
+        setAvailableProducts(products);
+      } catch (error) {
+        console.error("Error fetching product stocks:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            error.message || "An error occurred while fetching product stocks.",
+        });
+        setAvailableProducts([]);
+      }
+    };
+    loadAvailableStock();
+  }, []);
+
   // Calculate statistics
   const orderStats = useMemo(() => {
     const totalOrders = orders.length;
     const requestedOrders = orders.filter(
       (order) => order.status === "Requested"
+    ).length;
+    const processedOrders = orders.filter(
+      (order) => order.status === "Processed"
     ).length;
     const completedOrders = orders.filter(
       (order) => order.status === "Completed"
@@ -101,12 +171,13 @@ const ListOrder = () => {
     return {
       totalOrders,
       requestedOrders,
+      processedOrders,
       completedOrders,
     };
   }, [orders]);
 
   // Handle add order
-  const handleAddOrder = async (e) => {
+  const handleAddOrder = async (e, orderData) => {
     e.preventDefault();
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
       setError("User not logged in or invalid user ID.");
@@ -117,20 +188,6 @@ const ListOrder = () => {
       });
       return;
     }
-
-    const orderData = {
-      customer_name: newOrder.customer_name,
-      email: newOrder.email,
-      phone_number: newOrder.phone_number,
-      location: newOrder.location,
-      status: newOrder.status,
-      payment_method: newOrder.payment_method || null,
-      order_items: newOrder.order_items.map((item) => ({
-        product_type_id: parseInt(item.product_type_id) || 0,
-        quantity: parseInt(item.quantity) || 0,
-      })),
-      notes: newOrder.notes || null,
-    };
 
     try {
       const response = await createOrder(orderData);
@@ -154,9 +211,43 @@ const ListOrder = () => {
           location: "",
           status: "Requested",
           payment_method: "",
-          order_items: [{ product_type_id: "", quantity: "" }],
+          order_items: [],
           notes: "",
         });
+        // Refresh product stocks
+        const refreshedStock = await getProductStocks();
+        if (
+          refreshedStock.success &&
+          Array.isArray(refreshedStock.productStocks)
+        ) {
+          const groupedProducts = refreshedStock.productStocks.reduce(
+            (acc, product) => {
+              if (
+                product.status === "available" &&
+                product.product_type_detail &&
+                typeof product.product_type === "number"
+              ) {
+                const type = product.product_type;
+                if (!acc[type]) {
+                  acc[type] = {
+                    product_type: type,
+                    product_name:
+                      product.product_type_detail.product_name || "Unknown",
+                    total_quantity: 0,
+                    image: product.product_type_detail.image || "",
+                  };
+                }
+                acc[type].total_quantity += Number(product.quantity) || 0;
+              }
+              return acc;
+            },
+            {}
+          );
+          const products = Object.values(groupedProducts);
+          setAvailableProducts(products);
+        } else {
+          setAvailableProducts([]);
+        }
       } else {
         setError(response.message || "Failed to add order.");
         Swal.fire({
@@ -171,13 +262,15 @@ const ListOrder = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "An unexpected error occurred while adding the order.",
+        text:
+          error.response?.data?.message ||
+          "An unexpected error occurred while adding the order.",
       });
     }
   };
 
   // Handle edit order
-  const handleEditOrder = async (e) => {
+  const handleEditOrder = async (e, orderData) => {
     e.preventDefault();
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
       setError("User not logged in or invalid user ID.");
@@ -189,27 +282,14 @@ const ListOrder = () => {
       return;
     }
 
-    const orderData = {
-      customer_name: selectedOrder.customer_name,
-      email: selectedOrder.email,
-      phone_number: selectedOrder.phone_number,
-      location: selectedOrder.location,
-      status: selectedOrder.status,
-      payment_method: selectedOrder.payment_method || null,
-      order_items: selectedOrder.order_items.map((item) => ({
-        product_type_id: parseInt(item.product_type_id) || item.product_type_detail?.id || 0,
-        quantity: parseInt(item.quantity) || 0,
-      })),
-      notes: selectedOrder.notes || null,
-    };
-
     try {
       const response = await updateOrder(selectedOrder.id, orderData);
+      console.log("Update order response:", response);
       if (response.success) {
         Swal.fire({
           icon: "success",
           title: "Success",
-          text: "Order updated successfully!",
+          text: response.message || "Order updated successfully!",
           timer: 3000,
           showConfirmButton: false,
         });
@@ -219,6 +299,40 @@ const ListOrder = () => {
         }
         setShowEditModal(false);
         setSelectedOrder(null);
+        // Refresh product stocks
+        const refreshedStock = await getProductStocks();
+        if (
+          refreshedStock.success &&
+          Array.isArray(refreshedStock.productStocks)
+        ) {
+          const groupedProducts = refreshedStock.productStocks.reduce(
+            (acc, product) => {
+              if (
+                product.status === "available" &&
+                product.product_type_detail &&
+                typeof product.product_type === "number"
+              ) {
+                const type = product.product_type;
+                if (!acc[type]) {
+                  acc[type] = {
+                    product_type: type,
+                    product_name:
+                      product.product_type_detail.product_name || "Unknown",
+                    total_quantity: 0,
+                    image: product.product_type_detail.image || "",
+                  };
+                }
+                acc[type].total_quantity += Number(product.quantity) || 0;
+              }
+              return acc;
+            },
+            {}
+          );
+          const products = Object.values(groupedProducts);
+          setAvailableProducts(products);
+        } else {
+          setAvailableProducts([]);
+        }
       } else {
         setError(response.message || "Failed to update order.");
         Swal.fire({
@@ -233,7 +347,9 @@ const ListOrder = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "An unexpected error occurred while editing the order.",
+        text:
+          error.response?.data?.message ||
+          "An unexpected error occurred while editing the order.",
       });
     }
   };
@@ -341,13 +457,18 @@ const ListOrder = () => {
             setSearchTerm={setSearchTerm}
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
-            orders={orders}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
             setCurrentPage={setCurrentPage}
           />
           <OrderTable
             orders={orders}
             searchTerm={searchTerm}
             selectedStatus={selectedStatus}
+            startDate={startDate}
+            endDate={endDate}
             currentPage={currentPage}
             ordersPerPage={ordersPerPage}
             setCurrentPage={setCurrentPage}
@@ -356,13 +477,27 @@ const ListOrder = () => {
               setShowViewModal(true);
             }}
             openEditModal={(order) => {
+              // Consolidate order_items by product_type
+              const consolidatedItems = order.order_items.reduce(
+                (acc, item) => {
+                  const existingItem = acc.find(
+                    (i) => i.product_type === item.product_type_detail?.id
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += item.quantity;
+                  } else {
+                    acc.push({
+                      product_type: item.product_type_detail?.id || "",
+                      quantity: item.quantity || 0,
+                    });
+                  }
+                  return acc;
+                },
+                []
+              );
               setSelectedOrder({
                 ...order,
-                order_items: order.order_items.map((item) => ({
-                  ...item,
-                  product_type_id: item.product_type_detail?.id || "",
-                  quantity: item.quantity || "",
-                })),
+                order_items: consolidatedItems,
               });
               setShowEditModal(true);
             }}
@@ -381,6 +516,7 @@ const ListOrder = () => {
             setSelectedOrder={setSelectedOrder}
             handleAddOrder={handleAddOrder}
             handleEditOrder={handleEditOrder}
+            availableProducts={availableProducts}
           />
         </Card.Body>
       </Card>

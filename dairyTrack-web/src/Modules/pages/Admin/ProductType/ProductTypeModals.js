@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Modal,
   Button,
@@ -9,6 +10,7 @@ import {
   Badge,
 } from "react-bootstrap";
 import CurrencyInput from "react-currency-input-field";
+import Swal from "sweetalert2";
 
 // Fungsi untuk memformat harga ke Rupiah
 const formatRupiah = (value) => {
