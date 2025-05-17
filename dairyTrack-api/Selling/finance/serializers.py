@@ -4,9 +4,20 @@ from sales.models import SalesTransaction
 from stock.serializers import UserSerializer
 from stock.models import User
 
+class StringToIntPrimaryKeyField(serializers.PrimaryKeyRelatedField):
+    def to_internal_value(self, data):
+        # Convert string to integer if possible
+        try:
+            if isinstance(data, str) and data.isdigit():
+                data = int(data)
+            return super().to_internal_value(data)
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("Invalid user ID format. Expected a number.")
+
+
 class ExpenseTypeSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
-    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    created_by = StringToIntPrimaryKeyField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = StringToIntPrimaryKeyField(queryset=User.objects.all(), required=False, allow_null=True)
     created_by_detail = UserSerializer(source='created_by', read_only=True)
     updated_by_detail = UserSerializer(source='updated_by', read_only=True)
 
@@ -26,8 +37,8 @@ class ExpenseTypeSerializer(serializers.ModelSerializer):
         return representation
 
 class IncomeTypeSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
-    updated_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    created_by = StringToIntPrimaryKeyField(queryset=User.objects.all(), required=False, allow_null=True)
+    updated_by = StringToIntPrimaryKeyField(queryset=User.objects.all(), required=False, allow_null=True)
     created_by_detail = UserSerializer(source='created_by', read_only=True)
     updated_by_detail = UserSerializer(source='updated_by', read_only=True)
 

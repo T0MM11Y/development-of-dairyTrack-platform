@@ -176,6 +176,12 @@ try {
         </option>
       ))}
 </select>
+ {/* ⚠️ Tampilkan peringatan jika tidak ada sapi betina */}
+  {Array.isArray(cows) && cows.filter((cow) => cow.gender?.toLowerCase() === "female").length === 0 && (
+    <div className="text-danger mt-2">
+      Tidak ada sapi betina yang tersedia. Silakan cek data sapi Anda.
+    </div>
+  )}
               </div>  
 
               {/* Tanggal-tanggal */}

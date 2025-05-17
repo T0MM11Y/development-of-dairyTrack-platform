@@ -16,6 +16,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import ReactApexChart from "react-apexcharts";
 import financeController from "../../../controllers/financeController.js";
 import { format } from "date-fns";
+import usePermissions from "../Permission/usePermission";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -39,14 +40,29 @@ if (
 }
 
 const FinancePage = () => {
-  // Define formatRupiah at the top to avoid TDZ
+  // Rupiah formatting with decimals (for summary cards, charts, and modal display)
   const formatRupiah = (value) => {
-    if (!value) return "Rp 0";
+    if (value === null || value === undefined || isNaN(parseFloat(value)))
+      return "Rp 0,00";
     const number = parseFloat(value);
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(number);
+  };
+
+  // Rupiah formatting without decimals (for transaction table)
+  const formatRupiahNoDecimals = (value) => {
+    if (value === null || value === undefined || isNaN(parseFloat(value)))
+      return "Rp 0";
+    const number = Math.round(parseFloat(value));
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(number);
   };
 
@@ -55,7 +71,6 @@ const FinancePage = () => {
   const [incomeTypes, setIncomeTypes] = useState([]);
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [financeType, setFinanceType] = useState("");
@@ -67,6 +82,15 @@ const FinancePage = () => {
   const [totalExpense, setTotalExpense] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const transactionsPerPage = 8;
+
+  // Use the permissions hook
+  const {
+    currentUser,
+    isSupervisor,
+    disableIfSupervisor,
+    restrictSupervisorAction,
+    error: userError,
+  } = usePermissions();
 
   // Fetch data
   const fetchData = async (filters = {}) => {
@@ -104,10 +128,22 @@ const FinancePage = () => {
       const incomes = (incomeResponse.incomes || []).map((item) => ({
         ...item,
         income_type: item.income_type_detail || { name: "Unknown" },
+        created_by: item.created_by
+          ? {
+              ...item.created_by,
+              id: item.created_by.id ? parseInt(item.created_by.id) : null,
+            }
+          : null,
       }));
       const expenses = (expenseResponse.expenses || []).map((item) => ({
         ...item,
         expense_type: item.expense_type_detail || { name: "Unknown" },
+        created_by: item.created_by
+          ? {
+              ...item.created_by,
+              id: item.created_by.id ? parseInt(item.created_by.id) : null,
+            }
+          : null,
       }));
 
       setIncomeData(incomes);
@@ -116,12 +152,13 @@ const FinancePage = () => {
       setExpenseTypes(expenseTypesResponse.expenseTypes || []);
 
       calculateTotals(incomes, expenses);
-      setError("");
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError(
-        "Failed to fetch finance data. Please ensure the API server is active."
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to fetch finance data. Please ensure the API server is active.",
+      });
       setIncomeData([]);
       setExpenseData([]);
       setIncomeTypes([]);
@@ -218,13 +255,21 @@ const FinancePage = () => {
         endDate
       );
       if (!response.success) {
-        setError(response.message || "Failed to export PDF.");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Failed to export PDF.",
+        });
       }
     } catch (error) {
       console.error("Error exporting PDF:", error);
-      setError(
-        "An unexpected error occurred while exporting to PDF: " + error.message
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          "An unexpected error occurred while exporting to PDF: " +
+          error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -239,14 +284,21 @@ const FinancePage = () => {
         endDate
       );
       if (!response.success) {
-        setError(response.message || "Failed to export Excel.");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Failed to export Excel.",
+        });
       }
     } catch (error) {
       console.error("Error exporting Excel:", error);
-      setError(
-        "An unexpected error occurred while exporting to Excel: " +
-          error.message
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          "An unexpected error occurred while exporting to Excel: " +
+          error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -359,12 +411,12 @@ const FinancePage = () => {
       ...incomeData.map((item) => ({
         ...item,
         type: "income",
-        formattedAmount: `+${formatRupiah(item.amount)}`,
+        formattedAmount: `+${formatRupiahNoDecimals(item.amount)}`,
       })),
       ...expenseData.map((item) => ({
         ...item,
         type: "expense",
-        formattedAmount: `-${formatRupiah(item.amount)}`,
+        formattedAmount: `-${formatRupiahNoDecimals(item.amount)}`,
       })),
     ].sort(
       (a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)
@@ -383,67 +435,89 @@ const FinancePage = () => {
 
   // Handle modal save
   const handleIncomeSaved = async (newIncome) => {
+    if (restrictSupervisorAction("add", "add income")) return;
     try {
-      const response = await financeController.createIncome(newIncome);
-      if (response.success) {
-        const updatedIncomeData = [
-          ...incomeData,
-          {
-            ...response.income,
-            income_type: response.income.income_type_detail,
-          },
-        ];
-        setIncomeData(updatedIncomeData);
-        calculateTotals(updatedIncomeData, expenseData);
-        setShowAddIncomeModal(false);
-      } else {
-        setError(response.message);
+      if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
         Swal.fire({
           icon: "error",
-          title: "Finance Error",
+          title: "Error",
+          text: "User not logged in or invalid user ID.",
+        });
+        return;
+      }
+
+      const response = await financeController.createIncome(newIncome);
+      if (response.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Income added successfully!",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+        // Re-fetch data to update UI
+        await fetchData({
+          start_date: startDate,
+          end_date: endDate,
+          finance_type: financeType,
+        });
+        setShowAddIncomeModal(false);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
           text: response.message,
         });
       }
     } catch (error) {
-      const errorMessage = "Failed to save income: " + error.message;
-      setError(errorMessage);
       Swal.fire({
         icon: "error",
-        title: "Finance Error",
-        text: errorMessage,
+        title: "Error",
+        text: "Failed to save income: " + error.message,
       });
     }
   };
 
   const handleExpenseSaved = async (newExpense) => {
+    if (restrictSupervisorAction("add", "add expense")) return;
     try {
-      const response = await financeController.createExpense(newExpense);
-      if (response.success) {
-        const updatedExpenseData = [
-          ...expenseData,
-          {
-            ...response.expense,
-            expense_type: response.expense.expense_type_detail,
-          },
-        ];
-        setExpenseData(updatedExpenseData);
-        calculateTotals(incomeData, updatedExpenseData);
-        setShowAddExpenseModal(false);
-      } else {
-        setError(response.message);
+      if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
         Swal.fire({
           icon: "error",
-          title: "Finance Error",
+          title: "Error",
+          text: "User not logged in or invalid user ID.",
+        });
+        return;
+      }
+
+      const response = await financeController.createExpense(newExpense);
+      if (response.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Expense added successfully!",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+        // Re-fetch data to update UI
+        await fetchData({
+          start_date: startDate,
+          end_date: endDate,
+          finance_type: financeType,
+        });
+        setShowAddExpenseModal(false);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
           text: response.message,
         });
       }
     } catch (error) {
-      const errorMessage = "Failed to save expense: " + error.message;
-      setError(errorMessage);
       Swal.fire({
         icon: "error",
-        title: "Finance Error",
-        text: errorMessage,
+        title: "Error",
+        text: "Failed to save expense: " + error.message,
       });
     }
   };
@@ -461,10 +535,10 @@ const FinancePage = () => {
     );
   }
 
-  if (error && !incomeData.length && !expenseData.length) {
+  if (userError && !incomeData.length && !expenseData.length) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger text-center">{error}</div>
+        <div className="alert alert-danger text-center">{userError}</div>
       </div>
     );
   }
@@ -481,8 +555,7 @@ const FinancePage = () => {
               fontWeight: "600",
             }}
           >
-            <i className="fas fa-wallet me-2" />{" "}
-            {"finance.finance_title" || "Finance Management"}
+            <i className="fas fa-wallet me-2" /> Finance Management
           </h4>
         </Card.Header>
         <Card.Body>
@@ -498,10 +571,11 @@ const FinancePage = () => {
                     letterSpacing: "0.5px",
                     fontWeight: "500",
                     fontSize: "0.9rem",
+                    ...disableIfSupervisor.style,
                   }}
+                  {...disableIfSupervisor}
                 >
-                  <i className="bx bx-plus me-1" />{" "}
-                  {"finance.add_income" || "Add Income"}
+                  <i className="bx bx-plus me-1" /> Record New Income
                 </Button>
                 <Button
                   variant="danger"
@@ -512,10 +586,11 @@ const FinancePage = () => {
                     letterSpacing: "0.5px",
                     fontWeight: "500",
                     fontSize: "0.9rem",
+                    ...disableIfSupervisor.style,
                   }}
+                  {...disableIfSupervisor}
                 >
-                  <i className="bx bx-plus me-1" />{" "}
-                  {"finance.add_expense" || "Add Expense"}
+                  <i className="bx bx-plus me-1" /> Record New Expense
                 </Button>
               </div>
             </Col>
@@ -559,7 +634,6 @@ const FinancePage = () => {
             resetFilters={resetFilters}
             handleExportExcel={handleExportExcel}
             handleExportPdf={handleExportPdf}
-            error={error}
             loading={loading}
           />
 
@@ -580,7 +654,7 @@ const FinancePage = () => {
             setCurrentPage={setCurrentPage}
             totalItems={paginatedTransactions.totalItems}
             totalPages={paginatedTransactions.totalPages}
-            formatRupiah={formatRupiah}
+            formatRupiah={formatRupiahNoDecimals}
             loading={loading}
           />
 
@@ -589,12 +663,20 @@ const FinancePage = () => {
             onClose={() => setShowAddIncomeModal(false)}
             onSaved={handleIncomeSaved}
             incomeTypes={incomeTypes}
+            currentUser={currentUser}
+            formatRupiah={formatRupiah}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
           <AddExpenseModal
             show={showAddExpenseModal}
             onClose={() => setShowAddExpenseModal(false)}
             onSaved={handleExpenseSaved}
             expenseTypes={expenseTypes}
+            currentUser={currentUser}
+            formatRupiah={formatRupiah}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
         </Card.Body>
       </Card>
@@ -617,9 +699,7 @@ const FinanceSummaryCards = ({
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <h6 className="card-title mb-0">
-                  {"finance.available_balance" || "Available Balance"}
-                </h6>
+                <h6 className="card-title mb-0">Available Balance</h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(currentBalance)}
                 </h2>
@@ -636,9 +716,7 @@ const FinanceSummaryCards = ({
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <h6 className="card-title mb-0">
-                  {"finance.total_income" || "Total Income"}
-                </h6>
+                <h6 className="card-title mb-0">Total Income</h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(totalIncome)}
                 </h2>
@@ -655,9 +733,7 @@ const FinanceSummaryCards = ({
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <h6 className="card-title mb-0">
-                  {"finance.total_expense" || "Total Expense"}
-                </h6>
+                <h6 className="card-title mb-0">Total Expense</h6>
                 <h2 className="mt-2 mb-0">
                   {loading ? "Loading..." : formatRupiah(totalExpense)}
                 </h2>
@@ -685,7 +761,6 @@ const FilterExportPanel = ({
   resetFilters,
   handleExportExcel,
   handleExportPdf,
-  error,
   loading,
 }) => {
   return (
@@ -699,13 +774,13 @@ const FilterExportPanel = ({
             color: "#444",
           }}
         >
-          {"finance.filter_export" || "Filter & Export"}
+          Finance Filtering & Export
         </h5>
         <Form onSubmit={handleFilterSubmit}>
           <Row>
             <Col md={3}>
               <Form.Group className="mb-3">
-                <Form.Label>{"finance.start_date" || "Start Date"}</Form.Label>
+                <Form.Label>Start Date</Form.Label>
                 <Form.Control
                   type="date"
                   value={startDate}
@@ -716,7 +791,7 @@ const FilterExportPanel = ({
             </Col>
             <Col md={3}>
               <Form.Group className="mb-3">
-                <Form.Label>{"finance.end_date" || "End Date"}</Form.Label>
+                <Form.Label>End Date</Form.Label>
                 <Form.Control
                   type="date"
                   value={endDate}
@@ -727,19 +802,15 @@ const FilterExportPanel = ({
             </Col>
             <Col md={3}>
               <Form.Group className="mb-3">
-                <Form.Label>
-                  {"finance.finance_type" || "Finance Type"}
-                </Form.Label>
+                <Form.Label>Transaction Type</Form.Label>
                 <Form.Select
                   value={financeType}
                   onChange={(e) => setFinanceType(e.target.value)}
                   disabled={loading}
                 >
-                  <option value="">{"finance.all" || "All"}</option>
-                  <option value="income">{"finance.income" || "Income"}</option>
-                  <option value="expense">
-                    {"finance.expense" || "Expense"}
-                  </option>
+                  <option value="">All Transactions</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -757,8 +828,7 @@ const FilterExportPanel = ({
                     fontSize: "0.9rem",
                   }}
                 >
-                  <i className="bx bx-filter-alt me-1" />{" "}
-                  {"finance.filter" || "Filter"}
+                  <i className="bx bx-filter-alt me-1" /> Apply Filters
                 </Button>
                 <Button
                   variant="outline-secondary"
@@ -772,8 +842,7 @@ const FilterExportPanel = ({
                     fontSize: "0.9rem",
                   }}
                 >
-                  <i className="bx bx-reset me-1" />{" "}
-                  {"finance.reset" || "Reset"}
+                  <i className="bx bx-reset me-1" /> Clear Filters
                 </Button>
               </div>
             </Col>
@@ -793,8 +862,7 @@ const FilterExportPanel = ({
                 fontSize: "0.9rem",
               }}
             >
-              <i className="bx bxs-file-excel me-1" />{" "}
-              {"finance.export_excel" || "Export Excel"}
+              <i className="bx bxs-file-excel me-1" /> Export to Excel
             </Button>
             <Button
               variant="danger"
@@ -808,16 +876,10 @@ const FilterExportPanel = ({
                 fontSize: "0.9rem",
               }}
             >
-              <i className="bx bxs-file-pdf me-1" />{" "}
-              {"finance.export_pdf" || "Export PDF"}
+              <i className="bx bxs-file-pdf me-1" /> Export to PDF
             </Button>
           </Col>
         </Row>
-        {error && (
-          <div className="alert alert-danger mt-3" role="alert">
-            {error}
-          </div>
-        )}
       </Card.Body>
     </Card>
   );
@@ -827,11 +889,8 @@ const FilterExportPanel = ({
 const FinanceCharts = ({ chartData, loading }) => {
   const areaChartOptions = {
     series: [
-      { name: "finance.income" || "Income", data: chartData.monthly.income },
-      {
-        name: "finance.expense" || "Expense",
-        data: chartData.monthly.expense,
-      },
+      { name: "Income", data: chartData.monthly.income },
+      { name: "Expense", data: chartData.monthly.expense },
     ],
     chart: { height: 350, type: "area", toolbar: { show: false } },
     dataLabels: { enabled: false },
@@ -853,8 +912,14 @@ const FinanceCharts = ({ chartData, loading }) => {
           return new Intl.NumberFormat("id-ID", {
             style: "currency",
             currency: "IDR",
-            minimumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           }).format(val);
+        },
+      },
+      x: {
+        formatter: (val, { dataPointIndex }) => {
+          return chartData.monthly.months[dataPointIndex];
         },
       },
     },
@@ -909,7 +974,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {"finance.income_expense" || "Income vs Expense"}
+              Income vs Expense Chart
             </h5>
             {loading ? (
               <div
@@ -940,7 +1005,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {"finance.income_by_category" || "Income by Category"}
+              Income by Category
             </h5>
             {loading || chartData.incomeCategory.labels.length === 0 ? (
               <div
@@ -948,9 +1013,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 style={{ fontFamily: "'Nunito', sans-serif", color: "#666" }}
               >
                 <i className="fas fa-chart-pie fa-2x text-muted mb-2"></i>
-                <p>
-                  {"finance.no_data" || "No income category data available."}
-                </p>
+                <p>No income category data available.</p>
               </div>
             ) : (
               <div style={{ height: "200px" }}>
@@ -972,7 +1035,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 color: "#444",
               }}
             >
-              {"finance.expense_by_category" || "Expense by Category"}
+              Expense by Category
             </h5>
             {loading || chartData.expenseCategory.labels.length === 0 ? (
               <div
@@ -980,9 +1043,7 @@ const FinanceCharts = ({ chartData, loading }) => {
                 style={{ fontFamily: "'Nunito', sans-serif", color: "#666" }}
               >
                 <i className="fas fa-chart-pie fa-2x text-muted mb-2"></i>
-                <p>
-                  {"finance.no_data" || "No expense category data available."}
-                </p>
+                <p>No expense category data available.</p>
               </div>
             ) : (
               <div style={{ height: "200px" }}>
@@ -1030,7 +1091,7 @@ const RecentTransactions = ({
             color: "#444",
           }}
         >
-          {"finance.recent_transactions" || "Recent Transactions"}
+          Recent Transactions
         </h5>
         {loading && transactions.length === 0 ? (
           <div className="d-flex justify-content-center align-items-center py-4">
@@ -1192,7 +1253,11 @@ const RecentTransactions = ({
                       </td>
                       <td style={{ letterSpacing: "0.3px", fontWeight: "500" }}>
                         {new Date(transaction.transaction_date).toLocaleString(
-                          "id-ID"
+                          "id-ID",
+                          {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }
                         )}
                       </td>
                     </tr>
@@ -1210,8 +1275,7 @@ const RecentTransactions = ({
                   className="lead text-muted"
                   style={{ letterSpacing: "0.5px", fontWeight: "500" }}
                 >
-                  {"finance.no_transactions" ||
-                    "No transactions found matching your criteria."}
+                  No transactions found matching your criteria.
                 </p>
               </div>
             )}
@@ -1319,14 +1383,34 @@ const RecentTransactions = ({
 };
 
 // Add Income Modal Component
-const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
+const AddIncomeModal = ({
+  show,
+  onClose,
+  onSaved,
+  incomeTypes,
+  currentUser,
+  formatRupiah,
+  isSupervisor,
+  disableIfSupervisor,
+}) => {
   const [formData, setFormData] = useState({
     amount: "",
     income_type: "",
-    transaction_date: format(new Date(), "yyyy-MM-dd"),
+    transaction_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     description: "",
+    created_by: currentUser?.user_id || "",
   });
+  const [formattedAmount, setFormattedAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Update formatted amount when amount changes
+  useEffect(() => {
+    if (formData.amount) {
+      setFormattedAmount(formatRupiah(formData.amount));
+    } else {
+      setFormattedAmount("");
+    }
+  }, [formData.amount, formatRupiah]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1335,20 +1419,47 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSupervisor) {
+      Swal.fire({
+        icon: "error",
+        title: "Permission Denied",
+        text: "Supervisor cannot add income.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
+      if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "User not logged in or invalid user ID.",
+        });
+        return;
+      }
+
       const incomeData = {
         amount: parseFloat(formData.amount),
         income_type: parseInt(formData.income_type),
-        transaction_date: formData.transaction_date,
+        transaction_date: new Date(formData.transaction_date).toISOString(),
         description: formData.description,
+        created_by: parseInt(currentUser.user_id),
       };
+
       await onSaved(incomeData);
+      setFormData({
+        amount: "",
+        income_type: "",
+        transaction_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        description: "",
+        created_by: currentUser.user_id,
+      });
+      setFormattedAmount("");
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: "finance.error" || "Error",
-        text: "finance.failed_to_save_income" || "Failed to save income.",
+        title: "Error",
+        text: "Failed to save income.",
       });
     } finally {
       setSubmitting(false);
@@ -1359,13 +1470,13 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title style={{ fontFamily: "'Nunito', sans-serif" }}>
-          {"finance.add_income" || "Add Income"}
+          Record New Income
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.amount" || "Amount"}</Form.Label>
+            <Form.Label>Amount</Form.Label>
             <InputGroup>
               <InputGroup.Text>Rp</InputGroup.Text>
               <Form.Control
@@ -1375,19 +1486,25 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
                 onChange={handleChange}
                 required
                 min="0"
-                step="1"
+                step="0.01"
+                placeholder="Enter amount"
+                disabled={isSupervisor}
               />
             </InputGroup>
+            {formattedAmount && (
+              <Form.Text className="text-muted">{formattedAmount}</Form.Text>
+            )}
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.income_type" || "Income Type"}</Form.Label>
+            <Form.Label>Income Category</Form.Label>
             <Form.Select
               name="income_type"
               value={formData.income_type}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             >
-              <option value="">{"finance.select_type" || "Select Type"}</option>
+              <option value="">Select Category</option>
               {incomeTypes.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name}
@@ -1396,23 +1513,25 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.date" || "Date"}</Form.Label>
+            <Form.Label>Transaction Date & Time</Form.Label>
             <Form.Control
-              type="date"
+              type="datetime-local"
               name="transaction_date"
               value={formData.transaction_date}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.description" || "Description"}</Form.Label>
+            <Form.Label>Description</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
               name="description"
               value={formData.description}
               onChange={handleChange}
+              disabled={isSupervisor}
             />
           </Form.Group>
           <div className="d-flex justify-content-end gap-2">
@@ -1426,22 +1545,24 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
                 fontSize: "0.9rem",
               }}
             >
-              {"finance.cancel" || "Cancel"}
+              Cancel
             </Button>
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || isSupervisor}
               style={{
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               {submitting ? (
                 <Spinner size="sm" animation="border" />
               ) : (
-                "finance.save" || "Save"
+                "Save Income"
               )}
             </Button>
           </div>
@@ -1452,14 +1573,34 @@ const AddIncomeModal = ({ show, onClose, onSaved, incomeTypes }) => {
 };
 
 // Add Expense Modal Component
-const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
+const AddExpenseModal = ({
+  show,
+  onClose,
+  onSaved,
+  expenseTypes,
+  currentUser,
+  formatRupiah,
+  isSupervisor,
+  disableIfSupervisor,
+}) => {
   const [formData, setFormData] = useState({
     amount: "",
     expense_type: "",
-    transaction_date: format(new Date(), "yyyy-MM-dd"),
+    transaction_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     description: "",
+    created_by: currentUser?.user_id || "",
   });
+  const [formattedAmount, setFormattedAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Update formatted amount when amount changes
+  useEffect(() => {
+    if (formData.amount) {
+      setFormattedAmount(formatRupiah(formData.amount));
+    } else {
+      setFormattedAmount("");
+    }
+  }, [formData.amount, formatRupiah]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1468,20 +1609,47 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSupervisor) {
+      Swal.fire({
+        icon: "error",
+        title: "Permission Denied",
+        text: "Supervisor cannot add expense.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
+      if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "User not logged in or invalid user ID.",
+        });
+        return;
+      }
+
       const expenseData = {
         amount: parseFloat(formData.amount),
         expense_type: parseInt(formData.expense_type),
-        transaction_date: formData.transaction_date,
+        transaction_date: new Date(formData.transaction_date).toISOString(),
         description: formData.description,
+        created_by: parseInt(currentUser.user_id),
       };
+
       await onSaved(expenseData);
+      setFormData({
+        amount: "",
+        expense_type: "",
+        transaction_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        description: "",
+        created_by: currentUser.user_id,
+      });
+      setFormattedAmount("");
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: "finance.error" || "Error",
-        text: "finance.failed_to_save_expense" || "Failed to save expense.",
+        title: "Error",
+        text: "Failed to save expense.",
       });
     } finally {
       setSubmitting(false);
@@ -1492,13 +1660,13 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title style={{ fontFamily: "'Nunito', sans-serif" }}>
-          {"finance.add_expense" || "Add Expense"}
+          Record New Expense
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.amount" || "Amount"}</Form.Label>
+            <Form.Label>Amount</Form.Label>
             <InputGroup>
               <InputGroup.Text>Rp</InputGroup.Text>
               <Form.Control
@@ -1508,19 +1676,25 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
                 onChange={handleChange}
                 required
                 min="0"
-                step="1"
+                step="0.01"
+                placeholder="Enter amount"
+                disabled={isSupervisor}
               />
             </InputGroup>
+            {formattedAmount && (
+              <Form.Text className="text-muted">{formattedAmount}</Form.Text>
+            )}
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.expense_type" || "Expense Type"}</Form.Label>
+            <Form.Label>Expense Category</Form.Label>
             <Form.Select
               name="expense_type"
               value={formData.expense_type}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             >
-              <option value="">{"finance.select_type" || "Select Type"}</option>
+              <option value="">Select Category</option>
               {expenseTypes.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name}
@@ -1529,23 +1703,25 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.date" || "Date"}</Form.Label>
+            <Form.Label>Transaction Date & Time</Form.Label>
             <Form.Control
-              type="date"
+              type="datetime-local"
               name="transaction_date"
               value={formData.transaction_date}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>{"finance.description" || "Description"}</Form.Label>
+            <Form.Label>Description</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
               name="description"
               value={formData.description}
               onChange={handleChange}
+              disabled={isSupervisor}
             />
           </Form.Group>
           <div className="d-flex justify-content-end gap-2">
@@ -1559,22 +1735,24 @@ const AddExpenseModal = ({ show, onClose, onSaved, expenseTypes }) => {
                 fontSize: "0.9rem",
               }}
             >
-              {"finance.cancel" || "Cancel"}
+              Cancel
             </Button>
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || isSupervisor}
               style={{
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               {submitting ? (
                 <Spinner size="sm" animation="border" />
               ) : (
-                "finance.save" || "Save"
+                "Save Expense"
               )}
             </Button>
           </div>

@@ -13,6 +13,8 @@ const OrderTable = ({
   openViewModal,
   openEditModal,
   handleDeleteOrder,
+  isSupervisor,
+  disableIfSupervisor,
 }) => {
   // Format Rupiah
   const formatRupiah = (value) => {
@@ -251,7 +253,13 @@ const OrderTable = ({
                     </OverlayTrigger>
                     <OverlayTrigger
                       placement="top"
-                      overlay={<Tooltip>Edit Order</Tooltip>}
+                      overlay={
+                        <Tooltip>
+                          {isSupervisor
+                            ? "Supervisor cannot edit orders"
+                            : "Edit Order"}
+                        </Tooltip>
+                      }
                     >
                       <Button
                         variant="outline-primary"
@@ -262,15 +270,26 @@ const OrderTable = ({
                           height: "36px",
                           borderRadius: "8px",
                           transition: "all 0.2s",
+                          ...disableIfSupervisor.style,
                         }}
-                        onClick={() => openEditModal(order)}
+                        onClick={() => {
+                          if (isSupervisor) return;
+                          openEditModal(order);
+                        }}
+                        {...disableIfSupervisor}
                       >
                         <i className="fas fa-edit" />
                       </Button>
                     </OverlayTrigger>
                     <OverlayTrigger
                       placement="top"
-                      overlay={<Tooltip>Delete Order</Tooltip>}
+                      overlay={
+                        <Tooltip>
+                          {isSupervisor
+                            ? "Supervisor cannot delete orders"
+                            : "Delete Order"}
+                        </Tooltip>
+                      }
                     >
                       <Button
                         variant="outline-danger"
@@ -281,8 +300,13 @@ const OrderTable = ({
                           height: "36px",
                           borderRadius: "8px",
                           transition: "all 0.2s",
+                          ...disableIfSupervisor.style,
                         }}
-                        onClick={() => handleDeleteOrder(order.id)}
+                        onClick={() => {
+                          if (isSupervisor) return;
+                          handleDeleteOrder(order.id);
+                        }}
+                        {...disableIfSupervisor}
                       >
                         <i className="fas fa-trash-alt" />
                       </Button>

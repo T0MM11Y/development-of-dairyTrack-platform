@@ -23,16 +23,17 @@ const ReproductionListPage = () => {
   const PAGE_SIZE = 3;
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const isSupervisor = user?.type === "supervisor";
   const [currentUser, setCurrentUser] = useState(null);
+   const isSupervisor =
+  currentUser?.role_id === 2;
   const [userManagedCows, setUserManagedCows] = useState([]);
-  const disableIfSupervisor = isSupervisor
-    ? {
-        disabled: true,
-        title: "Supervisor tidak dapat mengedit data",
-        style: { opacity: 0.5, cursor: "not-allowed" },
-      }
-    : {};
+   const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
   const fetchData = async () => {
   setLoading(true);
@@ -43,6 +44,8 @@ const ReproductionListPage = () => {
     setCows(parsedCows);
 
     const isAdmin = currentUser?.role_id === 1;
+    const isSupervisor = currentUser.role_id === 2;
+
     let filtered = Array.isArray(res) ? res : [];
 
     console.log("📦 Data reproductions:", res);
@@ -51,7 +54,7 @@ const ReproductionListPage = () => {
     console.log("🐄 userManagedCows:", userManagedCows);
     console.log("🆔 allowedCowIds:", userManagedCows.map((c) => c.id));
 
-    if (!isAdmin && userManagedCows.length > 0) {
+    if (!isAdmin && !isSupervisor && userManagedCows.length > 0) {
       filtered = filtered.filter((item, index) => {
         const cow = item.cow;
         const cowId = typeof cow === "object" ? cow?.id : cow;
@@ -132,9 +135,11 @@ const ReproductionListPage = () => {
  useEffect(() => {
   if (!currentUser) return;
 
-const isAdmin = currentUser?.username === "admin001"; // bisa diganti sesuai username admin kamu
+  const isAdmin = currentUser.role_id === 1;
+  const isSupervisor = currentUser.role_id === 2;
 
-  if (isAdmin) {
+
+  if (isAdmin || isSupervisor) {
     fetchData(); // Admin langsung fetch
   } else if (userManagedCows.length > 0) {
     fetchData(); // Non-admin tunggu sapi user tersedia
@@ -145,15 +150,33 @@ const isAdmin = currentUser?.username === "admin001"; // bisa diganti sesuai use
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Reproduksi</h2>
-        <button
-          className="btn btn-info"
-          onClick={() => {
-            if (!isSupervisor) setModalType("create");
-          }}
-          {...disableIfSupervisor}
-        >
-          + Tambah Reproduksi
-        </button>
+      <button
+  className="btn btn-info"
+  onClick={() => {
+    if (isSupervisor) return;
+
+    const femaleCows =
+      Array.isArray(userManagedCows) &&
+      userManagedCows.filter((cow) => cow.gender?.toLowerCase() === "female");
+
+    if (!femaleCows || femaleCows.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Tidak Ada Sapi Betina",
+        text: "Tidak dapat menambahkan reproduksi karena tidak ada sapi betina yang tersedia.",
+        confirmButtonText: "Tutup",
+      });
+      return; // ⛔ Cegah buka modal
+    }
+
+    // ✅ Buka modal hanya jika ada sapi betina
+    setModalType("create");
+  }}
+  {...disableIfSupervisor}
+>
+  + Tambah Reproduksi
+</button>
+
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

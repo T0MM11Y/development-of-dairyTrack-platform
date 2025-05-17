@@ -22,7 +22,17 @@ const ProductTypeTable = ({
   openViewModal,
   openEditModal,
   handleDeleteProductType,
+  isSupervisor,
 }) => {
+  // Disable properties for supervisor role
+  const disableIfSupervisor = isSupervisor
+    ? {
+        disabled: true,
+        title: "Supervisor cannot perform this action",
+        style: { opacity: 0.5, cursor: "not-allowed" },
+      }
+    : {};
+
   // Filter, sort, and paginate product types
   const filteredAndPaginatedProductTypes = useMemo(() => {
     let filtered = productTypes.filter((pt) => {
@@ -244,7 +254,13 @@ const ProductTypeTable = ({
                       </OverlayTrigger>
                       <OverlayTrigger
                         placement="top"
-                        overlay={<Tooltip>Edit Product Type</Tooltip>}
+                        overlay={
+                          <Tooltip>
+                            {isSupervisor
+                              ? "Supervisor cannot edit product types"
+                              : "Edit Product Type"}
+                          </Tooltip>
+                        }
                       >
                         <Button
                           variant="outline-primary"
@@ -255,15 +271,26 @@ const ProductTypeTable = ({
                             height: "36px",
                             borderRadius: "8px",
                             transition: "all 0.2s",
+                            ...disableIfSupervisor.style,
                           }}
-                          onClick={() => openEditModal(pt)}
+                          onClick={() => {
+                            if (isSupervisor) return;
+                            openEditModal(pt);
+                          }}
+                          {...disableIfSupervisor}
                         >
                           <i className="fas fa-edit" />
                         </Button>
                       </OverlayTrigger>
                       <OverlayTrigger
                         placement="top"
-                        overlay={<Tooltip>Delete Product Type</Tooltip>}
+                        overlay={
+                          <Tooltip>
+                            {isSupervisor
+                              ? "Supervisor cannot delete product types"
+                              : "Delete Product Type"}
+                          </Tooltip>
+                        }
                       >
                         <Button
                           variant="outline-danger"
@@ -274,8 +301,13 @@ const ProductTypeTable = ({
                             height: "36px",
                             borderRadius: "8px",
                             transition: "all 0.2s",
+                            ...disableIfSupervisor.style,
                           }}
-                          onClick={() => handleDeleteProductType(pt.id)}
+                          onClick={() => {
+                            if (isSupervisor) return;
+                            handleDeleteProductType(pt.id);
+                          }}
+                          {...disableIfSupervisor}
                         >
                           <i className="fas fa-trash-alt" />
                         </Button>
