@@ -574,7 +574,7 @@ const Home = () => {
                           variant="top"
                           src={
                             product.image ||
-                            require("../../assets/commodity.png")
+                            require("../../assets/no-image.png")
                           }
                           alt={product.product_name}
                           className="product-img"
@@ -835,78 +835,51 @@ const Home = () => {
         </Row>
 
         <Row className="g-4">
-          {featuredGalleries && featuredGalleries.length > 0
-            ? featuredGalleries.map((gallery, index) => (
-                <Col md={3} sm={6} key={gallery.id || index}>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Link to="/gallery" className="text-decoration-none">
-                      <div className="gallery-card position-relative rounded-4 overflow-hidden">
-                        <img
-                          src={
-                            gallery.image_url ||
-                            require("../../assets/commodity.png")
-                          }
-                          alt={gallery.title || `Gallery image ${index + 1}`}
-                          className="img-fluid shadow-sm"
-                          style={{
-                            width: "100%",
-                            height: "220px",
-                            objectFit: "cover",
-                          }}
-                        />
-                        <div className="gallery-overlay rounded-4">
-                          <h5 className="text-white mb-0">
-                            <i className="fas fa-camera-retro me-2"></i>
-                            {gallery.title || `Beautiful View ${index + 1}`}
-                          </h5>
-                          <small className="text-white-50">
-                            {gallery.created_at &&
-                              format(
-                                new Date(gallery.created_at),
-                                "MMMM dd, yyyy"
-                              )}
-                          </small>
-                        </div>
+          {featuredGalleries && featuredGalleries.length > 0 ? (
+            featuredGalleries.map((gallery, index) => (
+              <Col md={3} sm={6} key={gallery.id || index}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Link to="/gallery" className="text-decoration-none">
+                    <div className="gallery-card position-relative rounded-4 overflow-hidden">
+                      <img
+                        src={gallery.image_url}
+                        alt={gallery.title || `Gallery image ${index + 1}`}
+                        className="img-fluid shadow-sm"
+                        style={{
+                          width: "100%",
+                          height: "220px",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <div className="gallery-overlay rounded-4">
+                        <h5 className="text-white mb-0">
+                          <i className="fas fa-camera-retro me-2"></i>
+                          {gallery.title || `Beautiful View ${index + 1}`}
+                        </h5>
+                        <small className="text-white-50">
+                          {gallery.created_at &&
+                            format(
+                              new Date(gallery.created_at),
+                              "MMMM dd, yyyy"
+                            )}
+                        </small>
                       </div>
-                    </Link>
-                  </motion.div>
-                </Col>
-              ))
-            : // Fallback gallery images if API call fails
-              Array.from({ length: 4 }).map((_, index) => (
-                <Col md={3} sm={6} key={index}>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Link to="/gallery" className="text-decoration-none">
-                      <div className="gallery-card position-relative rounded-4 overflow-hidden">
-                        <img
-                          src={require(index % 2 === 0
-                            ? "../../assets/commodity.png"
-                            : "../../assets/aerial.png")}
-                          alt={`Gallery image ${index + 1}`}
-                          className="img-fluid shadow-sm"
-                          style={{
-                            width: "100%",
-                            height: "220px",
-                            objectFit: "cover",
-                          }}
-                        />
-                        <div className="gallery-overlay rounded-4">
-                          <h5 className="text-white mb-0">
-                            <i className="fas fa-camera-retro me-2"></i>
-                            Beautiful View {index + 1}
-                          </h5>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                </Col>
-              ))}
+                    </div>
+                  </Link>
+                </motion.div>
+              </Col>
+            ))
+          ) : (
+            <Col xs={12} className="text-center py-4">
+              <p className="text-muted">
+                <i className="fas fa-exclamation-circle me-2"></i>
+                No gallery images available at the moment.
+              </p>
+            </Col>
+          )}
         </Row>
 
         <Row className="mt-5">
@@ -961,7 +934,7 @@ const Home = () => {
                           variant="top"
                           src={
                             blog.photo_url ||
-                            require("../../assets/facility.png")
+                            require("../../assets/no-image.png")
                           }
                           alt={blog.title}
                           style={{
@@ -1047,7 +1020,7 @@ const Home = () => {
                       <div style={{ height: "200px", overflow: "hidden" }}>
                         <Card.Img
                           variant="top"
-                          src={require("../../assets/facility.png")}
+                          src={require("../../assets/no-image.png")}
                           alt={`Blog post ${index + 1}`}
                           style={{
                             width: "100%",
