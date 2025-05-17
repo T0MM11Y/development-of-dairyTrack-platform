@@ -36,9 +36,11 @@ const HealthCheckListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const isSupervisor = user?.type === "supervisor";
   const [userManagedCows, setUserManagedCows] = useState([]);
 const [currentUser, setCurrentUser] = useState(null);
+const isSupervisor =
+  currentUser?.role_id === 2;
+
 useEffect(() => {
   const userData = JSON.parse(localStorage.getItem("user"));
   setCurrentUser(userData);
@@ -59,19 +61,23 @@ useEffect(() => {
 
 
   const disableIfSupervisor = isSupervisor
-    ? {
-        disabled: true,
-        title: "Supervisor tidak dapat mengedit data",
-        style: { opacity: 0.5, cursor: "not-allowed" },
-      }
-    : {};
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
+
 
  const fetchData = async () => {
   try {
+    if (!currentUser) return;
+
     setLoading(true);
     const healthChecksData = await getHealthChecks();
 
-    const isAdmin = currentUser?.role_id === 1;
+    const isAdmin = currentUser.role_id === 1;
+    const isSupervisor = currentUser.role_id === 2;
 
     let filteredHealthChecks = healthChecksData;
 
@@ -82,8 +88,13 @@ useEffect(() => {
       );
     }
 
+    // 🔍 Jika supervisor tapi tidak punya sapi, tetap tampilkan semua (atau bisa dikustom)
+    if (isSupervisor && userManagedCows.length === 0) {
+      filteredHealthChecks = healthChecksData; // atau tampilkan []
+    }
+
     setData(filteredHealthChecks || []);
-    setHealthChecks(filteredHealthChecks || []); // ⬅️ Tambahkan ini
+    setHealthChecks(filteredHealthChecks || []);
   } catch (err) {
     Swal.fire("Error", "Gagal memuat data.", "error");
     setData([]);
@@ -92,6 +103,7 @@ useEffect(() => {
     setLoading(false);
   }
 };
+
 
 
 
@@ -122,12 +134,14 @@ useEffect(() => {
 useEffect(() => {
   if (!currentUser) return;
 
-const isAdmin = currentUser?.username === "admin001"; // bisa diganti sesuai username admin kamu
+  const isAdmin = currentUser.role_id === 1;
+  const isSupervisor = currentUser.role_id === 2;
 
-  if (isAdmin) {
-    fetchData(); // Admin langsung fetch
+  // Admin langsung fetch
+  if (isAdmin || isSupervisor) {
+    fetchData();
   } else if (userManagedCows.length > 0) {
-    fetchData(); // Non-admin tunggu sapi user tersedia
+    fetchData(); // Non-admin non-supervisor tunggu sapi tersedia
   }
 }, [userManagedCows, currentUser]);
 

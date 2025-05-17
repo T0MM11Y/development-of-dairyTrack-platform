@@ -33,21 +33,22 @@ const DiseaseHistoryListPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user"));
-  const isSupervisor = user?.type === "supervisor";
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 3;
   const [currentUser, setCurrentUser] = useState(null);
+  const isSupervisor =
+  currentUser?.role_id === 2;
   const [userManagedCows, setUserManagedCows] = useState([]);
   const [viewModalData, setViewModalData] = useState(null);
   const [viewModalShow, setViewModalShow] = useState(false);
 
-  const disableIfSupervisor = isSupervisor
-    ? {
-        disabled: true,
-        title: "Supervisor tidak dapat mengedit data",
-        style: { opacity: 0.5, cursor: "not-allowed" },
-      }
-    : {};
+   const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
@@ -86,9 +87,11 @@ const DiseaseHistoryListPage = () => {
       setSymptoms(Array.isArray(symptomList) ? symptomList : []);
 
       const isAdmin = currentUser?.role_id === 1;
+      const isSupervisor = currentUser.role_id === 2;
+
       let filteredHistories = historyList;
 
-      if (!isAdmin && userManagedCows.length > 0) {
+      if (!isAdmin && !isSupervisor && userManagedCows.length > 0) {
         const allowedCowIds = userManagedCows.map((cow) => cow.id);
 
         filteredHistories = historyList.filter((history) => {
@@ -111,8 +114,10 @@ const DiseaseHistoryListPage = () => {
 
   useEffect(() => {
     if (!currentUser) return;
-    const isAdmin = currentUser?.username === "admin001";
-    if (isAdmin) {
+    const isAdmin = currentUser.role_id === 1;
+    const isSupervisor = currentUser.role_id === 2;
+
+  if (isAdmin || isSupervisor) {
       fetchData();
     } else if (userManagedCows.length > 0) {
       fetchData();
