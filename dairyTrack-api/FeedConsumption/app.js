@@ -111,7 +111,9 @@ app.use((req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
-  res.status(500).json({ message: "Internal server error", error: err.message });
+  res
+    .status(500)
+    .json({ message: "Internal server error", error: err.message });
 });
 
 // Jalankan server

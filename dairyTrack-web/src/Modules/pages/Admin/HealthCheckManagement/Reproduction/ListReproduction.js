@@ -145,15 +145,33 @@ const isAdmin = currentUser?.username === "admin001"; // bisa diganti sesuai use
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800">Data Reproduksi</h2>
-        <button
-          className="btn btn-info"
-          onClick={() => {
-            if (!isSupervisor) setModalType("create");
-          }}
-          {...disableIfSupervisor}
-        >
-          + Tambah Reproduksi
-        </button>
+      <button
+  className="btn btn-info"
+  onClick={() => {
+    if (isSupervisor) return;
+
+    const femaleCows =
+      Array.isArray(userManagedCows) &&
+      userManagedCows.filter((cow) => cow.gender?.toLowerCase() === "female");
+
+    if (!femaleCows || femaleCows.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Tidak Ada Sapi Betina",
+        text: "Tidak dapat menambahkan reproduksi karena tidak ada sapi betina yang tersedia.",
+        confirmButtonText: "Tutup",
+      });
+      return; // ⛔ Cegah buka modal
+    }
+
+    // ✅ Buka modal hanya jika ada sapi betina
+    setModalType("create");
+  }}
+  {...disableIfSupervisor}
+>
+  + Tambah Reproduksi
+</button>
+
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

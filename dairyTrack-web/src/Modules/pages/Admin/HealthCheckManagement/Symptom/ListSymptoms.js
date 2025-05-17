@@ -126,11 +126,15 @@ const fetchData = async () => {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
-  const getCowName = (hcId) => {
-    const hc = healthChecks.find((h) => h.id === hcId);
-    const cow = cows.find((c) => c.id === hc?.cow);
-    return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
-  };
+ const getCowName = (hcId) => {
+  const hc = healthChecks.find((h) => h.id === hcId);
+  if (!hc) return "Tidak ditemukan";
+
+  const cowId = typeof hc.cow === "object" ? hc.cow.id : hc.cow;
+  const cow = cows.find((c) => c.id === cowId);
+  return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
+};
+
 
   const handleDelete = async (id) => {
     if (!id) return;

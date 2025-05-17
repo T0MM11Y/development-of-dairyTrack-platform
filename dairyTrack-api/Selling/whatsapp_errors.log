@@ -5645,3 +5645,19 @@ Gupshup response: {'status': 'submitted', 'messageId': 'eb1ad7b9-46c0-4603-9c70-
 Order updated successfully: ORD0396E4
 OrderItem saved: 1 x Susu Strawberry, total_price=10000.00
 Order updated successfully: ORD2744CC
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+C:\Users\t0mm11y\Documents\Dairy~Track\dairyTrack-api\Selling\sales_and_finance\settings.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Not Found: /media/products/susucoklat.jpg
+Not Found: /media/products/strawberry_KkHqWhe.jpg
+Not Found: /media/products/susucoklat.jpg
+Not Found: /media/products/susucoklat.jpg
+Not Found: /media/products/susucoklat.jpg
+C:\Users\t0mm11y\Documents\Dairy~Track\dairyTrack-api\Selling\stock\serializers.py changed, reloading.

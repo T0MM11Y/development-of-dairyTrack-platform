@@ -335,3 +335,48 @@ export const resetUserPassword = async (userId) => {
     };
   }
 };
+
+// Function to change user password
+export const changeUserPassword = async (userId, oldPassword, newPassword) => {
+  try {
+    const response = await fetch(`${API_URL1}/user/change-password/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        old_password: oldPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok && data.status === "success") {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: data.message,
+      });
+      return { success: true, message: data.message };
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.message || "Failed to change password.",
+      });
+      return { success: false, message: data.message };
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An error occurred while changing the password.",
+    });
+    console.error("Error changing password:", error);
+    return {
+      success: false,
+      message: "An error occurred while changing the password.",
+    };
+  }
+};
+// ...existing code...
