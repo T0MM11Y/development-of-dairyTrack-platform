@@ -16,6 +16,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import ReactApexChart from "react-apexcharts";
 import financeController from "../../../controllers/financeController.js";
 import { format } from "date-fns";
+import usePermissions from "../Permission/usePermission";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -70,7 +71,6 @@ const FinancePage = () => {
   const [incomeTypes, setIncomeTypes] = useState([]);
   const [expenseTypes, setExpenseTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [financeType, setFinanceType] = useState("");
@@ -81,37 +81,16 @@ const FinancePage = () => {
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentUser, setCurrentUser] = useState(null);
   const transactionsPerPage = 8;
 
-  // Fetch user from localStorage
-  useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData && userData.user_id) {
-        const userId = parseInt(userData.user_id);
-        if (isNaN(userId)) {
-          throw new Error("Invalid user ID in localStorage.");
-        }
-        setCurrentUser({ ...userData, user_id: userId });
-      } else {
-        setError("User not logged in. Please log in to continue.");
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "User not logged in. Please log in to continue.",
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-      setError("Failed to load user data. Please try again.");
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load user data. Please try again.",
-      });
-    }
-  }, []);
+  // Use the permissions hook
+  const {
+    currentUser,
+    isSupervisor,
+    disableIfSupervisor,
+    restrictSupervisorAction,
+    error: userError,
+  } = usePermissions();
 
   // Fetch data
   const fetchData = async (filters = {}) => {
@@ -173,12 +152,13 @@ const FinancePage = () => {
       setExpenseTypes(expenseTypesResponse.expenseTypes || []);
 
       calculateTotals(incomes, expenses);
-      setError("");
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError(
-        "Failed to fetch finance data. Please ensure the API server is active."
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to fetch finance data. Please ensure the API server is active.",
+      });
       setIncomeData([]);
       setExpenseData([]);
       setIncomeTypes([]);
@@ -275,13 +255,21 @@ const FinancePage = () => {
         endDate
       );
       if (!response.success) {
-        setError(response.message || "Failed to export PDF.");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Failed to export PDF.",
+        });
       }
     } catch (error) {
       console.error("Error exporting PDF:", error);
-      setError(
-        "An unexpected error occurred while exporting to PDF: " + error.message
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          "An unexpected error occurred while exporting to PDF: " +
+          error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -296,14 +284,21 @@ const FinancePage = () => {
         endDate
       );
       if (!response.success) {
-        setError(response.message || "Failed to export Excel.");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Failed to export Excel.",
+        });
       }
     } catch (error) {
       console.error("Error exporting Excel:", error);
-      setError(
-        "An unexpected error occurred while exporting to Excel: " +
-          error.message
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          "An unexpected error occurred while exporting to Excel: " +
+          error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -440,9 +435,9 @@ const FinancePage = () => {
 
   // Handle modal save
   const handleIncomeSaved = async (newIncome) => {
+    if (restrictSupervisorAction("add", "add income")) return;
     try {
       if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-        setError("User not logged in or invalid user ID.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -468,7 +463,6 @@ const FinancePage = () => {
         });
         setShowAddIncomeModal(false);
       } else {
-        setError(response.message);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -476,20 +470,18 @@ const FinancePage = () => {
         });
       }
     } catch (error) {
-      const errorMessage = "Failed to save income: " + error.message;
-      setError(errorMessage);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: errorMessage,
+        text: "Failed to save income: " + error.message,
       });
     }
   };
 
   const handleExpenseSaved = async (newExpense) => {
+    if (restrictSupervisorAction("add", "add expense")) return;
     try {
       if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-        setError("User not logged in or invalid user ID.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -515,7 +507,6 @@ const FinancePage = () => {
         });
         setShowAddExpenseModal(false);
       } else {
-        setError(response.message);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -523,12 +514,10 @@ const FinancePage = () => {
         });
       }
     } catch (error) {
-      const errorMessage = "Failed to save expense: " + error.message;
-      setError(errorMessage);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: errorMessage,
+        text: "Failed to save expense: " + error.message,
       });
     }
   };
@@ -546,10 +535,10 @@ const FinancePage = () => {
     );
   }
 
-  if (error && !incomeData.length && !expenseData.length) {
+  if (userError && !incomeData.length && !expenseData.length) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger text-center">{error}</div>
+        <div className="alert alert-danger text-center">{userError}</div>
       </div>
     );
   }
@@ -582,7 +571,9 @@ const FinancePage = () => {
                     letterSpacing: "0.5px",
                     fontWeight: "500",
                     fontSize: "0.9rem",
+                    ...disableIfSupervisor.style,
                   }}
+                  {...disableIfSupervisor}
                 >
                   <i className="bx bx-plus me-1" /> Record New Income
                 </Button>
@@ -595,7 +586,9 @@ const FinancePage = () => {
                     letterSpacing: "0.5px",
                     fontWeight: "500",
                     fontSize: "0.9rem",
+                    ...disableIfSupervisor.style,
                   }}
+                  {...disableIfSupervisor}
                 >
                   <i className="bx bx-plus me-1" /> Record New Expense
                 </Button>
@@ -641,7 +634,6 @@ const FinancePage = () => {
             resetFilters={resetFilters}
             handleExportExcel={handleExportExcel}
             handleExportPdf={handleExportPdf}
-            error={error}
             loading={loading}
           />
 
@@ -673,6 +665,8 @@ const FinancePage = () => {
             incomeTypes={incomeTypes}
             currentUser={currentUser}
             formatRupiah={formatRupiah}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
           <AddExpenseModal
             show={showAddExpenseModal}
@@ -681,6 +675,8 @@ const FinancePage = () => {
             expenseTypes={expenseTypes}
             currentUser={currentUser}
             formatRupiah={formatRupiah}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
         </Card.Body>
       </Card>
@@ -765,7 +761,6 @@ const FilterExportPanel = ({
   resetFilters,
   handleExportExcel,
   handleExportPdf,
-  error,
   loading,
 }) => {
   return (
@@ -885,11 +880,6 @@ const FilterExportPanel = ({
             </Button>
           </Col>
         </Row>
-        {error && (
-          <div className="alert alert-danger mt-3" role="alert">
-            {error}
-          </div>
-        )}
       </Card.Body>
     </Card>
   );
@@ -1400,6 +1390,8 @@ const AddIncomeModal = ({
   incomeTypes,
   currentUser,
   formatRupiah,
+  isSupervisor,
+  disableIfSupervisor,
 }) => {
   const [formData, setFormData] = useState({
     amount: "",
@@ -1427,6 +1419,14 @@ const AddIncomeModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSupervisor) {
+      Swal.fire({
+        icon: "error",
+        title: "Permission Denied",
+        text: "Supervisor cannot add income.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
@@ -1488,6 +1488,7 @@ const AddIncomeModal = ({
                 min="0"
                 step="0.01"
                 placeholder="Enter amount"
+                disabled={isSupervisor}
               />
             </InputGroup>
             {formattedAmount && (
@@ -1501,6 +1502,7 @@ const AddIncomeModal = ({
               value={formData.income_type}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             >
               <option value="">Select Category</option>
               {incomeTypes.map((type) => (
@@ -1518,6 +1520,7 @@ const AddIncomeModal = ({
               value={formData.transaction_date}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -1528,6 +1531,7 @@ const AddIncomeModal = ({
               name="description"
               value={formData.description}
               onChange={handleChange}
+              disabled={isSupervisor}
             />
           </Form.Group>
           <div className="d-flex justify-content-end gap-2">
@@ -1546,12 +1550,14 @@ const AddIncomeModal = ({
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || isSupervisor}
               style={{
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               {submitting ? (
                 <Spinner size="sm" animation="border" />
@@ -1574,6 +1580,8 @@ const AddExpenseModal = ({
   expenseTypes,
   currentUser,
   formatRupiah,
+  isSupervisor,
+  disableIfSupervisor,
 }) => {
   const [formData, setFormData] = useState({
     amount: "",
@@ -1601,6 +1609,14 @@ const AddExpenseModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSupervisor) {
+      Swal.fire({
+        icon: "error",
+        title: "Permission Denied",
+        text: "Supervisor cannot add expense.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
@@ -1662,6 +1678,7 @@ const AddExpenseModal = ({
                 min="0"
                 step="0.01"
                 placeholder="Enter amount"
+                disabled={isSupervisor}
               />
             </InputGroup>
             {formattedAmount && (
@@ -1675,6 +1692,7 @@ const AddExpenseModal = ({
               value={formData.expense_type}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             >
               <option value="">Select Category</option>
               {expenseTypes.map((type) => (
@@ -1692,6 +1710,7 @@ const AddExpenseModal = ({
               value={formData.transaction_date}
               onChange={handleChange}
               required
+              disabled={isSupervisor}
             />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -1702,6 +1721,7 @@ const AddExpenseModal = ({
               name="description"
               value={formData.description}
               onChange={handleChange}
+              disabled={isSupervisor}
             />
           </Form.Group>
           <div className="d-flex justify-content-end gap-2">
@@ -1720,12 +1740,14 @@ const AddExpenseModal = ({
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || isSupervisor}
               style={{
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               {submitting ? (
                 <Spinner size="sm" animation="border" />

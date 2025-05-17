@@ -55,8 +55,7 @@ const FinanceRecords = () => {
 
   // Rupiah formatting
   const formatRupiah = (value) => {
-    if (value === null || value === undefined || isNaN(parseFloat(value)))
-      return "Rp 0,00";
+    if (value === null || value === undefined || isNaN(parseFloat(value))) return "Rp 0,00";
     const number = parseFloat(value);
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -102,40 +101,28 @@ const FinanceRecords = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [
-          incomeResponse,
-          expenseResponse,
-          incomeTypesResponse,
-          expenseTypesResponse,
-        ] = await Promise.all([
-          financeController.getIncomes(),
-          financeController.getExpenses(),
-          financeController.getIncomeTypes(),
-          financeController.getExpenseTypes(),
-        ]);
+        const [incomeResponse, expenseResponse, incomeTypesResponse, expenseTypesResponse] =
+          await Promise.all([
+            financeController.getIncomes(),
+            financeController.getExpenses(),
+            financeController.getIncomeTypes(),
+            financeController.getExpenseTypes(),
+          ]);
 
         if (!incomeResponse.success) throw new Error(incomeResponse.message);
         if (!expenseResponse.success) throw new Error(expenseResponse.message);
-        if (!incomeTypesResponse.success)
-          throw new Error(incomeTypesResponse.message);
-        if (!expenseTypesResponse.success)
-          throw new Error(expenseTypesResponse.message);
+        if (!incomeTypesResponse.success) throw new Error(incomeTypesResponse.message);
+        if (!expenseTypesResponse.success) throw new Error(expenseTypesResponse.message);
 
         const incomes = incomeResponse.incomes.map((item) => ({
           ...item,
           type: "income",
           category: item.income_type_detail?.name || "Unknown",
           created_by: item.created_by
-            ? {
-                ...item.created_by,
-                id: item.created_by.id ? parseInt(item.created_by.id) : null,
-              }
+            ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
             : null,
           updated_by: item.updated_by
-            ? {
-                ...item.updated_by,
-                id: item.updated_by.id ? parseInt(item.updated_by.id) : null,
-              }
+            ? { ...item.updated_by, id: item.updated_by.id ? parseInt(item.updated_by.id) : null }
             : null,
         }));
         const expenses = expenseResponse.expenses.map((item) => ({
@@ -143,16 +130,10 @@ const FinanceRecords = () => {
           type: "expense",
           category: item.expense_type_detail?.name || "Unknown",
           created_by: item.created_by
-            ? {
-                ...item.created_by,
-                id: item.created_by.id ? parseInt(item.created_by.id) : null,
-              }
+            ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
             : null,
           updated_by: item.updated_by
-            ? {
-                ...item.updated_by,
-                id: item.updated_by.id ? parseInt(item.updated_by.id) : null,
-              }
+            ? { ...item.updated_by, id: item.updated_by.id ? parseInt(item.updated_by.id) : null }
             : null,
         }));
 
@@ -209,16 +190,10 @@ const FinanceRecords = () => {
             type: "income",
             category: item.income_type_detail?.name || "Unknown",
             created_by: item.created_by
-              ? {
-                  ...item.created_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
             updated_by: item.updated_by
-              ? {
-                  ...item.updated_by,
-                  id: item.updated_by.id ? parseInt(item.updated_by.id) : null,
-                }
+              ? { ...item.updated_by, id: item.updated_by.id ? parseInt(item.updated_by.id) : null }
               : null,
           }));
           setRecords((prev) => [
@@ -271,16 +246,12 @@ const FinanceRecords = () => {
       income_type: parseInt(selectedRecord.income_type),
       transaction_date: new Date(selectedRecord.transaction_date).toISOString(),
       description: selectedRecord.description,
-      created_by:
-        selectedRecord.created_by?.id || parseInt(currentUser.user_id),
+      created_by: selectedRecord.created_by?.id || parseInt(currentUser.user_id),
       updated_by: parseInt(currentUser.user_id),
     };
 
     try {
-      const response = await financeController.updateIncome(
-        selectedRecord.id,
-        incomeData
-      );
+      const response = await financeController.updateIncome(selectedRecord.id, incomeData);
       if (response.success) {
         Swal.fire({
           icon: "success",
@@ -296,16 +267,10 @@ const FinanceRecords = () => {
             type: "income",
             category: item.income_type_detail?.name || "Unknown",
             created_by: item.created_by
-              ? {
-                  ...item.created_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
             updated_by: item.updated_by
-              ? {
-                  ...item.updated_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.updated_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
           }));
           setRecords((prev) => [
@@ -336,9 +301,7 @@ const FinanceRecords = () => {
 
   // Handle delete income
   const handleDeleteIncome = async (incomeId) => {
-    const record = records.find(
-      (r) => r.id === incomeId && r.type === "income"
-    );
+    const record = records.find((r) => r.id === incomeId && r.type === "income");
     const result = await Swal.fire({
       title: "Are you sure?",
       text: `You are about to delete income "${record?.description}". This cannot be undone!`,
@@ -361,9 +324,7 @@ const FinanceRecords = () => {
             timer: 3000,
             showConfirmButton: false,
           });
-          setRecords((prev) =>
-            prev.filter((r) => !(r.id === incomeId && r.type === "income"))
-          );
+          setRecords((prev) => prev.filter((r) => !(r.id === incomeId && r.type === "income")));
         } else {
           setError(response.message);
           Swal.fire({
@@ -422,16 +383,10 @@ const FinanceRecords = () => {
             type: "expense",
             category: item.expense_type_detail?.name || "Unknown",
             created_by: item.created_by
-              ? {
-                  ...item.created_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
             updated_by: item.updated_by
-              ? {
-                  ...item.updated_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.updated_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
           }));
           setRecords((prev) => [
@@ -484,16 +439,12 @@ const FinanceRecords = () => {
       expense_type: parseInt(selectedRecord.expense_type),
       transaction_date: new Date(selectedRecord.transaction_date).toISOString(),
       description: selectedRecord.description,
-      created_by:
-        selectedRecord.created_by?.id || parseInt(currentUser.user_id),
+      created_by: selectedRecord.created_by?.id || parseInt(currentUser.user_id),
       updated_by: parseInt(currentUser.user_id),
     };
 
     try {
-      const response = await financeController.updateExpense(
-        selectedRecord.id,
-        expenseData
-      );
+      const response = await financeController.updateExpense(selectedRecord.id, expenseData);
       if (response.success) {
         Swal.fire({
           icon: "success",
@@ -509,16 +460,10 @@ const FinanceRecords = () => {
             type: "expense",
             category: item.expense_type_detail?.name || "Unknown",
             created_by: item.created_by
-              ? {
-                  ...item.created_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.created_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
             updated_by: item.updated_by
-              ? {
-                  ...item.updated_by,
-                  id: item.created_by.id ? parseInt(item.created_by.id) : null,
-                }
+              ? { ...item.updated_by, id: item.created_by.id ? parseInt(item.created_by.id) : null }
               : null,
           }));
           setRecords((prev) => [
@@ -549,9 +494,7 @@ const FinanceRecords = () => {
 
   // Handle delete expense
   const handleDeleteExpense = async (expenseId) => {
-    const record = records.find(
-      (r) => r.id === expenseId && r.type === "expense"
-    );
+    const record = records.find((r) => r.id === expenseId && r.type === "expense");
     const result = await Swal.fire({
       title: "Are you sure?",
       text: `You are about to delete expense "${record?.description}". This cannot be undone!`,
@@ -574,9 +517,7 @@ const FinanceRecords = () => {
             timer: 3000,
             showConfirmButton: false,
           });
-          setRecords((prev) =>
-            prev.filter((r) => !(r.id === expenseId && r.type === "expense"))
-          );
+          setRecords((prev) => prev.filter((r) => !(r.id === expenseId && r.type === "expense")));
         } else {
           setError(response.message);
           Swal.fire({
@@ -610,10 +551,7 @@ const FinanceRecords = () => {
 
       let response;
       if (isEdit) {
-        response = await financeController.updateIncomeType(
-          incomeTypeId,
-          cleanedData
-        );
+        response = await financeController.updateIncomeType(incomeTypeId, cleanedData);
       } else {
         response = await financeController.createIncomeType(cleanedData);
       }
@@ -632,16 +570,11 @@ const FinanceRecords = () => {
         return false;
       }
     } catch (error) {
-      console.error(
-        `Error ${isEdit ? "updating" : "creating"} income type:`,
-        error
-      );
+      console.error(`Error ${isEdit ? "updating" : "creating"} income type:`, error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: `An unexpected error occurred while ${
-          isEdit ? "updating" : "creating"
-        } the income type.`,
+        text: `An unexpected error occurred while ${isEdit ? "updating" : "creating"} the income type.`,
       });
       return false;
     }
@@ -676,11 +609,7 @@ const FinanceRecords = () => {
   };
 
   // Handle expense type CRUD
-  const handleExpenseTypeSave = async (
-    expenseTypeData,
-    isEdit,
-    expenseTypeId
-  ) => {
+  const handleExpenseTypeSave = async (expenseTypeData, isEdit, expenseTypeId) => {
     try {
       // Ensure created_by and updated_by are integers
       const cleanedData = {
@@ -692,10 +621,7 @@ const FinanceRecords = () => {
 
       let response;
       if (isEdit) {
-        response = await financeController.updateExpenseType(
-          expenseTypeId,
-          cleanedData
-        );
+        response = await financeController.updateExpenseType(expenseTypeId, cleanedData);
       } else {
         response = await financeController.createExpenseType(cleanedData);
       }
@@ -714,16 +640,11 @@ const FinanceRecords = () => {
         return false;
       }
     } catch (error) {
-      console.error(
-        `Error ${isEdit ? "updating" : "creating"} expense type:`,
-        error
-      );
+      console.error(`Error ${isEdit ? "updating" : "creating"} expense type:`, error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: `An unexpected error occurred while ${
-          isEdit ? "updating" : "creating"
-        } the expense type.`,
+        text: `An unexpected error occurred while ${isEdit ? "updating" : "creating"} the expense type.`,
       });
       return false;
     }
@@ -968,9 +889,7 @@ const FinanceRecordsStats = ({ records, formatRupiah }) => {
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h6 className="card-title mb-0">Total Expense</h6>
-                <h2 className="mt-2 mb-0">
-                  {formatRupiah(stats.totalExpense)}
-                </h2>
+                <h2 className="mt-2 mb-0">{formatRupiah(stats.totalExpense)}</h2>
               </div>
               <div>
                 <i className="fas fa-arrow-down fa-3x opacity-50"></i>
@@ -1454,27 +1373,15 @@ const FinanceRecordsModals = ({
 }) => {
   const [formattedIncomeAmount, setFormattedIncomeAmount] = useState("");
   const [formattedExpenseAmount, setFormattedExpenseAmount] = useState("");
-  const [newIncomeType, setNewIncomeType] = useState({
-    name: "",
-    description: "",
-    created_by: currentUser?.user_id,
-  });
-  const [newExpenseType, setNewExpenseType] = useState({
-    name: "",
-    description: "",
-    created_by: currentUser?.user_id,
-  });
+  const [newIncomeType, setNewIncomeType] = useState({ name: "", description: "", created_by: currentUser?.user_id });
+  const [newExpenseType, setNewExpenseType] = useState({ name: "", description: "", created_by: currentUser?.user_id });
   const [selectedIncomeType, setSelectedIncomeType] = useState(null);
   const [selectedExpenseType, setSelectedExpenseType] = useState(null);
 
   // Update formatted amounts
   useEffect(() => {
-    setFormattedIncomeAmount(
-      newIncome.amount ? formatRupiah(newIncome.amount) : ""
-    );
-    setFormattedExpenseAmount(
-      newExpense.amount ? formatRupiah(newExpense.amount) : ""
-    );
+    setFormattedIncomeAmount(newIncome.amount ? formatRupiah(newIncome.amount) : "");
+    setFormattedExpenseAmount(newExpense.amount ? formatRupiah(newExpense.amount) : "");
   }, [newIncome.amount, newExpense.amount, formatRupiah]);
 
   // Handle input changes
@@ -1537,21 +1444,13 @@ const FinanceRecordsModals = ({
   };
 
   const handleCloseIncomeTypeModal = () => {
-    setNewIncomeType({
-      name: "",
-      description: "",
-      created_by: currentUser?.user_id,
-    });
+    setNewIncomeType({ name: "", description: "", created_by: currentUser?.user_id });
     setSelectedIncomeType(null);
     setShowIncomeTypeModal(false);
   };
 
   const handleCloseExpenseTypeModal = () => {
-    setNewExpenseType({
-      name: "",
-      description: "",
-      created_by: currentUser?.user_id,
-    });
+    setNewExpenseType({ name: "", description: "", created_by: currentUser?.user_id });
     setSelectedExpenseType(null);
     setShowExpenseTypeModal(false);
   };
@@ -1560,32 +1459,18 @@ const FinanceRecordsModals = ({
   const handleAddIncomeType = async (e) => {
     e.preventDefault();
     const success = await handleIncomeTypeSave(
-      {
-        ...newIncomeType,
-        created_by: parseInt(currentUser.user_id),
-        updated_by: parseInt(currentUser.user_id),
-      },
+      { ...newIncomeType, created_by: parseInt(currentUser.user_id), updated_by: parseInt(currentUser.user_id) },
       false
     );
     if (success) {
-      setNewIncomeType({
-        name: "",
-        description: "",
-        created_by: currentUser?.user_id,
-      });
+      setNewIncomeType({ name: "", description: "", created_by: currentUser?.user_id });
     }
   };
 
   const handleEditIncomeType = async (e) => {
     e.preventDefault();
     const success = await handleIncomeTypeSave(
-      {
-        ...selectedIncomeType,
-        created_by: parseInt(
-          selectedIncomeType.created_by?.id || currentUser.user_id
-        ),
-        updated_by: parseInt(currentUser.user_id),
-      },
+      { ...selectedIncomeType, created_by: parseInt(selectedIncomeType.created_by?.id || currentUser.user_id), updated_by: parseInt(currentUser.user_id) },
       true,
       selectedIncomeType.id
     );
@@ -1598,32 +1483,18 @@ const FinanceRecordsModals = ({
   const handleAddExpenseType = async (e) => {
     e.preventDefault();
     const success = await handleExpenseTypeSave(
-      {
-        ...newExpenseType,
-        created_by: parseInt(currentUser.user_id),
-        updated_by: parseInt(currentUser.user_id),
-      },
+      { ...newExpenseType, created_by: parseInt(currentUser.user_id), updated_by: parseInt(currentUser.user_id) },
       false
     );
     if (success) {
-      setNewExpenseType({
-        name: "",
-        description: "",
-        created_by: currentUser?.user_id,
-      });
+      setNewExpenseType({ name: "", description: "", created_by: currentUser?.user_id });
     }
   };
 
   const handleEditExpenseType = async (e) => {
     e.preventDefault();
     const success = await handleExpenseTypeSave(
-      {
-        ...selectedExpenseType,
-        created_by: parseInt(
-          selectedExpenseType.created_by?.id || currentUser.user_id
-        ),
-        updated_by: parseInt(currentUser.user_id),
-      },
+      { ...selectedExpenseType, created_by: parseInt(selectedExpenseType.created_by?.id || currentUser.user_id), updated_by: parseInt(currentUser.user_id) },
       true,
       selectedExpenseType.id
     );
@@ -1666,9 +1537,7 @@ const FinanceRecordsModals = ({
                     />
                   </InputGroup>
                   {formattedIncomeAmount && (
-                    <Form.Text className="text-muted">
-                      {formattedIncomeAmount}
-                    </Form.Text>
+                    <Form.Text className="text-muted">{formattedIncomeAmount}</Form.Text>
                   )}
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -1755,9 +1624,7 @@ const FinanceRecordsModals = ({
                         placeholder="Enter amount"
                       />
                     </InputGroup>
-                    <Form.Text className="text-muted">
-                      {formatRupiah(selectedRecord.amount)}
-                    </Form.Text>
+                    <Form.Text className="text-muted">{formatRupiah(selectedRecord.amount)}</Form.Text>
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>Income Type</Form.Label>
@@ -1782,10 +1649,7 @@ const FinanceRecordsModals = ({
                     <Form.Control
                       type="datetime-local"
                       name="transaction_date"
-                      value={format(
-                        new Date(selectedRecord.transaction_date),
-                        "yyyy-MM-dd'T'HH:mm"
-                      )}
+                      value={format(new Date(selectedRecord.transaction_date), "yyyy-MM-dd'T'HH:mm")}
                       onChange={handleEditInputChange}
                       required
                     />
@@ -1839,9 +1703,7 @@ const FinanceRecordsModals = ({
                 </p>
                 <p>
                   <strong>Transaction Date:</strong>{" "}
-                  {new Date(selectedRecord.transaction_date).toLocaleString(
-                    "id-ID"
-                  )}
+                  {new Date(selectedRecord.transaction_date).toLocaleString("id-ID")}
                 </p>
                 <p>
                   <strong>Created By:</strong>{" "}
@@ -1864,10 +1726,7 @@ const FinanceRecordsModals = ({
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowViewIncomeModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowViewIncomeModal(false)}>
             Close
           </Button>
         </Modal.Footer>
@@ -1905,9 +1764,7 @@ const FinanceRecordsModals = ({
                     />
                   </InputGroup>
                   {formattedExpenseAmount && (
-                    <Form.Text className="text-muted">
-                      {formattedExpenseAmount}
-                    </Form.Text>
+                    <Form.Text className="text-muted">{formattedExpenseAmount}</Form.Text>
                   )}
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -1994,9 +1851,7 @@ const FinanceRecordsModals = ({
                         placeholder="Enter amount"
                       />
                     </InputGroup>
-                    <Form.Text className="text-muted">
-                      {formatRupiah(selectedRecord.amount)}
-                    </Form.Text>
+                    <Form.Text className="text-muted">{formatRupiah(selectedRecord.amount)}</Form.Text>
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>Expense Type</Form.Label>
@@ -2021,10 +1876,7 @@ const FinanceRecordsModals = ({
                     <Form.Control
                       type="datetime-local"
                       name="transaction_date"
-                      value={format(
-                        new Date(selectedRecord.transaction_date),
-                        "yyyy-MM-dd'T'HH:mm"
-                      )}
+                      value={format(new Date(selectedRecord.transaction_date), "yyyy-MM-dd'T'HH:mm")}
                       onChange={handleEditInputChange}
                       required
                     />
@@ -2078,9 +1930,7 @@ const FinanceRecordsModals = ({
                 </p>
                 <p>
                   <strong>Transaction Date:</strong>{" "}
-                  {new Date(selectedRecord.transaction_date).toLocaleString(
-                    "id-ID"
-                  )}
+                  {new Date(selectedRecord.transaction_date).toLocaleString("id-ID")}
                 </p>
                 <p>
                   <strong>Created By:</strong>{" "}
@@ -2103,10 +1953,7 @@ const FinanceRecordsModals = ({
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowViewExpenseModal(false)}
-          >
+          <Button variant="secondary" onClick={() => setShowViewExpenseModal(false)}>
             Close
           </Button>
         </Modal.Footer>
@@ -2125,11 +1972,7 @@ const FinanceRecordsModals = ({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form
-            onSubmit={
-              selectedIncomeType ? handleEditIncomeType : handleAddIncomeType
-            }
-          >
+          <Form onSubmit={selectedIncomeType ? handleEditIncomeType : handleAddIncomeType}>
             <Row>
               <Col md={4}>
                 <Form.Group className="mb-3">
@@ -2137,17 +1980,10 @@ const FinanceRecordsModals = ({
                   <Form.Control
                     type="text"
                     name="name"
-                    value={
-                      selectedIncomeType
-                        ? selectedIncomeType.name
-                        : newIncomeType.name
-                    }
+                    value={selectedIncomeType ? selectedIncomeType.name : newIncomeType.name}
                     onChange={(e) =>
                       selectedIncomeType
-                        ? setSelectedIncomeType((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
+                        ? setSelectedIncomeType((prev) => ({ ...prev, name: e.target.value }))
                         : handleIncomeTypeInputChange(e)
                     }
                     required
@@ -2264,11 +2100,7 @@ const FinanceRecordsModals = ({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form
-            onSubmit={
-              selectedExpenseType ? handleEditExpenseType : handleAddExpenseType
-            }
-          >
+          <Form onSubmit={selectedExpenseType ? handleEditExpenseType : handleAddExpenseType}>
             <Row>
               <Col md={4}>
                 <Form.Group className="mb-3">
@@ -2276,17 +2108,10 @@ const FinanceRecordsModals = ({
                   <Form.Control
                     type="text"
                     name="name"
-                    value={
-                      selectedExpenseType
-                        ? selectedExpenseType.name
-                        : newExpenseType.name
-                    }
+                    value={selectedExpenseType ? selectedExpenseType.name : newExpenseType.name}
                     onChange={(e) =>
                       selectedExpenseType
-                        ? setSelectedExpenseType((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
+                        ? setSelectedExpenseType((prev) => ({ ...prev, name: e.target.value }))
                         : handleExpenseTypeInputChange(e)
                     }
                     required

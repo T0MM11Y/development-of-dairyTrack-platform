@@ -12,11 +12,11 @@ import {
   deleteOrder,
 } from "../../../controllers/orderController";
 import { getProductStocks } from "../../../controllers/productStockController";
+import usePermissions from "../Permission/usePermission";
 
 const ListOrder = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -26,7 +26,6 @@ const ListOrder = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [newOrder, setNewOrder] = useState({
     customer_name: "",
@@ -40,34 +39,14 @@ const ListOrder = () => {
   });
   const ordersPerPage = 8;
 
-  // Fetch user from localStorage
-  useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData && userData.user_id) {
-        const userId = parseInt(userData.user_id);
-        if (isNaN(userId)) {
-          throw new Error("Invalid user ID in localStorage.");
-        }
-        setCurrentUser({ ...userData, user_id: userId });
-      } else {
-        setError("User not logged in. Please log in to continue.");
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "User not logged in. Please log in to continue.",
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-      setError("Failed to load user data. Please try again.");
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load user data. Please try again.",
-      });
-    }
-  }, []);
+  // Use the permissions hook
+  const {
+    currentUser,
+    isSupervisor,
+    disableIfSupervisor,
+    restrictSupervisorAction,
+    error: userError,
+  } = usePermissions();
 
   // Fetch orders
   useEffect(() => {
@@ -77,14 +56,21 @@ const ListOrder = () => {
         const response = await getOrders();
         if (response.success) {
           setOrders(response.orders);
-          setError(null);
         } else {
-          setError(response.message);
           setOrders([]);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response.message || "Failed to fetch orders.",
+          });
         }
       } catch (err) {
-        setError("An unexpected error occurred while fetching orders.");
         console.error("Error fetching orders:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An unexpected error occurred while fetching orders.",
+        });
       } finally {
         setLoading(false);
       }
@@ -179,8 +165,8 @@ const ListOrder = () => {
   // Handle add order
   const handleAddOrder = async (e, orderData) => {
     e.preventDefault();
+    if (restrictSupervisorAction("add", "add orders")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError("User not logged in or invalid user ID.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -249,7 +235,6 @@ const ListOrder = () => {
           setAvailableProducts([]);
         }
       } else {
-        setError(response.message || "Failed to add order.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -258,7 +243,6 @@ const ListOrder = () => {
       }
     } catch (error) {
       console.error("Error adding order:", error);
-      setError("An unexpected error occurred while adding the order.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -272,8 +256,8 @@ const ListOrder = () => {
   // Handle edit order
   const handleEditOrder = async (e, orderData) => {
     e.preventDefault();
+    if (restrictSupervisorAction("edit", "edit orders")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError("User not logged in or invalid user ID.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -334,7 +318,6 @@ const ListOrder = () => {
           setAvailableProducts([]);
         }
       } else {
-        setError(response.message || "Failed to update order.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -343,7 +326,6 @@ const ListOrder = () => {
       }
     } catch (error) {
       console.error("Error editing order:", error);
-      setError("An unexpected error occurred while editing the order.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -356,6 +338,7 @@ const ListOrder = () => {
 
   // Handle delete order
   const handleDeleteOrder = async (orderId) => {
+    if (restrictSupervisorAction("delete", "delete orders")) return;
     const order = orders.find((o) => o.id === orderId);
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -384,7 +367,6 @@ const ListOrder = () => {
             setOrders(refreshedResponse.orders);
           }
         } else {
-          setError(response.message || "Failed to delete order.");
           Swal.fire({
             icon: "error",
             title: "Error",
@@ -393,7 +375,6 @@ const ListOrder = () => {
         }
       } catch (error) {
         console.error("Error deleting order:", error);
-        setError("An unexpected error occurred while deleting the order.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -411,10 +392,10 @@ const ListOrder = () => {
     );
   }
 
-  if (error) {
+  if (userError) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger text-center">{error}</div>
+        <div className="alert alert-danger text-center">{userError}</div>
       </div>
     );
   }
@@ -446,7 +427,9 @@ const ListOrder = () => {
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               <i className="fas fa-plus me-2" /> Add Order
             </Button>
@@ -502,6 +485,8 @@ const ListOrder = () => {
               setShowEditModal(true);
             }}
             handleDeleteOrder={handleDeleteOrder}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
           <OrderModals
             showAddModal={showAddModal}
