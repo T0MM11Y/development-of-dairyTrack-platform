@@ -1,4 +1,3 @@
-// src/pages/Admin/FeedManagement/Feed/EditFeed.js
 import { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import {
@@ -14,10 +13,9 @@ const FeedEditPage = () => {
   const { id } = useParams();
   const history = useHistory();
   const [form, setForm] = useState(null);
-  const [originalForm, setOriginalForm] = useState(null); // Store original data to compare changes
+  const [originalForm, setOriginalForm] = useState(null);
   const [feedTypes, setFeedTypes] = useState([]);
   const [nutritions, setNutritions] = useState([]);
-  const [setOriginalName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -48,10 +46,15 @@ const FeedEditPage = () => {
             listNutritions(),
           ]);
 
+        console.log("Feed Response:", feedResponse);
+        console.log("Feed Types Response:", feedTypeResponse);
+        console.log("Nutritions Response:", nutritionResponse);
+
         if (feedResponse.success) {
           const feed = feedResponse.feed;
           const initialForm = {
             typeId: feed.type_id || "",
+            typeName: "", // Will be updated in the next useEffect
             name: feed.name || "",
             unit: feed.unit || "",
             min_stock: feed.min_stock || 0,
@@ -60,12 +63,12 @@ const FeedEditPage = () => {
             updated_by: currentUser?.user_id || "",
             nutrisiList: feed.nutrisi_records.map((n) => ({
               nutrisi_id: n.nutrisi_id,
-              amount: n.amount,
+              amount: n.amount || 0,
+              nutrisi_name: "", // Will be updated in the next useEffect
             })),
           };
           setForm(initialForm);
-          setOriginalForm(initialForm); // Store original data for comparison
-          setOriginalName(feed.name || "");
+          setOriginalForm(initialForm);
         } else {
           throw new Error(feedResponse.message || "Pakan tidak ditemukan.");
         }
@@ -98,12 +101,32 @@ const FeedEditPage = () => {
     }
   }, [id, currentUser]);
 
+  // Update typeName and nutrisi_name after feedTypes and nutritions are loaded
+  useEffect(() => {
+    if (form && feedTypes.length > 0 && nutritions.length > 0) {
+      setForm((prev) => ({
+        ...prev,
+        typeName: feedTypes.find((t) => t.id === parseInt(prev.typeId))?.name || "Tidak diketahui",
+        nutrisiList: prev.nutrisiList.map((n) => ({
+          ...n,
+          nutrisi_name: nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui",
+        })),
+      }));
+    }
+  }, [feedTypes, nutritions, form]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "price" || name === "min_stock") {
       setForm((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value) || 0,
+      }));
+    } else if (name === "typeId") {
+      setForm((prev) => ({
+        ...prev,
+        typeId: value,
+        typeName: feedTypes.find((t) => t.id === parseInt(value))?.name || "Tidak diketahui",
       }));
     } else {
       setForm((prev) => ({
@@ -123,6 +146,7 @@ const FeedEditPage = () => {
             ? ""
             : parseFloat(value) || 0
           : value,
+      nutrisi_name: field === "nutrisi_id" ? nutritions.find((nut) => nut.id === parseInt(value))?.name || "Tidak diketahui" : updatedNutrisiList[index].nutrisi_name,
     };
     setForm((prev) => ({
       ...prev,
@@ -133,7 +157,7 @@ const FeedEditPage = () => {
   const addNutrisi = () => {
     setForm((prev) => ({
       ...prev,
-      nutrisiList: [...prev.nutrisiList, { nutrisi_id: "", amount: "" }],
+      nutrisiList: [...prev.nutrisiList, { nutrisi_id: "", amount: "", nutrisi_name: "" }],
     }));
   };
 
@@ -147,8 +171,8 @@ const FeedEditPage = () => {
   const formatNumber = (value) => {
     if (value === "" || isNaN(value)) return "";
     const num = parseFloat(value);
-    if (Number.isInteger(num)) return num.toString(); // No decimals for integers (e.g., 2 -> "2")
-    return num.toString(); // Keep decimals as they are (e.g., 2.5 -> "2.5")
+    if (Number.isInteger(num)) return num.toString();
+    return num.toString();
   };
 
   const getAvailableNutritions = (currentIndex) => {
@@ -161,25 +185,101 @@ const FeedEditPage = () => {
     );
   };
 
-  const hasChanges = () => {
-    if (!originalForm || !form) return false;
-    // Compare basic fields
-    const basicFieldsChanged =
-      form.typeId !== originalForm.typeId ||
-      form.name.trim() !== originalForm.name.trim() ||
-      form.unit.trim() !== originalForm.unit.trim() ||
-      parseFloat(form.min_stock) !== parseFloat(originalForm.min_stock) ||
-      parseFloat(form.price) !== parseFloat(originalForm.price);
+  const detectChanges = () => {
+    if (!originalForm || !form) return { hasChanges: false, messages: [] };
+
+    const messages = [];
+    let hasChanges = false;
+
+    // Compare typeId
+    if (form.typeId !== originalForm.typeId) {
+      const oldType = feedTypes.find((t) => t.id === parseInt(originalForm.typeId))?.name || "Tidak diketahui";
+      const newType = feedTypes.find((t) => t.id === parseInt(form.typeId))?.name || "Tidak diketahui";
+      messages.push(`Mengubah jenis pakan yang awalnya "${oldType}" menjadi "${newType}"`);
+      hasChanges = true;
+    }
+
+    // Compare name
+    if (form.name.trim() !== originalForm.name.trim()) {
+      messages.push(`Mengubah nama pakan dari "${originalForm.name.trim()}" menjadi "${form.name.trim()}"`);
+      hasChanges = true;
+    }
+
+    // Compare unit
+    if (form.unit.trim() !== originalForm.unit.trim()) {
+      messages.push(`Mengubah satuan dari "${originalForm.unit.trim()}" menjadi "${form.unit.trim()}"`);
+      hasChanges = true;
+    }
+
+    // Compare min_stock
+    if (parseFloat(form.min_stock) !== parseFloat(originalForm.min_stock)) {
+      messages.push(`Mengubah stok minimum dari "${formatNumber(originalForm.min_stock)}" menjadi "${formatNumber(form.min_stock)}"`);
+      hasChanges = true;
+    }
+
+    // Compare price
+    if (parseFloat(form.price) !== parseFloat(originalForm.price)) {
+      messages.push(`Mengubah harga dari "Rp ${formatNumber(originalForm.price).toLocaleString("id-ID")}" menjadi "Rp ${formatNumber(form.price).toLocaleString("id-ID")}"`);
+      hasChanges = true;
+    }
+
     // Compare nutrisiList
-    const nutrisiListChanged =
-      JSON.stringify(form.nutrisiList) !==
-      JSON.stringify(originalForm.nutrisiList);
-    return basicFieldsChanged || nutrisiListChanged;
+    const oldNutrisiList = originalForm.nutrisiList;
+    const newNutrisiList = form.nutrisiList;
+
+    // Detect removed nutritions
+    const removedNutritions = oldNutrisiList.filter(
+      (oldN) => !newNutrisiList.some((newN) => newN.nutrisi_id === oldN.nutrisi_id)
+    );
+    if (removedNutritions.length > 0) {
+      const removedNames = removedNutritions.map(
+        (n) => nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui"
+      );
+      messages.push(`Menghapus nutrisi: ${removedNames.join(", ")}`);
+      hasChanges = true;
+    }
+
+    // Detect added nutritions
+    const addedNutritions = newNutrisiList.filter(
+      (newN) => !oldNutrisiList.some((oldN) => oldN.nutrisi_id === newN.nutrisi_id)
+    );
+    if (addedNutritions.length > 0) {
+      const addedDetails = addedNutritions.map(
+        (n) => {
+          const name = nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui";
+          return `${name} (${formatNumber(n.amount)})`
+        }
+      );
+      messages.push(`Menambahkan nutrisi: ${addedDetails.join(", ")}`);
+      hasChanges = true;
+    }
+
+    // Detect updated nutritions
+    const updatedNutritions = newNutrisiList.filter((newN) =>
+      oldNutrisiList.some(
+        (oldN) =>
+          oldN.nutrisi_id === newN.nutrisi_id &&
+          parseFloat(oldN.amount) !== parseFloat(newN.amount)
+      )
+    );
+    if (updatedNutritions.length > 0) {
+      const updatedDetails = updatedNutritions.map((n) => {
+        const oldN = oldNutrisiList.find((o) => o.nutrisi_id === n.nutrisi_id);
+        const name = nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui";
+        return `Mengubah jumlah nutrisi "${name}" dari "${formatNumber(oldN.amount)}" menjadi "${formatNumber(n.amount)}"`;
+      });
+      messages.push(...updatedDetails);
+      hasChanges = true;
+    }
+
+    return { hasChanges, messages };
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!hasChanges()) {
+    const { hasChanges, messages } = detectChanges();
+
+    if (!hasChanges) {
       Swal.fire({
         icon: "info",
         title: "Tidak Ada Perubahan",
@@ -188,9 +288,13 @@ const FeedEditPage = () => {
       return;
     }
 
+    const confirmationText = messages.length > 0
+      ? `Apakah Anda yakin ingin menyimpan perubahan berikut untuk pakan "${form.name}"?\n\n${messages.join("\n")}`
+      : `Apakah Anda yakin ingin menyimpan perubahan untuk pakan "${form.name}"?`;
+
     const result = await Swal.fire({
       title: "Konfirmasi Perubahan",
-      text: `Apakah anda yakin mau menyimpan perubahan untuk pakan "${form.name}"?`,
+      text: confirmationText,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -289,6 +393,9 @@ const FeedEditPage = () => {
                         </option>
                       ))}
                     </select>
+                    <small className="text-muted">
+                      Jenis saat ini: {form.typeName || "Tidak diketahui"}
+                    </small>
                   </div>
 
                   <div className="col-md-6 mb-3">
@@ -417,6 +524,9 @@ const FeedEditPage = () => {
                             </option>
                           ))}
                         </select>
+                        <small className="text-muted">
+                          Nutrisi saat ini: {nutrisi.nutrisi_name || "Tidak diketahui"}
+                        </small>
                       </div>
                       <div className="col-md-5">
                         {index === 0 && (
