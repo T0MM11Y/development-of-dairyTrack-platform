@@ -166,6 +166,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         },
         { id: "sales", title: "Sales", link: "/admin/sales" },
         { id: "finance", title: "Finance", link: "/admin/finance" },
+        { id: "finance-record", title: "Finance Record", link: "/admin/finance-record" },
       ],
       showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
     },
