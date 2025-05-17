@@ -64,19 +64,6 @@
     position: relative;
     font-weight: 500;
 }
-
-#mainNav .nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background-color: var(--warning-color);
-    transition: all 0.3s ease;
-    transform: translateX(-50%);
-}
-
 .navbar-toggler-light {
   color: rgba(255, 255, 255, 0.8);
   border-color: rgba(255, 255, 255, 0.5);

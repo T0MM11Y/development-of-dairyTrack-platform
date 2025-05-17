@@ -109,6 +109,7 @@ function App() {
             <Route path="/" exact>
               <Header />
               <Home />
+              <Footer />
             </Route>
             <Route path="/about">
               <Header />

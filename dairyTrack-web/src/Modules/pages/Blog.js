@@ -25,6 +25,7 @@ import {
   getBlogCategories,
   getCategoryBlogs,
 } from "../../Modules/controllers/blogCategoryController";
+import { motion } from "framer-motion";
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
@@ -42,11 +43,28 @@ const Blog = () => {
   const [categoryStats, setCategoryStats] = useState({});
   const [showCategoryInfo, setShowCategoryInfo] = useState(false);
   const [selectedCategoryInfo, setSelectedCategoryInfo] = useState(null);
-  const blogsPerPage = 6;
 
+  const blogsPerPage = 6;
+  const heroColors = {
+    primary: "#E9A319",
+    secondary: "#3D8D7A",
+    accent: "#F15A29",
+  };
+
+  const fadeIn = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
+    },
+  };
   // Simple color definitions
   const primaryColor = "#E9A319"; // gold
-  const greyColor = "#6c757d"; // grey
+  const greyColor = "#3D8D7A"; // grey
 
   // Bootstrap colors for categories
   const categoryVariants = ["primary", "danger", "success", "info"];
@@ -220,39 +238,89 @@ const Blog = () => {
 
   return (
     <Container fluid className="p-0">
-      {/* Hero Section */}
+      {/* Hero Section - Enhanced like About.js */}
       <div
-        className="text-white py-5"
+        className="blog-hero-section text-white position-relative"
         style={{
-          background: greyColor,
-          padding: "60px 0",
+          background: `linear-gradient(to right, rgba(61, 141, 122, 0.93), rgba(61, 141, 122, 0.7)), url(${require("../../assets/about.png")}) no-repeat center center`,
+          backgroundSize: "cover",
+          minHeight: "40vh",
+          display: "flex",
+          alignItems: "center",
+          borderBottom: `5px solid ${heroColors.primary}`,
         }}
       >
         <Container>
           <Row className="align-items-center">
-            <Col md={8} className="text-md-start text-center">
-              <h1
-                className="display-4 fw-bold mb-2"
-                style={{
-                  fontFamily: "Roboto, monospace",
-                  letterSpacing: "1.5px",
-                  fontSize: "40px",
-                  fontWeight: "600",
+            <Col lg={8} className="text-lg-start text-center">
+              <motion.div initial="hidden" animate="visible" variants={fadeIn}>
+                <h1
+                  className="display-4 fw-bold mb-3"
+                  style={{
+                    fontFamily: "Roboto, sans-serif",
+                    letterSpacing: "2px",
+                    fontSize: "45px",
+                    fontWeight: "700",
+                    textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  Blog & Artikel
+                </h1>
+                <div
+                  className="title-bar mb-4 mx-auto mx-lg-0"
+                  style={{
+                    width: "80px",
+                    height: "4px",
+                    background: heroColors.primary,
+                  }}
+                ></div>
+                <p
+                  className="lead mb-4"
+                  style={{
+                    fontSize: "18px",
+                    maxWidth: "600px",
+                    margin: "0 auto 0 0",
+                  }}
+                >
+                  <i className="fas fa-newspaper me-2"></i>
+                  Temukan inspirasi, wawasan, dan berita terbaru seputar dunia
+                  herbal, hortikultura, dan inovasi sains di Indonesia. Jelajahi
+                  artikel pilihan dan update terkini dari TSTH<sup>2</sup>.
+                </p>
+              </motion.div>
+            </Col>
+            <Col lg={4} className="d-none d-lg-block">
+              <motion.div
+                className="text-end"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0, x: 50 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.9, ease: "easeOut" },
+                  },
                 }}
               >
-                Our Blog
-              </h1>
-              <p className="lead mb-4">
-                <i className="fas fa-info-circle me-2"></i>
-                Discover the latest trends, expert insights, and valuable tips
-                in the dairy industry. Stay informed and inspired with our
-                curated blog content.
-              </p>
-            </Col>
-            <Col md={4} className="d-none d-md-block">
-              <div className="text-end">
-                <i className="fas fa-newspaper fa-5x"></i>
-              </div>
+                <div
+                  className="icon-circle"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    color: "#fff",
+                    width: "180px",
+                    height: "180px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(5px)",
+                    margin: "0 auto",
+                  }}
+                >
+                  <i className="fas fa-blog fa-4x"></i>
+                </div>
+              </motion.div>
             </Col>
           </Row>
         </Container>

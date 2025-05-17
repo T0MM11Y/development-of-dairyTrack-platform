@@ -11,6 +11,8 @@ import {
   Modal,
   Pagination,
 } from "react-bootstrap";
+import { motion } from "framer-motion";
+
 import { format } from "date-fns";
 import { listGalleries } from "../../Modules/controllers/galleryController.js";
 
@@ -24,6 +26,23 @@ const Gallery = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const galleriesPerPage = 8;
+  const heroColors = {
+    primary: "#E9A319",
+    secondary: "#3D8D7A",
+    accent: "#F15A29",
+  };
+
+  const fadeIn = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
+    },
+  };
 
   // Simple color definitions
   const greyColor = "#6c757d";
@@ -126,39 +145,86 @@ const Gallery = () => {
 
   return (
     <Container fluid className="p-0">
-      {/* Hero Section */}
+      {/* Hero Section ala About.js */}
       <div
-        className="text-white py-5"
+        className="gallery-hero-section text-white position-relative"
         style={{
-          background: greyColor,
-          padding: "60px 0",
+          background: `linear-gradient(to right, rgba(61, 141, 122, 0.93), rgba(61, 141, 122, 0.7)), url(${require("../../assets/about.png")}) no-repeat center center`,
+          backgroundSize: "cover",
+          minHeight: "40vh",
+          display: "flex",
+          alignItems: "center",
+          borderBottom: `5px solid ${heroColors.primary}`,
         }}
       >
         <Container>
           <Row className="align-items-center">
             <Col md={8} className="text-md-start text-center">
-              <h1
-                className="display-4 fw-bold mb-2"
-                style={{
-                  fontFamily: "Roboto, monospace",
-                  letterSpacing: "1.5px",
-                  fontSize: "40px",
-                  fontWeight: "600",
-                }}
-              >
-                Photo Gallery
-              </h1>
-              <p className="lead mb-4">
-                <i className="fas fa-images me-2"></i>
-                Explore our collection of high-quality images showcasing our
-                farm, facilities, animals, and dairy products. A visual journey
-                through our dairy operations.
-              </p>
+              <motion.div initial="hidden" animate="visible" variants={fadeIn}>
+                <h1
+                  className="display-4 fw-bold mb-3"
+                  style={{
+                    fontFamily: "Roboto, sans-serif",
+                    letterSpacing: "2px",
+                    fontSize: "45px",
+                    fontWeight: "700",
+                    textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  Galeri Foto
+                </h1>
+                <div
+                  className="title-bar mb-4"
+                  style={{
+                    width: "80px",
+                    height: "4px",
+                    background: heroColors.primary,
+                  }}
+                ></div>
+                <p
+                  className="lead mb-4"
+                  style={{ fontSize: "18px", maxWidth: "600px" }}
+                >
+                  <i className="fas fa-images me-2"></i>
+                  Jelajahi koleksi foto-foto terbaik kami yang menampilkan
+                  aktivitas, fasilitas, hewan ternak, dan produk Dairy~Track.
+                  Temukan cerita visual di balik setiap momen di peternakan
+                  kami.
+                </p>
+              </motion.div>
             </Col>
             <Col md={4} className="d-none d-md-block">
-              <div className="text-end">
-                <i className="fas fa-camera-retro fa-5x"></i>
-              </div>
+              <motion.div
+                className="text-end"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0, x: 50 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.9, ease: "easeOut" },
+                  },
+                }}
+              >
+                <div
+                  className="icon-circle"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    color: "#fff",
+                    width: "180px",
+                    height: "180px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(5px)",
+                    margin: "0 auto",
+                  }}
+                >
+                  <i className="fas fa-camera-retro fa-4x"></i>
+                </div>
+              </motion.div>
             </Col>
           </Row>
         </Container>
