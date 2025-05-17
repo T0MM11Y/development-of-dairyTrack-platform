@@ -156,6 +156,8 @@ const ProductTypeModals = ({
                   >
                     <option value="">Select unit</option>
                     <option value="botol">Botol</option>
+                    <option value="cup">Cup</option>
+                    <option value="pcs">Pcs</option>
                     <option value="liter">Liter</option>
                     <option value="galon">Galon</option>
                   </Form.Select>
@@ -256,6 +258,8 @@ const ProductTypeModals = ({
                     >
                       <option value="">Select unit</option>
                       <option value="botol">Botol</option>
+                      <option value="cup">Cup</option>
+                      <option value="pcs">Pcs</option>
                       <option value="liter">Liter</option>
                       <option value="galon">Galon</option>
                     </Form.Select>

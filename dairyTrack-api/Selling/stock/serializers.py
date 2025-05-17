@@ -1,18 +1,11 @@
 from rest_framework import serializers
-from django.conf import settings  # Untuk mengakses settings.MEDIA_URL
-from .models import RawMilk, ProductType, ProductStock, StockHistory, User
+from django.conf import settings
+from .models import ProductType, ProductStock, StockHistory, User
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'name', 'role_id']  # Sesuaikan field yang ingin ditampilkan
-
-class RawMilkSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = RawMilk
-        fields = ['cow_id', 'production_time', 'expiration_time', 'available_stocks', 'previous_volume', 'status', 'daily_total_id', 'session', 'volume_liters']
-
+        fields = ['id', 'username', 'name', 'role_id']
 
 class ProductTypeSerializer(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
@@ -27,17 +20,14 @@ class ProductTypeSerializer(serializers.ModelSerializer):
                   'created_by_detail', 'updated_by_detail']
 
     def to_internal_value(self, data):
-        # Salin data agar tidak mengubah input asli
         data = data.copy()
         
-        # Konversi created_by dari string ke integer jika string
         if 'created_by' in data and isinstance(data['created_by'], str):
             try:
                 data['created_by'] = int(data['created_by'])
             except ValueError:
                 raise serializers.ValidationError({"created_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
 
-        # Konversi updated_by dari string ke integer jika string
         if 'updated_by' in data and isinstance(data['updated_by'], str):
             try:
                 data['updated_by'] = int(data['updated_by']) if data['updated_by'] else None

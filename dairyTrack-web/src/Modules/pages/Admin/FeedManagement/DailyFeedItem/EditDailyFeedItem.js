@@ -4,6 +4,7 @@ import {
   updateFeedItem,
   deleteFeedItem,
   addFeedItem,
+  getFeedItemsByDailyFeedId,
 } from "../../../../controllers/feedItemController";
 import { listFeeds } from "../../../../controllers/feedController";
 import { getAllFeedStocks } from "../../../../controllers/feedStockController";
@@ -23,6 +24,13 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   const [itemErrors, setItemErrors] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [formList, setFormList] = useState([]);
+
+  // Function to format numbers without trailing zeros
+  const formatNumber = (number) => {
+    if (Number.isNaN(number) || number === null || number === undefined) return "0";
+    const num = parseFloat(number);
+    return num % 1 === 0 ? num.toString() : num.toFixed(2).replace(/\.?0+$/, "");
+  };
 
   useEffect(() => {
     console.log("Current feeds state:", feeds);
@@ -51,7 +59,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
           }),
           getAllFeedItems().catch((err) => {
             console.error("getAllFeedItems error:", err);
-            return { success: false, data: [] };
+            return [];
           }),
           listFeeds().catch((err) => {
             console.error("listFeeds error:", err);
@@ -69,11 +77,9 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
 
         if (!isMounted) return;
 
-        console.log("Raw feedResponse:", JSON.stringify(feedResponse, null, 2));
-        console.log(
-          "Raw stockResponse:",
-          JSON.stringify(stockResponse, null, 2)
-        );
+        console.log("Daily Feed ID:", dailyFeedId, typeof dailyFeedId);
+        console.log("Daily Feed Data:", dailyFeedResponse?.data);
+        console.log("All Feed Items Response:", allFeedItemsResponse);
 
         // Handle cow data
         const cowMap = {};
@@ -92,21 +98,29 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         }
 
         // Handle feed items
-        const feedItemsData = Array.isArray(allFeedItemsResponse?.data)
-          ? allFeedItemsResponse.data
+        const feedItemsData = Array.isArray(allFeedItemsResponse)
+          ? allFeedItemsResponse.filter(
+              (item) => item.daily_feed_id == dailyFeedId
+            )
+          : Array.isArray(allFeedItemsResponse?.data)
+          ? allFeedItemsResponse.data.filter(
+              (item) => item.daily_feed_id == dailyFeedId
+            )
           : [];
-        const relevantFeedItems = feedItemsData.filter(
-          (item) => item.daily_feed_id === parseInt(dailyFeedId)
-        );
-        setFeedItems(relevantFeedItems);
+        console.log("Feed Items Data:", feedItemsData);
+        setFeedItems(feedItemsData);
         setFormList(
-          relevantFeedItems.map((item) => ({
+          feedItemsData.map((item) => ({
             id: item.id,
             feed_id: item.feed_id?.toString() || "",
-            quantity: formatQuantityForDisplay(item.quantity),
+            quantity: formatNumber(item.quantity),
             daily_feed_id: item.daily_feed_id,
           }))
         );
+
+        if (feedItemsData.length === 0) {
+          console.warn(`No feed items found for dailyFeedId: ${dailyFeedId}`);
+        }
 
         // Handle feeds
         if (feedResponse?.success && Array.isArray(feedResponse.feeds)) {
@@ -115,21 +129,12 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
             name: feed.name || feed.type_name || `Feed #${feed.id}`,
           }));
           setFeeds(processedFeeds);
-          console.log("Processed feeds:", processedFeeds);
           if (processedFeeds.length === 0) {
-            setError(
-              "Tidak ada data pakan tersedia. Silakan tambahkan pakan terlebih dahulu."
-            );
+            setError("Tidak ada data pakan tersedia.");
           }
         } else {
           setFeeds([]);
-          setError(
-            (prev) =>
-              prev +
-              ` Gagal memuat data pakan: ${
-                feedResponse?.message || "Respon tidak valid"
-              }.`
-          );
+          setError("Gagal memuat data pakan.");
         }
 
         // Handle feed stocks
@@ -140,36 +145,20 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
               feedId: feed.id,
               stock: parseFloat(feed.stock.stock) || 0,
               unit: feed.stock.unit || "kg",
-              FeedStock: feed.stock, // Keep for compatibility if needed
+              FeedStock: feed.stock,
             }));
           setFeedStocks(stockEntries);
-          console.log("Processed feedStocks:", stockEntries);
           if (stockEntries.length === 0) {
-            setError(
-              (prev) =>
-                prev +
-                " Tidak ada stok pakan tersedia. Silakan tambahkan stok pakan."
-            );
+            setError("Tidak ada stok pakan tersedia.");
           }
         } else {
           setFeedStocks([]);
-          setError(
-            (prev) =>
-              prev +
-              ` Gagal memuat data stok pakan: ${
-                stockResponse?.message || "Respon tidak valid"
-              }.`
-          );
+          setError("Gagal memuat data stok pakan.");
         }
       } catch (error) {
         if (isMounted) {
           console.error("Error fetching data:", error);
-          let errorMessage = error.message || "Gagal mengambil data";
-          if (error.message.includes("401") || error.message.includes("403")) {
-            errorMessage = "Sesi Anda telah berakhir. Silakan login kembali.";
-            localStorage.removeItem("user");
-          }
-          setError(errorMessage);
+          setError(error.message || "Gagal mengambil data");
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -184,9 +173,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
   }, [dailyFeedId]);
 
   const formatQuantityForDisplay = (quantity) => {
-    if (quantity === null || quantity === undefined) return "";
-    const num = parseFloat(quantity);
-    return isNaN(num) ? "" : num.toFixed(2);
+    return formatNumber(quantity);
   };
 
   const formatQuantityForAPI = (quantity) => {
@@ -209,7 +196,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         feedItems.map((item) => ({
           id: item.id,
           feed_id: item.feed_id?.toString() || "",
-          quantity: formatQuantityForDisplay(item.quantity),
+          quantity: formatNumber(item.quantity),
           daily_feed_id: item.daily_feed_id,
         }))
       );
@@ -230,7 +217,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
       if (quantity > availableStock) {
         setItemErrors((prev) => ({
           ...prev,
-          [index]: `Jumlah melebihi stok: ${availableStock.toFixed(2)} kg`,
+          [index]: `Jumlah melebihi stok: ${formatNumber(availableStock)} kg`,
         }));
       } else {
         setItemErrors((prev) => {
@@ -333,7 +320,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         }
         const availableStock = getFeedStockInfo(parseInt(item.feed_id));
         if (parseFloat(item.quantity) > availableStock) {
-          errors[i] = `Jumlah melebihi stok: ${availableStock.toFixed(2)} kg`;
+          errors[i] = `Jumlah melebihi stok: ${formatNumber(availableStock)} kg`;
         }
       }
 
@@ -363,7 +350,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
 
       // Prepare confirmation
       const feedDetails = formList
-        .map((item) => `${displayFeedName(item.feed_id)} ${item.quantity} kg`)
+        .map((item) => `${displayFeedName(item.feed_id)} ${formatNumber(item.quantity)} kg`)
         .join(", ");
       const cowName = getCowName();
       const date = formatDate(dailyFeed?.date);
@@ -495,11 +482,6 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
     return parseFloat(feedStock?.stock) || 0;
   };
 
-  const formatStockDisplay = (stock) => {
-    const num = parseFloat(stock);
-    return isNaN(num) ? "0.00" : num.toFixed(2);
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", {
@@ -601,16 +583,16 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                     ) : (
                       formList.map((item, index) => (
                         <div
-                          className="row mb-3 align-items-center"
+                          className="row mb-3"
                           key={item.id || `new-${index}`}
                         >
-                          <div className="col-md-5">
+                          <div className="col-md-5 d-flex flex-column">
                             <label className="form-label fw-bold">
                               Jenis Pakan
                             </label>
                             <select
                               name="feed_id"
-                              className="form-select"
+                              className="form-select mb-1"
                               value={item.feed_id}
                               onChange={(e) => handleChange(e, index)}
                               required
@@ -632,14 +614,14 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                             {item.feed_id && (
                               <div className="form-text text-primary">
                                 Stok tersedia:{" "}
-                                {formatStockDisplay(
+                                {formatNumber(
                                   getFeedStockInfo(parseInt(item.feed_id))
                                 )}{" "}
                                 kg
                               </div>
                             )}
                           </div>
-                          <div className="col-md-4">
+                          <div className="col-md-4 d-flex flex-column">
                             <label className="form-label fw-bold">
                               Jumlah (kg)
                             </label>
@@ -655,15 +637,15 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                               disabled={actionLoading}
                             />
                             {itemErrors[index] && (
-                              <small className="form-text text-danger">
+                              <small className="form-text text-danger mt-1">
                                 {itemErrors[index]}
                               </small>
                             )}
                           </div>
-                          <div className="col-md-3 d-flex align-items-end justify-content-end">
+                          <div className="col-md-3 d-flex">
                             <button
                               type="button"
-                              className="btn btn-danger"
+                              className="btn btn-danger mt-auto ms-auto"
                               onClick={() => handleRemoveFeedItem(index)}
                               disabled={actionLoading}
                             >
@@ -698,7 +680,8 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                     {feedItems.length === 0 ? (
                       <div className="alert alert-info">
                         <i className="ri-information-line me-2"></i> Tidak ada
-                        data pakan untuk sesi ini
+                        data item pakan untuk sesi ini (Daily Feed ID: {dailyFeedId}). Klik tombol 'Edit'
+                        untuk menambahkan pakan.
                       </div>
                     ) : (
                       <div className="table-responsive mb-4">
@@ -732,10 +715,10 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                                 <td className="text-center">{index + 1}</td>
                                 <td>{displayFeedName(item.feed_id)}</td>
                                 <td className="text-center">
-                                  {formatStockDisplay(item.quantity)} kg
+                                  {formatNumber(item.quantity)} kg
                                 </td>
                                 <td className="text-center">
-                                  {formatStockDisplay(
+                                  {formatNumber(
                                     getFeedStockInfo(item.feed_id)
                                   )}{" "}
                                   kg

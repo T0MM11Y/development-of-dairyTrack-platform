@@ -141,7 +141,7 @@ CORS_ALLOW_HEADERS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Ganti dengan nama database MySQL
+        'NAME': 'dairy_track4',  # Ganti dengan nama database MySQL
         'USER': 'root',  # Ganti dengan username MySQL
         'PASSWORD': '',  # Ganti dengan password MySQL
         'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan

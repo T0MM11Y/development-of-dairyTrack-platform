@@ -4,72 +4,11 @@ from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics, serializers
-from .serializers import RawMilkSerializer, ProductTypeSerializer, ProductStockSerializer, StockHistorySerializer
-from .models import RawMilk, ProductType, ProductStock, StockHistory
+from .serializers import ProductTypeSerializer, ProductStockSerializer, StockHistorySerializer
+from .models import ProductType, ProductStock, StockHistory
 from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
 from rest_framework import filters
 from .filters import StockHistoryFilter
-
-# Untuk list & create RawMilk (tanpa `pk`)
-class RawMilkListCreateView(generics.ListCreateAPIView):
-    queryset = RawMilk.objects.all()
-    serializer_class = RawMilkSerializer
-
-    def perform_create(self, serializer):
-        try:
-            instance = serializer.save()
-            return Response({
-                "message": "RawMilk created successfully!",
-                "data": RawMilkSerializer(instance).data
-            }, status=201)
-        except serializers.ValidationError as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return self.perform_create(serializer)
-
-# Untuk retrieve, update, dan delete RawMilk (dengan `pk`)
-class RawMilkRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = RawMilk.objects.all()
-    serializer_class = RawMilkSerializer
-
-    def perform_update(self, serializer):
-        try:
-            instance = serializer.save()
-            return Response({
-                "message": "RawMilk updated successfully!",
-                "data": RawMilkSerializer(instance).data
-            }, status=200)
-        except serializers.ValidationError as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
-
-    def perform_destroy(self, instance):
-        try:
-            instance.delete()
-            return Response({
-                "message": "RawMilk deleted successfully!"
-            }, status=204)
-        except Exception as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        return self.perform_update(serializer)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        return self.perform_destroy(instance)
 
 # Untuk list & create ProductType (tanpa `pk`)
 class ProductTypeCreateView(generics.ListCreateAPIView):
@@ -140,7 +79,7 @@ class ProductStockCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         try:
             product_stock = serializer.save()
-            product_stock.deduct_raw_milk()
+            product_stock.deduct_milk_batch()
             if product_stock.expiry_at < timezone.now():
                 product_stock.status = "expired"
                 product_stock.quantity = 0
