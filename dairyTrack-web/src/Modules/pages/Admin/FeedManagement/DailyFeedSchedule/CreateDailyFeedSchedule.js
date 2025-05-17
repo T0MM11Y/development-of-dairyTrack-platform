@@ -72,7 +72,7 @@ const CreateDailyFeed = ({
   }, [currentUser, initialCows]);
 
   const handleChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, type, checked } = e.target;
     if (name === "cow_id" || name === "date") {
       setForm((prev) => ({ ...prev, [name]: value }));
     } else if (name.startsWith("session_")) {
@@ -148,9 +148,7 @@ const CreateDailyFeed = ({
   return (
     <Modal show={true} onHide={onClose} centered>
       <Modal.Header closeButton className="bg-light border-bottom">
-        <Modal.Title className="text-info fw-bold">
-          Tambah Jadwal Pakan
-        </Modal.Title>
+        <Modal.Title className="text-info fw-bold">Tambah Jadwal Pakan</Modal.Title>
       </Modal.Header>
       <Modal.Body className="p-4">
         {error && <p className="text-danger text-center mb-4">{error}</p>}

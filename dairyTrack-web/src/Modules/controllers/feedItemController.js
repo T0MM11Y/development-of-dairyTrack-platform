@@ -1,6 +1,7 @@
 // src/controllers/feedItemController.js
 import { API_URL4 } from "../../api/apiController.js";
 
+
 const getAllFeedItems = async (params = {}) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token;
@@ -16,6 +17,25 @@ const getAllFeedItems = async (params = {}) => {
   const result = await response.json();
   if (!response.ok) {
     throw new Error(result.message || "Gagal mengambil data item pakan");
+  }
+  return result; // Return array directly as per backend
+};
+
+const getFeedItemsByDailyFeedId = async (dailyFeedId) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = user.token;
+
+  const response = await fetch(`${API_URL4}/dailyFeedItem?daily_feed_id=${dailyFeedId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message || "Gagal mengambil item pakan untuk sesi harian");
   }
   return result; // Return array directly as per backend
 };
@@ -116,25 +136,6 @@ const bulkUpdateFeedItems = async (data) => {
     throw new Error(result.message || "Gagal memperbarui item pakan secara massal");
   }
   return result; // Return result (contains success, message, results)
-};
-
-const getFeedItemsByDailyFeedId = async (dailyFeedId) => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
-
-  const response = await fetch(`${API_URL4}/dailyFeedItem/daily-feeds/${dailyFeedId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal mengambil item pakan untuk sesi harian");
-  }
-  return result; // Return array directly as per backend
 };
 
 const getFeedUsageByDate = async (params = {}) => {

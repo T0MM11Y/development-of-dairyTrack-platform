@@ -14,88 +14,95 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-  const fetchFeedsAndStocks = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const token = user.token || null;
-      console.log("fetchFeedsAndStocks - Token:", token);
-      if (!token) {
-        setError("Token tidak ditemukan. Silakan login ulang.");
-        Swal.fire({
-          icon: "error",
-          title: "Sesi Berakhir",
-          text: "Token tidak ditemukan. Silakan login kembali.",
-        });
-        localStorage.removeItem("user");
-        window.location.href = "/";
-        return;
-      }
-
-      const [feedResponse, stockResponse] = await Promise.all([
-        listFeeds(),
-        getAllFeedStocks(),
-      ]);
-
-      console.log("CreateDailyFeedItem - Feeds Response:", JSON.stringify(feedResponse, null, 2));
-      console.log("CreateDailyFeedItem - Stocks Response:", JSON.stringify(stockResponse, null, 2));
-
-      if (!feedResponse.success || !Array.isArray(feedResponse.feeds)) {
-        console.error("Invalid feed response:", feedResponse);
-        setError("Gagal memuat daftar pakan: Data tidak valid.");
-        setFeeds([]);
-        return;
-      }
-
-      if (!stockResponse.success || !Array.isArray(stockResponse.data)) {
-        console.error("Invalid stock response:", stockResponse);
-        setError("Gagal memuat data stok pakan: Data tidak valid.");
-        setFeeds([]);
-        return;
-      }
-
-      const feedsWithStock = feedResponse.feeds
-        .map((feed) => {
-          const stockData = stockResponse.data.find((s) => String(s.id) === String(feed.id));
-          console.log(`Matching Feed ID: ${feed.id}, Stock Data:`, stockData);
-
-          let stockValue = 0;
-          let unitValue = feed.unit || "kg";
-
-          if (stockData && stockData.stock) {
-            stockValue = parseFloat(stockData.stock.stock) || 0;
-            unitValue = stockData.stock.unit || unitValue;
-          } else {
-            console.warn(`No valid stock for feed ID ${feed.id}`);
-          }
-
-          return {
-            id: feed.id,
-            name: feed.name || feed.type_name || `Feed #${feed.id}`,
-            stock: stockValue,
-            unit: unitValue,
-          };
-        })
-        .filter((feed) => feed.stock > 0); // Only include feeds with stock
-
-      console.log("CreateDailyFeedItem - Feeds with Stock:", JSON.stringify(feedsWithStock, null, 2));
-      setFeeds(feedsWithStock);
-
-      if (feedsWithStock.length === 0) {
-        setError("Tidak ada pakan dengan stok tersedia.");
-      }
-    } catch (err) {
-      console.error("CreateDailyFeedItem - Fetch Error:", err);
-      setError("Gagal memuat data: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+  // Function to format numbers without trailing zeros
+  const formatNumber = (number) => {
+    if (Number.isNaN(number) || number === null || number === undefined) return "0";
+    const num = parseFloat(number);
+    return num % 1 === 0 ? num.toString() : num.toFixed(2).replace(/\.?0+$/, "");
   };
-  fetchFeedsAndStocks();
-}, []);
+
+  useEffect(() => {
+    const fetchFeedsAndStocks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const token = user.token || null;
+        console.log("fetchFeedsAndStocks - Token:", token);
+        if (!token) {
+          setError("Token tidak ditemukan. Silakan login ulang.");
+          Swal.fire({
+            icon: "error",
+            title: "Sesi Berakhir",
+            text: "Token tidak ditemukan. Silakan login kembali.",
+          });
+          localStorage.removeItem("user");
+          window.location.href = "/";
+          return;
+        }
+
+        const [feedResponse, stockResponse] = await Promise.all([
+          listFeeds(),
+          getAllFeedStocks(),
+        ]);
+
+        console.log("CreateDailyFeedItem - Feeds Response:", JSON.stringify(feedResponse, null, 2));
+        console.log("CreateDailyFeedItem - Stocks Response:", JSON.stringify(stockResponse, null, 2));
+
+        if (!feedResponse.success || !Array.isArray(feedResponse.feeds)) {
+          console.error("Invalid feed response:", feedResponse);
+          setError("Gagal memuat daftar pakan: Data tidak valid.");
+          setFeeds([]);
+          return;
+        }
+
+        if (!stockResponse.success || !Array.isArray(stockResponse.data)) {
+          console.error("Invalid stock response:", stockResponse);
+          setError("Gagal memuat data stok pakan: Data tidak valid.");
+          setFeeds([]);
+          return;
+        }
+
+        const feedsWithStock = feedResponse.feeds
+          .map((feed) => {
+            const stockData = stockResponse.data.find((s) => String(s.id) === String(feed.id));
+            console.log(`Matching Feed ID: ${feed.id}, Stock Data:`, stockData);
+
+            let stockValue = 0;
+            let unitValue = feed.unit || "kg";
+
+            if (stockData && stockData.stock) {
+              stockValue = parseFloat(stockData.stock.stock) || 0;
+              unitValue = stockData.stock.unit || unitValue;
+            } else {
+              console.warn(`No valid stock for feed ID ${feed.id}`);
+            }
+
+            return {
+              id: feed.id,
+              name: feed.name || feed.type_name || `Feed #${feed.id}`,
+              stock: stockValue,
+              unit: unitValue,
+            };
+          })
+          .filter((feed) => feed.stock > 0); // Only include feeds with stock
+
+        console.log("CreateDailyFeedItem - Feeds with Stock:", JSON.stringify(feedsWithStock, null, 2));
+        setFeeds(feedsWithStock);
+
+        if (feedsWithStock.length === 0) {
+          setError("Tidak ada pakan dengan stok tersedia.");
+        }
+      } catch (err) {
+        console.error("CreateDailyFeedItem - Fetch Error:", err);
+        setError("Gagal memuat data: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeedsAndStocks();
+  }, []);
 
   const availableFeeds = feeds.filter(
     (feed) => !selectedFeeds.some((selected) => selected.feedId === feed.id)
@@ -122,7 +129,7 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
       return;
     }
     if (requestedQuantity > availableStock) {
-      setError(`Jumlah melebihi stok tersedia: ${availableStock.toFixed(2)} ${feed.unit}.`);
+      setError(`Jumlah melebihi stok tersedia: ${formatNumber(availableStock)} ${feed.unit}.`);
       return;
     }
 
@@ -161,7 +168,7 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
       return;
     }
     if (quantity > availableStock) {
-      setError(`Jumlah melebihi stok tersedia: ${availableStock.toFixed(2)} ${feed.unit}.`);
+      setError(`Jumlah melebihi stok tersedia: ${formatNumber(availableStock)} ${feed.unit}.`);
       return;
     }
 
@@ -251,7 +258,7 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Tambah Pakan</Form.Label>
+                <Form.Label>Tμή Pakan</Form.Label>
                 <Row>
                   <Col md={6}>
                     <Form.Select
@@ -267,7 +274,7 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
                       ) : (
                         availableFeeds.map((feed) => (
                           <option key={feed.id} value={feed.id}>
-                            {feed.name} (Stok: {feed.stock.toFixed(2)} {feed.unit})
+                            {feed.name} (Stok: {formatNumber(feed.stock)} {feed.unit})
                           </option>
                         ))
                       )}
@@ -275,9 +282,9 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
                     {newFeedId && (
                       <Form.Text className="text-primary">
                         Stok tersedia:{" "}
-                        {feeds
-                          .find((f) => f.id === parseInt(newFeedId))
-                          ?.stock.toFixed(2) || "0.00"}{" "}
+                        {formatNumber(
+                          feeds.find((f) => f.id === parseInt(newFeedId))?.stock
+                        )}{" "}
                         {feeds.find((f) => f.id === parseInt(newFeedId))?.unit || "kg"}
                       </Form.Text>
                     )}
@@ -324,14 +331,14 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
                               type="number"
                               min="0.01"
                               step="0.01"
-                              value={item.quantity}
+                              value={formatNumber(item.quantity)}
                               onChange={(e) => handleQuantityChange(item.feedId, e.target.value)}
                               style={{ width: "150px", display: "inline-block", marginLeft: "10px" }}
                               disabled={loading}
                             />
                             {feed && (
                               <Form.Text className="text-muted ms-2">
-                                Stok tersedia: {feed.stock.toFixed(2)} {feed.unit}
+                                Stok tersedia: {formatNumber(feed.stock)} {feed.unit}
                               </Form.Text>
                             )}
                           </div>
