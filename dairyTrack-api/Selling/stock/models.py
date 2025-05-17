@@ -6,34 +6,24 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 # from notifications.models import User
 
-# Model Produksi Susu Mentah
-class RawMilk(models.Model):
-
+# Model Batch Susu
+class MilkBatch(models.Model):
     class Meta:
-        db_table = "raw_milks"
+        db_table = "milk_batches"
         managed = False
 
     objects = models.Manager()
-    cow_id = models.IntegerField()
-    production_time = models.DateTimeField(default=timezone.now)
-    expiration_time = models.DateTimeField(default=timezone.now)
-    volume_liters = models.DecimalField(max_digits=5, decimal_places=2)
-    previous_volume = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=20, default='fresh')
+    batch_number = models.CharField(max_length=50, unique=True)
+    total_volume = models.FloatField()
+    status = models.CharField(max_length=20, choices=[('FRESH', 'Fresh'), ('EXPIRED', 'Expired'), ('USED', 'Used')], default='FRESH')
+    production_date = models.DateTimeField()
+    expiry_date = models.DateTimeField(null=True, blank=True)
+    notes = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    daily_total_id = models.IntegerField(null=True, blank=True)  # Hanya sebagai kolom biasa, bukan FK
-    session = models.IntegerField()
-    available_stocks = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    def save(self, *args, **kwargs):
-        """Set expiration_time otomatis berdasarkan produksi"""
-        if not self.expiration_time:
-            self.expiration_time = self.production_time + timezone.timedelta(hours=8)  # Sesuai default DB
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Cow {self.cow_id} - {self.available_stocks}L available"
+        return f"Batch {self.batch_number} - {self.total_volume}L ({self.status})"
 
 class User(models.Model):
     class Meta:
@@ -108,34 +98,35 @@ class ProductStock(models.Model):
     def __str__(self):
         return f"{self.product_type}"
 
-    def deduct_raw_milk(self):
-        """ Mengurangi stok susu mentah berdasarkan total_milk_used tanpa perhitungan tambahan """
+    def deduct_milk_batch(self):
+        """Mengurangi stok dari milk_batches berdasarkan total_milk_used menggunakan FIFO"""
         if self.total_milk_used <= 0:
-            return  # Jika tidak ada susu yang digunakan, keluar dari fungsi
+            return
 
-        # Ambil stok susu dari yang paling lama (FIFO)
-        raw_milk_entries = RawMilk.objects.filter(status="fresh").order_by("production_time")
+        milk_batches = MilkBatch.objects.filter(status='FRESH').order_by('production_date')
 
-        total_available = sum(entry.available_stocks for entry in raw_milk_entries)
+        total_available = sum(batch.total_volume for batch in milk_batches)
         if self.total_milk_used > total_available:
-            raise ValidationError("Stok susu mentah tidak mencukupi untuk produksi!")
+            raise ValidationError("Stok susu di milk_batches tidak mencukupi untuk produksi!")
 
-        remaining_milk_needed = self.total_milk_used
+        remaining_milk_needed = float(self.total_milk_used)
 
         with transaction.atomic():
-            for entry in raw_milk_entries:
+            for batch in milk_batches:
                 if remaining_milk_needed <= 0:
                     break
 
-                if entry.available_stocks <= remaining_milk_needed:
-                    remaining_milk_needed -= entry.available_stocks
-                    entry.available_stocks = 0
-                    entry.status = "used"
+                if batch.total_volume <= remaining_milk_needed:
+                    remaining_milk_needed -= batch.total_volume
+                    batch.total_volume = 0
+                    batch.status = 'USED'
                 else:
-                    entry.available_stocks -= remaining_milk_needed
+                    batch.total_volume -= remaining_milk_needed
                     remaining_milk_needed = 0
+                    if batch.total_volume == 0:
+                        batch.status = 'USED'
 
-                entry.save()
+                batch.save()
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -147,10 +138,9 @@ class ProductStock(models.Model):
             except ProductStock.DoesNotExist: # pylint: disable=no-member
                 pass
 
-        super().save(*args, **kwargs)  # Simpan dulu untuk dapat ID jika belum ada
+        super().save(*args, **kwargs)
 
         if previous and previous.status != "contamination" and self.status == "contamination":
-            # Hanya jika berubah menjadi contamination
             if self.quantity > 0:
                 StockHistory.objects.create(
                     product_stock=self,
@@ -158,12 +148,11 @@ class ProductStock(models.Model):
                     quantity_change=self.quantity
                 )
                 self.quantity = 0
-                super().save(update_fields=["quantity"])  # Update hanya quantity
-
+                super().save(update_fields=["quantity"])
 
     @classmethod
     def check_expired_products(cls):
-        """ Otomatis set produk expired jika sudah melewati tanggal kadaluarsa """
+        """Otomatis set produk expired jika sudah melewati tanggal kadaluarsa"""
         expired_products = cls.objects.filter(expiry_at__lt=timezone.now(), status="available")
         
         with transaction.atomic():
@@ -174,12 +163,11 @@ class ProductStock(models.Model):
                     change_type="expired",
                     quantity_change=product.quantity
                 )
-                # product.quantity = 0  # Set stok menjadi 0
                 product.save()
 
     @classmethod
     def sell_product(cls, product_type, quantity):
-        """ Jual produk berdasarkan FIFO jika tersedia """
+        """Jual produk berdasarkan FIFO jika tersedia"""
         available_stocks = cls.objects.filter(
             product_type=product_type, 
             status="available", 
@@ -187,7 +175,7 @@ class ProductStock(models.Model):
         ).order_by("production_at")
 
         remaining = quantity
-        stock_usage = []  # Untuk tracking penggunaan stock
+        stock_usage = []
 
         with transaction.atomic():
             for stock in available_stocks:
@@ -201,10 +189,8 @@ class ProductStock(models.Model):
                 if stock.quantity == 0:
                     stock.status = "sold_out"
 
-                # Hitung total harga transaksi
                 total_price = sold_quantity * stock.product_type.price
 
-                # Simpan history penjualan
                 history_entry = StockHistory.objects.create(
                     product_stock=stock,
                     change_type="sold",
@@ -225,6 +211,7 @@ class ProductStock(models.Model):
             raise ValidationError("Stok tidak mencukupi!")
 
         return stock_usage
+
 
 # Model Histori Perubahan Stok
 class StockHistory(models.Model):
