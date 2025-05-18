@@ -22,7 +22,9 @@ const DailyFeedItemsListPage = () => {
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState(null);
   const [editId, setEditId] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -39,20 +41,21 @@ const DailyFeedItemsListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedItemsResponse, dailyFeedsResponse, cowsData] = await Promise.all([
-        getAllFeedItems().catch((err) => {
-          console.error("Error fetching feed items:", err);
-          return [];
-        }),
-        getAllDailyFeeds({ date: selectedDate }).catch((err) => {
-          console.error("Error fetching daily feeds:", err);
-          return { data: [] };
-        }),
-        listCows().catch((err) => {
-          console.error("Error fetching cows:", err);
-          return [];
-        }),
-      ]);
+      const [feedItemsResponse, dailyFeedsResponse, cowsData] =
+        await Promise.all([
+          getAllFeedItems().catch((err) => {
+            console.error("Error fetching feed items:", err);
+            return [];
+          }),
+          getAllDailyFeeds({ date: selectedDate }).catch((err) => {
+            console.error("Error fetching daily feeds:", err);
+            return { data: [] };
+          }),
+          listCows().catch((err) => {
+            console.error("Error fetching cows:", err);
+            return [];
+          }),
+        ]);
 
       // Log responses for debugging
       console.log("Feed Items Response:", feedItemsResponse);
@@ -60,13 +63,19 @@ const DailyFeedItemsListPage = () => {
       console.log("Cows Data Response:", cowsData);
 
       // Handle feedItemsResponse as array
-      setFeedItems(Array.isArray(feedItemsResponse) ? feedItemsResponse : feedItemsResponse.data || []);
+      setFeedItems(
+        Array.isArray(feedItemsResponse)
+          ? feedItemsResponse
+          : feedItemsResponse.data || []
+      );
       // Handle dailyFeedsResponse as object with data property
       const dailyFeedsData = dailyFeedsResponse.data || [];
       setDailyFeeds(dailyFeedsData);
 
       // Handle cowsData, ensuring it's an array
-      const cowsArray = Array.isArray(cowsData) ? cowsData : cowsData.data || [];
+      const cowsArray = Array.isArray(cowsData)
+        ? cowsData
+        : cowsData.data || [];
       setCows(cowsArray);
 
       // Use dailyFeeds for cowNames to match CreateDailyFeedItem
@@ -80,7 +89,9 @@ const DailyFeedItemsListPage = () => {
         : {};
       // Use cowsArray for birth dates and weights
       const birthDateMap = cowsArray.length
-        ? Object.fromEntries(cowsArray.map((cow) => [cow.id, cow.birth_date || null]))
+        ? Object.fromEntries(
+            cowsArray.map((cow) => [cow.id, cow.birth_date || null])
+          )
         : {};
       const weightMap = cowsArray.length
         ? Object.fromEntries(
@@ -91,11 +102,6 @@ const DailyFeedItemsListPage = () => {
       setCowNames(cowMap);
       setCowBirthDates(birthDateMap);
       setCowWeights(weightMap);
-
-      if (Object.keys(cowMap).length === 0) {
-        console.warn("No cow data available in dailyFeeds");
-        Swal.fire("Peringatan", "Data nama sapi tidak tersedia dari sesi pakan.", "warning");
-      }
     } catch (error) {
       console.error("Failed to fetch data:", error.message);
       setFeedItems([]);
@@ -150,7 +156,9 @@ const DailyFeedItemsListPage = () => {
     const cowAge = calculateAge(cowBirthDates[dailyFeed.cow_id]);
     const cowWeight = cowWeights[dailyFeed.cow_id] || "Tidak Diketahui";
     const key = `${dailyFeed.cow_id}-${dailyFeed.date}`;
-    const items = feedItems.filter((item) => item.daily_feed_id === dailyFeed.id);
+    const items = feedItems.filter(
+      (item) => item.daily_feed_id === dailyFeed.id
+    );
 
     if (!acc[key]) {
       acc[key] = {
@@ -184,12 +192,13 @@ const DailyFeedItemsListPage = () => {
       group.cow.toLowerCase().includes(searchLower) ||
       group.age.toLowerCase().includes(searchLower) ||
       group.weight.toString().toLowerCase().includes(searchLower) ||
-      Object.values(group.sessions).some((session) =>
-        session.items.some(
-          (item) =>
-            (item.feed_name || "").toLowerCase().includes(searchLower) ||
-            (item.quantity?.toString() || "").includes(searchLower)
-        ) || session.weather.toLowerCase().includes(searchLower)
+      Object.values(group.sessions).some(
+        (session) =>
+          session.items.some(
+            (item) =>
+              (item.feed_name || "").toLowerCase().includes(searchLower) ||
+              (item.quantity?.toString() || "").includes(searchLower)
+          ) || session.weather.toLowerCase().includes(searchLower)
       )
     );
   });
@@ -237,7 +246,11 @@ const DailyFeedItemsListPage = () => {
         fetchData();
       } catch (error) {
         console.error("Gagal menghapus data pakan:", error.message);
-        Swal.fire("Error!", "Terjadi kesalahan saat menghapus: " + error.message, "error");
+        Swal.fire(
+          "Error!",
+          "Terjadi kesalahan saat menghapus: " + error.message,
+          "error"
+        );
       } finally {
         setLoading(false);
       }
@@ -299,7 +312,9 @@ const DailyFeedItemsListPage = () => {
             <div className="table-responsive">
               {Object.keys(cowNames).length === 0 && (
                 <div className="alert alert-warning mb-3">
-                  <i className="fas fa-exclamation-triangle me-2" /> Data nama sapi tidak tersedia dari sesi pakan. Nama sapi ditampilkan sebagai ID.
+                  <i className="fas fa-exclamation-triangle me-2" /> Data nama
+                  sapi tidak tersedia dari sesi pakan. Nama sapi ditampilkan
+                  sebagai ID.
                 </div>
               )}
               <Table bordered hover className="align-middle">
@@ -322,23 +337,31 @@ const DailyFeedItemsListPage = () => {
                         {idx === 0 && (
                           <>
                             <td rowSpan={sessionCount}>{group.cow}</td>
-                            <td rowSpan={sessionCount}>{formatDate(group.date)}</td>
+                            <td rowSpan={sessionCount}>
+                              {formatDate(group.date)}
+                            </td>
                           </>
                         )}
                         <td>{session}</td>
                         <td>
                           {group.sessions[session].items.length > 0 ? (
                             <div className="d-flex flex-wrap gap-2">
-                              {group.sessions[session].items.map((feedItem, itemIdx) => (
-                                <div
-                                  key={itemIdx}
-                                  className="border rounded p-2 bg-light"
-                                  style={{ minWidth: "100px" }}
-                                >
-                                  <div className="fw-medium">{feedItem.feed_name || "-"}</div>
-                                  <small className="text-muted">{feedItem.quantity} kg</small>
-                                </div>
-                              ))}
+                              {group.sessions[session].items.map(
+                                (feedItem, itemIdx) => (
+                                  <div
+                                    key={itemIdx}
+                                    className="border rounded p-2 bg-light"
+                                    style={{ minWidth: "100px" }}
+                                  >
+                                    <div className="fw-medium">
+                                      {feedItem.feed_name || "-"}
+                                    </div>
+                                    <small className="text-muted">
+                                      {feedItem.quantity} kg
+                                    </small>
+                                  </div>
+                                )
+                              )}
                             </div>
                           ) : (
                             <span className="text-muted">-</span>
@@ -351,8 +374,13 @@ const DailyFeedItemsListPage = () => {
                             size="sm"
                             className="me-2"
                             onClick={() => {
-                              if (!isSupervisor && group.sessions[session].daily_feed_id) {
-                                setEditId(group.sessions[session].daily_feed_id);
+                              if (
+                                !isSupervisor &&
+                                group.sessions[session].daily_feed_id
+                              ) {
+                                setEditId(
+                                  group.sessions[session].daily_feed_id
+                                );
                                 setModalType("edit");
                               }
                             }}
@@ -364,8 +392,12 @@ const DailyFeedItemsListPage = () => {
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            onClick={() => !isSupervisor && handleDeleteClick(group, session)}
-                            disabled={group.sessions[session].items.length === 0}
+                            onClick={() =>
+                              !isSupervisor && handleDeleteClick(group, session)
+                            }
+                            disabled={
+                              group.sessions[session].items.length === 0
+                            }
                             {...disableIfSupervisor}
                           >
                             <i className="fas fa-trash" />

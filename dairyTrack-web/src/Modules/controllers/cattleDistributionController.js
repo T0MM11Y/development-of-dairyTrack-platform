@@ -128,6 +128,7 @@ export const listCowsByUser = async (userId) => {
     };
   }
 };
+
 export const getUsersWithCows = async () => {
   try {
     const response = await fetch(`${API_URL1}/user-cow/farmers-with-cows`, {

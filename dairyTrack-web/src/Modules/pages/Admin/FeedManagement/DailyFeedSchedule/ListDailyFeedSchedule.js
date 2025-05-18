@@ -1,6 +1,7 @@
-// src/pages/Admin/FeedManagement/DailyFeed/DailyFeedListPage.js
+// DailyFeedListPage.js
 import React, { useEffect, useState } from "react";
 import { getAllDailyFeeds, deleteDailyFeed, createDailyFeed } from "../../../../controllers/feedScheduleController";
+import { listCowsByUser } from "../../../../../Modules/controllers/cattleDistributionController";
 import { listCows } from "../../../../controllers/cowsController";
 import CreateDailyFeed from "./CreateDailyFeedSchedule";
 import EditDailyFeed from "./EditDailyFeedSchedule";
@@ -14,40 +15,58 @@ const DailyFeedListPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCowModal, setShowCowModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" })
+  );
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
-
-  const disableIfSupervisor = isSupervisor
-    ? {
-        disabled: true,
-        title: "Supervisor tidak dapat mengedit data",
-        style: { opacity: 0.5, cursor: "not-allowed" },
-      }
-    : {};
+  const isAdmin = user?.role?.toLowerCase() === "admin";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
+  const isFarmer = user?.role?.toLowerCase() === "farmer";
+  const isReadOnly = isAdmin || isSupervisor;
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedResponse, cowResponse] = await Promise.all([
-        getAllDailyFeeds({ date: selectedDate }),
-        listCows(),
-      ]);
+      console.log("Fetching data for date:", selectedDate);
 
-      if (feedResponse.success) {
-        setFeeds(feedResponse.data || []);
+      const feedResponse = await getAllDailyFeeds({ date: selectedDate });
+      console.log("Feed response:", feedResponse);
+
+      const cowResponse = isReadOnly
+        ? await listCows()
+        : await listCowsByUser(user.user_id);
+      console.log("Cow response:", cowResponse);
+
+      if (feedResponse.success && Array.isArray(feedResponse.data)) {
+        setFeeds(feedResponse.data);
+        console.log("Feeds:", feedResponse.data);
       } else {
         setFeeds([]);
+        console.log("Feed fetch failed:", feedResponse.message || "No data");
       }
 
-      if (cowResponse.success) {
-        setCows(cowResponse.cows || []);
+      if (cowResponse.success && Array.isArray(cowResponse.cows)) {
+        setCows(cowResponse.cows);
+        console.log("Cows:", cowResponse.cows);
       } else {
         setCows([]);
+        console.log("Cow fetch failed:", cowResponse.message || "No cows");
       }
     } catch (err) {
-      Swal.fire("Error", "Gagal memuat data jadwal pakan.", "error");
+      console.error("Fetch error:", err);
+      if (err.message.includes("Autentikasi gagal")) {
+        Swal.fire({
+          icon: "error",
+          title: "Sesi Berakhir",
+          text: err.message,
+        }).then(() => {
+          localStorage.removeItem("user");
+          window.location.href = "/";
+        });
+      } else {
+        Swal.fire("Error", err.message || "Gagal memuat data jadwal pakan.", "error");
+      }
       setFeeds([]);
       setCows([]);
     } finally {
@@ -90,6 +109,11 @@ const DailyFeedListPage = () => {
 
   const handleAutoCreate = async (cowId, cowName, session) => {
     try {
+      const selectedCow = cows.find((cow) => cow.id === parseInt(cowId));
+      if (!selectedCow) {
+        throw new Error("Anda tidak memiliki izin untuk mengelola sapi ini.");
+      }
+
       const formattedDate = new Date(selectedDate).toLocaleDateString("id-ID");
       const result = await Swal.fire({
         title: "Konfirmasi Buat Jadwal",
@@ -107,7 +131,7 @@ const DailyFeedListPage = () => {
           cow_id: parseInt(cowId),
           date: selectedDate,
           session,
-          items: [], // Empty items, as backend allows it
+          items: [],
         };
         const response = await createDailyFeed(payload);
         if (response.success) {
@@ -130,21 +154,21 @@ const DailyFeedListPage = () => {
   };
 
   useEffect(() => {
-    if (!user.token) {
+    if (!user.token || !user.user_id || !user.role) {
       Swal.fire({
         icon: "error",
         title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
+        text: "Autentikasi gagal. Silakan login kembali.",
       }).then(() => {
         localStorage.removeItem("user");
         window.location.href = "/";
       });
     } else {
       fetchData();
+      console.log("User:", user);
     }
   }, [selectedDate]);
 
-  // Group feeds by cow and date
   const groupedFeeds = feeds.reduce((acc, feed) => {
     const key = `${feed.cow_id}_${feed.date}`;
     if (!acc[key]) {
@@ -162,20 +186,16 @@ const DailyFeedListPage = () => {
     });
     return acc;
   }, {});
+  console.log("Grouped feeds:", groupedFeeds);
 
-  // Find cows without feed schedules for the selected date
   const sessions = ["Pagi", "Siang", "Sore"];
-  const cowsWithoutSchedules = cows
-    .map((cow) => {
-      const key = `${cow.id}_${selectedDate}`;
-      const existingSessions = groupedFeeds[key]?.sessions.map((s) => s.session) || [];
-      const missingSessions = sessions.filter((session) => !existingSessions.includes(session));
-      if (missingSessions.length > 0) {
-        return { ...cow, missingSessions };
-      }
-      return null;
-    })
-    .filter(Boolean);
+  const cowsWithMissingSessions = cows.map((cow) => {
+    const key = `${cow.id}_${selectedDate}`;
+    const existingSessions = groupedFeeds[key]?.sessions.map((s) => s.session) || [];
+    const missingSessions = sessions.filter((session) => !existingSessions.includes(session));
+    return missingSessions.length > 0 ? { ...cow, missingSessions } : null;
+  }).filter(Boolean);
+  console.log("Cows with missing sessions:", cowsWithMissingSessions);
 
   const formatDate = (dateString) => {
     try {
@@ -202,28 +222,36 @@ const DailyFeedListPage = () => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                max={new Date().toISOString().split("T")[0]}
+                max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" })}
               />
             </Form.Group>
-            <div className="mb-2">
-              <Button
-                variant="primary"
-                onClick={() => !isSupervisor && setModalType("create")}
-                {...disableIfSupervisor}
-                className="me-2"
-              >
-                <i className="fas fa-plus me-2" /> Tambah Jadwal
-              </Button>
-              {cowsWithoutSchedules.length > 0 && (
+            {isFarmer && (
+              <div className="mb-2">
+                <Button
+                  variant="primary"
+                  onClick={() => setModalType("create")}
+                  className="me-2"
+                >
+                  <i className="fas fa-plus me-2" /> Tambah Jadwal
+                </Button>
                 <Button
                   variant="success"
-                  onClick={() => !isSupervisor && setShowCowModal(true)}
-                  {...disableIfSupervisor}
+                  onClick={() => setShowCowModal(true)}
                 >
                   <i className="fas fa-cow me-2" /> Sapi Tanpa Jadwal
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
+            {!isFarmer && (
+              <div className="mb-2">
+                <Button
+                  variant="success"
+                  onClick={() => setShowCowModal(true)}
+                >
+                  <i className="fas fa-cow me-2" /> Sapi Tanpa Jadwal
+                </Button>
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -234,7 +262,9 @@ const DailyFeedListPage = () => {
           ) : (
             <div className="table-responsive">
               {Object.values(groupedFeeds).length === 0 ? (
-                <p className="text-center text-muted py-4">Tidak ada jadwal pakan untuk tanggal ini.</p>
+                <p className="text-center text-muted py-4">
+                  Tidak ada jadwal pakan untuk tanggal ini.
+                </p>
               ) : (
                 <Table bordered hover className="align-middle">
                   <thead className="table-light">
@@ -243,7 +273,7 @@ const DailyFeedListPage = () => {
                       <th>Tanggal</th>
                       <th>Sesi</th>
                       <th>Cuaca</th>
-                      <th>Aksi</th>
+                      {isFarmer && <th>Aksi</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -259,38 +289,35 @@ const DailyFeedListPage = () => {
                           )}
                           <td>{session.session}</td>
                           <td>{session.weather}</td>
-                          <td>
-                            <Button
-                              variant="outline-warning"
-                              size="sm"
-                              className="me-2"
-                              onClick={() => {
-                                if (!isSupervisor) {
+                          {isFarmer && (
+                            <td>
+                              <Button
+                                variant="outline-warning"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => {
                                   setEditId(session.id);
                                   setModalType("edit");
+                                }}
+                              >
+                                <i className="fas fa-edit" />
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() =>
+                                  handleDelete(
+                                    session.id,
+                                    group.cow_name,
+                                    formatDate(group.date),
+                                    session.session
+                                  )
                                 }
-                              }}
-                              {...disableIfSupervisor}
-                            >
-                              <i className="fas fa-edit" />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() =>
-                                !isSupervisor &&
-                                handleDelete(
-                                  session.id,
-                                  group.cow_name,
-                                  formatDate(group.date),
-                                  session.session
-                                )
-                              }
-                              {...disableIfSupervisor}
-                            >
-                              <i className="fas fa-trash" />
-                            </Button>
-                          </td>
+                              >
+                                <i className="fas fa-trash" />
+                              </Button>
+                            </td>
+                          )}
                         </tr>
                       ));
                     })}
@@ -302,8 +329,7 @@ const DailyFeedListPage = () => {
         </Card.Body>
       </Card>
 
-      {/* Modals */}
-      {modalType === "create" && (
+      {isFarmer && modalType === "create" && (
         <CreateDailyFeed
           cows={cows}
           defaultDate={selectedDate}
@@ -315,9 +341,10 @@ const DailyFeedListPage = () => {
         />
       )}
 
-      {modalType === "edit" && editId && (
+      {isFarmer && modalType === "edit" && editId && (
         <EditDailyFeed
           id={editId}
+          cows={cows}
           onClose={() => {
             setModalType(null);
             setEditId(null);
@@ -338,33 +365,40 @@ const DailyFeedListPage = () => {
         backdrop="static"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Sapi Tanpa Jadwal Pakan</Modal.Title>
+          <Modal.Title>Sapi dengan Jadwal Tidak Lengkap</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {cowsWithoutSchedules.length === 0 ? (
-            <p className="text-center text-muted">Semua sapi memiliki jadwal pakan lengkap.</p>
+          {cowsWithMissingSessions.length === 0 ? (
+            <p className="text-center text-muted">
+              {cows.length === 0
+                ? "Tidak ada sapi yang tersedia."
+                : "Semua sapi memiliki jadwal pakan lengkap untuk tanggal ini."}
+            </p>
           ) : (
             <ListGroup>
-              {cowsWithoutSchedules.map((cow) => (
+              {cowsWithMissingSessions.map((cow) => (
                 <ListGroup.Item key={cow.id} className="mb-2">
                   <div className="d-flex justify-content-between align-items-center">
                     <strong>{cow.name}</strong>
-                    <span className="badge bg-primary">{cow.missingSessions.length} sesi tersisa</span>
+                    <span className="badge bg-primary">
+                      Sesi hilang: {cow.missingSessions.join(", ")}
+                    </span>
                   </div>
-                  <div className="mt-2">
-                    {cow.missingSessions.map((session) => (
-                      <Button
-                        key={`${cow.id}_${session}`}
-                        variant="outline-primary"
-                        size="sm"
-                        className="me-2 mb-2"
-                        onClick={() => !isSupervisor && handleAutoCreate(cow.id, cow.name, session)}
-                        {...disableIfSupervisor}
-                      >
-                        Buat Jadwal {session}
-                      </Button>
-                    ))}
-                  </div>
+                  {isFarmer && (
+                    <div className="mt-2">
+                      {cow.missingSessions.map((session) => (
+                        <Button
+                          key={`${cow.id}_${session}`}
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2 mb-2"
+                          onClick={() => handleAutoCreate(cow.id, cow.name, session)}
+                        >
+                          Buat Jadwal {session}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </ListGroup.Item>
               ))}
             </ListGroup>
