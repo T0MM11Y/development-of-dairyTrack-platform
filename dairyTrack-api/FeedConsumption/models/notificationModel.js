@@ -13,12 +13,10 @@ const Notification = sequelize.define(
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
     },
     cow_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
     },
     feed_stock_id: {
       type: DataTypes.INTEGER,

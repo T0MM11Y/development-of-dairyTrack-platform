@@ -141,16 +141,17 @@ CORS_ALLOW_HEADERS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Ganti dengan nama database MySQL
-        'USER': 'root',  # Ganti dengan username MySQL
-        'PASSWORD': '',  # Ganti dengan password MySQL
-        'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan
-        'PORT': '3306',  # Port default MySQL
+        'NAME': 'dairytrack_stiffplate',  # Ganti dengan nama database MySQL
+        'USER': 'dairytrack_stiffplate',  # Ganti dengan username MySQL
+        'PASSWORD': 'dcdd07f7b478dd1f479b4c44c4b131048a7c0ac3',  # Ganti dengan password MySQL
+        'HOST': 'xcq0v.h.filess.io',  # Jika menggunakan server lain, ganti sesuai kebutuhan
+        'PORT': '3307',  # Port MySQL dari layanan filess.io
         'OPTIONS': {
             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
         },
     }
 }
+
 
 # DATABASES = {
 #     'default': {
