@@ -251,24 +251,42 @@ const ListMilking = () => {
     }
     setShowAddModal(true);
   };
-
   // Calculate milk statistics
   const milkStats = useMemo(() => {
+    // Total volume and sessions for all users
     const totalVolume = sessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
     );
     const totalSessions = sessions.length;
 
-    // Get today's date in ISO format (YYYY-MM-DD)
+    // Today's sessions and volume for all users
     const today = new Date().toISOString().split("T")[0];
-
-    // Calculate sessions from today
     const todaySessions = sessions.filter((session) =>
       session.milking_time?.startsWith(today)
     );
-
     const todayVolume = todaySessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
+    );
+
+    // Filter sessions for farmers
+    const filteredSessions =
+      currentUser?.role_id !== 1
+        ? sessions.filter((session) =>
+            userManagedCows.some((cow) => cow.id === session.cow_id)
+          )
+        : sessions;
+
+    // Total volume and sessions for filtered data
+    const filteredVolume = filteredSessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
+    );
+    const filteredTodaySessions = filteredSessions.filter((session) =>
+      session.milking_time?.startsWith(today)
+    );
+    const filteredTodayVolume = filteredTodaySessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
     );
@@ -281,11 +299,14 @@ const ListMilking = () => {
       avgVolumePerSession: totalSessions
         ? (totalVolume / totalSessions).toFixed(2)
         : "0.00",
+      filteredSessions: filteredSessions.length,
+      filteredVolume: filteredVolume.toFixed(2),
+      filteredTodayVolume: filteredTodayVolume.toFixed(2),
+      filteredAvgVolumePerSession: filteredSessions.length
+        ? (filteredVolume / filteredSessions.length).toFixed(2)
+        : "0.00",
     };
-  }, [sessions]);
-
-  // Filter, sort and paginate sessions
-  // ...existing code...
+  }, [sessions, currentUser, userManagedCows]);
 
   // Filter, sort and paginate sessions
   const filteredAndPaginatedSessions = useMemo(() => {
@@ -363,22 +384,31 @@ const ListMilking = () => {
   ]);
 
   const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]);
-
   // Handle adding a new milking session
   const handleAddSession = async (e) => {
     e.preventDefault();
 
-    // Convert volume to number
+    // Tambahkan informasi pembuat ke dalam notes
+    const creatorInfo = currentUser
+      ? `Created by: ${currentUser.name} (Role: ${
+          currentUser.role_id === 1 ? "Admin" : "Farmer"
+        })`
+      : "Created by: Unknown";
+
+    // Gabungkan notes baru dengan informasi pembuat
     const sessionData = {
       ...newSession,
       volume: parseFloat(newSession.volume),
+      notes: newSession.notes
+        ? `${newSession.notes}\n\n${creatorInfo}`
+        : creatorInfo,
     };
 
     try {
       const response = await addMilkingSession(sessionData);
 
       if (response.success) {
-        // Show success message
+        // Tampilkan pesan sukses
         Swal.fire({
           icon: "success",
           title: "Success",
@@ -387,14 +417,14 @@ const ListMilking = () => {
           showConfirmButton: false,
         });
 
-        // Refresh the sessions list
+        // Refresh daftar sesi
         const sessionsResponse = await getMilkingSessions();
         if (sessionsResponse.success && sessionsResponse.sessions) {
           setSessions(sessionsResponse.sessions);
         }
 
         setShowAddModal(false);
-        // Reset with current user ID and current time
+        // Reset form dengan ID pengguna saat ini dan waktu saat ini
         setNewSession({
           cow_id: "",
           milker_id: currentUser
@@ -405,7 +435,7 @@ const ListMilking = () => {
           notes: "",
         });
       } else {
-        // Show error message
+        // Tampilkan pesan error
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -638,7 +668,13 @@ const ListMilking = () => {
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <h6 className="card-title mb-0">Total Sessions</h6>
-                      <h2 className="mt-2 mb-0">{milkStats.totalSessions}</h2>
+                      <h2 className="mt-2 mb-0">
+                        {
+                          currentUser?.role_id === 1
+                            ? milkStats.totalSessions // Admin: semua sesi
+                            : milkStats.filteredSessions // Farmer: sesi terkait
+                        }
+                      </h2>
                     </div>
                     <div>
                       <i className="fas fa-calendar-check fa-3x opacity-50"></i>
@@ -653,7 +689,13 @@ const ListMilking = () => {
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <h6 className="card-title mb-0">Total Volume</h6>
-                      <h2 className="mt-2 mb-0">{milkStats.totalVolume} L</h2>
+                      <h2 className="mt-2 mb-0">
+                        {
+                          currentUser?.role_id === 1
+                            ? `${milkStats.totalVolume} L` // Admin: semua volume
+                            : `${milkStats.filteredVolume} L` // Farmer: volume terkait
+                        }
+                      </h2>
                     </div>
                     <div>
                       <i className="fas fa-fill-drip fa-3x opacity-50"></i>
@@ -668,7 +710,13 @@ const ListMilking = () => {
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <h6 className="card-title mb-0">Today's Volume</h6>
-                      <h2 className="mt-2 mb-0">{milkStats.todayVolume} L</h2>
+                      <h2 className="mt-2 mb-0">
+                        {
+                          currentUser?.role_id === 1
+                            ? `${milkStats.todayVolume} L` // Admin: semua volume hari ini
+                            : `${milkStats.filteredTodayVolume} L` // Farmer: volume hari ini terkait
+                        }
+                      </h2>
                     </div>
                     <div>
                       <i className="fas fa-glass fa-3x opacity-50"></i>
@@ -684,7 +732,11 @@ const ListMilking = () => {
                     <div>
                       <h6 className="card-title mb-0">Avg Volume/Session</h6>
                       <h2 className="mt-2 mb-0">
-                        {milkStats.avgVolumePerSession} L
+                        {
+                          currentUser?.role_id === 1
+                            ? `${milkStats.avgVolumePerSession} L` // Admin: rata-rata semua sesi
+                            : `${milkStats.filteredAvgVolumePerSession} L` // Farmer: rata-rata sesi terkait
+                        }
                       </h2>
                     </div>
                     <div>
