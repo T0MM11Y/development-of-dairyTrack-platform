@@ -13,8 +13,10 @@ import {
   OverlayTrigger,
   Tooltip,
   ProgressBar,
+  Col,
 } from "react-bootstrap";
 import { Link, useHistory } from "react-router-dom";
+import { color } from "framer-motion";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -23,7 +25,24 @@ const Users = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
   const [selectedRole, setSelectedRole] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+  // Tambahkan: Ambil user dari localStorage
+  const getCurrentUser = () => {
+    if (typeof localStorage !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  };
+  // Tambahkan: Ambil user yang sedang login
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const isSupervisor = currentUser?.role_id === 2;
+  // Removed selectedStatus state
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
 
@@ -134,15 +153,13 @@ const Users = () => {
 
   // Filter, sort, and paginate users
   const { filteredUsers, currentUsers, totalPages } = useMemo(() => {
-    // Filter users
+    // Filter users (removed status filter)
     const filtered = users.filter(
       (user) =>
         (user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.contact.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedRole === "" || user.role_id === parseInt(selectedRole)) &&
-        (selectedStatus === "" ||
-          (selectedStatus === "active" ? user.is_logged : !user.is_logged))
+        (selectedRole === "" || user.role_id === parseInt(selectedRole))
     );
 
     // Sort users
@@ -175,7 +192,7 @@ const Users = () => {
     users,
     searchTerm,
     selectedRole,
-    selectedStatus, // Dependensi ini penting untuk filter status
+    // Removed selectedStatus dependency
     sortConfig,
     usersPerPage,
     indexOfFirstUser,
@@ -186,7 +203,7 @@ const Users = () => {
   const getRoleBadge = useCallback((roleId) => {
     const roleData = {
       1: { label: "Admin", bg: "primary" },
-      2: { label: "Supervisor", bg: "warning" },
+      2: { label: "Supervisor", bg: "warning", color: "black" },
       3: { label: "Farmer", bg: "info" },
     };
 
@@ -479,22 +496,11 @@ const Users = () => {
                   <option value="2">Supervisor</option>
                   <option value="3">Farmer</option>
                 </select>
-                <select
-                  className="form-select shadow-sm py-2 border-0 w-auto"
-                  value={selectedStatus}
-                  onChange={(e) => {
-                    setSelectedStatus(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                {/* Removed status dropdown */}
                 <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
                   <button
                     className="btn btn-success shadow-sm"
-                    onClick={exportUsersToExcel} // Panggil fungsi ekspor Excel
+                    onClick={exportUsersToExcel}
                   >
                     <i className="fas fa-file-excel me-1"></i> Excel
                   </button>
@@ -502,18 +508,27 @@ const Users = () => {
                 <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
                   <button
                     className="btn btn-danger shadow-sm"
-                    onClick={exportUsersToPDF} // Panggil fungsi ekspor PDF
+                    onClick={exportUsersToPDF}
                   >
                     <i className="fas fa-file-pdf me-1"></i> PDF
                   </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Add New User</Tooltip>}>
-                  <Link
-                    to="/admin/add-users"
-                    className="btn btn-primary shadow-sm"
-                  >
-                    <i className="fas fa-user-plus me-1"></i> Add User
-                  </Link>
+                  <span>
+                    <Link
+                      to="/admin/add-users"
+                      className={`btn btn-primary shadow-sm${
+                        isSupervisor ? " disabled" : ""
+                      }`}
+                      tabIndex={isSupervisor ? -1 : 0}
+                      aria-disabled={isSupervisor}
+                      onClick={(e) => {
+                        if (isSupervisor) e.preventDefault();
+                      }}
+                    >
+                      <i className="fas fa-user-plus me-1"></i> Add User
+                    </Link>
+                  </span>
                 </OverlayTrigger>
               </div>
             </div>
@@ -586,9 +601,7 @@ const Users = () => {
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="text-center fw-medium">
-                    Status
-                  </th>
+                  {/* Removed Status column header */}
                   <th scope="col" className="text-center fw-medium">
                     Actions
                   </th>
@@ -631,7 +644,7 @@ const Users = () => {
                                   user.role_id === 1
                                     ? "text-primary"
                                     : user.role_id === 2
-                                    ? "text-warning"
+                                    ? "text-dark" /* Changed from text-white to text-dark */
                                     : "text-info"
                                 }`}
                               ></i>
@@ -653,55 +666,49 @@ const Users = () => {
                         <td className="text-center">
                           {getRoleBadge(user.role_id)}
                         </td>
-                        <td className="text-center">
-                          {user.is_logged ? (
-                            <Badge
-                              bg="success"
-                              className="status-badge bg-opacity-10 text-success"
-                              pill
-                            >
-                              <i className="fas fa-circle me-1 small"></i>{" "}
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge
-                              bg="secondary"
-                              className="status-badge bg-opacity-10 text-secondary"
-                              pill
-                            >
-                              <i className="fas fa-circle me-1 small"></i>{" "}
-                              Inactive
-                            </Badge>
-                          )}
-                        </td>
+                        {/* Removed Status column */}
                         <td className="text-center">
                           <div className="btn-group">
                             <OverlayTrigger
                               overlay={<Tooltip>Edit User</Tooltip>}
                             >
-                              <Link
-                                to={`/admin/edit-user/${user.id}`}
-                                className="btn btn-sm btn-outline-secondary border-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditUser(user.id);
-                                }}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </Link>
+                              <span>
+                                <Link
+                                  to={`/admin/edit-user/${user.id}`}
+                                  className={`btn btn-sm btn-outline-secondary border-0${
+                                    isSupervisor ? " disabled" : ""
+                                  }`}
+                                  tabIndex={isSupervisor ? -1 : 0}
+                                  aria-disabled={isSupervisor}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isSupervisor) {
+                                      e.preventDefault();
+                                    } else {
+                                      handleEditUser(user.id);
+                                    }
+                                  }}
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </Link>
+                              </span>
                             </OverlayTrigger>
                             <OverlayTrigger
                               overlay={<Tooltip>Delete User</Tooltip>}
                             >
-                              <button
-                                className="btn btn-sm btn-outline-secondary border-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteUser(user.id);
-                                }}
-                              >
-                                <i className="fas fa-trash-alt"></i>
-                              </button>
+                              <span>
+                                <button
+                                  className="btn btn-sm btn-outline-secondary border-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isSupervisor)
+                                      handleDeleteUser(user.id);
+                                  }}
+                                  disabled={isSupervisor}
+                                >
+                                  <i className="fas fa-trash-alt"></i>
+                                </button>
+                              </span>
                             </OverlayTrigger>
                           </div>
                         </td>
@@ -710,7 +717,8 @@ const Users = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center py-4">
+                    <td colSpan="9" className="text-center py-4">
+                      {/* Updated colspan from 10 to 9 since we removed a column */}
                       <div className="text-muted">
                         <i
                           className="fas fa-search fs-3 d-block mb-2"
@@ -726,7 +734,7 @@ const Users = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages >= 1 && ( // Ubah dari totalPages > 1 menjadi totalPages >= 1
+          {totalPages >= 1 && (
             <div className="card-footer bg-transparent border-0 mt-3">
               <PaginationControls />
               <div className="text-center mt-3">

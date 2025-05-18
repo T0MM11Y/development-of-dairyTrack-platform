@@ -16,8 +16,23 @@ import {
   listGalleries,
   addGallery,
   deleteGallery,
-  updateGallery, // Import updateGallery
+  updateGallery,
 } from "../../../../controllers/galleryController";
+
+// Ambil user dari localStorage
+const getCurrentUser = () => {
+  if (typeof localStorage !== "undefined") {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+};
 
 const ListOfGallery = () => {
   const [galleries, setGalleries] = useState([]);
@@ -26,12 +41,15 @@ const ListOfGallery = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false); // State untuk modal edit
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newGallery, setNewGallery] = useState({ title: "", image: null });
-  const [selectedGallery, setSelectedGallery] = useState(null); // State untuk galeri yang dipilih
+  const [selectedGallery, setSelectedGallery] = useState(null);
   const galleriesPerPage = 8;
 
-  // Fetch galleries
+  // Cek role user
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const isSupervisor = currentUser?.role_id === 2;
+
   useEffect(() => {
     const fetchGalleries = async () => {
       try {
@@ -47,7 +65,6 @@ const ListOfGallery = () => {
     fetchGalleries();
   }, []);
 
-  // Memoized filtered and paginated galleries
   const filteredGalleries = useMemo(
     () =>
       galleries.filter((gallery) =>
@@ -63,10 +80,10 @@ const ListOfGallery = () => {
 
   const totalPages = Math.ceil(filteredGalleries.length / galleriesPerPage);
 
-  // Handlers
   const handlePageChange = (page) => setCurrentPage(page);
 
   const handleDeleteGallery = async (galleryId) => {
+    if (isSupervisor) return;
     const { isConfirmed } = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
@@ -90,6 +107,7 @@ const ListOfGallery = () => {
 
   const handleAddGallery = async (e) => {
     e.preventDefault();
+    if (isSupervisor) return;
     const { success, gallery } = await addGallery(newGallery);
     if (success) {
       setGalleries([...galleries, gallery]);
@@ -100,6 +118,7 @@ const ListOfGallery = () => {
 
   const handleEditGallery = async (e) => {
     e.preventDefault();
+    if (isSupervisor) return;
     const { success, gallery } = await updateGallery(
       selectedGallery.id,
       selectedGallery
@@ -121,7 +140,6 @@ const ListOfGallery = () => {
     setShowEditModal(true);
   };
 
-  // Render loading or error states
   if (loading)
     return (
       <div
@@ -155,7 +173,13 @@ const ListOfGallery = () => {
             <i className="fas fa-images me-2" /> Gallery Management
           </h4>
           <div className="d-flex justify-content-end mt-3">
-            <Button variant="primary" onClick={() => setShowModal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => setShowModal(true)}
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               <i className="fas fa-plus me-2" /> Add Gallery
             </Button>
           </div>
@@ -188,8 +212,6 @@ const ListOfGallery = () => {
           <div className="row">
             {currentGalleries.map((gallery) => (
               <div className="col-md-3 mb-4" key={gallery.id}>
-                {" "}
-                {/* Ubah col-md-4 menjadi col-md-3 */}
                 <Card className="h-60 shadow-sm">
                   <Card.Img
                     variant="top"
@@ -215,11 +237,11 @@ const ListOfGallery = () => {
                       <div className="d-flex align-items-center mb-2">
                         <i
                           className="fas fa-calendar-alt me-2"
-                          style={{ color: "#6c757d" }} // Warna kustom untuk ikon (abu-abu)
+                          style={{ color: "#6c757d" }}
                         />
                         <small
                           className="text-muted"
-                          style={{ letterSpacing: "0.4px", fontWeight: "400" }} // Letter spacing dan font weight
+                          style={{ letterSpacing: "0.4px", fontWeight: "400" }}
                         >
                           <strong>Created:</strong>{" "}
                           {format(
@@ -231,11 +253,11 @@ const ListOfGallery = () => {
                       <div className="d-flex align-items-center">
                         <i
                           className="fas fa-edit me-2"
-                          style={{ color: "#6c757d" }} // Warna kustom untuk ikon (abu-abu)
+                          style={{ color: "#6c757d" }}
                         />
                         <small
                           className="text-muted"
-                          style={{ letterSpacing: "0.4px", fontWeight: "400" }} // Letter spacing dan font weight
+                          style={{ letterSpacing: "0.4px", fontWeight: "400" }}
                         >
                           <strong>Updated:</strong>{" "}
                           {format(
@@ -248,22 +270,32 @@ const ListOfGallery = () => {
                   </Card.Body>
                   <Card.Footer className="d-flex justify-content-between">
                     <OverlayTrigger overlay={<Tooltip>Edit Gallery</Tooltip>}>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => openEditModal(gallery)} // Open edit modal
-                      >
-                        <i className="fas fa-edit" /> Edit
-                      </Button>
+                      <span>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => openEditModal(gallery)}
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
+                        >
+                          <i className="fas fa-edit" /> Edit
+                        </Button>
+                      </span>
                     </OverlayTrigger>
                     <OverlayTrigger overlay={<Tooltip>Delete Gallery</Tooltip>}>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleDeleteGallery(gallery.id)}
-                      >
-                        <i className="fas fa-trash-alt" /> Delete
-                      </Button>
+                      <span>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteGallery(gallery.id)}
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
+                        >
+                          <i className="fas fa-trash-alt" /> Delete
+                        </Button>
+                      </span>
                     </OverlayTrigger>
                   </Card.Footer>
                 </Card>
@@ -379,6 +411,9 @@ const ListOfGallery = () => {
                   setNewGallery({ ...newGallery, title: e.target.value })
                 }
                 required
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -389,9 +424,18 @@ const ListOfGallery = () => {
                   setNewGallery({ ...newGallery, image: e.target.files[0] })
                 }
                 required
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Add Gallery
             </Button>
           </Form>
@@ -417,6 +461,9 @@ const ListOfGallery = () => {
                   })
                 }
                 required
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -468,12 +515,11 @@ const ListOfGallery = () => {
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
-                    // Create a preview URL for the new image
                     const previewUrl = URL.createObjectURL(file);
                     setSelectedGallery({
                       ...selectedGallery,
                       image: file,
-                      previewUrl: previewUrl, // Temporary URL for preview
+                      previewUrl: previewUrl,
                     });
                   } else {
                     setSelectedGallery({
@@ -484,9 +530,18 @@ const ListOfGallery = () => {
                   }
                 }}
                 accept="image/*"
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Save Changes
             </Button>
           </Form>

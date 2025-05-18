@@ -36,6 +36,21 @@ import {
   updateCategory,
 } from "../../../../controllers/categoryController"; // Import addCategory
 
+// Ambil user dari localStorage
+const getCurrentUser = () => {
+  if (typeof localStorage !== "undefined") {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+};
+
 const ListOfBlog = () => {
   const [blogs, setBlogs] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false); // State untuk modal assign
@@ -59,6 +74,9 @@ const ListOfBlog = () => {
     content: "",
     photo: null,
   });
+  // Cek role user
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const isSupervisor = currentUser?.role_id === 2;
 
   const [selectedBlog, setSelectedBlog] = useState(null);
   // Fungsi untuk menghasilkan warna berdasarkan nama atau ID kategori
@@ -443,10 +461,19 @@ const ListOfBlog = () => {
               className="me-2"
               style={{ color: "white" }}
               onClick={handleOpenAssignModal}
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
             >
               <i className="fas fa-link me-2" /> Assign Categories
             </Button>
-            <Button variant="primary" onClick={() => setShowModal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => setShowModal(true)}
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               <i className="fas fa-plus me-2" /> Add Blog
             </Button>
           </div>
@@ -545,6 +572,9 @@ const ListOfBlog = () => {
                                 onClick={() =>
                                   handleRemoveCategory(blog.id, category.id)
                                 }
+                                disabled={isSupervisor}
+                                tabIndex={isSupervisor ? -1 : 0}
+                                aria-disabled={isSupervisor}
                               >
                                 <i className="fas fa-times" />
                               </Button>
@@ -613,6 +643,9 @@ const ListOfBlog = () => {
                         variant="outline-primary"
                         size="sm"
                         onClick={() => openEditModal(blog)}
+                        disabled={isSupervisor}
+                        tabIndex={isSupervisor ? -1 : 0}
+                        aria-disabled={isSupervisor}
                       >
                         <i className="fas fa-edit" /> Edit
                       </Button>
@@ -622,6 +655,9 @@ const ListOfBlog = () => {
                         variant="outline-danger"
                         size="sm"
                         onClick={() => handleDeleteBlog(blog.id)}
+                        disabled={isSupervisor}
+                        tabIndex={isSupervisor ? -1 : 0}
+                        aria-disabled={isSupervisor}
                       >
                         <i className="fas fa-trash-alt" /> Delete
                       </Button>
@@ -767,7 +803,13 @@ const ListOfBlog = () => {
                 }
               />
             </Form.Group>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Add Category
             </Button>
           </Form>
@@ -789,6 +831,9 @@ const ListOfBlog = () => {
                   )
                 }
                 defaultValue=""
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               >
                 <option value="" disabled>
                   Select a blog
@@ -811,6 +856,9 @@ const ListOfBlog = () => {
                   )
                 }
                 defaultValue=""
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               >
                 <option value="" disabled>
                   Select a category
@@ -822,7 +870,13 @@ const ListOfBlog = () => {
                 ))}
               </Form.Select>
             </Form.Group>
-            <Button variant="primary" onClick={handleAssignCategory}>
+            <Button
+              variant="primary"
+              onClick={handleAssignCategory}
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Assign
             </Button>
           </Form>
@@ -932,6 +986,9 @@ const ListOfBlog = () => {
                               name: category.name,
                             })
                           }
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
                         />
                       </td>
                       <td>
@@ -953,6 +1010,9 @@ const ListOfBlog = () => {
                               description: category.description,
                             })
                           }
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
                         />
                       </td>
                       <td className="text-dark">{category.blog_count}</td>
@@ -961,6 +1021,9 @@ const ListOfBlog = () => {
                           variant="outline-danger"
                           size="sm"
                           onClick={() => handleDeleteCategory(category.id)}
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
                         >
                           <i className="fas fa-trash-alt" /> Delete
                         </Button>
@@ -1020,6 +1083,9 @@ const ListOfBlog = () => {
                   setNewBlog({ ...newBlog, title: e.target.value })
                 }
                 required
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -1029,13 +1095,13 @@ const ListOfBlog = () => {
                 value={newBlog.content}
                 onChange={(value) => setNewBlog({ ...newBlog, content: value })}
                 placeholder="Enter blog content"
-                style={{ height: "200px" }} // Atur tinggi editor
+                style={{ height: "200px" }}
+                readOnly={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label></Form.Label>
               <div className="d-flex flex-column align-items-start">
-                {/* Preview Gambar */}
                 {newBlog.photoPreview && (
                   <div className="mb-3">
                     <img
@@ -1061,22 +1127,31 @@ const ListOfBlog = () => {
                       setNewBlog({
                         ...newBlog,
                         photo: file,
-                        photoPreview: previewUrl, // Simpan URL untuk preview
+                        photoPreview: previewUrl,
                       });
                     } else {
                       setNewBlog({
                         ...newBlog,
                         photo: null,
-                        photoPreview: null, // Hapus preview jika tidak ada file
+                        photoPreview: null,
                       });
                     }
                   }}
                   accept="image/*"
                   required
+                  disabled={isSupervisor}
+                  tabIndex={isSupervisor ? -1 : 0}
+                  aria-disabled={isSupervisor}
                 />
               </div>
             </Form.Group>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Add Blog
             </Button>
           </Form>
@@ -1112,6 +1187,9 @@ const ListOfBlog = () => {
                   })
                 }
                 required
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -1123,7 +1201,8 @@ const ListOfBlog = () => {
                   setSelectedBlog({ ...selectedBlog, content: value })
                 }
                 placeholder="Enter blog content"
-                style={{ height: "200px" }} // Atur tinggi editor
+                style={{ height: "200px" }}
+                readOnly={isSupervisor}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -1186,9 +1265,18 @@ const ListOfBlog = () => {
                   }
                 }}
                 accept="image/*"
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               />
             </Form.Group>
-            <Button variant="primary" type="submit">
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={isSupervisor}
+              tabIndex={isSupervisor ? -1 : 0}
+              aria-disabled={isSupervisor}
+            >
               Save Changes
             </Button>
           </Form>

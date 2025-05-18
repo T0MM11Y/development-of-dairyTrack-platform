@@ -33,7 +33,12 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       icon: "far fa-users", // Ikon regular tanpa fill
       submenu: [
         { id: "list-users", title: "List of Users", link: "/admin/list-users" },
-        { id: "add-users", title: "Adding User", link: "/admin/add-users" },
+        {
+          id: "add-users",
+          title: "Adding User",
+          link: "/admin/add-users",
+          showForRoles: ["admin", "farmer"],
+        },
         {
           id: "reset-password",
           title: "Reset Password",
@@ -65,7 +70,12 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       icon: "far fa-paw", // Ikon regular tanpa fill
       submenu: [
         { id: "list-cows", title: "All Cows", link: "/admin/list-cows" },
-        { id: "add-cow", title: "Add Cow", link: "/admin/add-cow" },
+        {
+          id: "add-cow",
+          title: "Add Cow",
+          link: "/admin/add-cow",
+          showForRoles: ["admin", "farmer"],
+        },
       ],
       showForRoles: ["admin", "supervisor"], // Visible for farmers
     },
@@ -166,7 +176,11 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         },
         { id: "sales", title: "Sales", link: "/admin/sales" },
         { id: "finance", title: "Finance", link: "/admin/finance" },
-        { id: "finance-record", title: "Finance Record", link: "/admin/finance-record" },
+        {
+          id: "finance-record",
+          title: "Finance Record",
+          link: "/admin/finance-record",
+        },
       ],
       showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
     },
@@ -221,11 +235,18 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
                   </span>
                 </div>
                 <ul className="submenu">
-                  {item.submenu.map((subItem) => (
-                    <li key={subItem.id}>
-                      <Link to={subItem.link}>{subItem.title}</Link>
-                    </li>
-                  ))}
+                  {item.submenu
+                    .filter(
+                      (subItem) =>
+                        !subItem.showForRoles ||
+                        subItem.showForRoles.includes(userRole) ||
+                        userRole === "admin"
+                    )
+                    .map((subItem) => (
+                      <li key={subItem.id}>
+                        <Link to={subItem.link}>{subItem.title}</Link>
+                      </li>
+                    ))}
                 </ul>
               </>
             ) : (

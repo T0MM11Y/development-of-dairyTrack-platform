@@ -2,12 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { logout } from "../controllers/authController";
 import NotificationDropdown from "../components/Notification";
 import Swal from "sweetalert2";
-import { FaEye, FaEyeSlash, FaBars, FaTimes } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaBars,
+  FaTimes,
+  FaInfoCircle,
+} from "react-icons/fa";
 
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import { changeUserPassword } from "../controllers/usersController";
 import ProgressBar from "react-bootstrap/ProgressBar";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
 
 const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -36,11 +44,11 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
     }
   }, []);
 
-  // Update time every second
+  // Update time every minute instead of every second for better performance
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
@@ -214,6 +222,22 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
     }
   };
 
+  // Get role explanation text
+  const getRoleExplanation = () => {
+    if (!userData) return "";
+
+    switch (userData.role_id) {
+      case 1:
+        return "Full access to view, add, edit, and delete all data";
+      case 2:
+        return "Read-only access. Cannot add, edit or delete data";
+      case 3:
+        return "Can manage data related to assigned cows only";
+      default:
+        return "";
+    }
+  };
+
   // Style objects
   const styles = {
     header: {
@@ -224,6 +248,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       alignItems: "center",
       backgroundColor: "#fff",
       borderBottom: "1px solid #eaeaea",
+      flexWrap: "wrap",
     },
     sidebarToggle: {
       backgroundColor: "#2DAA9E",
@@ -239,41 +264,42 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       justifyContent: "center",
       width: "40px",
       height: "40px",
+      flexShrink: 0,
     },
     headerLeft: {
       display: "flex",
       alignItems: "center",
+      flexGrow: 1,
     },
     headerRight: {
       display: "flex",
       alignItems: "center",
     },
     title: {
-      fontSize: "1.3rem",
+      fontSize: "1.2rem",
       margin: 0,
       fontWeight: "600",
       color: "#333",
     },
     dateTime: {
-      fontFamily: "Roboto, monospace",
-      letterSpacing: "1px",
-      fontSize: "15px",
+      fontFamily: "Roboto, sans-serif",
+      fontSize: "14px",
       fontWeight: "400",
       color: "#8F87F1",
-      marginLeft: "20px",
     },
     userAvatar: {
-      width: "40px",
-      height: "40px",
+      width: "38px",
+      height: "38px",
       borderRadius: "50%",
       backgroundColor: "#FFAD60",
       color: "white",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontSize: "16px",
+      fontSize: "15px",
       fontWeight: "bold",
       marginLeft: "10px",
+      flexShrink: 0,
     },
     userDropdown: {
       position: "relative",
@@ -289,25 +315,25 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       top: "50px",
       right: "0",
       backgroundColor: "#fff",
-      borderRadius: "5px",
-      boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+      borderRadius: "8px",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
       minWidth: "180px",
       zIndex: 1000,
       overflow: "hidden",
     },
     dropdownItem: {
       display: "block",
-      padding: "10px 15px",
+      padding: "12px 15px",
       width: "100%",
       textAlign: "left",
       backgroundColor: "transparent",
       border: "none",
       fontFamily: "Roboto, sans-serif",
       fontSize: "14px",
-      letterSpacing: "0.8px",
+      letterSpacing: "0.4px",
       borderBottom: "1px solid #eee",
       color: "#333",
-      fontWeight: "400", // Ubah dari 500 ke 400 agar lebih kecil
+      fontWeight: "400",
       cursor: "pointer",
       transition: "background-color 0.2s",
     },
@@ -331,6 +357,21 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       marginTop: "5px",
       marginBottom: "15px",
     },
+    roleBadge: {
+      padding: "4px 8px",
+      borderRadius: "6px",
+      fontWeight: 700,
+      fontSize: "0.9em",
+      display: "inline-flex",
+      alignItems: "center",
+      marginRight: "10px",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    },
+    infoIcon: {
+      marginLeft: "5px",
+      fontSize: "14px",
+      cursor: "help",
+    },
   };
 
   return (
@@ -351,10 +392,41 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           {sidebarCollapsed ? <FaBars /> : <FaTimes />}
         </button>
 
-        <div>
-          <h1 style={styles.title}>
-            {userData ? `${userData.role} Dashboard` : "Dashboard"}
-          </h1>
+        <div className="header-content">
+          <div className="d-flex align-items-center flex-wrap">
+            {userData && (
+              <div
+                style={{
+                  ...styles.roleBadge,
+                  backgroundColor:
+                    userData.role_id === 1
+                      ? "#e3f2fd"
+                      : userData.role_id === 2
+                      ? "#fff3cd"
+                      : "#e8f5e9",
+                  color:
+                    userData.role_id === 1
+                      ? "#1976d2"
+                      : userData.role_id === 2
+                      ? "#b8860b"
+                      : "#388e3c",
+                }}
+              >
+                {userData.role}
+                <OverlayTrigger
+                  placement="bottom"
+                  overlay={
+                    <Tooltip id="role-tooltip">{getRoleExplanation()}</Tooltip>
+                  }
+                >
+                  <span style={styles.infoIcon}>
+                    <FaInfoCircle />
+                  </span>
+                </OverlayTrigger>
+              </div>
+            )}
+            <h1 style={styles.title}>Dashboard</h1>
+          </div>
           <div style={styles.dateTime}>
             {currentTime.toLocaleDateString("en-US", {
               weekday: "long",
@@ -377,13 +449,14 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
         </div>
 
         <div
+          className="user-profile"
           style={styles.userDropdown}
           ref={dropdownRef}
           onClick={toggleDropdown}
         >
           {userData ? (
             <>
-              <span>{userData.username}</span>
+              <span className="username-display">{userData.username}</span>
               <div style={styles.userAvatar}>
                 {userData.username
                   ? userData.username.substring(0, 2).toUpperCase()
@@ -582,6 +655,70 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           )}
         </div>
       </div>
+
+      {/* Improved responsive styles */}
+      <style>
+        {`
+        .header-content {
+          flex-grow: 1;
+          min-width: 0;
+        }
+        
+        .username-display {
+          margin-right: 10px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 150px;
+        }
+        
+        @media (max-width: 768px) {
+          .admin-header {
+            padding: 12px 15px;
+          }
+          
+          .header-content h1 {
+            font-size: 1.1rem;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          .admin-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+          }
+          
+          .admin-header > div {
+            width: 100%;
+          }
+          
+          .header-content {
+            margin-left: 0;
+            width: calc(100% - 55px);
+          }
+          
+          .notification-container {
+            margin-right: auto !important;
+            margin-left: 55px;
+          }
+          
+          .user-profile {
+            margin-left: auto;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .username-display {
+            max-width: 80px;
+          }
+          
+          .header-content h1 {
+            font-size: 1rem;
+          }
+        }
+        `}
+      </style>
     </header>
   );
 };

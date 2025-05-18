@@ -579,6 +579,7 @@ const Home = () => {
                           alt={product.product_name}
                           className="product-img"
                           style={{
+                            backgroundSize: "contain",
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",

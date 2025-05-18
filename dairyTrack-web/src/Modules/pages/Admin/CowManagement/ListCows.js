@@ -23,6 +23,20 @@ const lactationPhaseDescriptions = {
   Mid: "The cow is in the middle stage of lactation, with milk production gradually decreasing.",
   Late: "The cow is in the late stage of lactation, with milk production significantly reduced.",
 };
+// Ambil user dari localStorage
+const getCurrentUser = () => {
+  if (typeof localStorage !== "undefined") {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+};
 
 const calculateAge = (birthdate) => {
   if (!birthdate) return "N/A";
@@ -64,6 +78,9 @@ const Cows = () => {
   const [expandedCow] = useState(null);
   const [selectedGender, setSelectedGender] = useState("");
   const [selectedPhase, setSelectedPhase] = useState("");
+  // Cek role user
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const isSupervisor = currentUser?.role_id === 2;
 
   // Fetch cows data
   useEffect(() => {
@@ -555,12 +572,21 @@ const Cows = () => {
                   </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Add New Cow</Tooltip>}>
-                  <Link
-                    to="/admin/add-cow"
-                    className="btn btn-primary shadow-sm"
-                  >
-                    <i className="fas fa-plus me-1"></i> Add Cow
-                  </Link>
+                  <span>
+                    <Link
+                      to="/admin/add-cow"
+                      className={`btn btn-primary shadow-sm${
+                        isSupervisor ? " disabled" : ""
+                      }`}
+                      tabIndex={isSupervisor ? -1 : 0}
+                      aria-disabled={isSupervisor}
+                      onClick={(e) => {
+                        if (isSupervisor) e.preventDefault();
+                      }}
+                    >
+                      <i className="fas fa-plus me-1"></i> Add Cow
+                    </Link>
+                  </span>
                 </OverlayTrigger>
               </div>
             </div>
@@ -710,28 +736,38 @@ const Cows = () => {
                             <OverlayTrigger
                               overlay={<Tooltip>Edit Cow</Tooltip>}
                             >
-                              <button
-                                className="btn btn-sm btn-outline-secondary border-0 me-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditCow(cow.id);
-                                }}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
+                              <span>
+                                <button
+                                  className="btn btn-sm btn-outline-secondary border-0 me-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditCow(cow.id);
+                                  }}
+                                  disabled={isSupervisor}
+                                  tabIndex={isSupervisor ? -1 : 0}
+                                  aria-disabled={isSupervisor}
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </button>
+                              </span>
                             </OverlayTrigger>
                             <OverlayTrigger
                               overlay={<Tooltip>Delete Cow</Tooltip>}
                             >
-                              <button
-                                className="btn btn-sm btn-outline-secondary border-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCow(cow.id);
-                                }}
-                              >
-                                <i className="fas fa-trash-alt"></i>
-                              </button>
+                              <span>
+                                <button
+                                  className="btn btn-sm btn-outline-secondary border-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCow(cow.id);
+                                  }}
+                                  disabled={isSupervisor}
+                                  tabIndex={isSupervisor ? -1 : 0}
+                                  aria-disabled={isSupervisor}
+                                >
+                                  <i className="fas fa-trash-alt"></i>
+                                </button>
+                              </span>
                             </OverlayTrigger>
                           </div>
                         </td>
