@@ -12,10 +12,6 @@ import {
   Card,
   Table,
   Spinner,
-  Modal,
-  Row,
-  Col,
-  Form,
   InputGroup,
   FormControl,
   Badge,
@@ -330,9 +326,9 @@ const availableCows = Array.isArray(rawCows)
 
           {/* Pagination (optional) */}
           {Math.ceil(data.length / PAGE_SIZE) > 1 && (
-            <div className="d-flex justify-content-end">
+            <div className="d-flex justify-content-center align-items-center mt-3">
               <Button
-                variant="outline-secondary"
+                variant="outline-primary"
                 size="sm"
                 className="me-2"
                 disabled={currentPage === 1}
@@ -340,11 +336,11 @@ const availableCows = Array.isArray(rawCows)
               >
                 Prev
               </Button>
-              <span className="align-self-center">
-                Page {currentPage} of {Math.ceil(data.length / PAGE_SIZE)}
+              <span className="fw-semibold">
+                Halaman {currentPage} dari {Math.ceil(data.length / PAGE_SIZE)}
               </span>
               <Button
-                variant="outline-secondary"
+                variant="outline-primary"
                 size="sm"
                 className="ms-2"
                 disabled={currentPage === Math.ceil(data.length / PAGE_SIZE)}

@@ -172,7 +172,7 @@ try {
       .filter((cow) => cow.gender?.toLowerCase() === "female") // ✅ hanya betina
       .map((cow) => (
         <option key={cow.id} value={cow.id}>
-          {cow.name} ({cow.breed}) - {cow.lactation_phase || "Unknown"}
+          {cow.name} ({cow.breed})
         </option>
       ))}
 </select>
