@@ -61,7 +61,8 @@ import EditFeed from "./pages/Admin/FeedManagement/Feed/EditFeed";
 import ListStock from "./pages/Admin/FeedManagement/FeedStock/FeedStockList";
 import ListDailyFeedSchedule from "./pages/Admin/FeedManagement/DailyFeedSchedule/ListDailyFeedSchedule";
 import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDailyFeedItem";
-
+import DailyFeedUsage from "./pages/Admin/FeedManagement/Grafik/DailyFeedUsage"
+import DailyNutrition from "./pages/Admin/FeedManagement/Grafik/DailyNutrition"
 // sales and financial
 import ProductType from "./pages/Admin/ProductType/listProductType";
 import ProductStock from "./pages/Admin/Product/ListProductStock";
@@ -261,6 +262,17 @@ function App() {
                 <ListDailyFeedItem />
               </AdminLayout>
             </ProtectedRoute>
+            <ProtectedRoute path="/admin/daily-feed-usage">
+              <AdminLayout>
+                <DailyFeedUsage />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/daily-nutrition">
+              <AdminLayout>
+                <DailyNutrition />
+              </AdminLayout>
+            </ProtectedRoute>
+            
             {/* HealthCheck */}
             <ProtectedRoute path="/admin/list-health-checks">
               <AdminLayout>

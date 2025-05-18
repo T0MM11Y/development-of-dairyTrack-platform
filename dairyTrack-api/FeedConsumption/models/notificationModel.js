@@ -37,7 +37,6 @@ const Notification = sequelize.define(
     type: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      defaultValue: "FEED_STOCK",
     },
     is_read: {
       type: DataTypes.BOOLEAN,

@@ -154,6 +154,8 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       icon: "far fa-chart-line", // Using chart icon
       submenu: [
         { id: "milk-trend", title: "Milk Trend", link: "/admin/milk-trend" },
+        { id: "feed-trend", title: "Feed Usage", link: "/admin/daily-feed-usage" },
+        { id: "feed-trend", title: "Daily Nutrition", link: "/admin/daily-nutrition" },
       ],
       showForRoles: ["admin", "supervisor", "farmer"], // Only visible for admin, supervisor, and farmer
     },
