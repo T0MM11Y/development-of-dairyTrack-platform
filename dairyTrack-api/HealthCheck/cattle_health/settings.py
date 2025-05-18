@@ -102,16 +102,18 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Nama database MySQL
-        'USER': 'root',  # Username MySQL
-        'PASSWORD': '',  # Password MySQL (kosong)
-        'HOST': 'localhost',  # Host MySQL
-        'PORT': '3306',  # Port default MySQL
+        'NAME': 'dairytrack_stiffplate',  # Nama database di filess.io
+        'USER': 'dairytrack_stiffplate',  # Username dari filess.io
+        'PASSWORD': 'dcdd07f7b478dd1f479b4c44c4b131048a7c0ac3',  # Password dari filess.io
+        'HOST': 'xcq0v.h.filess.io',  # Host dari filess.io
+        'PORT': '3307',  # Port MySQL khusus dari filess.io
         'OPTIONS': {
-            'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
