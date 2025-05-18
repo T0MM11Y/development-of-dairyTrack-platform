@@ -48,7 +48,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000);
+    }, 1000);
 
     return () => clearInterval(timer);
   }, []);
@@ -427,7 +427,15 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
             )}
             <h1 style={styles.title}>Dashboard</h1>
           </div>
-          <div style={styles.dateTime}>
+          <div
+            style={{
+              ...styles.dateTime,
+              fontFamily: "Roboto Mono, monospace",
+              letterSpacing: "1.5px",
+              color: "#3A59D1",
+              fontWeight: "700",
+            }}
+          >
             {currentTime.toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -438,6 +446,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
             {currentTime.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
+              second: "2-digit", // Tambahkan opsi ini untuk menampilkan detik
             })}
           </div>
         </div>
