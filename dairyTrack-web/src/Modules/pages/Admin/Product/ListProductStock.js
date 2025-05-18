@@ -11,11 +11,11 @@ import {
   updateProductStock,
   deleteProductStock,
 } from "../../../controllers/productStockController";
+import usePermissions from "../Permission/usePermission";
 
 const ProductStock = () => {
   const [productStocks, setProductStocks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,7 +23,6 @@ const ProductStock = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProductStock, setSelectedProductStock] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [newProductStock, setNewProductStock] = useState({
     product_type: "",
     initial_quantity: "",
@@ -35,38 +34,24 @@ const ProductStock = () => {
   });
   const stocksPerPage = 8;
 
-  // Fetch user from localStorage
+  // Use the permissions hook
+  const {
+    currentUser,
+    isSupervisor,
+    disableIfSupervisor,
+    restrictSupervisorAction,
+    error: userError,
+  } = usePermissions();
+
+  // Set created_by for new product stock when currentUser is available
   useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData && userData.user_id) {
-        const userId = parseInt(userData.user_id);
-        if (isNaN(userId)) {
-          throw new Error("Invalid user ID in localStorage.");
-        }
-        setCurrentUser({ ...userData, user_id: userId });
-        setNewProductStock((prev) => ({
-          ...prev,
-          created_by: userId,
-        }));
-      } else {
-        setError("User not logged in. Please log in to continue.");
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "User not logged in. Please log in to continue.",
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-      setError("Failed to load user data. Please try again.");
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load user data. Please try again.",
-      });
+    if (currentUser?.user_id) {
+      setNewProductStock((prev) => ({
+        ...prev,
+        created_by: currentUser.user_id,
+      }));
     }
-  }, []);
+  }, [currentUser]);
 
   // Fetch product stocks
   useEffect(() => {
@@ -79,7 +64,10 @@ const ProductStock = () => {
             ...ps,
             created_by: {
               ...ps.created_by,
-              id: ps.created_by && ps.created_by.id ? parseInt(ps.created_by.id) : null,
+              id:
+                ps.created_by && ps.created_by.id
+                  ? parseInt(ps.created_by.id)
+                  : null,
             },
             updated_by: ps.updated_by
               ? {
@@ -90,14 +78,21 @@ const ProductStock = () => {
             total_milk_used: parseFloat(ps.total_milk_used) || 0,
           }));
           setProductStocks(normalizedProductStocks);
-          setError(null);
         } else {
-          setError(response.message);
           setProductStocks([]);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response.message || "Failed to fetch product stocks.",
+          });
         }
       } catch (err) {
-        setError("An unexpected error occurred while fetching product stocks.");
         console.error("Error fetching product stocks:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An unexpected error occurred while fetching product stocks.",
+        });
       } finally {
         setLoading(false);
       }
@@ -125,8 +120,8 @@ const ProductStock = () => {
   // Handle add product stock
   const handleAddProductStock = async (e) => {
     e.preventDefault();
+    if (restrictSupervisorAction("add", "add product stocks")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError("User not logged in or invalid user ID.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -137,7 +132,6 @@ const ProductStock = () => {
 
     const createdBy = parseInt(currentUser.user_id);
     if (isNaN(createdBy)) {
-      setError("Invalid user ID for created_by.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -147,7 +141,10 @@ const ProductStock = () => {
     }
 
     const formData = new FormData();
-    formData.append("product_type", parseInt(newProductStock.product_type) || "");
+    formData.append(
+      "product_type",
+      parseInt(newProductStock.product_type) || ""
+    );
     formData.append(
       "initial_quantity",
       parseInt(newProductStock.initial_quantity) || 0
@@ -179,9 +176,10 @@ const ProductStock = () => {
               ...ps,
               created_by: {
                 ...ps.created_by,
-                id: ps.created_by && ps.created_by.id
-                  ? parseInt(ps.created_by.id)
-                  : null,
+                id:
+                  ps.created_by && ps.created_by.id
+                    ? parseInt(ps.created_by.id)
+                    : null,
               },
               updated_by: ps.updated_by
                 ? {
@@ -204,7 +202,6 @@ const ProductStock = () => {
           created_by: currentUser.user_id,
         });
       } else {
-        setError(response.message || "Failed to add product stock.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -213,7 +210,6 @@ const ProductStock = () => {
       }
     } catch (error) {
       console.error("Error adding product stock:", error);
-      setError("An unexpected error occurred while adding the product stock.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -225,8 +221,8 @@ const ProductStock = () => {
   // Handle edit product stock
   const handleEditProductStock = async (e) => {
     e.preventDefault();
+    if (restrictSupervisorAction("edit", "edit product stocks")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError("User not logged in or invalid user ID.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -239,7 +235,6 @@ const ProductStock = () => {
     const updatedBy = parseInt(currentUser.user_id);
 
     if (!createdBy || isNaN(createdBy) || createdBy <= 0) {
-      setError("Invalid created_by value for product stock.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -248,7 +243,6 @@ const ProductStock = () => {
       return;
     }
     if (isNaN(updatedBy) || updatedBy <= 0) {
-      setError("Invalid user ID for updated_by.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -296,9 +290,10 @@ const ProductStock = () => {
               ...ps,
               created_by: {
                 ...ps.created_by,
-                id: ps.created_by && ps.created_by.id
-                  ? parseInt(ps.created_by.id)
-                  : null,
+                id:
+                  ps.created_by && ps.created_by.id
+                    ? parseInt(ps.created_by.id)
+                    : null,
               },
               updated_by: ps.updated_by
                 ? {
@@ -313,7 +308,6 @@ const ProductStock = () => {
         setShowEditModal(false);
         setSelectedProductStock(null);
       } else {
-        setError(response.message || "Failed to update product stock.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -322,7 +316,6 @@ const ProductStock = () => {
       }
     } catch (error) {
       console.error("Error editing product stock:", error);
-      setError("An unexpected error occurred while editing the product stock.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -333,12 +326,11 @@ const ProductStock = () => {
 
   // Handle delete product stock
   const handleDeleteProductStock = async (productStockId) => {
+    if (restrictSupervisorAction("delete", "delete product stocks")) return;
     const product = productStocks.find((ps) => ps.id === productStockId);
     const result = await Swal.fire({
       title: "Are you sure?",
-      text: `You are about to delete stock for "${
-        product?.product_type_detail?.product_name
-      }". This cannot be undone!`,
+      text: `You are about to delete stock for "${product?.product_type_detail?.product_name}". This cannot be undone!`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -354,7 +346,8 @@ const ProductStock = () => {
           Swal.fire({
             icon: "success",
             title: "Deleted!",
-            text: response.data.message || "Product stock deleted successfully.",
+            text:
+              response.data.message || "Product stock deleted successfully.",
             timer: 3000,
             showConfirmButton: false,
           });
@@ -365,9 +358,10 @@ const ProductStock = () => {
                 ...ps,
                 created_by: {
                   ...ps.created_by,
-                  id: ps.created_by && ps.created_by.id
-                    ? parseInt(ps.created_by.id)
-                    : null,
+                  id:
+                    ps.created_by && ps.created_by.id
+                      ? parseInt(ps.created_by.id)
+                      : null,
                 },
                 updated_by: ps.updated_by
                   ? {
@@ -380,7 +374,6 @@ const ProductStock = () => {
             );
           }
         } else {
-          setError(response.message || "Failed to delete product stock.");
           Swal.fire({
             icon: "error",
             title: "Error",
@@ -389,7 +382,6 @@ const ProductStock = () => {
         }
       } catch (error) {
         console.error("Error deleting product stock:", error);
-        setError("An unexpected error occurred while deleting the product stock.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -407,10 +399,10 @@ const ProductStock = () => {
     );
   }
 
-  if (error) {
+  if (userError) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger text-center">{error}</div>
+        <div className="alert alert-danger text-center">{userError}</div>
       </div>
     );
   }
@@ -419,18 +411,18 @@ const ProductStock = () => {
     <div className="container-fluid mt-4">
       <Card className="shadow-sm border-0 rounded">
         <Card.Header className="bg-gradient-primary text-grey py-3">
-                  <h4
-                    className="mb-0"
-                    style={{
-                      color: "#3D90D7",
-                      fontSize: "25px",
-                      fontFamily: "Roboto, Monospace",
-                      letterSpacing: "1.4px",
-                    }}
-                  >
-                    <i className="fas fa-boxes me-2" /> Product Stock Management
-                  </h4>
-                </Card.Header>
+          <h4
+            className="mb-0"
+            style={{
+              color: "#3D90D7",
+              fontSize: "25px",
+              fontFamily: "Roboto, Monospace",
+              letterSpacing: "1.4px",
+            }}
+          >
+            <i className="fas fa-boxes me-2" /> Product Stock Management
+          </h4>
+        </Card.Header>
         <Card.Body>
           <div className="d-flex justify-content-end mb-3">
             <Button
@@ -442,7 +434,9 @@ const ProductStock = () => {
                 letterSpacing: "0.5px",
                 fontWeight: "500",
                 fontSize: "0.9rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               <i className="fas fa-plus me-2" /> Add Product Stock
             </Button>
@@ -472,6 +466,8 @@ const ProductStock = () => {
               setShowEditModal(true);
             }}
             handleDeleteProductStock={handleDeleteProductStock}
+            isSupervisor={isSupervisor}
+            disableIfSupervisor={disableIfSupervisor}
           />
           <ProductStockModals
             showAddModal={showAddModal}

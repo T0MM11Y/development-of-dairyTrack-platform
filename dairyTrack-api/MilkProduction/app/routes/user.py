@@ -7,6 +7,8 @@ from fpdf import FPDF
 from flask import send_file
 from io import BytesIO
 import pandas as pd
+from werkzeug.security import check_password_hash
+
 
 user_bp = Blueprint('user', __name__)
 
@@ -364,3 +366,31 @@ def reset_password(user_id):
             "status": "error",
             "message": str(e)
         }), 500
+    
+@user_bp.route('/change-password/<int:user_id>', methods=['POST'])
+def change_password(user_id):
+    try:
+        data = request.get_json()
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+
+        if not old_password or not new_password:
+            return jsonify({"status": "error", "message": "Old and new password are required"}), 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"status": "error", "message": "User not found"}), 404
+
+        # Verifikasi password lama
+        if not check_password_hash(user.password, old_password):
+            return jsonify({"status": "error", "message": "Old password is incorrect"}), 400
+
+        # Update password baru
+        user.password = generate_password_hash(new_password)
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Password changed successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500

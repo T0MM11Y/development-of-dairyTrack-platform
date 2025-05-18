@@ -11,11 +11,11 @@ import {
   updateProductType,
   deleteProductType,
 } from "../../../controllers/productTypeController";
+import usePermissions from "../Permission/usePermission";
 
 const ProductTypes = () => {
   const [productTypes, setProductTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,7 +23,6 @@ const ProductTypes = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProductType, setSelectedProductType] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
   const [newProductType, setNewProductType] = useState({
     product_name: "",
     product_description: "",
@@ -34,38 +33,24 @@ const ProductTypes = () => {
   });
   const productsPerPage = 8;
 
-  // Fetch user from localStorage
+  // Use the permissions hook
+  const {
+    currentUser,
+    isSupervisor,
+    disableIfSupervisor,
+    restrictSupervisorAction,
+    error: userError,
+  } = usePermissions();
+
+  // Set created_by for new product type when currentUser is available
   useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData && userData.user_id) {
-        const userId = parseInt(userData.user_id);
-        if (isNaN(userId)) {
-          throw new Error("Invalid user ID in localStorage.");
-        }
-        setCurrentUser({ ...userData, user_id: userId });
-        setNewProductType((prev) => ({
-          ...prev,
-          created_by: userId,
-        }));
-      } else {
-        setError("User not logged in. Please log in to continue.");
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "User not logged in. Please log in to continue.",
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-      setError("Failed to load user data. Please try again.");
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load user data. Please try again.",
-      });
+    if (currentUser?.user_id) {
+      setNewProductType((prev) => ({
+        ...prev,
+        created_by: currentUser.user_id,
+      }));
     }
-  }, []);
+  }, [currentUser]);
 
   // Fetch product types
   useEffect(() => {
@@ -74,8 +59,6 @@ const ProductTypes = () => {
       try {
         const response = await getProductTypes();
         if (response.success) {
-          // Normalize created_by and updated_by from object to integer for form submission
-          // Keep the full object for display
           const normalizedProductTypes = response.productTypes.map((pt) => ({
             ...pt,
             created_by: {
@@ -91,17 +74,24 @@ const ProductTypes = () => {
                   id: pt.updated_by.id ? parseInt(pt.updated_by.id) : null,
                 }
               : null,
-            price: parseFloat(pt.price) || 0, // Ensure price is numeric
+            price: parseFloat(pt.price) || 0,
           }));
           setProductTypes(normalizedProductTypes);
-          setError(null);
         } else {
-          setError(response.message);
           setProductTypes([]);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response.message || "Failed to fetch product types.",
+          });
         }
       } catch (err) {
-        setError("An unexpected error occurred while fetching product types.");
         console.error("Error fetching product types:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An unexpected error occurred while fetching product types.",
+        });
       } finally {
         setLoading(false);
       }
@@ -112,19 +102,14 @@ const ProductTypes = () => {
   // Calculate statistics
   const productTypeStats = useMemo(() => {
     const totalProductTypes = productTypes.length;
-
-    return {
-      totalProductTypes,
-    };
+    return { totalProductTypes };
   }, [productTypes]);
 
   // Handle add product type
   const handleAddProductType = async (e) => {
     e.preventDefault();
+    if (restrictSupervisorAction("add", "add product types")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError(
-        "User not logged in or invalid user ID. Please log in to add a product type."
-      );
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -135,7 +120,6 @@ const ProductTypes = () => {
 
     const createdBy = parseInt(currentUser.user_id);
     if (isNaN(createdBy)) {
-      setError("Invalid user ID for created_by.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -197,7 +181,6 @@ const ProductTypes = () => {
           created_by: currentUser.user_id,
         });
       } else {
-        setError(response.message || "Failed to add product type.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -206,7 +189,6 @@ const ProductTypes = () => {
       }
     } catch (error) {
       console.error("Error adding product type:", error);
-      setError("An unexpected error occurred while adding the product type.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -218,10 +200,8 @@ const ProductTypes = () => {
   // Handle edit product type
   const handleEditProductType = async (e) => {
     e.preventDefault();
+    if (restrictSupervisorAction("edit", "edit product types")) return;
     if (!currentUser?.user_id || isNaN(currentUser.user_id)) {
-      setError(
-        "User not logged in or invalid user ID. Please log in to edit a product type."
-      );
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -234,7 +214,6 @@ const ProductTypes = () => {
     const updatedBy = parseInt(currentUser.user_id);
 
     if (!createdBy || isNaN(createdBy) || createdBy <= 0) {
-      setError("Invalid created_by value for product type.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -243,7 +222,6 @@ const ProductTypes = () => {
       return;
     }
     if (isNaN(updatedBy) || updatedBy <= 0) {
-      setError("Invalid user ID for updated_by.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -307,7 +285,6 @@ const ProductTypes = () => {
         setShowEditModal(false);
         setSelectedProductType(null);
       } else {
-        setError(response.message || "Failed to update product type.");
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -316,7 +293,6 @@ const ProductTypes = () => {
       }
     } catch (error) {
       console.error("Error editing product type:", error);
-      setError("An unexpected error occurred while editing the product type.");
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -327,6 +303,7 @@ const ProductTypes = () => {
 
   // Handle delete product type
   const handleDeleteProductType = async (productTypeId) => {
+    if (restrictSupervisorAction("delete", "delete product types")) return;
     const product = productTypes.find((pt) => pt.id === productTypeId);
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -373,7 +350,6 @@ const ProductTypes = () => {
             );
           }
         } else {
-          setError(response.message || "Failed to delete product type.");
           Swal.fire({
             icon: "error",
             title: "Error",
@@ -382,9 +358,6 @@ const ProductTypes = () => {
         }
       } catch (error) {
         console.error("Error deleting product type:", error);
-        setError(
-          "An unexpected error occurred while deleting the product type."
-        );
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -405,10 +378,10 @@ const ProductTypes = () => {
     );
   }
 
-  if (error) {
+  if (userError) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger text-center">{error}</div>
+        <div className="alert alert-danger text-center">{userError}</div>
       </div>
     );
   }
@@ -441,7 +414,9 @@ const ProductTypes = () => {
                 letterSpacing: "1.3px",
                 fontWeight: "600",
                 fontSize: "0.8rem",
+                ...disableIfSupervisor.style,
               }}
+              {...disableIfSupervisor}
             >
               <i className="fas fa-plus me-2" /> Add Product Type
             </Button>
@@ -471,6 +446,7 @@ const ProductTypes = () => {
               setShowEditModal(true);
             }}
             handleDeleteProductType={handleDeleteProductType}
+            isSupervisor={isSupervisor}
           />
           <ProductTypeModals
             showAddModal={showAddModal}
@@ -485,6 +461,7 @@ const ProductTypes = () => {
             setSelectedProductType={setSelectedProductType}
             handleAddProductType={handleAddProductType}
             handleEditProductType={handleEditProductType}
+            isSupervisor={isSupervisor}
           />
         </Card.Body>
       </Card>

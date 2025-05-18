@@ -362,7 +362,7 @@ const ListMilking = () => {
     userManagedCows,
   ]);
 
-  // ...existing code...
+  const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]);
 
   // Handle adding a new milking session
   const handleAddSession = async (e) => {
@@ -602,6 +602,9 @@ const ListMilking = () => {
                   fontWeight: "600",
                   fontSize: "0.8rem",
                 }}
+                disabled={isSupervisor}
+                tabIndex={isSupervisor ? -1 : 0}
+                aria-disabled={isSupervisor}
               >
                 <i className="fas fa-plus me-2" /> Add Milking Session
               </Button>
@@ -960,22 +963,26 @@ const ListMilking = () => {
                             placement="top"
                             overlay={<Tooltip>Edit Session</Tooltip>}
                           >
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="d-flex align-items-center justify-content-center shadow-sm"
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "8px",
-                                transition: "all 0.2s",
-                              }}
-                              onClick={() => openEditModal(session)}
-                            >
-                              <i className="fas fa-edit" />
-                            </Button>
+                            <span>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="d-flex align-items-center justify-content-center shadow-sm"
+                                style={{
+                                  width: "36px",
+                                  height: "36px",
+                                  borderRadius: "8px",
+                                  transition: "all 0.2s",
+                                }}
+                                onClick={() => openEditModal(session)}
+                                disabled={isSupervisor}
+                                tabIndex={isSupervisor ? -1 : 0}
+                                aria-disabled={isSupervisor}
+                              >
+                                <i className="fas fa-edit" />
+                              </Button>
+                            </span>
                           </OverlayTrigger>
-
                           <OverlayTrigger
                             placement="top"
                             overlay={<Tooltip>View Details</Tooltip>}
@@ -995,25 +1002,29 @@ const ListMilking = () => {
                               <i className="fas fa-eye" />
                             </Button>
                           </OverlayTrigger>
-
                           <OverlayTrigger
                             placement="top"
                             overlay={<Tooltip>Delete Session</Tooltip>}
                           >
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              className="d-flex align-items-center justify-content-center shadow-sm"
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "8px",
-                                transition: "all 0.2s",
-                              }}
-                              onClick={() => handleDeleteSession(session.id)}
-                            >
-                              <i className="fas fa-trash-alt" />
-                            </Button>
+                            <span>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                className="d-flex align-items-center justify-content-center shadow-sm"
+                                style={{
+                                  width: "36px",
+                                  height: "36px",
+                                  borderRadius: "8px",
+                                  transition: "all 0.2s",
+                                }}
+                                onClick={() => handleDeleteSession(session.id)}
+                                disabled={isSupervisor}
+                                tabIndex={isSupervisor ? -1 : 0}
+                                aria-disabled={isSupervisor}
+                              >
+                                <i className="fas fa-trash-alt" />
+                              </Button>
+                            </span>
                           </OverlayTrigger>
                         </div>
                       </td>

@@ -44,8 +44,9 @@ const SymptomListPage = () => {
   const [modalType, setModalType] = useState(null); // "create" | "edit" | null
   const [editId, setEditId] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
-  const isSupervisor = user?.type === "supervisor";
   const [currentUser, setCurrentUser] = useState(null);
+  const isSupervisor =
+  currentUser?.role_id === 2;
   const [userManagedCows, setUserManagedCows] = useState([]);
 useEffect(() => {
   const userData = JSON.parse(localStorage.getItem("user"));
@@ -66,13 +67,13 @@ useEffect(() => {
 }, []);
 
   
-  const disableIfSupervisor = isSupervisor
-    ? {
-        disabled: true,
-        title: "Supervisor tidak dapat mengedit data",
-        style: { opacity: 0.5, cursor: "not-allowed" },
-      }
-    : {};
+    const disableIfSupervisor = isSupervisor
+  ? {
+      disabled: true,
+      title: "Supervisor tidak dapat mengedit data",
+      style: { opacity: 0.5, cursor: "not-allowed" },
+    }
+  : {};
 
 const fetchData = async () => {
   try {
@@ -84,6 +85,8 @@ const fetchData = async () => {
     ]);
 
     const isAdmin = currentUser?.role_id === 1;
+    const isSupervisor = currentUser.role_id === 2;
+
     const allCows = Array.isArray(cowsData) ? cowsData : cowsData.cows || [];
 
     setHealthChecks(hcs);
@@ -92,7 +95,7 @@ const fetchData = async () => {
 
     let visibleSymptoms = fetchedSymptoms;
 
-    if (!isAdmin && userManagedCows.length > 0) {
+    if (!isAdmin && !isSupervisor  && userManagedCows.length > 0) {
       const allowedCowIds = userManagedCows.map((cow) => cow.id);
 
       visibleSymptoms = fetchedSymptoms.filter((symptom) => {
@@ -126,11 +129,15 @@ const fetchData = async () => {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
-  const getCowName = (hcId) => {
-    const hc = healthChecks.find((h) => h.id === hcId);
-    const cow = cows.find((c) => c.id === hc?.cow);
-    return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
-  };
+ const getCowName = (hcId) => {
+  const hc = healthChecks.find((h) => h.id === hcId);
+  if (!hc) return "Tidak ditemukan";
+
+  const cowId = typeof hc.cow === "object" ? hc.cow.id : hc.cow;
+  const cow = cows.find((c) => c.id === cowId);
+  return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
+};
+
 
   const handleDelete = async (id) => {
     if (!id) return;
@@ -301,14 +308,16 @@ const fetchData = async () => {
 useEffect(() => {
   if (!currentUser) return;
 
-const isAdmin = currentUser?.username === "admin001"; // bisa diganti sesuai username admin kamu
+  const isAdmin = currentUser.role_id === 1;
+  const isSupervisor = currentUser.role_id === 2;
 
-  if (isAdmin) {
-    fetchData(); // Admin langsung fetch
+  if (isAdmin || isSupervisor) {
+    fetchData(); // Admin dan Supervisor langsung fetch
   } else if (userManagedCows.length > 0) {
-    fetchData(); // Non-admin tunggu sapi user tersedia
+    fetchData(); // Peternak tunggu sapi tersedia
   }
 }, [userManagedCows, currentUser]);
+
 const rawCows = currentUser?.role_id === 1 ? cows : userManagedCows;
 
 const filteredHealthChecks = useMemo(() => {

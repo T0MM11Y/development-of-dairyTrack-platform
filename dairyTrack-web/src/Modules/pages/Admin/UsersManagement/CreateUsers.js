@@ -30,33 +30,65 @@ const CreateUser = () => {
     setShowPassword(!showPassword);
   };
 
+  // ...existing code...
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Validasi panjang password
-    if (formData.password.length < 8) {
-      Swal.fire(
-        "Validation Error",
-        "Password must be at least 8 characters long",
-        "warning"
-      );
-      setLoading(false);
-      return;
+    // Form validation
+    let isValid = true;
+    let errorMessage = "";
+
+    // Validate username (alphanumeric with limited special characters)
+    const usernameRegex = /^[a-zA-Z0-9._-]{3,20}$/;
+    if (!usernameRegex.test(formData.username)) {
+      errorMessage =
+        "Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, and hyphens";
+      isValid = false;
     }
 
-    // Validasi rentang waktu Birthdate
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      errorMessage = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    // Contact number validation
+    const phoneRegex =
+      /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/;
+    if (!phoneRegex.test(formData.contact)) {
+      errorMessage = "Please enter a valid phone number";
+      isValid = false;
+    }
+
+    // Birthdate validation - enhanced
     const birthDate = new Date(formData.birth);
     const today = new Date();
     const hundredYearsAgo = new Date();
-    hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+    const fifteenYearsAgo = new Date();
 
-    if (birthDate > today || birthDate < hundredYearsAgo) {
-      Swal.fire(
-        "Validation Error",
-        "Birthdate must be within the last 100 years and not in the future.",
-        "warning"
-      );
+    hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+    fifteenYearsAgo.setFullYear(today.getFullYear() - 15);
+
+    // Set times to midnight to compare dates only
+    today.setHours(0, 0, 0, 0);
+    birthDate.setHours(0, 0, 0, 0);
+
+    if (birthDate >= today) {
+      errorMessage = "Birthdate cannot be today or in the future";
+      isValid = false;
+    } else if (birthDate > fifteenYearsAgo) {
+      errorMessage = "User must be at least 15 years old";
+      isValid = false;
+    } else if (birthDate < hundredYearsAgo) {
+      errorMessage = "Birthdate cannot be more than 100 years ago";
+      isValid = false;
+    }
+
+    if (!isValid) {
+      Swal.fire("Validation Error", errorMessage, "warning");
       setLoading(false);
       return;
     }

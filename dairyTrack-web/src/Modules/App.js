@@ -69,6 +69,7 @@ import ProductStock from "./pages/Admin/Product/ListProductStock";
 import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
 import SalesOrder from "./pages/Admin/Order/ListOrder";
 import Finance from "./pages/Admin/Finance/Finance";
+import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -110,6 +111,7 @@ function App() {
             <Route path="/" exact>
               <Header />
               <Home />
+              <Footer />
             </Route>
             <Route path="/about">
               <Header />
@@ -369,6 +371,11 @@ function App() {
             <ProtectedRoute path="/admin/finance">
               <AdminLayout>
                 <Finance />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/finance-record">
+              <AdminLayout>
+                <FinanceRecord />
               </AdminLayout>
             </ProtectedRoute>
           </Switch>

@@ -45,6 +45,21 @@ const CattleDistribution = () => {
   const [selectedCowId, setSelectedCowId] = useState(null);
   const [showUnassignedModal, setShowUnassignedModal] = useState(false);
   const [unassignedCattle, setUnassignedCattle] = useState([]);
+  // Tambahkan: Ambil user dari localStorage
+  const getCurrentUser = () => {
+    if (typeof localStorage !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          return JSON.parse(storedUser);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  };
+
   const [dashboardStats, setDashboardStats] = useState({
     totalFarmers: 0,
     totalCows: 0,
@@ -75,6 +90,9 @@ const CattleDistribution = () => {
     setShowUnassignedModal(true);
   };
   const totalPages = Math.ceil(usersWithCows.length / itemsPerPage);
+  // Tambahkan: Ambil user yang sedang login
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const isSupervisor = currentUser?.role_id === 2;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -526,6 +544,9 @@ const CattleDistribution = () => {
                     letterSpacing: "1.0px",
                     fontWeight: "500",
                   }}
+                  disabled={isSupervisor}
+                  tabIndex={isSupervisor ? -1 : 0}
+                  aria-disabled={isSupervisor}
                 >
                   <i className="fas fa-plus me-2"></i>
                   Assign Cow
@@ -595,28 +616,33 @@ const CattleDistribution = () => {
                                     <OverlayTrigger
                                       overlay={<Tooltip>Unassign Cow</Tooltip>}
                                     >
-                                      <Button
-                                        variant="danger"
-                                        size="sm"
-                                        className="p-0 d-flex align-items-center justify-content-center"
-                                        style={{
-                                          width: "20px", // Mengurangi ukuran tombol
-                                          height: "20px", // Mengurangi ukuran tombol
-                                          borderRadius: "50%",
-                                        }}
-                                        onClick={() =>
-                                          handleUnassignCow(
-                                            farmer.user.id,
-                                            cow.id
-                                          )
-                                        }
-                                      >
-                                        <i
-                                          className="fas fa-times"
-                                          style={{ fontSize: "10px" }}
-                                        ></i>{" "}
-                                        {/* Mengurangi ukuran ikon */}
-                                      </Button>
+                                      <span>
+                                        <Button
+                                          variant="danger"
+                                          size="sm"
+                                          className="p-0 d-flex align-items-center justify-content-center"
+                                          style={{
+                                            width: "20px",
+                                            height: "20px",
+                                            borderRadius: "50%",
+                                          }}
+                                          onClick={() =>
+                                            !isSupervisor &&
+                                            handleUnassignCow(
+                                              farmer.user.id,
+                                              cow.id
+                                            )
+                                          }
+                                          disabled={isSupervisor}
+                                          tabIndex={isSupervisor ? -1 : 0}
+                                          aria-disabled={isSupervisor}
+                                        >
+                                          <i
+                                            className="fas fa-times"
+                                            style={{ fontSize: "10px" }}
+                                          ></i>
+                                        </Button>
+                                      </span>
                                     </OverlayTrigger>
                                   </Badge>
                                 ))}

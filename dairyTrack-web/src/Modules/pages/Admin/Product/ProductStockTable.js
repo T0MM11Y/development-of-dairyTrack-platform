@@ -11,6 +11,8 @@ const ProductStockTable = ({
   openViewModal,
   openEditModal,
   handleDeleteProductStock,
+  isSupervisor,
+  disableIfSupervisor,
 }) => {
   // Filter, sort, and paginate product stocks
   const filteredAndPaginatedProductStocks = useMemo(() => {
@@ -239,7 +241,13 @@ const ProductStockTable = ({
                       </OverlayTrigger>
                       <OverlayTrigger
                         placement="top"
-                        overlay={<Tooltip>Edit Stock</Tooltip>}
+                        overlay={
+                          <Tooltip>
+                            {isSupervisor
+                              ? "Supervisor cannot edit product stocks"
+                              : "Edit Stock"}
+                          </Tooltip>
+                        }
                       >
                         <Button
                           variant="outline-primary"
@@ -250,15 +258,26 @@ const ProductStockTable = ({
                             height: "36px",
                             borderRadius: "8px",
                             transition: "all 0.2s",
+                            ...disableIfSupervisor.style,
                           }}
-                          onClick={() => openEditModal(ps)}
+                          onClick={() => {
+                            if (isSupervisor) return;
+                            openEditModal(ps);
+                          }}
+                          {...disableIfSupervisor}
                         >
                           <i className="fas fa-edit" />
                         </Button>
                       </OverlayTrigger>
                       <OverlayTrigger
                         placement="top"
-                        overlay={<Tooltip>Delete Stock</Tooltip>}
+                        overlay={
+                          <Tooltip>
+                            {isSupervisor
+                              ? "Supervisor cannot delete product stocks"
+                              : "Delete Stock"}
+                          </Tooltip>
+                        }
                       >
                         <Button
                           variant="outline-danger"
@@ -269,8 +288,13 @@ const ProductStockTable = ({
                             height: "36px",
                             borderRadius: "8px",
                             transition: "all 0.2s",
+                            ...disableIfSupervisor.style,
                           }}
-                          onClick={() => handleDeleteProductStock(ps.id)}
+                          onClick={() => {
+                            if (isSupervisor) return;
+                            handleDeleteProductStock(ps.id);
+                          }}
+                          {...disableIfSupervisor}
                         >
                           <i className="fas fa-trash-alt" />
                         </Button>

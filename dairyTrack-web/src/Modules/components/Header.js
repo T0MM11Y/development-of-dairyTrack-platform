@@ -2,22 +2,35 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { login } from "../controllers/authController";
 import { useHistory } from "react-router-dom";
-import Swal from "sweetalert2";
 import logo from "../../assets/logo.png";
 
 const Header = () => {
   const [showModal, setShowModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [loading, setLoading] = useState(false);
   const history = useHistory();
   const location = useLocation();
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime] = useState(0);
 
   // Check if current page is blog
   const isBlogPage =
     location.pathname === "/blog" || location.pathname.startsWith("/blog/");
+
+  // Function to check if a path is active
+  const isActive = (path) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return (
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+  };
 
   // Add scroll event listener
   useEffect(() => {
@@ -35,31 +48,125 @@ const Header = () => {
     };
   }, []);
 
-  const toggleModal = () => {
-    // User is not logged in, show the login modal
-    setShowModal(!showModal);
-    setErrorMessage(""); // Clear error message when modal is toggled
+  // Load lockout state on component mount
+  useEffect(() => {
+    const savedLockoutEndTime = localStorage.getItem("loginLockoutEndTime");
+    if (savedLockoutEndTime) {
+      const remainingTime = Math.floor(
+        (parseInt(savedLockoutEndTime) - Date.now()) / 1000
+      );
+      if (remainingTime > 0) {
+        setLockoutTime(remainingTime);
+      } else {
+        localStorage.removeItem("loginLockoutEndTime");
+      }
+    }
+  }, []);
+
+  // Timer for lockout
+  useEffect(() => {
+    if (lockoutTime > 0) {
+      const timer = setInterval(() => {
+        setLockoutTime((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [lockoutTime]);
+
+  // Save lockout state whenever it changes
+  useEffect(() => {
+    if (lockoutTime > 0) {
+      const lockoutEndTime = Date.now() + lockoutTime * 1000;
+      localStorage.setItem("loginLockoutEndTime", lockoutEndTime.toString());
+    } else {
+      localStorage.removeItem("loginLockoutEndTime");
+    }
+  }, [lockoutTime]);
+
+  // Add body class when modal is open to prevent scrolling
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("modal-open");
+    } else {
+      document.body.classList.remove("modal-open");
+    }
+  }, [showModal]);
+
+  const resetForm = () => {
+    setUsername("");
+    setPassword("");
+    setErrorMessage("");
+    setSuccessMessage("");
+    setShowPassword(false);
   };
 
-  const handleLogin = async () => {
-    const result = await login(username, password);
-    if (result.success) {
-      // Get the user's role from the login result
-      const userRole = result.data?.role || "user";
+  const toggleModal = () => {
+    setShowModal(!showModal);
+    if (showModal) {
+      // If we're closing the modal
+      resetForm();
+    }
+  };
 
-      Swal.fire({
-        icon: "success",
-        title: "Login Successful",
-        text: `Welcome to the ${userRole} page!`,
-      });
-      toggleModal(); // Close modal on successful login
-      history.push("/admin"); // Redirect to admin page
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Login Failed",
-        text: result.message || "Login failed. Please try again.",
-      });
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    // Clear previous messages
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    // Basic validation
+    if (username.trim().length < 3) {
+      setErrorMessage("Username must be at least 3 characters");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters");
+      return;
+    }
+
+    if (lockoutTime > 0) {
+      setErrorMessage(
+        `Please wait ${lockoutTime} seconds before trying again.`
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await login(username, password);
+
+      if (result.success) {
+        setErrorMessage("");
+        setSuccessMessage("Login Successful! Redirecting...");
+        setTimeout(() => {
+          setSuccessMessage("");
+          resetForm();
+          toggleModal();
+          history.push("/admin");
+        }, 3000);
+        setLoginAttempts(0);
+      } else {
+        setSuccessMessage("");
+        setErrorMessage(result.message || "Login failed. Please try again.");
+
+        // Use functional update to ensure we have the latest value
+        setLoginAttempts((prevAttempts) => {
+          const newAttempts = prevAttempts + 1;
+          if (newAttempts >= 3) {
+            setLockoutTime(30);
+            return 0; // Reset attempts after lockout
+          }
+          return newAttempts;
+        });
+      }
+    } catch (error) {
+      setErrorMessage("An error occurred. Please try again later.");
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -121,13 +228,13 @@ const Header = () => {
               <ul className="navbar-nav ms-auto">
                 <li className="nav-item">
                   <Link
-                    className={`nav-link ${
+                    className={`nav-link ${isActive("/") ? "active" : ""} ${
                       isBlogPage && !scrolled ? "text-light" : ""
                     }`}
                     to="/"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontFamily: "Roboto, sans-serif",
@@ -141,12 +248,12 @@ const Header = () => {
                 <li className="nav-item">
                   <Link
                     className={`nav-link ${
-                      isBlogPage && !scrolled ? "text-light" : ""
-                    }`}
+                      isActive("/about") ? "active" : ""
+                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
                     to="/about"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontFamily: "Roboto, sans-serif",
@@ -159,13 +266,13 @@ const Header = () => {
                 </li>
                 <li className="nav-item">
                   <Link
-                    className={`nav-link ${
-                      location.pathname === "/blog" ? "active" : ""
-                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
+                    className={`nav-link ${isActive("/blog") ? "active" : ""} ${
+                      isBlogPage && !scrolled ? "text-light" : ""
+                    }`}
                     to="/blog"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontFamily: "Roboto, sans-serif",
@@ -179,12 +286,12 @@ const Header = () => {
                 <li className="nav-item">
                   <Link
                     className={`nav-link ${
-                      isBlogPage && !scrolled ? "text-light" : ""
-                    }`}
+                      isActive("/product") ? "active" : ""
+                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
                     to="/product"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontFamily: "Roboto, sans-serif",
@@ -198,12 +305,12 @@ const Header = () => {
                 <li className="nav-item">
                   <Link
                     className={`nav-link ${
-                      isBlogPage && !scrolled ? "text-light" : ""
-                    }`}
+                      isActive("/gallery") ? "active" : ""
+                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
                     to="/gallery"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontFamily: "Roboto, sans-serif",
@@ -217,12 +324,12 @@ const Header = () => {
                 <li className="nav-item">
                   <Link
                     className={`nav-link ${
-                      isBlogPage && !scrolled ? "text-light" : ""
-                    }`}
+                      isActive("/order") ? "active" : ""
+                    } ${isBlogPage && !scrolled ? "text-light" : ""}`}
                     to="/order"
                   >
                     <div
-                      className="nav-link-icon "
+                      className="nav-link-icon"
                       style={{
                         letterSpacing: "0.1rem",
                         fontSize: "0.9rem",
@@ -235,7 +342,7 @@ const Header = () => {
                 </li>
               </ul>
 
-              {/* Login Button - Updated to always use btn-primary styling */}
+              {/* Login Button */}
               <button
                 className="btn btn-primary ms-lg-3"
                 onClick={toggleModal}
@@ -255,8 +362,11 @@ const Header = () => {
       </header>
       {/* Login Modal */}
       {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-blur-backdrop" onClick={toggleModal}>
+          <div
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-content material-modal shadow-lg border-0">
               <div className="modal-header bg-dark border-0 pb-1">
                 <h5 className="modal-title fw-bold">Sign In</h5>
@@ -268,12 +378,7 @@ const Header = () => {
                 ></button>
               </div>
               <div className="modal-body px-4 py-4">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleLogin();
-                  }}
-                >
+                <form onSubmit={handleLogin}>
                   <div className="mb-4">
                     <div className="input-group">
                       <span className="input-group-text bg-light border-end-0">
@@ -317,30 +422,48 @@ const Header = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="rememberMe"
-                      />
-                      <label
-                        className="form-check-label small"
-                        htmlFor="rememberMe"
+
+                  {/* Loading Indicator */}
+                  {loading && (
+                    <div className="text-center mb-3">
+                      <div
+                        className="spinner-border text-primary"
+                        role="status"
                       >
-                        Remember me
-                      </label>
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Success Message */}
+                  {successMessage && (
+                    <div
+                      className="alert alert-success py-2 small"
+                      role="alert"
+                    >
+                      <i className="far fa-check-circle me-2"></i>
+                      {successMessage}
+                    </div>
+                  )}
+
+                  {/* Error Message */}
                   {errorMessage && (
                     <div className="alert alert-danger py-2 small" role="alert">
                       <i className="far fa-exclamation-triangle me-2"></i>
                       {errorMessage}
                     </div>
                   )}
-                  <button type="submit" className="btn btn-primary w-100 py-2">
-                    <i className="fa fa-sign-in-alt me-2"></i>
-                    Sign In
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100 py-2 text-white"
+                    disabled={loading || lockoutTime > 0} // Disable button while loading or locked out
+                  >
+                    {loading
+                      ? "Logging in..."
+                      : lockoutTime > 0
+                      ? `Locked (${lockoutTime}s)`
+                      : "Sign In"}
                   </button>
                 </form>
               </div>
@@ -348,6 +471,80 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        /* Blur backdrop styles */
+        .modal-blur-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1050;
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+          animation: modalSlideIn 0.3s ease-out;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .modal-header {
+          border-radius: 12px 12px 0 0;
+        }
+
+        .modal-open {
+          overflow: hidden;
+        }
+
+        /* Style for active nav links */
+        .nav-link.active {
+          font-weight: bold;
+          position: relative;
+          color: #e9a319; /* Change to your desired active link color */
+        }
+
+        .nav-link.active:after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          transform: scaleX(1);
+          color: #e9a319; /* Change to your desired active link color */
+          width: 100%;
+          height: 2px;
+          background-color: currentColor;
+        }
+      `}</style>
     </>
   );
 };

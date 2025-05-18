@@ -12,6 +12,8 @@ import {
   Modal,
   Pagination,
 } from "react-bootstrap";
+import { motion } from "framer-motion";
+
 import { format } from "date-fns";
 import { Link } from "react-router-dom"; // Import Link
 import { getProductStocks } from "../../Modules/controllers/productStockController";
@@ -26,9 +28,24 @@ const Product = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProductType, setSelectedProductType] = useState(null);
   const productsPerPage = 6;
+  const heroColors = {
+    primary: "#E9A319",
+    secondary: "#3D8D7A",
+    accent: "#F15A29",
+  };
 
-  const primaryColor = "#E9A319";
-  const greyColor = "#6c757d";
+  const fadeIn = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
+    },
+  };
+  const primaryColor = "#3D8D7A";
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -172,37 +189,85 @@ const Product = () => {
 
   return (
     <Container fluid className="p-0">
+      {/* Hero Section ala About.js */}
       <div
-        className="text-white py-5"
+        className="product-hero-section text-white position-relative"
         style={{
-          background: greyColor,
-          padding: "60px 0",
+          background: `linear-gradient(to right, rgba(61, 141, 122, 0.93), rgba(61, 141, 122, 0.7)), url(${require("../../assets/about.png")}) no-repeat center center`,
+          backgroundSize: "cover",
+          minHeight: "40vh",
+          display: "flex",
+          alignItems: "center",
+          borderBottom: `5px solid ${heroColors.primary}`,
         }}
       >
         <Container>
           <Row className="align-items-center">
             <Col md={8} className="text-md-start text-center">
-              <h1
-                className="display-4 fw-bold mb-2"
-                style={{
-                  fontFamily: "Roboto, monospace",
-                  letterSpacing: "1.5px",
-                  fontSize: "40px",
-                  fontWeight: "600",
-                }}
-              >
-                Our Products
-              </h1>
-              <p className="lead mb-4">
-                <i className="fas fa-cheese me-2"></i>
-                Discover a variety of high-quality dairy products, crafted with
-                love and dedication for your satisfaction.
-              </p>
+              <motion.div initial="hidden" animate="visible" variants={fadeIn}>
+                <h1
+                  className="display-4 fw-bold mb-3"
+                  style={{
+                    fontFamily: "Roboto, sans-serif",
+                    letterSpacing: "2px",
+                    fontSize: "45px",
+                    fontWeight: "700",
+                    textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  Produk Kami
+                </h1>
+                <div
+                  className="title-bar mb-4"
+                  style={{
+                    width: "80px",
+                    height: "4px",
+                    background: heroColors.primary,
+                  }}
+                ></div>
+                <p
+                  className="lead mb-4"
+                  style={{ fontSize: "18px", maxWidth: "600px" }}
+                >
+                  <i className="fas fa-cheese me-2"></i>
+                  Temukan berbagai produk olahan susu dan pangan sehat
+                  berkualitas dari Dairy~Track. Semua produk kami diproses
+                  dengan standar tinggi untuk kesehatan dan kepuasan Anda.
+                </p>
+              </motion.div>
             </Col>
             <Col md={4} className="d-none d-md-block">
-              <div className="text-end">
-                <i className="fas fa-shopping-cart fa-5x"></i>
-              </div>
+              <motion.div
+                className="text-end"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0, x: 50 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.9, ease: "easeOut" },
+                  },
+                }}
+              >
+                <div
+                  className="icon-circle"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    color: "#fff",
+                    width: "180px",
+                    height: "180px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(5px)",
+                    margin: "0 auto",
+                  }}
+                >
+                  <i className="fas fa-shopping-cart fa-4x"></i>
+                </div>
+              </motion.div>
             </Col>
           </Row>
         </Container>
