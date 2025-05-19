@@ -365,7 +365,6 @@ def reset_password(user_id):
         return jsonify({
             "status": "error",
             "message": str(e)
-<<<<<<< Updated upstream
         }), 500
     
 @user_bp.route('/change-password/<int:user_id>', methods=['POST'])
@@ -395,6 +394,3 @@ def change_password(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
-=======
-        }), 500
->>>>>>> Stashed changes
