@@ -17,8 +17,13 @@ import {
   OverlayTrigger,
   Tooltip,
   Badge,
+  Card,
+  Spinner,
+  InputGroup,
+  FormControl,
 } from "react-bootstrap";
 import { listCowsByUser } from "../../../../../Modules/controllers/cattleDistributionController";
+
 
 const DiseaseHistoryListPage = () => {
   const [data, setData] = useState([]);
@@ -26,6 +31,7 @@ const DiseaseHistoryListPage = () => {
   const [checks, setChecks] = useState([]);
   const [healthChecks, setHealthChecks] = useState([]);
   const [symptoms, setSymptoms] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -127,9 +133,21 @@ const DiseaseHistoryListPage = () => {
   const resolveCheck = (hc) => (typeof hc === "object" ? hc.id : hc);
   const resolveCow = (c) => (typeof c === "object" ? c.id : c);
 
-  const safeData = Array.isArray(data) ? data : [];
-  const totalPages = Math.ceil(safeData.length / PAGE_SIZE);
-  const paginatedData = safeData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const filteredData = data.filter((item) => {
+  const hcId = resolveCheck(item.health_check);
+  const check = checks.find((c) => c.id === hcId);
+  const cowId = resolveCow(check?.cow);
+  const cow = cows.find((c) => c.id === cowId);
+  const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
+  return cowName.includes(searchTerm.toLowerCase());
+});
+
+const paginatedData = filteredData.slice(
+  (currentPage - 1) * PAGE_SIZE,
+  currentPage * PAGE_SIZE
+);
+const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+
   const handleDelete = async (id) => {
   if (!id) return;
   setSubmitting(true);
@@ -156,212 +174,239 @@ const DiseaseHistoryListPage = () => {
 };
 
 
-  return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Riwayat Penyakit</h2>
-        <button
-          className="btn btn-info"
-          onClick={() => {
-            if (isSupervisor) return;
-            const noAvailableCheck = healthChecks.filter((check) => {
-              const status = (check.status || "").toLowerCase();
-              const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
-              const isOwned = userManagedCows.some((cow) => cow.id === cowId);
-              return status !== "handled" && status !== "healthy" && isOwned;
-            }).length === 0;
+return (
+  <div className="container-fluid mt-4">
+    <Card className="shadow-lg border-0 rounded-lg">
+      <Card.Header className="bg-gradient-primary text-grey py-3">
+        <h4 className="mb-0 text-primary fw-bold">
+          <i className="fas fa-notes-medical me-2" /> Riwayat Penyakit
+        </h4>
+      </Card.Header>
 
-            if (noAvailableCheck) {
-              Swal.fire({
-                icon: "warning",
-                title: "Tidak Bisa Menambahkan Riwayat Penyakit",
-                text: "Tidak ada pemeriksaan yang tersedia. Semua pemeriksaan mungkin telah ditangani, sehat, atau bukan milik sapi Anda.",
-              });
-              return;
-            }
-            setModalType("create");
-          }}
-          {...disableIfSupervisor}
-        >
-          + Tambah Riwayat
-        </button>
-      </div>
+      <Card.Body>
+        {/* 🔍 Search dan Button Tambah */}
+        <div className="d-flex justify-content-between mb-3">
+          <InputGroup style={{ maxWidth: "300px" }}>
+            <FormControl
+              placeholder="Cari nama sapi..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </InputGroup>
+          <Button
+            className="btn btn-info"
+            onClick={() => {
+              if (isSupervisor) return;
+              const noAvailableCheck = healthChecks.filter((check) => {
+                const status = (check.status || "").toLowerCase();
+                const cowId = typeof check?.cow === "object" ? check.cow.id : check?.cow;
+                const isOwned = userManagedCows.some((cow) => cow.id === cowId);
+                return status !== "handled" && status !== "healthy" && isOwned;
+              }).length === 0;
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-info" role="status" />
-          <p className="mt-2 text-muted">Memuat data riwayat penyakit...</p>
+              if (noAvailableCheck) {
+                Swal.fire({
+                  icon: "warning",
+                  title: "Tidak Bisa Menambahkan Riwayat Penyakit",
+                  text: "Tidak ada pemeriksaan yang tersedia. Semua pemeriksaan mungkin telah ditangani, sehat, atau bukan milik sapi Anda.",
+                });
+                return;
+              }
+              setModalType("create");
+            }}
+            {...disableIfSupervisor}
+          >
+            <i className="fas fa-plus me-2" />
+            Tambah Riwayat
+          </Button>
         </div>
-      ) : error ? (
-        <div className="alert alert-danger">{error}</div>
-      ) : data.length === 0 ? (
-        <p className="text-muted">Tidak ada data riwayat penyakit.</p>
-      ) : (
-        <div className="card">
-          <div className="card-body">
-            <h4 className="card-title">Data Riwayat Penyakit</h4>
-            <div className="table-responsive">
-            <table className="table table-bordered table-striped text-sm">
-  <thead className="bg-light">
-    <tr>
-      <th>#</th>
-      <th>Tanggal</th>
-      <th>Sapi</th>
-      <th>Penyakit</th>
-      <th>Status</th>
-      <th>Aksi</th>
-    </tr>
-  </thead>
-  <tbody>
-    {paginatedData.map((item, idx) => {
-      const hcId = resolveCheck(item.health_check);
-      const check = checks.find((c) => c.id === hcId);
-      const symptom = symptoms.find((s) => resolveCheck(s.health_check) === hcId);
-      const cowId = resolveCow(check?.cow);
-      const cow = cows.find((c) => c.id === cowId);
 
-      return (
-        <tr key={item.id}>
-          <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
-          <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
-          <td>{cow ? `${cow.name} (${cow.breed})` : check?.cow ? `ID: ${resolveCow(check?.cow)}` : "-"}</td>
-          <td>{item.disease_name}</td>
-          <td>
-            {check?.status === "handled" ? (
-              <span className="badge bg-success">Sudah Ditangani</span>
-            ) : (
-              <span className="badge bg-warning text-dark">Belum Ditangani</span>
-            )}
-          </td>
-          <td>
-            <OverlayTrigger overlay={<Tooltip>Lihat Detail</Tooltip>}>
-              <Button
-                variant="outline-info"
-                size="sm"
-                className="me-2"
-                onClick={() => {
-                  setViewModalData({ history: item, check, symptom, cow });
-                  setViewModalShow(true);
-                }}
-              >
-                <i className="fas fa-eye" />
-              </Button>
-            </OverlayTrigger>
-
-            <OverlayTrigger overlay={<Tooltip>Edit</Tooltip>}>
-              <Button
-                variant="outline-warning"
-                size="sm"
-                className="me-2"
-                onClick={() => {
-                  if (isSupervisor) return;
-                  setEditId(item.id);
-                  setModalType("edit");
-                }}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-edit" />
-              </Button>
-            </OverlayTrigger>
-
-            <OverlayTrigger overlay={<Tooltip>Hapus</Tooltip>}>
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => {
-                  if (isSupervisor) return;
-                  Swal.fire({
-                    title: "Yakin ingin menghapus?",
-                    text: "Riwayat penyakit ini tidak dapat dikembalikan.",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#d33",
-                    cancelButtonColor: "#6c757d",
-                    confirmButtonText: "Ya, hapus!",
-                    cancelButtonText: "Batal",
-                  }).then((result) => {
-                    if (result.isConfirmed) {
-                      handleDelete(item.id);
-                    }
-                  });
-                }}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-trash" />
-              </Button>
-            </OverlayTrigger>
-          </td>
-        </tr>
-      );
-    })}
-  </tbody>
-</table>
-
-
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-center align-items-center mt-3">
-                  <button
-                    className="btn btn-outline-primary btn-sm me-2"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    Prev
-                  </button>
-                  <span className="fw-semibold">Halaman {currentPage} dari {totalPages}</span>
-                  <button
-                    className="btn btn-outline-primary btn-sm ms-2"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </div>
+        {/* 🔄 Konten */}
+        {loading ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" variant="info" />
+            <p className="mt-2 text-muted">Memuat data riwayat penyakit...</p>
           </div>
-        </div>
-      )}
+        ) : error ? (
+          <div className="alert alert-danger">{error}</div>
+        ) : filteredData.length === 0 ? (
+          <p className="text-muted">Tidak ada data riwayat penyakit.</p>
+        ) : (
+          <>
+            <div className="table-responsive">
+              <Table bordered hover className="align-middle text-sm">
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Tanggal</th>
+                    <th>Sapi</th>
+                    <th>Penyakit</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedData.map((item, idx) => {
+                    const hcId = resolveCheck(item.health_check);
+                    const check = checks.find((c) => c.id === hcId);
+                    const symptom = symptoms.find((s) => resolveCheck(s.health_check) === hcId);
+                    const cowId = resolveCow(check?.cow);
+                    const cow = cows.find((c) => c.id === cowId);
 
-      {modalType === "create" && (
-        <DiseaseHistoryCreatePage
-          onClose={() => setModalType(null)}
-          onSaved={() => {
-            fetchData();
-            setModalType(null);
-          }}
-        />
-      )}
+                    return (
+                      <tr key={item.id}>
+                        <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+                        <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
+                        <td>{cow ? `${cow.name} (${cow.breed})` : check?.cow ? `ID: ${cowId}` : "-"}</td>
+                        <td>{item.disease_name}</td>
+                        <td>
+                          {check?.status === "handled" ? (
+                            <Badge bg="success">Sudah Ditangani</Badge>
+                          ) : (
+                            <Badge bg="warning" text="dark">Belum Ditangani</Badge>
+                          )}
+                        </td>
+                        <td>
+                          {/* Aksi: Lihat, Edit, Hapus */}
+                          <OverlayTrigger overlay={<Tooltip>Lihat Detail</Tooltip>}>
+                            <Button
+                              variant="outline-info"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => {
+                                setViewModalData({ history: item, check, symptom, cow });
+                                setViewModalShow(true);
+                              }}
+                            >
+                              <i className="fas fa-eye" />
+                            </Button>
+                          </OverlayTrigger>
 
-      {modalType === "edit" && editId && (
-        <DiseaseHistoryEditPage
-          historyId={editId}
-          onClose={() => {
-            setEditId(null);
-            setModalType(null);
-          }}
-          onSaved={() => {
-            fetchData();
-            setEditId(null);
-            setModalType(null);
-          }}
-        />
-      )}
+                          <OverlayTrigger overlay={<Tooltip>Edit</Tooltip>}>
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => {
+                                if (isSupervisor) return;
+                                setEditId(item.id);
+                                setModalType("edit");
+                              }}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-edit" />
+                            </Button>
+                          </OverlayTrigger>
 
-      {viewModalData && (
-        <ViewDiseaseHistory
-          show={viewModalShow}
-          onClose={() => {
-            setViewModalShow(false);
-            setViewModalData(null);
-          }}
-          history={viewModalData.history}
-          check={viewModalData.check}
-          symptom={viewModalData.symptom}
-          cow={viewModalData.cow}
-        />
-      )}
-    </div>
-  );
+                          <OverlayTrigger overlay={<Tooltip>Hapus</Tooltip>}>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => {
+                                if (isSupervisor) return;
+                                Swal.fire({
+                                  title: "Yakin ingin menghapus?",
+                                  text: "Riwayat penyakit ini tidak dapat dikembalikan.",
+                                  icon: "warning",
+                                  showCancelButton: true,
+                                  confirmButtonColor: "#d33",
+                                  cancelButtonColor: "#6c757d",
+                                  confirmButtonText: "Ya, hapus!",
+                                  cancelButtonText: "Batal",
+                                }).then((result) => {
+                                  if (result.isConfirmed) {
+                                    handleDelete(item.id);
+                                  }
+                                });
+                              }}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-trash" />
+                            </Button>
+                          </OverlayTrigger>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+            </div>
+
+            {/* 🔁 Pagination */}
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center align-items-center mt-3">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="me-2"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Prev
+                </Button>
+                <span className="fw-semibold">Halaman {currentPage} dari {totalPages}</span>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="ms-2"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Modal Tambah/Edit/Lihat */}
+        {modalType === "create" && (
+          <DiseaseHistoryCreatePage
+            onClose={() => setModalType(null)}
+            onSaved={() => {
+              fetchData();
+              setModalType(null);
+            }}
+          />
+        )}
+
+        {modalType === "edit" && editId && (
+          <DiseaseHistoryEditPage
+            historyId={editId}
+            onClose={() => {
+              setEditId(null);
+              setModalType(null);
+            }}
+            onSaved={() => {
+              fetchData();
+              setEditId(null);
+              setModalType(null);
+            }}
+          />
+        )}
+
+        {viewModalData && (
+          <ViewDiseaseHistory
+            show={viewModalShow}
+            onClose={() => {
+              setViewModalShow(false);
+              setViewModalData(null);
+            }}
+            history={viewModalData.history}
+            check={viewModalData.check}
+            symptom={viewModalData.symptom}
+            cow={viewModalData.cow}
+          />
+        )}
+      </Card.Body>
+    </Card>
+  </div>
+);
+
+
 };
 
 export default DiseaseHistoryListPage;

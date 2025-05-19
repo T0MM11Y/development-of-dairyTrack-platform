@@ -138,7 +138,7 @@ const availableCows = Array.isArray(rawCows)
   <option value="">-- Pilih Sapi --</option>
   {availableCows.map((cow) => (
     <option key={cow.id} value={cow.id}>
-      {cow.name} (ID: {cow.id}) - {cow.lactation_phase || "Unknown"}
+      {cow.name}
     </option>
   ))}
 </select>
