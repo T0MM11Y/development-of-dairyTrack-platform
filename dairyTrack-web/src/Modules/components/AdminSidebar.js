@@ -33,16 +33,12 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       icon: "far fa-users", // Ikon regular tanpa fill
       submenu: [
         { id: "list-users", title: "List of Users", link: "/admin/list-users" },
-<<<<<<< Updated upstream
         {
           id: "add-users",
           title: "Adding User",
           link: "/admin/add-users",
           showForRoles: ["admin", "farmer"],
         },
-=======
-        { id: "add-users", title: "Adding User", link: "/admin/add-users" },
->>>>>>> Stashed changes
         {
           id: "reset-password",
           title: "Reset Password",

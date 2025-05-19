@@ -12,10 +12,7 @@ import {
   deleteOrder,
 } from "../../../controllers/orderController";
 import { getProductStocks } from "../../../controllers/productStockController";
-<<<<<<< Updated upstream
 import usePermissions from "../Permission/usePermission";
-=======
->>>>>>> Stashed changes
 
 const ListOrder = () => {
   const [orders, setOrders] = useState([]);
@@ -29,10 +26,6 @@ const ListOrder = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-<<<<<<< Updated upstream
-=======
-  const [currentUser, setCurrentUser] = useState(null);
->>>>>>> Stashed changes
   const [availableProducts, setAvailableProducts] = useState([]);
   const [newOrder, setNewOrder] = useState({
     customer_name: "",

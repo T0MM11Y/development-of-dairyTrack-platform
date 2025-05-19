@@ -20,7 +20,6 @@ const ResetPassword = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
   const [selectedRole, setSelectedRole] = useState("");
-<<<<<<< Updated upstream
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   // Ambil user yang sedang login dari localStorage
@@ -39,11 +38,6 @@ const ResetPassword = () => {
   };
   const currentUser = useMemo(() => getCurrentUser(), []);
   const isSupervisor = currentUser?.role_id === 2;
-=======
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
->>>>>>> Stashed changes
 
   const [sortConfig, setSortConfig] = useState({
     key: "username",
@@ -175,13 +169,7 @@ const ResetPassword = () => {
         (user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.contact?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-<<<<<<< Updated upstream
         (selectedRole === "" || user.role_id === parseInt(selectedRole))
-=======
-        (selectedRole === "" || user.role_id === parseInt(selectedRole)) &&
-        (selectedStatus === "" ||
-          (selectedStatus === "active" ? user.is_logged : !user.is_logged))
->>>>>>> Stashed changes
     );
 
     // Sort users
@@ -214,10 +202,6 @@ const ResetPassword = () => {
     users,
     searchTerm,
     selectedRole,
-<<<<<<< Updated upstream
-=======
-    selectedStatus,
->>>>>>> Stashed changes
     sortConfig,
     usersPerPage,
     indexOfFirstUser,
@@ -473,21 +457,6 @@ const ResetPassword = () => {
                   <option value="2">Supervisor</option>
                   <option value="3">Farmer</option>
                 </select>
-<<<<<<< Updated upstream
-=======
-                <select
-                  className="form-select shadow-sm py-2 border-0 w-auto"
-                  value={selectedStatus}
-                  onChange={(e) => {
-                    setSelectedStatus(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
->>>>>>> Stashed changes
               </div>
             </div>
           </div>
@@ -550,13 +519,6 @@ const ResetPassword = () => {
                       )}
                     </div>
                   </th>
-<<<<<<< Updated upstream
-
-=======
-                  <th scope="col" className="text-center fw-medium">
-                    Status
-                  </th>
->>>>>>> Stashed changes
                   <th scope="col" className="text-center fw-medium">
                     Action
                   </th>
@@ -595,35 +557,10 @@ const ResetPassword = () => {
                       <td className="text-center">
                         {getRoleBadge(user.role_id)}
                       </td>
-<<<<<<< Updated upstream
-
-=======
-                      <td className="text-center">
-                        {user.is_logged ? (
-                          <Badge
-                            bg="success"
-                            className="status-badge bg-opacity-10 text-success"
-                            pill
-                          >
-                            <i className="fas fa-circle me-1 small"></i> Active
-                          </Badge>
-                        ) : (
-                          <Badge
-                            bg="secondary"
-                            className="status-badge bg-opacity-10 text-secondary"
-                            pill
-                          >
-                            <i className="fas fa-circle me-1 small"></i>{" "}
-                            Inactive
-                          </Badge>
-                        )}
-                      </td>
->>>>>>> Stashed changes
                       <td className="text-center">
                         <OverlayTrigger
                           overlay={<Tooltip>Reset User's Password</Tooltip>}
                         >
-<<<<<<< Updated upstream
                           <span>
                             <button
                               className="btn btn-warning btn-sm"
@@ -637,27 +574,13 @@ const ResetPassword = () => {
                               <i className="fas fa-key me-1"></i> Reset Password
                             </button>
                           </span>
-=======
-                          <button
-                            className="btn btn-warning btn-sm"
-                            onClick={() =>
-                              handleResetPassword(user.id, user.username)
-                            }
-                          >
-                            <i className="fas fa-key me-1"></i> Reset Password
-                          </button>
->>>>>>> Stashed changes
                         </OverlayTrigger>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-<<<<<<< Updated upstream
                     <td colSpan="6" className="text-center py-4">
-=======
-                    <td colSpan="7" className="text-center py-4">
->>>>>>> Stashed changes
                       <div className="text-muted">
                         <i
                           className="fas fa-search fs-3 d-block mb-2"
