@@ -1,4 +1,3 @@
-// ...existing code...
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Dropdown,
@@ -14,6 +13,8 @@ import {
 } from "react-bootstrap";
 import { useSocket } from "../../socket/socket";
 import { formatDistanceToNow } from "date-fns";
+import { deleteNotification } from "../controllers/notificationController";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 const NotificationDropdown = () => {
   const {
@@ -26,6 +27,8 @@ const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Get current user from localStorage
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Modal state
   const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -34,6 +37,14 @@ const NotificationDropdown = () => {
   const notificationsPerPage = 8;
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Get current user on component mount
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id) {
+      setCurrentUser(userData);
+    }
+  }, []);
+
   // Animate bell on new notifications
   useEffect(() => {
     if (unreadCount > 0) {
@@ -41,6 +52,65 @@ const NotificationDropdown = () => {
       return () => clearTimeout(timer);
     }
   }, [unreadCount]);
+
+  const handleDeleteNotification = async (notificationId) => {
+    // Check if user is logged in
+    if (!currentUser?.user_id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "You must be logged in to delete notifications",
+      });
+      return;
+    }
+
+    try {
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: "Confirm Delete",
+        text: "Are you sure you want to delete this notification?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Delete",
+        cancelButtonText: "Cancel",
+      });
+
+      if (result.isConfirmed) {
+        const response = await deleteNotification(
+          notificationId,
+          currentUser.user_id
+        );
+
+        if (response.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Notification deleted successfully",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+
+          // Refresh notifications list
+          fetchNotifications();
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response.message || "Failed to delete notification",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while deleting the notification",
+      });
+    }
+  };
 
   // Filter logic
   const applyFilters = useCallback(() => {
@@ -112,6 +182,25 @@ const NotificationDropdown = () => {
   const totalPages = Math.ceil(
     filteredNotifications.length / notificationsPerPage
   );
+
+  // Handle clear all notifications with confirmation
+  const handleClearAll = async () => {
+    const result = await Swal.fire({
+      title: "Clear All Notifications?",
+      text: "This action cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, clear them",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed && clearAllNotifications) {
+      clearAllNotifications();
+      setShowAllModal(false);
+    }
+  };
 
   return (
     <>
@@ -189,43 +278,59 @@ const NotificationDropdown = () => {
                         !n.is_read ? "bg-light" : ""
                       }`}
                       style={{ cursor: "pointer" }}
-                      onClick={(e) => handleMarkAsRead(n.id, e)}
                     >
-                      <div className="me-2">
-                        <span
-                          className={`d-inline-flex align-items-center justify-content-center rounded-circle ${
-                            n.type === "low_production"
-                              ? "bg-danger bg-opacity-10"
-                              : n.type === "high_production"
-                              ? "bg-success bg-opacity-10"
-                              : "bg-secondary bg-opacity-10"
-                          }`}
-                          style={{ width: 32, height: 32 }}
-                        >
-                          <i
-                            className={`fas ${getNotificationIcon(n.type)} ${
+                      <div
+                        className="d-flex flex-grow-1 align-items-start"
+                        onClick={(e) => handleMarkAsRead(n.id, e)}
+                      >
+                        <div className="me-2">
+                          <span
+                            className={`d-inline-flex align-items-center justify-content-center rounded-circle ${
                               n.type === "low_production"
-                                ? "text-danger"
+                                ? "bg-danger bg-opacity-10"
                                 : n.type === "high_production"
-                                ? "text-success"
-                                : "text-secondary"
+                                ? "bg-success bg-opacity-10"
+                                : "bg-secondary bg-opacity-10"
                             }`}
-                          ></i>
-                        </span>
-                      </div>
-                      <div className="flex-grow-1">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <span className="small text-muted">
-                            {formatTimeAgo(n.created_at)}
+                            style={{ width: 32, height: 32 }}
+                          >
+                            <i
+                              className={`fas ${getNotificationIcon(n.type)} ${
+                                n.type === "low_production"
+                                  ? "text-danger"
+                                  : n.type === "high_production"
+                                  ? "text-success"
+                                  : "text-secondary"
+                              }`}
+                            ></i>
                           </span>
-                          {!n.is_read && (
-                            <Badge bg="primary" pill style={{ fontSize: 9 }}>
-                              New
-                            </Badge>
-                          )}
                         </div>
-                        <div className="small">{n.message}</div>
+                        <div className="flex-grow-1">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="small text-muted">
+                              {formatTimeAgo(n.created_at)}
+                            </span>
+                            {!n.is_read && (
+                              <Badge bg="primary" pill style={{ fontSize: 9 }}>
+                                New
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="small">{n.message}</div>
+                        </div>
                       </div>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        className="ms-2 align-self-center"
+                        style={{ padding: "0.25rem 0.5rem" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNotification(n.id);
+                        }}
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </Button>
                     </div>
                   ))
                 )}
@@ -371,6 +476,15 @@ const NotificationDropdown = () => {
                       </div>
                       <div className="small">{n.message}</div>
                     </div>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      className="ms-2"
+                      style={{ padding: "0.25rem 0.5rem" }}
+                      onClick={() => handleDeleteNotification(n.id)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </Button>
                   </Card.Body>
                 </Card>
               ))}
@@ -447,15 +561,7 @@ const NotificationDropdown = () => {
           )}
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
-          <Button
-            variant="outline-danger"
-            onClick={() => {
-              if (window.confirm("Clear all notifications?")) {
-                clearAllNotifications && clearAllNotifications();
-                setShowAllModal(false);
-              }
-            }}
-          >
+          <Button variant="outline-danger" onClick={handleClearAll}>
             Clear all
           </Button>
           <Button variant="primary" onClick={() => setShowAllModal(false)}>
@@ -468,4 +574,3 @@ const NotificationDropdown = () => {
 };
 
 export default NotificationDropdown;
-// ...existing code...

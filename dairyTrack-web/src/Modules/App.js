@@ -24,6 +24,7 @@ import ListOfGallery from "./pages/Admin/HighlightsManagement/Gallery/ListOfGall
 import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
 import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
 import MilkTrend from "./pages/Admin/MilkProduction/MilkTrend";
+import FreshnessMilk from "./pages/Admin/MilkProduction/FreshnessMilk";
 import Blog from "./pages/Blog";
 import Gallery from "./pages/Gallery";
 import Product from "./pages/Product";
@@ -61,8 +62,8 @@ import EditFeed from "./pages/Admin/FeedManagement/Feed/EditFeed";
 import ListStock from "./pages/Admin/FeedManagement/FeedStock/FeedStockList";
 import ListDailyFeedSchedule from "./pages/Admin/FeedManagement/DailyFeedSchedule/ListDailyFeedSchedule";
 import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDailyFeedItem";
-import DailyFeedUsage from "./pages/Admin/FeedManagement/Grafik/DailyFeedUsage"
-import DailyNutrition from "./pages/Admin/FeedManagement/Grafik/DailyNutrition"
+import DailyFeedUsage from "./pages/Admin/FeedManagement/Grafik/DailyFeedUsage";
+import DailyNutrition from "./pages/Admin/FeedManagement/Grafik/DailyNutrition";
 // sales and financial
 import ProductType from "./pages/Admin/ProductType/listProductType";
 import ProductStock from "./pages/Admin/Product/ListProductStock";
@@ -143,26 +144,22 @@ function App() {
               <Order />
               <Footer />
             </Route>
-
             {/* Rute untuk halaman admin - with authentication protection */}
             <ProtectedRoute path="/admin" exact>
               <AdminLayout>
                 <Admin />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/list-users">
               <AdminLayout>
                 <ListUsers />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/add-users">
               <AdminLayout>
                 <CreateUsers />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/edit-user/:userId">
               <AdminLayout>
                 <EditUser />
@@ -173,37 +170,31 @@ function App() {
                 <ResetPassword />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/cattle-distribution">
               <AdminLayout>
                 <CattleDistribution />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/list-cows">
               <AdminLayout>
                 <ListCows />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/add-cow">
               <AdminLayout>
                 <CreateCows />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/edit-cow/:cowId">
               <AdminLayout>
                 <EditCow />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/list-of-gallery">
               <AdminLayout>
                 <ListOfGallery />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/list-of-blog">
               <AdminLayout>
                 <ListOfBlog />
@@ -214,12 +205,17 @@ function App() {
                 <ListMilking />
               </AdminLayout>
             </ProtectedRoute>
-
             <ProtectedRoute path="/admin/milk-trend">
               <AdminLayout>
                 <MilkTrend />
               </AdminLayout>
             </ProtectedRoute>
+            <ProtectedRoute path="/admin/freshness-milk">
+              <AdminLayout>
+                <FreshnessMilk />
+              </AdminLayout>
+            </ProtectedRoute>
+
             <ProtectedRoute path="/admin/list-feedType">
               <AdminLayout>
                 <ListFeedTypes />
@@ -272,7 +268,6 @@ function App() {
                 <DailyNutrition />
               </AdminLayout>
             </ProtectedRoute>
-            
             {/* HealthCheck */}
             <ProtectedRoute path="/admin/list-health-checks">
               <AdminLayout>
@@ -289,7 +284,6 @@ function App() {
                 <EditHealthCheck />
               </AdminLayout>
             </ProtectedRoute>
-
             {/* Symptom */}
             <ProtectedRoute path="/admin/list-symptoms">
               <AdminLayout>
@@ -306,7 +300,6 @@ function App() {
                 <EditSymptom />
               </AdminLayout>
             </ProtectedRoute>
-
             {/* DiseaseHistory */}
             <ProtectedRoute path="/admin/list-disease-history">
               <AdminLayout>
@@ -323,7 +316,6 @@ function App() {
                 <EditDiseaseHistory />
               </AdminLayout>
             </ProtectedRoute>
-
             {/* Reproduction */}
             <ProtectedRoute path="/admin/list-reproduction">
               <AdminLayout>
@@ -346,7 +338,6 @@ function App() {
                 <HealthDashboard />
               </AdminLayout>
             </ProtectedRoute>
-
             {/* Saless and Fincancial Section */}
             <ProtectedRoute path="/admin/product-type">
               <AdminLayout>

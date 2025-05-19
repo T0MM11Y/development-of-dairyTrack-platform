@@ -33,6 +33,7 @@ const CreateCows = () => {
 
     const weight = parseInt(formData.weight, 10);
 
+    // Weight validation
     if (formData.gender === "Female" && (weight < 450 || weight > 650)) {
       Swal.fire({
         icon: "warning",
@@ -47,6 +48,49 @@ const CreateCows = () => {
         icon: "warning",
         title: "Invalid Weight",
         text: "For male cows, weight must be between 700 kg and 900 kg.",
+      });
+      return;
+    }
+
+    // Birth date validation
+    const birthDate = new Date(formData.birth);
+    const currentDate = new Date();
+
+    // Check if birth date is in the future
+    if (birthDate > currentDate) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Birth Date",
+        text: "Birth date cannot be in the future.",
+      });
+      return;
+    }
+
+    // Calculate age in years
+    const ageInMilliseconds = currentDate - birthDate;
+    const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
+
+    // Check if age is reasonable (between 0 and 20 years)
+    if (ageInYears > 20) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Birth Date",
+        text: "The cow's age exceeds 20 years, which is unusual for cattle. Please verify the birth date.",
+      });
+      return;
+    }
+
+    // For a female cow in lactation, ensure minimum age of 2 years (typical age for first calving)
+    if (
+      formData.gender === "Female" &&
+      formData.lactation_phase !== "Dry" &&
+      formData.lactation_phase !== "" &&
+      ageInYears < 2
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Combination",
+        text: "A female cow in lactation should be at least 2 years old. Please adjust the birth date or lactation phase.",
       });
       return;
     }
@@ -122,8 +166,7 @@ const CreateCows = () => {
                   />
                   <div className="form-text">
                     Enter the cow's name (e.g., Daisy).
-                  </div>{" "}
-                  {/* Penjelasan */}
+                  </div>
                 </div>
                 <div className="col-md-6">
                   <label htmlFor="birth" className="form-label">
@@ -136,10 +179,13 @@ const CreateCows = () => {
                     name="birth"
                     value={formData.birth}
                     onChange={handleChange}
+                    max={new Date().toISOString().split("T")[0]}
                     required
                   />
-                  <div className="form-text">Select the cow's birth date.</div>{" "}
-                  {/* Penjelasan */}
+                  <div className="form-text">
+                    Select a valid birth date (cannot be in the future, and must
+                    be reasonable for the cow's age).
+                  </div>
                 </div>
                 <div className="col-md-6">
                   <label htmlFor="breed" className="form-label">

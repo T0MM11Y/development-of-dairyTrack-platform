@@ -84,36 +84,34 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'DairyTrack_massfortso',
+        'USER': 'DairyTrack_massfortso',
+        'PASSWORD': '87237ffa17d18f91ba46b6ba67ac1cc35160d14b',  
+        'HOST': 'tcorc.h.filess.io',
+        'PORT': '61002',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+    }
+}
+
+# #local
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dairytrack_operation',  # Ganti dengan nama database MySQL
-#         'USER': 'dairytrack_operation',  # Ganti dengan username MySQL
-#         'PASSWORD': 'c89d2e129b1b9d76b283c5989a33ef05f9cb88d2',  # Ganti dengan password MySQL
-#         'HOST': 'd2pug.h.filess.io',  # Jika menggunakan server lain, ganti sesuai kebutuhan
-#         'PORT': '61002',  # Port default MySQL
+#         'NAME': 'dairy_track',  # Nama database MySQL
+#         'USER': 'root',  # Username MySQL
+#         'PASSWORD': '',  # Password MySQL (kosong)
+#         'HOST': 'localhost',  # Host MySQL
+#         'PORT': '3306',  # Port default MySQL
 #         'OPTIONS': {
 #             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
 #         },
 #     }
 # }
-
-#local
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairytrack_stiffplate',  # Nama database di filess.io
-        'USER': 'dairytrack_stiffplate',  # Username dari filess.io
-        'PASSWORD': 'dcdd07f7b478dd1f479b4c44c4b131048a7c0ac3',  # Password dari filess.io
-        'HOST': 'xcq0v.h.filess.io',  # Host dari filess.io
-        'PORT': '3307',  # Port MySQL khusus dari filess.io
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

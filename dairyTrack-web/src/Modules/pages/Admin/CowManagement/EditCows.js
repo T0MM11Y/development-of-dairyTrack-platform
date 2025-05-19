@@ -54,11 +54,83 @@ const EditCow = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    // Handle gender change to update lactation_phase accordingly
+    if (name === "gender" && value === "Male") {
+      setFormData({ ...formData, [name]: value, lactation_phase: "-" });
+    } else if (name === "gender" && value === "Female") {
+      setFormData({ ...formData, [name]: value, lactation_phase: "" });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const weight = parseInt(formData.weight, 10);
+
+    // Weight validation
+    if (formData.gender === "Female" && (weight < 450 || weight > 650)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Weight",
+        text: "For female cows, weight must be between 450 kg and 650 kg.",
+      });
+      return;
+    }
+
+    if (formData.gender === "Male" && (weight < 700 || weight > 900)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Weight",
+        text: "For male cows, weight must be between 700 kg and 900 kg.",
+      });
+      return;
+    }
+
+    // Birth date validation
+    const birthDate = new Date(formData.birth);
+    const currentDate = new Date();
+
+    // Check if birth date is in the future
+    if (birthDate > currentDate) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Birth Date",
+        text: "Birth date cannot be in the future.",
+      });
+      return;
+    }
+
+    // Calculate age in years
+    const ageInMilliseconds = currentDate - birthDate;
+    const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
+
+    // Check if age is reasonable (between 0 and 20 years)
+    if (ageInYears > 20) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Birth Date",
+        text: "The cow's age exceeds 20 years, which is unusual for cattle. Please verify the birth date.",
+      });
+      return;
+    }
+
+    // For a female cow in lactation, ensure minimum age of 2 years (typical age for first calving)
+    if (
+      formData.gender === "Female" &&
+      formData.lactation_phase !== "Dry" &&
+      formData.lactation_phase !== "" &&
+      ageInYears < 2
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Combination",
+        text: "A female cow in lactation should be at least 2 years old. Please adjust the birth date or lactation phase.",
+      });
+      return;
+    }
 
     const confirmation = await Swal.fire({
       title: "Are you sure?",
@@ -176,6 +248,11 @@ const EditCow = () => {
                       onChange={handleChange}
                       required
                     />
+                    <div className="form-text">
+                      {formData.gender === "Female"
+                        ? "For female cows, weight must be between 450 kg and 650 kg."
+                        : "For male cows, weight must be between 700 kg and 900 kg."}
+                    </div>
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="birth" className="form-label">
@@ -188,8 +265,13 @@ const EditCow = () => {
                       name="birth"
                       value={formData.birth}
                       onChange={handleChange}
+                      max={new Date().toISOString().split("T")[0]}
                       required
                     />
+                    <div className="form-text">
+                      Select a valid birth date (cannot be in the future, and
+                      must be reasonable for the cow's age).
+                    </div>
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="gender" className="form-label">
@@ -235,6 +317,12 @@ const EditCow = () => {
                         </>
                       )}
                     </select>
+                    {formData.gender === "Female" && (
+                      <div className="form-text">
+                        For cows in lactation (Early, Mid, Late), the age must
+                        be at least 2 years.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
