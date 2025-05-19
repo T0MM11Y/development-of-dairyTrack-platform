@@ -170,6 +170,10 @@ function App() {
                 <ResetPassword />
               </AdminLayout>
             </ProtectedRoute>
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
             <ProtectedRoute path="/admin/cattle-distribution">
               <AdminLayout>
                 <CattleDistribution />

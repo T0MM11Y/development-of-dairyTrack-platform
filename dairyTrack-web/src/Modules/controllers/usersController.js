@@ -335,6 +335,7 @@ export const resetUserPassword = async (userId) => {
     };
   }
 };
+<<<<<<< Updated upstream
 
 // Function to change user password
 export const changeUserPassword = async (userId, oldPassword, newPassword) => {
@@ -380,3 +381,5 @@ export const changeUserPassword = async (userId, oldPassword, newPassword) => {
   }
 };
 // ...existing code...
+=======
+>>>>>>> Stashed changes

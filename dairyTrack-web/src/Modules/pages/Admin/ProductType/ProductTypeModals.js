@@ -11,7 +11,10 @@ import {
 } from "react-bootstrap";
 import CurrencyInput from "react-currency-input-field";
 import Swal from "sweetalert2";
+<<<<<<< Updated upstream
 import { useMemo } from 'react';
+=======
+>>>>>>> Stashed changes
 
 // Fungsi untuk memformat harga ke Rupiah
 const formatRupiah = (value) => {

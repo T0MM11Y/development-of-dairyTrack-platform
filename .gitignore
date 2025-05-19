@@ -1,4 +1,5 @@
 /dairyTrack-web/node_modules
+<<<<<<< Updated upstream
 dairyTrack-api/Selling/sales/__pycache__/serializers.cpython-311.pyc
 dairyTrack-api/Selling/sales_and_finance/__pycache__/settings.cpython-311.pyc
 dairyTrack-api/Selling/whatsapp_errors.log
@@ -9,3 +10,8 @@ dairyTrack-api/Selling/whatsapp_errors.log
 dairyTrack-api/Selling/sales/__pycache__/serializers.cpython-311.pyc
 dairyTrack-api/MilkProduction/app/routes/__pycache__/user.cpython-311.pyc
 dairyTrack-api/Selling/whatsapp_errors.log
+=======
+dairyTrack-api/Selling/sales_and_finance/settings.py
+dairyTrack-api/Selling/sales_and_finance/__pycache__/wsgi.cpython-311.pyc
+dairyTrack-api/Selling/sales_and_finance/__pycache__/wsgi.cpython-311.pyc
+>>>>>>> Stashed changes
