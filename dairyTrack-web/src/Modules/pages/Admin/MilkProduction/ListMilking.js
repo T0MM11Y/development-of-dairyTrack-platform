@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import { listCows } from "../../../../Modules/controllers/cowsController";
@@ -25,79 +25,108 @@ import {
   exportMilkProductionToPDF,
   exportMilkProductionToExcel,
   editMilkingSession,
-  deleteMilkingSession, // Add this import
+  deleteMilkingSession,
 } from "../../../../Modules/controllers/milkProductionController";
 
 const ListMilking = () => {
-  // Get current logged in user
+  // ========== STATE MANAGEMENT ==========
   const [currentUser, setCurrentUser] = useState(null);
   const [cowList, setCowList] = useState([]);
-
-  // State management
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userManagedCows, setUserManagedCows] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [farmers, setFarmers] = useState([]);
 
+  // UI state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCow, setSelectedCow] = useState("");
+  const [selectedMilker, setSelectedMilker] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+
+  // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [viewSession, setViewSession] = useState(null);
+
+  // Form state
   const [newSession, setNewSession] = useState({
     cow_id: "",
     milker_id: "",
     volume: "",
-    milking_time: new Date().toISOString().slice(0, 16),
+    milking_time: getLocalDateTime(),
     notes: "",
   });
-  const [selectedCow, setSelectedCow] = useState("");
-  const [selectedMilker, setSelectedMilker] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+
   const sessionsPerPage = 8;
-  // Add near other state declarations
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewSession, setViewSession] = useState(null);
-  // Add this near other useEffect hooks
-  useEffect(() => {
-    const fetchUserManagedCows = async () => {
-      if (currentUser?.user_id) {
-        try {
-          const { success, cows } = await listCowsByUser(currentUser.user_id);
-          if (success && cows) {
-            setUserManagedCows(cows);
-          }
-        } catch (err) {
-          console.error("Error fetching user's cows:", err);
-        }
-      }
-    };
 
-    fetchUserManagedCows();
-  }, [currentUser]);
+  // ========== UTILITY FUNCTIONS ==========
+  // Get local date and time helpers
+  function getLocalDateTime() {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+  }
 
-  // Add this after getting user data from localStorage in useEffect
+  function getLocalDateString(date = new Date()) {
+    return (
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(date.getDate()).padStart(2, "0")
+    );
+  }
+
+  // Convert timestamp to local date string for filtering
+  const getSessionLocalDate = useCallback((timestamp) => {
+    const date = new Date(timestamp);
+    return getLocalDateString(date);
+  }, []);
+
+  // ========== DATA FETCHING ==========
+  // Fetch user data and initialize session
   useEffect(() => {
     try {
       const userData = JSON.parse(localStorage.getItem("user"));
       if (userData) {
         setCurrentUser(userData);
-        // Add console.log here
-        console.log("Logged in user role_id:", userData.role_id);
-        console.log("Current User Data:", userData);
-
         setNewSession((prev) => ({
           ...prev,
           milker_id: userData.user_id || userData.id || "",
         }));
       }
     } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
+      console.error("Error loading user data:", error);
     }
   }, []);
-  // Add this useEffect after other useEffects
+
+  // Fetch user's managed cows
   useEffect(() => {
+    if (!currentUser?.user_id) return;
+
+    const fetchUserManagedCows = async () => {
+      try {
+        const { success, cows } = await listCowsByUser(currentUser.user_id);
+        if (success && cows) {
+          setUserManagedCows(cows);
+        }
+      } catch (err) {
+        console.error("Error fetching user's cows:", err);
+      }
+    };
+
+    fetchUserManagedCows();
+  }, [currentUser]);
+
+  // Fetch farmers (for admins only)
+  useEffect(() => {
+    if (currentUser?.role_id !== 1) return;
+
     const fetchFarmers = async () => {
       try {
         const response = await getAllFarmers();
@@ -111,10 +140,10 @@ const ListMilking = () => {
       }
     };
 
-    if (currentUser?.role_id === 1) {
-      fetchFarmers();
-    }
+    fetchFarmers();
   }, [currentUser]);
+
+  // Fetch all cows
   useEffect(() => {
     const fetchCows = async () => {
       try {
@@ -130,28 +159,10 @@ const ListMilking = () => {
     fetchCows();
   }, []);
 
-  // Get user from localStorage when component mounts
-  useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData) {
-        setCurrentUser(userData);
-        // Pre-fill milker_id with current user's ID in the new session form
-        setNewSession((prev) => ({
-          ...prev,
-          milker_id: userData.user_id || userData.id || "",
-        }));
-      }
-    } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
-    }
-  }, []);
-
   // Fetch milking sessions
   useEffect(() => {
     const fetchMilkingSessions = async () => {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate loading delay
       try {
         const response = await getMilkingSessions();
         if (response.success && response.sessions) {
@@ -159,17 +170,11 @@ const ListMilking = () => {
           setError(null);
         } else {
           setError(response.message || "Failed to fetch milking sessions.");
-          console.error(
-            "Error fetching sessions:",
-            response.message || "Unknown error"
-          );
           setSessions([]);
         }
       } catch (err) {
-        setError(
-          "An unexpected error occurred while fetching milking sessions."
-        );
-        console.error("Error fetching sessions:", err);
+        setError("An error occurred while fetching milking sessions.");
+        console.error("Error:", err);
       } finally {
         setLoading(false);
       }
@@ -177,22 +182,25 @@ const ListMilking = () => {
 
     fetchMilkingSessions();
   }, []);
-  const milkingTimeInfo = {
-    Morning:
-      "Milking session conducted in the morning (before 12 PM), typically yields higher milk volume.",
-    Afternoon:
-      "Milking session during afternoon hours (12 PM - 6 PM), moderate milk production.",
-    Evening:
-      "Evening milking session (after 6 PM), usually the last session of the day.",
-  };
 
-  const openViewModal = (session) => {
-    setViewSession({
-      ...session,
-      milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
-    });
-    setShowViewModal(true);
-  };
+  // ========== DATA PROCESSING & MEMOIZED VALUES ==========
+  // Today's date for filtering
+  const today = useMemo(() => getLocalDateString(), []);
+
+  // Filter today's sessions using local date
+  const todaySessions = useMemo(() => {
+    return sessions.filter(
+      (session) => getSessionLocalDate(session.milking_time) === today
+    );
+  }, [sessions, today, getSessionLocalDate]);
+
+  // Calculate today's volume
+  const todayVolume = useMemo(() => {
+    return todaySessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
+    );
+  }, [todaySessions]);
 
   // Generate unique lists of cows and milkers for filtering
   const { uniqueCows, uniqueMilkers } = useMemo(() => {
@@ -212,63 +220,17 @@ const ListMilking = () => {
           `Milker #${id}`,
       }));
 
-    return {
-      uniqueCows: cows,
-      uniqueMilkers: milkers,
-    };
+    return { uniqueCows: cows, uniqueMilkers: milkers };
   }, [sessions]);
 
-  const handleDeleteSession = async (sessionId) => {
-    try {
-      const response = await deleteMilkingSession(sessionId);
-      if (response.success) {
-        // Refresh the sessions list after successful deletion
-        const sessionsResponse = await getMilkingSessions();
-        if (sessionsResponse.success && sessionsResponse.sessions) {
-          setSessions(sessionsResponse.sessions);
-        }
-      }
-    } catch (error) {
-      console.error("Error deleting session:", error);
-    }
-  };
-
-  // Function to prepare modal for adding new session
-  const handleOpenAddModal = () => {
-    // Ensure the milker_id is set to the current user's ID and time is set to now
-    if (currentUser) {
-      setNewSession((prev) => ({
-        ...prev,
-        milker_id: currentUser.user_id || currentUser.id || "",
-        milking_time: new Date().toISOString().slice(0, 16), // Always use current time
-      }));
-    } else {
-      // If no user, still update the time
-      setNewSession((prev) => ({
-        ...prev,
-        milking_time: new Date().toISOString().slice(0, 16),
-      }));
-    }
-    setShowAddModal(true);
-  };
   // Calculate milk statistics
   const milkStats = useMemo(() => {
-    // Total volume and sessions for all users
+    // Base stats
     const totalVolume = sessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
     );
     const totalSessions = sessions.length;
-
-    // Today's sessions and volume for all users
-    const today = new Date().toISOString().split("T")[0];
-    const todaySessions = sessions.filter((session) =>
-      session.milking_time?.startsWith(today)
-    );
-    const todayVolume = todaySessions.reduce(
-      (sum, session) => sum + parseFloat(session.volume || 0),
-      0
-    );
 
     // Filter sessions for farmers
     const filteredSessions =
@@ -278,14 +240,17 @@ const ListMilking = () => {
           )
         : sessions;
 
-    // Total volume and sessions for filtered data
+    // Total volume for filtered data
     const filteredVolume = filteredSessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
     );
-    const filteredTodaySessions = filteredSessions.filter((session) =>
-      session.milking_time?.startsWith(today)
+
+    // Today's filtered sessions using local date
+    const filteredTodaySessions = filteredSessions.filter(
+      (session) => getSessionLocalDate(session.milking_time) === today
     );
+
     const filteredTodayVolume = filteredTodaySessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
@@ -306,19 +271,23 @@ const ListMilking = () => {
         ? (filteredVolume / filteredSessions.length).toFixed(2)
         : "0.00",
     };
-  }, [sessions, currentUser, userManagedCows]);
+  }, [
+    sessions,
+    currentUser,
+    userManagedCows,
+    today,
+    todayVolume,
+    todaySessions,
+    getSessionLocalDate,
+  ]);
 
   // Filter, sort and paginate sessions
   const filteredAndPaginatedSessions = useMemo(() => {
     // Filter sessions based on user role
     let filteredSessions = sessions;
 
-    // If user is farmer (role_id !== 1), show only sessions for cows managed by this farmer
-    if (
-      currentUser &&
-      currentUser.role_id !== 1 &&
-      userManagedCows.length > 0
-    ) {
+    // For non-admin users, show only their managed cows
+    if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
       const managedCowIds = userManagedCows.map((cow) => String(cow.id));
       filteredSessions = filteredSessions.filter((session) =>
         managedCowIds.includes(String(session.cow_id))
@@ -327,6 +296,7 @@ const ListMilking = () => {
 
     // Apply search and filter logic
     filteredSessions = filteredSessions.filter((session) => {
+      // Search term
       const matchesSearch =
         (session.cow_name?.toLowerCase() || "").includes(
           searchTerm.toLowerCase()
@@ -336,21 +306,24 @@ const ListMilking = () => {
         ) ||
         String(session.volume).includes(searchTerm);
 
+      // Filter selects
       const matchesCow = selectedCow
         ? String(session.cow_id) === selectedCow
         : true;
       const matchesMilker = selectedMilker
         ? String(session.milker_id) === selectedMilker
         : true;
+
+      // Date filter with local date handling
       const matchesDate = selectedDate
-        ? session.milking_time?.startsWith(selectedDate)
+        ? getSessionLocalDate(session.milking_time) === selectedDate
         : true;
 
       return matchesSearch && matchesCow && matchesMilker && matchesDate;
     });
 
     // Sort by milking time, most recent first
-    filteredSessions = [...filteredSessions].sort(
+    filteredSessions.sort(
       (a, b) => new Date(b.milking_time) - new Date(a.milking_time)
     );
 
@@ -381,21 +354,77 @@ const ListMilking = () => {
     sessionsPerPage,
     currentUser,
     userManagedCows,
+    getSessionLocalDate,
   ]);
 
+  // Check if user is a supervisor
   const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]);
-  // Handle adding a new milking session
+
+  // ========== EVENT HANDLERS ==========
+  // Handle deletion of a milking session
+  const handleDeleteSession = useCallback(async (sessionId) => {
+    try {
+      const result = await Swal.fire({
+        title: "Delete Milking Session?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      if (result.isConfirmed) {
+        const response = await deleteMilkingSession(sessionId);
+        if (response.success) {
+          Swal.fire(
+            "Deleted!",
+            "The milking session has been deleted.",
+            "success"
+          );
+          // Refresh sessions
+          const sessionsResponse = await getMilkingSessions();
+          if (sessionsResponse.success && sessionsResponse.sessions) {
+            setSessions(sessionsResponse.sessions);
+          }
+        } else {
+          Swal.fire(
+            "Error",
+            response.message || "Failed to delete session",
+            "error"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      Swal.fire("Error", "An unexpected error occurred", "error");
+    }
+  }, []);
+
+  // Open add modal with pre-filled data
+  const handleOpenAddModal = useCallback(() => {
+    setNewSession({
+      cow_id: "",
+      milker_id: currentUser?.user_id || "",
+      volume: "",
+      milking_time: getLocalDateTime(),
+      notes: "",
+    });
+    setShowAddModal(true);
+  }, [currentUser]);
+
+  // Add new milking session
   const handleAddSession = async (e) => {
     e.preventDefault();
 
-    // Tambahkan informasi pembuat ke dalam notes
+    // Add creator info to notes
     const creatorInfo = currentUser
       ? `Created by: ${currentUser.name} (Role: ${
           currentUser.role_id === 1 ? "Admin" : "Farmer"
         })`
       : "Created by: Unknown";
 
-    // Gabungkan notes baru dengan informasi pembuat
+    // Create session data with creator info
     const sessionData = {
       ...newSession,
       volume: parseFloat(newSession.volume),
@@ -408,34 +437,30 @@ const ListMilking = () => {
       const response = await addMilkingSession(sessionData);
 
       if (response.success) {
-        // Tampilkan pesan sukses
         Swal.fire({
           icon: "success",
           title: "Success",
           text: "Milking session added successfully!",
-          timer: 3000,
+          timer: 2000,
           showConfirmButton: false,
         });
 
-        // Refresh daftar sesi
+        // Refresh sessions list
         const sessionsResponse = await getMilkingSessions();
         if (sessionsResponse.success && sessionsResponse.sessions) {
           setSessions(sessionsResponse.sessions);
         }
 
         setShowAddModal(false);
-        // Reset form dengan ID pengguna saat ini dan waktu saat ini
+        // Reset form
         setNewSession({
           cow_id: "",
-          milker_id: currentUser
-            ? currentUser.user_id || currentUser.id || ""
-            : "",
+          milker_id: currentUser?.user_id || "",
           volume: "",
-          milking_time: new Date().toISOString().slice(0, 16),
+          milking_time: getLocalDateTime(),
           notes: "",
         });
       } else {
-        // Tampilkan pesan error
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -447,11 +472,22 @@ const ListMilking = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "An unexpected error occurred while adding the milking session.",
+        text: "An unexpected error occurred",
       });
     }
   };
 
+  // Open edit modal with session data
+  const openEditModal = useCallback((session) => {
+    setSelectedSession({
+      ...session,
+      cow_id: String(session.cow_id),
+      milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
+    });
+    setShowEditModal(true);
+  }, []);
+
+  // Handle editing a session
   const handleEditSession = async (e) => {
     e.preventDefault();
     try {
@@ -461,6 +497,14 @@ const ListMilking = () => {
       );
 
       if (response.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Milking session updated successfully!",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
         setShowEditModal(false);
         // Refresh sessions list
         const sessionsResponse = await getMilkingSessions();
@@ -468,39 +512,40 @@ const ListMilking = () => {
           setSessions(sessionsResponse.sessions);
         }
         setSelectedSession(null);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Failed to update milking session",
+        });
       }
     } catch (error) {
       console.error("Error editing session:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to edit milking session",
+        text: "An unexpected error occurred",
       });
     }
   };
 
-  const handleExportToPDF = async () => {
-    await exportMilkProductionToPDF();
-  };
-
-  const handleExportToExcel = async () => {
-    await exportMilkProductionToExcel();
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const openEditModal = (session) => {
-    setSelectedSession({
+  // Open view modal with session data
+  const openViewModal = useCallback((session) => {
+    setViewSession({
       ...session,
-      cow_id: String(session.cow_id), // Konversi ke string
-      milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
+      milking_time: session.milking_time,
     });
-    setShowEditModal(true);
-  };
+    setShowViewModal(true);
+  }, []);
 
-  // Format milking time based on time of day
+  // Handle exports
+  const handleExportToPDF = () => exportMilkProductionToPDF();
+  const handleExportToExcel = () => exportMilkProductionToExcel();
+
+  // Handle pagination
+  const handlePageChange = (page) => setCurrentPage(page);
+
+  // Format milking time with badges based on time of day
   const getMilkingTimeLabel = (timeStr) => {
     const date = new Date(timeStr);
     const hours = date.getHours();
@@ -535,7 +580,18 @@ const ListMilking = () => {
     );
   };
 
-  // Render loading spinner
+  // ========== CONSTANTS ==========
+  const milkingTimeInfo = {
+    Morning:
+      "Milking session conducted in the morning (before 12 PM), typically yields higher milk volume.",
+    Afternoon:
+      "Milking session during afternoon hours (12 PM - 6 PM), moderate milk production.",
+    Evening:
+      "Evening milking session (after 6 PM), usually the last session of the day.",
+  };
+
+  // ========== RENDER METHODS ==========
+  // Show loading spinner
   if (loading) {
     return (
       <div
@@ -547,7 +603,7 @@ const ListMilking = () => {
     );
   }
 
-  // Render error message
+  // Show error message
   if (error) {
     return (
       <div className="container mt-4">
@@ -633,8 +689,6 @@ const ListMilking = () => {
                   fontSize: "0.8rem",
                 }}
                 disabled={isSupervisor}
-                tabIndex={isSupervisor ? -1 : 0}
-                aria-disabled={isSupervisor}
               >
                 <i className="fas fa-plus me-2" /> Add Milking Session
               </Button>
@@ -660,6 +714,7 @@ const ListMilking = () => {
               </OverlayTrigger>
             </div>
           </div>
+
           {/* Stats Cards */}
           <Row className="mb-4">
             <Col md={3}>
@@ -669,11 +724,9 @@ const ListMilking = () => {
                     <div>
                       <h6 className="card-title mb-0">Total Sessions</h6>
                       <h2 className="mt-2 mb-0">
-                        {
-                          currentUser?.role_id === 1
-                            ? milkStats.totalSessions // Admin: semua sesi
-                            : milkStats.filteredSessions // Farmer: sesi terkait
-                        }
+                        {currentUser?.role_id === 1
+                          ? milkStats.totalSessions
+                          : milkStats.filteredSessions}
                       </h2>
                     </div>
                     <div>
@@ -690,11 +743,9 @@ const ListMilking = () => {
                     <div>
                       <h6 className="card-title mb-0">Total Volume</h6>
                       <h2 className="mt-2 mb-0">
-                        {
-                          currentUser?.role_id === 1
-                            ? `${milkStats.totalVolume} L` // Admin: semua volume
-                            : `${milkStats.filteredVolume} L` // Farmer: volume terkait
-                        }
+                        {currentUser?.role_id === 1
+                          ? `${milkStats.totalVolume} L`
+                          : `${milkStats.filteredVolume} L`}
                       </h2>
                     </div>
                     <div>
@@ -711,11 +762,9 @@ const ListMilking = () => {
                     <div>
                       <h6 className="card-title mb-0">Today's Volume</h6>
                       <h2 className="mt-2 mb-0">
-                        {
-                          currentUser?.role_id === 1
-                            ? `${milkStats.todayVolume} L` // Admin: semua volume hari ini
-                            : `${milkStats.filteredTodayVolume} L` // Farmer: volume hari ini terkait
-                        }
+                        {currentUser?.role_id === 1
+                          ? `${milkStats.todayVolume} L`
+                          : `${milkStats.filteredTodayVolume} L`}
                       </h2>
                     </div>
                     <div>
@@ -732,11 +781,9 @@ const ListMilking = () => {
                     <div>
                       <h6 className="card-title mb-0">Avg Volume/Session</h6>
                       <h2 className="mt-2 mb-0">
-                        {
-                          currentUser?.role_id === 1
-                            ? `${milkStats.avgVolumePerSession} L` // Admin: rata-rata semua sesi
-                            : `${milkStats.filteredAvgVolumePerSession} L` // Farmer: rata-rata sesi terkait
-                        }
+                        {currentUser?.role_id === 1
+                          ? `${milkStats.avgVolumePerSession} L`
+                          : `${milkStats.filteredAvgVolumePerSession} L`}
                       </h2>
                     </div>
                     <div>
@@ -837,80 +884,25 @@ const ListMilking = () => {
                     letterSpacing: "0.4px",
                   }}
                 >
-                  <th
-                    className="py-3 text-center"
-                    style={{
-                      width: "5%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                    }}
-                  >
+                  <th className="py-3 text-center" style={{ width: "5%" }}>
                     #
                   </th>
-                  <th
-                    className="py-3"
-                    style={{
-                      width: "15%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3" style={{ width: "15%" }}>
                     Cow
                   </th>
-                  <th
-                    className="py-3"
-                    style={{
-                      width: "12%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3" style={{ width: "12%" }}>
                     Milker
                   </th>
-                  <th
-                    className="py-3"
-                    style={{
-                      width: "10%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3" style={{ width: "10%" }}>
                     Volume (L)
                   </th>
-                  <th
-                    className="py-3"
-                    style={{
-                      width: "18%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3" style={{ width: "18%" }}>
                     Milking Time
                   </th>
-                  <th
-                    className="py-3"
-                    style={{
-                      width: "25%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3" style={{ width: "25%" }}>
                     Notes
                   </th>
-                  <th
-                    className="py-3 text-center"
-                    style={{
-                      width: "15%",
-                      fontWeight: "550",
-                      fontSize: "0.95rem",
-                      color: "#444",
-                    }}
-                  >
+                  <th className="py-3 text-center" style={{ width: "15%" }}>
                     Actions
                   </th>
                 </tr>
@@ -934,12 +926,9 @@ const ListMilking = () => {
                             className="me-1 px-1 py-1"
                             style={{ letterSpacing: "0.5px" }}
                           >
-                            ID : {session.cow_id}
+                            ID: {session.cow_id}
                           </Badge>
-                          <span
-                            className="fw-medium"
-                            style={{ letterSpacing: "0.3px" }}
-                          >
+                          <span className="fw-medium">
                             {session.cow_name || `-`}
                           </span>
                         </div>
@@ -955,7 +944,6 @@ const ListMilking = () => {
                             fontSize: "0.9rem",
                             fontWeight: "500",
                             letterSpacing: "0.8px",
-                            fontFamily: "'Roboto Mono', monospace",
                           }}
                         >
                           {parseFloat(session.volume).toFixed(2)} L
@@ -981,13 +969,7 @@ const ListMilking = () => {
                         {session.notes ? (
                           <OverlayTrigger
                             placement="top"
-                            overlay={
-                              <Tooltip
-                                style={{ fontFamily: "'Nunito', sans-serif" }}
-                              >
-                                {session.notes}
-                              </Tooltip>
-                            }
+                            overlay={<Tooltip>{session.notes}</Tooltip>}
                           >
                             <span
                               className="text-truncate d-inline-block fst-italic"
@@ -1024,12 +1006,10 @@ const ListMilking = () => {
                                   width: "36px",
                                   height: "36px",
                                   borderRadius: "8px",
-                                  transition: "all 0.2s",
                                 }}
                                 onClick={() => openEditModal(session)}
                                 disabled={isSupervisor}
                                 tabIndex={isSupervisor ? -1 : 0}
-                                aria-disabled={isSupervisor}
                               >
                                 <i className="fas fa-edit" />
                               </Button>
@@ -1047,7 +1027,6 @@ const ListMilking = () => {
                                 width: "36px",
                                 height: "36px",
                                 borderRadius: "8px",
-                                transition: "all 0.2s",
                               }}
                               onClick={() => openViewModal(session)}
                             >
@@ -1067,12 +1046,10 @@ const ListMilking = () => {
                                   width: "36px",
                                   height: "36px",
                                   borderRadius: "8px",
-                                  transition: "all 0.2s",
                                 }}
                                 onClick={() => handleDeleteSession(session.id)}
                                 disabled={isSupervisor}
                                 tabIndex={isSupervisor ? -1 : 0}
-                                aria-disabled={isSupervisor}
                               >
                                 <i className="fas fa-trash-alt" />
                               </Button>
@@ -1087,11 +1064,9 @@ const ListMilking = () => {
             </table>
           </div>
 
+          {/* Empty state message */}
           {filteredAndPaginatedSessions.totalItems === 0 && (
-            <div
-              className="text-center py-5 my-4"
-              style={{ fontFamily: "'Nunito', sans-serif" }}
-            >
+            <div className="text-center py-5 my-4">
               <i className="fas fa-search fa-3x text-muted mb-4 opacity-50"></i>
               <p
                 className="lead text-muted"
@@ -1109,7 +1084,6 @@ const ListMilking = () => {
                   setSelectedMilker("");
                   setSelectedDate("");
                 }}
-                style={{ letterSpacing: "0.5px" }}
               >
                 <i className="fas fa-sync-alt me-2"></i> Reset Filters
               </Button>
@@ -1128,7 +1102,7 @@ const ListMilking = () => {
                 of {filteredAndPaginatedSessions.totalItems} entries
               </div>
 
-              <nav aria-label="Page navigation">
+              <nav>
                 <ul className="pagination justify-content-center mb-0">
                   <li
                     className={`page-item ${
@@ -1155,43 +1129,45 @@ const ListMilking = () => {
                     </button>
                   </li>
 
-                  {[
-                    ...Array(filteredAndPaginatedSessions.totalPages).keys(),
-                  ].map((page) => {
-                    const pageNumber = page + 1;
-                    if (
-                      pageNumber === 1 ||
-                      pageNumber === filteredAndPaginatedSessions.totalPages ||
-                      (pageNumber >= currentPage - 1 &&
-                        pageNumber <= currentPage + 1)
-                    ) {
-                      return (
-                        <li
-                          key={pageNumber}
-                          className={`page-item ${
-                            currentPage === pageNumber ? "active" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() => handlePageChange(pageNumber)}
+                  {Array.from(
+                    { length: filteredAndPaginatedSessions.totalPages },
+                    (_, i) => {
+                      const pageNumber = i + 1;
+                      if (
+                        pageNumber === 1 ||
+                        pageNumber ===
+                          filteredAndPaginatedSessions.totalPages ||
+                        (pageNumber >= currentPage - 1 &&
+                          pageNumber <= currentPage + 1)
+                      ) {
+                        return (
+                          <li
+                            key={pageNumber}
+                            className={`page-item ${
+                              currentPage === pageNumber ? "active" : ""
+                            }`}
                           >
-                            {pageNumber}
-                          </button>
-                        </li>
-                      );
-                    } else if (
-                      pageNumber === currentPage - 2 ||
-                      pageNumber === currentPage + 2
-                    ) {
-                      return (
-                        <li key={pageNumber} className="page-item disabled">
-                          <span className="page-link">...</span>
-                        </li>
-                      );
+                            <button
+                              className="page-link"
+                              onClick={() => handlePageChange(pageNumber)}
+                            >
+                              {pageNumber}
+                            </button>
+                          </li>
+                        );
+                      } else if (
+                        pageNumber === currentPage - 2 ||
+                        pageNumber === currentPage + 2
+                      ) {
+                        return (
+                          <li key={pageNumber} className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        );
+                      }
+                      return null;
                     }
-                    return null;
-                  })}
+                  )}
 
                   <li
                     className={`page-item ${
@@ -1240,11 +1216,7 @@ const ListMilking = () => {
       >
         <Modal.Header closeButton className="bg-light">
           <Modal.Title
-            style={{
-              fontFamily: "'Roboto', sans-serif",
-              fontSize: "1.5rem",
-              letterSpacing: "0.5px",
-            }}
+            style={{ fontFamily: "'Roboto', sans-serif", fontSize: "1.5rem" }}
           >
             <i className="fas fa-eye me-2 text-info"></i>
             View Milking Session Details
@@ -1255,36 +1227,28 @@ const ListMilking = () => {
             <div className="p-3">
               <Row className="mb-4">
                 <Col md={6}>
-                  <h6 className="text-muted mb-2 section-title">
-                    Cow Information
-                  </h6>
-                  <div className="info-section border-start ps-3">
-                    <p className="detail-row">
-                      <span className="label">Cow ID:</span>
-                      <span className="value">{viewSession.cow_id}</span>
+                  <h6 className="text-muted mb-2">Cow Information</h6>
+                  <div className="border-start ps-3">
+                    <p>
+                      <span className="fw-bold me-2">Cow ID:</span>
+                      <span>{viewSession.cow_id}</span>
                     </p>
-                    <p className="detail-row">
-                      <span className="label">Cow Name:</span>
-                      <span className="value">
-                        {viewSession.cow_name || "N/A"}
-                      </span>
+                    <p>
+                      <span className="fw-bold me-2">Cow Name:</span>
+                      <span>{viewSession.cow_name || "N/A"}</span>
                     </p>
                   </div>
                 </Col>
                 <Col md={6}>
-                  <h6 className="text-muted mb-2 section-title">
-                    Milker Information
-                  </h6>
-                  <div className="info-section border-start ps-3">
-                    <p className="detail-row">
-                      <span className="label">Milker ID:</span>
-                      <span className="value">{viewSession.milker_id}</span>
+                  <h6 className="text-muted mb-2">Milker Information</h6>
+                  <div className="border-start ps-3">
+                    <p>
+                      <span className="fw-bold me-2">Milker ID:</span>
+                      <span>{viewSession.milker_id}</span>
                     </p>
-                    <p className="detail-row">
-                      <span className="label">Milker Name:</span>
-                      <span className="value">
-                        {viewSession.milker_name || "N/A"}
-                      </span>
+                    <p>
+                      <span className="fw-bold me-2">Milker Name:</span>
+                      <span>{viewSession.milker_name || "N/A"}</span>
                     </p>
                   </div>
                 </Col>
@@ -1292,118 +1256,53 @@ const ListMilking = () => {
 
               <Row className="mb-4">
                 <Col md={6}>
-                  <h6 className="text-muted mb-2 section-title">
-                    Milking Details
-                  </h6>
-                  <div className="info-section border-start ps-3">
-                    <p className="detail-row">
-                      <span className="label">Volume:</span>
-                      <Badge
-                        bg="success"
-                        className="px-2 ms-2"
-                        style={{
-                          fontSize: "0.9rem",
-                          letterSpacing: "0.5px",
-                          fontFamily: "'Roboto Mono', monospace",
-                        }}
-                      >
+                  <h6 className="text-muted mb-2">Milking Details</h6>
+                  <div className="border-start ps-3">
+                    <p>
+                      <span className="fw-bold me-2">Volume:</span>
+                      <Badge bg="success" className="px-2">
                         {parseFloat(viewSession.volume).toFixed(2)} L
                       </Badge>
                     </p>
-                    <p className="detail-row">
-                      <span className="label">Date:</span>
-                      <span className="value">
+                    <p>
+                      <span className="fw-bold me-2">Date:</span>
+                      <span>
                         {format(
                           new Date(viewSession.milking_time),
                           "yyyy-MM-dd"
                         )}
                       </span>
                     </p>
-                    <p className="detail-row">
-                      <span className="label">Time:</span>
-                      <span className="value">
+                    <p>
+                      <span className="fw-bold me-2">Time:</span>
+                      <span>
                         {getMilkingTimeLabel(viewSession.milking_time)}
                       </span>
                     </p>
                   </div>
                 </Col>
                 <Col md={6}>
-                  <h6 className="text-muted mb-2 section-title">
-                    Additional Information
-                  </h6>
-                  <div className="info-section border-start ps-3">
-                    <p className="detail-row">
-                      <span className="label">Notes:</span>
+                  <h6 className="text-muted mb-2">Additional Information</h6>
+                  <div className="border-start ps-3">
+                    <p>
+                      <span className="fw-bold">Notes:</span>
                     </p>
-                    <p className="notes-text fst-italic text-muted">
+                    <p className="fst-italic text-muted">
                       {viewSession.notes || "No notes provided"}
                     </p>
                   </div>
                 </Col>
               </Row>
-
-              <style jsx>{`
-                .section-title {
-                  font-family: "Nunito", sans-serif;
-                  font-size: 1rem;
-                  letter-spacing: 0.3px;
-                  font-weight: 600;
-                }
-
-                .info-section {
-                  border-left: 3px solid #eaeaea;
-                }
-
-                .detail-row {
-                  margin-bottom: 0.5rem;
-                  font-family: "Roboto", sans-serif;
-                  font-size: 0.95rem;
-                  letter-spacing: 0.2px;
-                }
-
-                .label {
-                  color: #666;
-                  min-width: 100px;
-                  display: inline-block;
-                  position: relative;
-                  margin-right: 8px;
-                }
-
-                .label::after {
-                  content: ":";
-                  position: absolute;
-                  right: 0;
-                }
-
-                .value {
-                  color: #333;
-                }
-
-                .notes-text {
-                  font-family: "Nunito", sans-serif;
-                  font-size: 0.9rem;
-                  letter-spacing: 0.2px;
-                  color: #666;
-                }
-              `}</style>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowViewModal(false)}
-            style={{
-              fontFamily: "'Nunito', sans-serif",
-              fontSize: "0.9rem",
-              letterSpacing: "0.5px",
-              fontWeight: "500",
-            }}
-          >
+          <Button variant="secondary" onClick={() => setShowViewModal(false)}>
             Close
           </Button>
         </Modal.Footer>
       </Modal>
+
       {/* Add Milking Session Modal */}
       <Modal
         show={showAddModal}
@@ -1428,10 +1327,9 @@ const ListMilking = () => {
                       setNewSession({ ...newSession, cow_id: e.target.value })
                     }
                     required
-                    className="shadow-sm border-primary"
+                    className="shadow-sm"
                   >
                     <option value="">-- Select Cow --</option>
-                    {/* If admin (role_id === 1), show all cows, else show only managed cows */}
                     {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                       .filter((cow) => cow.gender?.toLowerCase() === "female")
                       .map((cow) => (
@@ -1441,40 +1339,29 @@ const ListMilking = () => {
                         </option>
                       ))}
                   </Form.Select>
-                  <Form.Text className="text-muted">
-                    {currentUser?.role_id === 1
-                      ? "Select any female cow from the herd"
-                      : "Select from your managed female cows"}
-                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Milker</Form.Label>
                   {currentUser?.role_id === 1 ? (
-                    <>
-                      <Form.Select
-                        value={newSession.milker_id}
-                        onChange={(e) =>
-                          setNewSession({
-                            ...newSession,
-                            milker_id: e.target.value,
-                          })
-                        }
-                        required
-                        className="shadow-sm"
-                      >
-                        <option value="">-- Select Milker --</option>
-                        {farmers.map((farmer) => (
-                          <option key={farmer.user_id} value={farmer.user_id}>
-                            {farmer.name} (ID: {farmer.user_id})
-                          </option>
-                        ))}
-                      </Form.Select>
-                      <Form.Text className="text-muted">
-                        Select the farmer who performed the milking
-                      </Form.Text>
-                    </>
+                    <Form.Select
+                      value={newSession.milker_id}
+                      onChange={(e) =>
+                        setNewSession({
+                          ...newSession,
+                          milker_id: e.target.value,
+                        })
+                      }
+                      required
+                    >
+                      <option value="">-- Select Milker --</option>
+                      {farmers.map((farmer) => (
+                        <option key={farmer.user_id} value={farmer.user_id}>
+                          {farmer.name} (ID: {farmer.user_id})
+                        </option>
+                      ))}
+                    </Form.Select>
                   ) : (
                     <>
                       <Form.Control
@@ -1487,9 +1374,6 @@ const ListMilking = () => {
                         disabled
                         className="bg-light"
                       />
-                      <Form.Text className="text-muted">
-                        Recording as current logged-in user
-                      </Form.Text>
                       <Form.Control
                         type="hidden"
                         value={newSession.milker_id}
@@ -1592,10 +1476,8 @@ const ListMilking = () => {
                         })
                       }
                       required
-                      className="shadow-sm border-primary"
                     >
                       <option value="">-- Select Cow --</option>
-                      {/* If admin (role_id === 1), show all cows, else show only managed cows */}
                       {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                         .filter((cow) => cow.gender?.toLowerCase() === "female")
                         .map((cow) => (
@@ -1605,40 +1487,29 @@ const ListMilking = () => {
                           </option>
                         ))}
                     </Form.Select>
-                    <Form.Text className="text-muted">
-                      {currentUser?.role_id === 1
-                        ? "Select any female cow from the herd"
-                        : "Select from your managed female cows"}
-                    </Form.Text>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Milker</Form.Label>
                     {currentUser?.role_id === 1 ? (
-                      <>
-                        <Form.Select
-                          value={selectedSession.milker_id}
-                          onChange={(e) =>
-                            setSelectedSession({
-                              ...selectedSession,
-                              milker_id: e.target.value,
-                            })
-                          }
-                          required
-                          className="shadow-sm"
-                        >
-                          <option value="">-- Select Milker --</option>
-                          {farmers.map((farmer) => (
-                            <option key={farmer.user_id} value={farmer.user_id}>
-                              {farmer.name} (ID: {farmer.user_id})
-                            </option>
-                          ))}
-                        </Form.Select>
-                        <Form.Text className="text-muted">
-                          Select the farmer who performed the milking
-                        </Form.Text>
-                      </>
+                      <Form.Select
+                        value={selectedSession.milker_id}
+                        onChange={(e) =>
+                          setSelectedSession({
+                            ...selectedSession,
+                            milker_id: e.target.value,
+                          })
+                        }
+                        required
+                      >
+                        <option value="">-- Select Milker --</option>
+                        {farmers.map((farmer) => (
+                          <option key={farmer.user_id} value={farmer.user_id}>
+                            {farmer.name} (ID: {farmer.user_id})
+                          </option>
+                        ))}
+                      </Form.Select>
                     ) : (
                       <>
                         <Form.Control
@@ -1651,9 +1522,6 @@ const ListMilking = () => {
                           disabled
                           className="bg-light"
                         />
-                        <Form.Text className="text-muted">
-                          Recording as current logged-in user
-                        </Form.Text>
                         <Form.Control
                           type="hidden"
                           value={selectedSession.milker_id}

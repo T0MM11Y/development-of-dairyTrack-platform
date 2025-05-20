@@ -8,7 +8,7 @@ from sqlalchemy import func
 from fpdf import FPDF
 from flask import send_file
 from io import BytesIO
-from app.services.notification import check_milk_production_and_notify
+from app.services.notification import check_milk_expiry_and_notify, check_milk_production_and_notify
 import pandas as pd
 
 milk_production_bp = Blueprint('milk_production', __name__)
@@ -89,6 +89,7 @@ def add_milking_session():
         #cek evening kosong apatidak
         if summary.evening_volume != 0 or summary.afternoon_volume != 0:
             check_milk_production_and_notify()
+            check_milk_expiry_and_notify()
 
         return jsonify({
             "success": True, 
@@ -786,5 +787,31 @@ def export_daily_summaries_excel():
 
 @milk_production_bp.route('/check-production', methods=['POST'])
 def check_production():
-    check_milk_production_and_notify()
-    return jsonify({'message': 'Production check completed'}), 200
+    try:
+        production_result = check_milk_production_and_notify()
+        return jsonify({
+            'success': True,
+            'message': 'Production check completed',
+            'notifications': production_result
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@milk_production_bp.route('/check-expiry', methods=['POST'])
+def check_expiry():
+    try:
+        expiry_result = check_milk_expiry_and_notify()
+        return jsonify({
+            'success': True,
+            'message': 'Expiry check completed',
+            'notifications': expiry_result
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

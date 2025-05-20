@@ -64,14 +64,17 @@ const notificationController = {
           notificationData.FeedStock &&
           notificationData.FeedStock.Feed
         ) {
-          const stockAsInteger = Math.floor(parseFloat(notificationData.FeedStock.stock));
+          const stockAsInteger = Math.floor(
+            parseFloat(notificationData.FeedStock.stock)
+          );
           const feedName = notificationData.FeedStock.Feed.name;
           const feedUnit = notificationData.FeedStock.Feed.unit;
           notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit} segera tambahkan stok nya`;
           notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
-            notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
+            notificationData.message ||
+            "Stok pakan tidak ditemukan, silahkan periksa";
           notificationData.name = "Stok Feed Tidak Diketahui";
         }
         delete notificationData.FeedStock;
@@ -145,7 +148,7 @@ const notificationController = {
         ],
         where: {
           stock: {
-            [Op.lte]: sequelize.literal('`Feed`.`min_stock`'),
+            [Op.lte]: sequelize.literal("`Feed`.`min_stock`"),
           },
         },
       });
@@ -165,7 +168,10 @@ const notificationController = {
       for (const stockItem of criticalStocks) {
         const stockAsInteger = Math.floor(parseFloat(stockItem.stock));
         const message = `Pakan ${stockItem.Feed.name} sisa ${stockAsInteger} ${stockItem.Feed.unit} segera tambahkan stok nya`;
-        console.log("Checking for existing notification", { feedStockId: stockItem.id, message });
+        console.log("Checking for existing notification", {
+          feedStockId: stockItem.id,
+          message,
+        });
 
         const recentNotification = await Notification.findOne({
           where: {
@@ -183,9 +189,13 @@ const notificationController = {
             stockItem.user_id
           );
           notifications.push(notification);
-          console.log("New notification created", { notificationId: notification.id });
+          console.log("New notification created", {
+            notificationId: notification.id,
+          });
         } else {
-          console.log("Recent notification exists, skipping", { notificationId: recentNotification.id });
+          console.log("Recent notification exists, skipping", {
+            notificationId: recentNotification.id,
+          });
         }
       }
 
@@ -242,14 +252,17 @@ const notificationController = {
           notificationData.FeedStock &&
           notificationData.FeedStock.Feed
         ) {
-          const stockAsInteger = Math.floor(parseFloat(notificationData.FeedStock.stock));
+          const stockAsInteger = Math.floor(
+            parseFloat(notificationData.FeedStock.stock)
+          );
           const feedName = notificationData.FeedStock.Feed.name;
           const feedUnit = notificationData.FeedStock.Feed.unit;
           notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit} segera tambahkan stok nya`;
           notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
-            notificationData.message || "Stok pakan tidak ditemukan, silahkan periksa";
+            notificationData.message ||
+            "Stok pakan tidak ditemukan, silahkan periksa";
           notificationData.name = "Stok Feed Tidak Diketahui";
         }
         delete notificationData.FeedStock;

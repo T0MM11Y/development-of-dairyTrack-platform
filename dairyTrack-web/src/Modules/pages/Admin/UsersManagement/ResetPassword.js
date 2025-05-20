@@ -519,7 +519,6 @@ const ResetPassword = () => {
                       )}
                     </div>
                   </th>
-
                   <th scope="col" className="text-center fw-medium">
                     Action
                   </th>
@@ -558,7 +557,6 @@ const ResetPassword = () => {
                       <td className="text-center">
                         {getRoleBadge(user.role_id)}
                       </td>
-
                       <td className="text-center">
                         <OverlayTrigger
                           overlay={<Tooltip>Reset User's Password</Tooltip>}

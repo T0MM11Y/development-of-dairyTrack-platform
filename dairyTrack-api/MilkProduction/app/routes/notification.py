@@ -72,3 +72,17 @@ def get_unread_count():
     count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
     return jsonify({'unread_count': count})
 
+
+@notification_bp.route('/<int:notification_id>', methods=['DELETE'])
+def delete_notification(notification_id):
+    # Get user_id from request data
+    user_id = request.json.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "Missing user_id in request body"}), 400
+    
+    notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first_or_404()
+    db.session.delete(notification)
+    db.session.commit()
+    
+    return jsonify({'message': 'Notifikasi dihapus'})

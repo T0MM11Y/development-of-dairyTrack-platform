@@ -415,7 +415,7 @@ const CattleDistribution = () => {
               },
               {
                 key: "unassignedCows",
-                color: "warning",
+                color: "warning text-light",
                 icon: "unlink",
                 label: "Unassigned Cattle",
                 description: (
@@ -933,7 +933,7 @@ const CattleDistribution = () => {
               letterSpacing: "1.4px",
             }}
           >
-            <i className="fas fa-paw me-2 text-primary"></i> Unassigned Cattle
+            <i className="fas fa-paw me-2 "></i> Unassigned Cattle
           </Modal.Title>
         </Modal.Header>
         <div
