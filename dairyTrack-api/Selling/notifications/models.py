@@ -7,8 +7,8 @@ class Notification(models.Model):
         db_table = "notifications"
 
     objects = models.Manager()
-    user_id = models.IntegerField(default=0)
-    cow_id = models.IntegerField(null=True, blank=True, default=0)
+    user_id = models.IntegerField(null=True, blank=True)
+    cow_id = models.IntegerField(null=True, blank=True)
     feed_stock_id = models.IntegerField(null=True, blank=True)
     message = models.TextField()
     type = models.CharField(max_length=20, default='FEED_STOCK')

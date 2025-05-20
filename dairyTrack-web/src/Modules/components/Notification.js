@@ -13,6 +13,7 @@ import {
 } from "react-bootstrap";
 import { useSocket } from "../../socket/socket";
 import { formatDistanceToNow } from "date-fns";
+import { toZonedTime } from "date-fns-tz"; // Ganti ini
 import { deleteNotification } from "../controllers/notificationController";
 import Swal from "sweetalert2"; // Import SweetAlert2
 
@@ -170,13 +171,16 @@ const NotificationDropdown = () => {
     });
   };
 
-  const formatTimeAgo = (dateString) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch {
-      return "Date unknown";
-    }
-  };
+const formatTimeAgo = (dateString) => {
+  // Paksa ubah ke objek Date (JavaScript akan asumsikan UTC jika tidak hati-hati)
+  const date = new Date(dateString);
+
+  // Geser 7 jam ke depan secara manual agar cocok dengan WIB
+  const adjustedDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  return formatDistanceToNow(adjustedDate, { addSuffix: true });
+};
+
 
   // Pagination numbers (simple)
   const totalPages = Math.ceil(
@@ -421,75 +425,74 @@ const NotificationDropdown = () => {
               style={{ maxWidth: 140, marginLeft: "auto" }}
             />
           </div>
-          {currentNotifications.length === 0 ? (
-            <div className="text-center text-muted py-4">
-              <i className="fas fa-bell-slash fa-2x mb-2"></i>
-              <div>No notifications found</div>
-            </div>
-          ) : (
-            <div style={{ maxHeight: 350, overflowY: "auto" }}>
-              {currentNotifications.map((n) => (
-                <Card
-                  key={n.id}
-                  className={`mb-2 border-0 ${!n.is_read ? "bg-light" : ""}`}
-                  style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
-                >
-                  <Card.Body className="py-2 px-3 d-flex align-items-center">
-                    <span
-                      className={`d-inline-flex align-items-center justify-content-center rounded-circle me-2 ${
-                        n.type === "low_production"
-                          ? "bg-danger bg-opacity-10"
-                          : n.type === "high_production"
-                          ? "bg-success bg-opacity-10"
-                          : "bg-secondary bg-opacity-10"
-                      }`}
-                      style={{ width: 28, height: 28 }}
-                    >
-                      <i
-                        className={`fas ${getNotificationIcon(n.type)} ${
-                          n.type === "low_production"
-                            ? "text-danger"
-                            : n.type === "high_production"
-                            ? "text-success"
-                            : "text-secondary"
-                        }`}
-                      ></i>
-                    </span>
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="small text-muted">
-                          {formatTimeAgo(n.created_at)}
-                        </span>
-                        {!n.is_read ? (
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 text-primary"
-                            style={{ fontSize: 13 }}
-                            onClick={() => markAsRead(n.id)}
-                          >
-                            Mark as read
-                          </Button>
-                        ) : (
-                          <span className="small text-secondary">Read</span>
-                        )}
-                      </div>
-                      <div className="small">{n.message}</div>
-                    </div>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="ms-2"
-                      style={{ padding: "0.25rem 0.5rem" }}
-                      onClick={() => handleDeleteNotification(n.id)}
-                    >
-                      <i className="fas fa-trash-alt"></i>
-                    </Button>
-                  </Card.Body>
-                </Card>
-              ))}
-            </div>
-          )}
+        {currentNotifications.map((n) => {
+  // 🔍 DEBUG: Tampilkan waktu asli dan hasil parsing
+  console.log("🕓 RAW created_at:", n.created_at);
+  console.log("📅 Parsed Date:", new Date(n.created_at));
+  console.log("🧠 Time ago shown:", formatTimeAgo(n.created_at));
+
+  return (
+    <Card
+      key={n.id}
+      className={`mb-2 border-0 ${!n.is_read ? "bg-light" : ""}`}
+      style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
+    >
+      <Card.Body className="py-2 px-3 d-flex align-items-center">
+        <span
+          className={`d-inline-flex align-items-center justify-content-center rounded-circle me-2 ${
+            n.type === "low_production"
+              ? "bg-danger bg-opacity-10"
+              : n.type === "high_production"
+              ? "bg-success bg-opacity-10"
+              : "bg-secondary bg-opacity-10"
+          }`}
+          style={{ width: 28, height: 28 }}
+        >
+          <i
+            className={`fas ${getNotificationIcon(n.type)} ${
+              n.type === "low_production"
+                ? "text-danger"
+                : n.type === "high_production"
+                ? "text-success"
+                : "text-secondary"
+            }`}
+          ></i>
+        </span>
+        <div className="flex-grow-1">
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="small text-muted">
+              {formatTimeAgo(n.created_at)}
+            </span>
+            {!n.is_read ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-primary"
+                style={{ fontSize: 13 }}
+                onClick={() => markAsRead(n.id)}
+              >
+                Mark as read
+              </Button>
+            ) : (
+              <span className="small text-secondary">Read</span>
+            )}
+          </div>
+          <div className="small">{n.message}</div>
+        </div>
+        <Button
+          variant="outline-danger"
+          size="sm"
+          className="ms-2"
+          style={{ padding: "0.25rem 0.5rem" }}
+          onClick={() => handleDeleteNotification(n.id)}
+        >
+          <i className="fas fa-trash-alt"></i>
+        </Button>
+      </Card.Body>
+    </Card>
+  );
+})}
+
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="d-flex justify-content-center mt-3">

@@ -12,6 +12,7 @@ class Config:
     #     'mysql+pymysql://DairyTrack_massfortso:87237ffa17d18f91ba46b6ba67ac1cc35160d14b@x6lpm.h.filess.io:61002/DairyTrack_massfortso'
     # )
 
+
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JSON_SORT_KEYS = False
