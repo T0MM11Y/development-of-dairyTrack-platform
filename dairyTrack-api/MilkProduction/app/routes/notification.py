@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.models.notification import Notification
 from app.database.database import db
+from pytz import timezone
 
 notification_bp = Blueprint('notification', __name__)
 
@@ -10,25 +11,28 @@ def get_notifications():
     
     if not user_id:
         return jsonify({"error": "Missing user_id parameter"}), 400
-    
+
     # Query parameters
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     is_read = request.args.get('is_read', None)
-    
+
     # Build query
     query = Notification.query.filter_by(user_id=user_id)
-    
+
     if is_read is not None:
         is_read = is_read.lower() == 'true'
         query = query.filter_by(is_read=is_read)
-    
+
     # Order by newest first
     query = query.order_by(Notification.created_at.desc())
-    
+
     # Paginate results
     notifications = query.paginate(page=page, per_page=per_page)
-    
+
+    # Convert created_at ke Asia/Jakarta timezone
+    jakarta = timezone("Asia/Jakarta")
+
     result = {
         'notifications': [
             {
@@ -37,19 +41,19 @@ def get_notifications():
                 'message': n.message,
                 'type': n.type,
                 'is_read': n.is_read,
-                'created_at': n.created_at.isoformat() if n.created_at else None
+                'created_at': n.created_at.astimezone(jakarta).isoformat() if n.created_at else None
             } for n in notifications.items
         ],
         'total': notifications.total,
         'pages': notifications.pages,
         'current_page': page
     }
-    
+
     return jsonify(result)
+
 
 @notification_bp.route('/<int:notification_id>/read', methods=['PUT'])
 def mark_as_read(notification_id):
-    # Get user_id from request data
     user_id = request.json.get('user_id')
     
     if not user_id:
@@ -61,9 +65,9 @@ def mark_as_read(notification_id):
     
     return jsonify({'message': 'Notifikasi ditandai sudah dibaca'})
 
+
 @notification_bp.route('/unread-count', methods=['GET'])
 def get_unread_count():
-    # Get user_id from request parameters
     user_id = request.args.get('user_id', type=int)
     
     if not user_id:
@@ -75,7 +79,6 @@ def get_unread_count():
 
 @notification_bp.route('/<int:notification_id>', methods=['DELETE'])
 def delete_notification(notification_id):
-    # Get user_id from request data
     user_id = request.json.get('user_id')
     
     if not user_id:
