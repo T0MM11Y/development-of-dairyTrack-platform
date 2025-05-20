@@ -44,7 +44,7 @@
     "eject": "react-scripts eject",
     "api:all": "concurrently \"npm run api:feed\" \"npm run api:milk\" \"npm run api:health\" \"npm run api:selling\"",
     "api:feed": "cd ../dairyTrack-api/FeedConsumption && npm start 0.0.0:5003",
-    "api:milk": "cd ../dairyTrack-api/MilkProduction && python run.py",
+    "api:milk": "cd ../dairyTrack-api/MilkProduction && python run.py 0.0.0:5000",
     "api:health": "cd ../dairyTrack-api/HealthCheck && python manage.py runserver 0.0.0.0:5002",
     "api:selling": "cd ../dairyTrack-api/Selling && python manage.py runserver 0.0.0.0:5001",
     "lint": "eslint src/",
