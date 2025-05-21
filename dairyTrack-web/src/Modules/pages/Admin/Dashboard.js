@@ -13,6 +13,7 @@ import {
   Bar,
   AreaChart,
   Area,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -894,7 +895,7 @@ const Dashboard = () => {
                 </Card.Title>
                 <div style={{ height: "300px" }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={financeData}>
+                    <LineChart data={financeData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis
                         dataKey="date"
@@ -918,19 +919,31 @@ const Dashboard = () => {
                         labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
                         itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
                       />
-                      <Bar
+                      <Legend
+                        verticalAlign="top"
+                        height={36}
+                        wrapperStyle={{
+                          fontFamily: "'Nunito', sans-serif",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Line
+                        type="monotone"
                         dataKey="income"
-                        fill="#198754"
                         name="Pendapatan"
-                        radius={[4, 4, 0, 0]}
+                        stroke="#198754"
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
                       />
-                      <Bar
+                      <Line
+                        type="monotone"
                         dataKey="expense"
-                        fill="#dc3545"
                         name="Pengeluaran"
-                        radius={[4, 4, 0, 0]}
+                        stroke="#dc3545"
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
                       />
-                    </BarChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </Card.Body>
