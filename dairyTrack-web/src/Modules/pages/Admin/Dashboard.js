@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Table } from "react-bootstrap";
 import {
   FaPaw,
-  FaGlassWhiskey,
   FaMoneyBillWave,
-  FaNotesMedical,
-  FaUsers,
+  FaShoppingCart,
+  FaBoxOpen,
 } from "react-icons/fa";
 import {
   LineChart,
@@ -14,6 +13,7 @@ import {
   Bar,
   AreaChart,
   Area,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -22,19 +22,33 @@ import {
 } from "recharts";
 import { useInView } from "react-intersection-observer";
 import { motion } from "framer-motion";
-import {
-  Droplet,
-  Wheat,
-  Activity,
-  Users as LucideUsers,
-  PawPrint,
-} from "lucide-react";
+import { Droplet, Wheat, Activity, PawPrint, LucideUsers } from "lucide-react";
+import Swal from "sweetalert2";
 import { listCows } from "../../controllers/cowsController";
 import { getAllUsers } from "../../controllers/usersController";
 import { getMilkingSessions } from "../../controllers/milkProductionController";
 import { getFeedUsageByDate } from "../../controllers/feedItemController";
 import { listCowsByUser } from "../../controllers/cattleDistributionController";
+import financeController from "../../controllers/financeController.js";
 import { getHealthChecks } from "../../controllers/healthCheckController";
+import { getOrders } from "../../controllers/orderController";
+import { getProductStocks } from "../../controllers/productStockController";
+
+// Validate financeController
+if (
+  !financeController ||
+  typeof financeController.getIncomes !== "function" ||
+  typeof financeController.getExpenses !== "function"
+) {
+  console.error(
+    "Error: financeController is not a valid module or missing getIncomes/getExpenses functions"
+  );
+  Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: "Failed to load finance controller. Please check the application configuration.",
+  });
+}
 
 // Animation variants for Framer Motion
 const cardVariants = {
@@ -49,10 +63,12 @@ const Dashboard = () => {
   const [stats, setStats] = useState([]);
   const [milkProductionData, setMilkProductionData] = useState([]);
   const [feedUsageData, setFeedUsageData] = useState([]);
-  const [incomeData, setIncomeData] = useState([]);
+  const [financeData, setFinanceData] = useState([]);
   const [healthCheckData, setHealthCheckData] = useState([]);
   const [efficiencyData, setEfficiencyData] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [productStocks, setProductStocks] = useState([]);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userManagedCows, setUserManagedCows] = useState([]);
@@ -102,181 +118,185 @@ const Dashboard = () => {
   }, [currentUser]);
 
   useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      // Fetch Total Cows
-      const cowsResponse = await listCows();
-      if (cowsResponse.success) {
-        setTotalCows(cowsResponse.cows.length);
-      } else {
-        throw new Error(cowsResponse.message || "Failed to fetch cows.");
-      }
+      try {
+        // Fetch Total Cows
+        const cowsResponse = await listCows();
+        if (cowsResponse.success) {
+          setTotalCows(cowsResponse.cows.length);
+        } else {
+          throw new Error(cowsResponse.message || "Failed to fetch cows.");
+        }
 
-      // Fetch Total Farmers
-      const usersResponse = await getAllUsers();
-      if (usersResponse.success) {
-        const farmers = usersResponse.users.filter(
-          (user) => user.role === "farmer"
-        );
-        setTotalFarmers(farmers.length);
-      } else {
-        throw new Error(usersResponse.message || "Failed to fetch users.");
-      }
+        // Fetch Total Farmers
+        const usersResponse = await getAllUsers();
+        if (usersResponse.success) {
+          const farmers = usersResponse.users.filter(
+            (user) => user.role === "farmer"
+          );
+          setTotalFarmers(farmers.length);
+        } else {
+          throw new Error(usersResponse.message || "Failed to fetch users.");
+        }
 
-      // Define shared date variables
-      const today = "2025-05-20";
-      const startDate = new Date("2025-05-18");
-      const endDate = new Date("2025-05-24");
+        // Define shared date variables
+        const today = "2025-05-20";
+        const startDate = new Date("2025-05-18");
+        const endDate = new Date("2025-05-24");
 
-      // Fetch Milking Sessions
-      const milkingResponse = await getMilkingSessions();
-      let todayMilkVolume = "0.00";
-      let milkProductionData = [];
+        // Fetch Milking Sessions
+        const milkingResponse = await getMilkingSessions();
+        let todayMilkVolume = "0.00";
+        let milkProductionData = [];
 
-      if (milkingResponse.success && milkingResponse.sessions) {
-        let filteredSessions = milkingResponse.sessions;
+        if (milkingResponse.success && milkingResponse.sessions) {
+          let filteredSessions = milkingResponse.sessions;
 
-        // Filter sessions for farmers (role_id !== 1)
-        if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
-          const managedCowIds = userManagedCows.map((cow) => String(cow.id));
-          filteredSessions = filteredSessions.filter((session) =>
-            managedCowIds.includes(String(session.cow_id))
+          if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
+            const managedCowIds = userManagedCows.map((cow) => String(cow.id));
+            filteredSessions = filteredSessions.filter((session) =>
+              managedCowIds.includes(String(session.cow_id))
+            );
+          }
+
+          todayMilkVolume = filteredSessions
+            .filter((session) => session.milking_time.startsWith(today))
+            .reduce((sum, session) => sum + parseFloat(session.volume || 0), 0)
+            .toFixed(2);
+
+          const milkByDate = {};
+          for (
+            let date = new Date(startDate);
+            date <= endDate;
+            date.setDate(date.getDate() + 1)
+          ) {
+            const formattedDate = date.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            });
+            milkByDate[formattedDate] = 0;
+          }
+
+          filteredSessions.forEach((session) => {
+            const date = new Date(session.milking_time).toLocaleDateString(
+              "id-ID",
+              { day: "numeric", month: "short" }
+            );
+            if (milkByDate[date] !== undefined) {
+              milkByDate[date] += parseFloat(session.volume || 0);
+            }
+          });
+
+          milkProductionData = Object.entries(milkByDate).map(
+            ([date, volume]) => ({
+              date,
+              volume: parseFloat(volume.toFixed(2)),
+            })
+          );
+        } else {
+          throw new Error(
+            milkingResponse.message || "Failed to fetch milking sessions."
           );
         }
 
-        // Calculate Today's Milk Production (May 20, 2025)
-        todayMilkVolume = filteredSessions
-          .filter((session) => session.milking_time.startsWith(today))
-          .reduce((sum, session) => sum + parseFloat(session.volume || 0), 0)
-          .toFixed(2);
-
-        // Aggregate Milk Production by Date for Current Week (May 18–24, 2025)
-        const milkByDate = {};
-        for (
-          let date = new Date(startDate);
-          date <= endDate;
-          date.setDate(date.getDate() + 1)
-        ) {
-          const formattedDate = date.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          milkByDate[formattedDate] = 0;
-        }
-
-        filteredSessions.forEach((session) => {
-          const date = new Date(session.milking_time).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          if (milkByDate[date] !== undefined) {
-            milkByDate[date] += parseFloat(session.volume || 0);
-          }
+        // Fetch Feed Usage Data
+        const feedResponse = await getFeedUsageByDate({
+          start_date: "2025-05-18",
+          end_date: "2025-05-24",
         });
 
-        milkProductionData = Object.entries(milkByDate).map(([date, volume]) => ({
-          date,
-          volume: parseFloat(volume.toFixed(2)),
-        }));
-      } else {
-        throw new Error(milkingResponse.message || "Failed to fetch milking sessions.");
-      }
+        let todayFeedQuantity = "0.00";
+        let feedUsageData = [];
 
-      // Fetch Feed Usage Data
-      const feedResponse = await getFeedUsageByDate({
-        start_date: "2025-05-18",
-        end_date: "2025-05-24",
-      });
+        if (feedResponse.success && Array.isArray(feedResponse.data)) {
+          todayFeedQuantity = feedResponse.data
+            .filter((item) => item.date.startsWith(today))
+            .reduce((sum, day) => {
+              return (
+                sum +
+                day.feeds.reduce(
+                  (daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0),
+                  0
+                )
+              );
+            }, 0)
+            .toFixed(2);
 
-      let todayFeedQuantity = "0.00";
-      let feedUsageData = [];
-
-      if (feedResponse.success && Array.isArray(feedResponse.data)) {
-        // Calculate Today's Feed Usage (May 20, 2025)
-        todayFeedQuantity = feedResponse.data
-          .filter((item) => item.date.startsWith(today))
-          .reduce((sum, day) => {
-            return (
-              sum +
-              day.feeds.reduce((daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0), 0)
-            );
-          }, 0)
-          .toFixed(2);
-
-        // Aggregate Feed Usage by Date for Current Week
-        const feedByDate = {};
-        for (
-          let date = new Date(startDate);
-          date <= endDate;
-          date.setDate(date.getDate() + 1)
-        ) {
-          const formattedDate = date.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          feedByDate[formattedDate] = 0;
-        }
-
-        feedResponse.data.forEach((day) => {
-          const date = new Date(day.date).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          if (feedByDate[date] !== undefined) {
-            feedByDate[date] += day.feeds.reduce(
-              (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
-              0
-            );
+          const feedByDate = {};
+          for (
+            let date = new Date(startDate);
+            date <= endDate;
+            date.setDate(date.getDate() + 1)
+          ) {
+            const formattedDate = date.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            });
+            feedByDate[formattedDate] = 0;
           }
-        });
 
-        feedUsageData = Object.entries(feedByDate).map(([date, quantity]) => ({
-          date,
-          feed: parseFloat(quantity.toFixed(2)),
-        }));
-      } else {
-        console.error("Unexpected feed usage response:", feedResponse);
-      }
+          feedResponse.data.forEach((day) => {
+            const date = new Date(day.date).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            });
+            if (feedByDate[date] !== undefined) {
+              feedByDate[date] += day.feeds.reduce(
+                (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
+                0
+              );
+            }
+          });
 
-      // Fetch Health Checks
-      const healthResponse = await getHealthChecks();
-      let totalHealthChecks = 0;
-      let healthCheckData = [];
-
-      if (Array.isArray(healthResponse)) {
-        console.log("Raw healthResponse:", healthResponse);
-
-        // Remove duplicates by id
-        const uniqueHealthChecks = Array.from(
-          new Map(healthResponse.map((check) => [check.id, check])).values()
-        );
-        console.log("Unique health checks:", uniqueHealthChecks);
-
-        let filteredHealthChecks = uniqueHealthChecks;
-
-        // Filter health checks for farmers (role_id !== 1)
-        if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
-          const managedCowIds = userManagedCows.map((cow) => cow.id);
-          filteredHealthChecks = filteredHealthChecks.filter((check) =>
-            managedCowIds.includes(check?.cow?.id)
+          feedUsageData = Object.entries(feedByDate).map(
+            ([date, quantity]) => ({
+              date,
+              feed: parseFloat(quantity.toFixed(2)),
+            })
           );
+        } else {
+          console.error("Unexpected feed usage response:", feedResponse);
         }
 
-        // Supervisors (role_id === 2) see all if no managed cows
-        if (currentUser?.role_id === 2 && userManagedCows.length === 0) {
-          filteredHealthChecks = uniqueHealthChecks;
+        // Fetch Finance Data
+        const queryParams = new URLSearchParams();
+        queryParams.append("start_date", "2025-05-18");
+        queryParams.append("end_date", "2025-05-24");
+        const queryString = queryParams.toString();
+
+        let incomes, expenses;
+        try {
+          const [incomeResponse, expenseResponse] = await Promise.all([
+            financeController.getIncomes(queryString),
+            financeController.getExpenses(queryString),
+          ]);
+
+          if (!incomeResponse.success) {
+            throw new Error(
+              incomeResponse.message || "Failed to fetch incomes."
+            );
+          }
+          if (!expenseResponse.success) {
+            throw new Error(
+              expenseResponse.message || "Failed to fetch expenses."
+            );
+          }
+
+          incomes = incomeResponse.incomes || [];
+          expenses = expenseResponse.expenses || [];
+        } catch (err) {
+          console.error("Error fetching finance data:", err);
+          throw new Error("Failed to fetch finance data: " + err.message);
         }
 
-        console.log("Filtered health checks:", filteredHealthChecks);
+        let totalIncome = "0.00";
+        let totalExpense = "0.00";
+        let financeChartData = [];
 
-        // Calculate Total Health Checks
-        totalHealthChecks = filteredHealthChecks.length;
-
-        // Aggregate Health Checks by Date for Current Week (May 18–24, 2025)
-        const healthByDate = {};
+        const financeByDate = {};
         for (
           let date = new Date(startDate);
           date <= endDate;
@@ -286,122 +306,275 @@ const Dashboard = () => {
             day: "numeric",
             month: "short",
           });
-          healthByDate[formattedDate] = 0;
+          financeByDate[formattedDate] = { income: 0, expense: 0 };
         }
 
-        filteredHealthChecks.forEach((check) => {
-          // Normalize checkup_date to YYYY-MM-DD
-          const checkupDate = new Date(check.checkup_date);
-          if (isNaN(checkupDate.getTime())) {
-            console.warn("Invalid checkup_date:", check.checkup_date);
-            return;
-          }
-          const date = checkupDate.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          console.log("Health check date:", check.checkup_date, "Formatted:", date);
-          if (healthByDate[date] !== undefined) {
-            healthByDate[date] += 1;
+        incomes.forEach((transaction) => {
+          const date = new Date(
+            transaction.transaction_date
+          ).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+          if (financeByDate[date]) {
+            const amount = parseFloat(transaction.amount) / 1000000; // Convert to millions
+            financeByDate[date].income += amount;
           }
         });
 
-        console.log("healthByDate:", healthByDate);
+        expenses.forEach((transaction) => {
+          const date = new Date(
+            transaction.transaction_date
+          ).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+          if (financeByDate[date]) {
+            const amount = parseFloat(transaction.amount) / 1000000; // Convert to millions
+            financeByDate[date].expense += amount;
+          }
+        });
 
-        healthCheckData = Object.entries(healthByDate).map(([date, checks]) => ({
-          date,
-          checks,
+        totalIncome = incomes
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+          .toFixed(2);
+
+        totalExpense = expenses
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+          .toFixed(2);
+
+        financeChartData = Object.entries(financeByDate).map(
+          ([date, values]) => ({
+            date,
+            income: parseFloat(values.income.toFixed(2)),
+            expense: parseFloat(values.expense.toFixed(2)),
+          })
+        );
+
+        // Fetch Health Checks
+        const healthResponse = await getHealthChecks();
+        let totalHealthChecks = 0;
+        let healthCheckData = [];
+
+        if (Array.isArray(healthResponse)) {
+          const uniqueHealthChecks = Array.from(
+            new Map(healthResponse.map((check) => [check.id, check])).values()
+          );
+
+          let filteredHealthChecks = uniqueHealthChecks;
+
+          if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
+            const managedCowIds = userManagedCows.map((cow) => cow.id);
+            filteredHealthChecks = filteredHealthChecks.filter((check) =>
+              managedCowIds.includes(check?.cow?.id)
+            );
+          }
+
+          if (currentUser?.role_id === 2 && userManagedCows.length === 0) {
+            filteredHealthChecks = uniqueHealthChecks;
+          }
+
+          totalHealthChecks = filteredHealthChecks.length;
+
+          const healthByDate = {};
+          for (
+            let date = new Date(startDate);
+            date <= endDate;
+            date.setDate(date.getDate() + 1)
+          ) {
+            const formattedDate = date.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            });
+            healthByDate[formattedDate] = 0;
+          }
+
+          filteredHealthChecks.forEach((check) => {
+            const checkupDate = new Date(check.checkup_date);
+            if (isNaN(checkupDate.getTime())) {
+              console.warn("Invalid checkup_date:", check.checkup_date);
+              return;
+            }
+            const date = checkupDate.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            });
+            if (healthByDate[date] !== undefined) {
+              healthByDate[date] += 1;
+            }
+          });
+
+          healthCheckData = Object.entries(healthByDate).map(
+            ([date, checks]) => ({
+              date,
+              checks,
+            })
+          );
+        } else {
+          console.error("Unexpected health checks response:", healthResponse);
+        }
+
+        // Fetch Orders
+        // Fetch Orders
+        let ordersData = [];
+        try {
+          const ordersResponse = await getOrders();
+          console.log("Orders Response:", ordersResponse); // Debug log
+          if (ordersResponse.success && Array.isArray(ordersResponse.orders)) {
+            ordersData = ordersResponse.orders.map((order) => ({
+              order_no: order.order_no || "N/A",
+              customer_name: order.customer_name || "Unknown",
+              total: parseFloat(order.total_price || 0).toLocaleString(
+                "id-ID",
+                {
+                  style: "currency",
+                  currency: "IDR",
+                  minimumFractionDigits: 0,
+                }
+              ),
+              status: order.status || "Unknown",
+            }));
+          } else {
+            console.error("Invalid orders response:", ordersResponse);
+            throw new Error("Failed to fetch valid orders data.");
+          }
+        } catch (err) {
+          console.error("Error fetching orders:", err);
+          setError(err.message || "Failed to fetch orders.");
+        }
+        setOrders(ordersData);
+        console.log("Orders State Updated:", ordersData); // Debug log
+
+        // Fetch Product Stocks
+        let stocksData = [];
+        try {
+          const stocksResponse = await getProductStocks();
+          if (
+            stocksResponse.success &&
+            Array.isArray(stocksResponse.product_stocks)
+          ) {
+            stocksData = stocksResponse.product_stocks
+              .map((stock) => ({
+                product: stock.product?.name || "Unknown",
+                quantity: stock.quantity || "0",
+                expiry_date: stock.expiry_date
+                  ? new Date(stock.expiry_date).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "N/A",
+              }))
+              .sort(
+                (a, b) => new Date(a.expiry_date) - new Date(b.expiry_date)
+              );
+          } else {
+            console.warn("Failed to fetch product stocks, using mock data.");
+            stocksData = [
+              {
+                product: "Susu Coklat",
+                quantity: "5 liter",
+                expiry_date: "20 Mei 2025",
+              },
+              {
+                product: "Susu Strawberry",
+                quantity: "5 liter",
+                expiry_date: "20 Mei 2025",
+              },
+              {
+                product: "Susu Strawberry",
+                quantity: "1 liter",
+                expiry_date: "22 Mei 2025",
+              },
+            ];
+          }
+        } catch (err) {
+          console.error("Error fetching product stocks:", err);
+        }
+
+        // Calculate Cow Efficiency
+        const efficiencyData = feedUsageData.map((feed, i) => ({
+          date: feed.date,
+          efficiency:
+            milkProductionData[i] && feed.feed > 0
+              ? (milkProductionData[i].volume / feed.feed).toFixed(2)
+              : 0,
         }));
 
-        console.log("healthCheckData:", healthCheckData);
-      } else {
-        console.error("Unexpected health checks response:", healthResponse);
+        // Generate Recent Activities
+        const recentActivities = [
+          {
+            time: "2 jam lalu",
+            content: `Pemeriksaan kesehatan: ${totalHealthChecks} sapi diperiksa`,
+            icon: <Activity className="text-purple" />,
+          },
+          {
+            time: "5 jam lalu",
+            content: `Produksi susu: ${todayMilkVolume} L`,
+            icon: <Droplet className="text-info" />,
+          },
+          {
+            time: "8 jam lalu",
+            content: `Konsumsi pakan: ${todayFeedQuantity} kg`,
+            icon: <Wheat className="text-warning" />,
+          },
+          {
+            time: "1 hari lalu",
+            content: `Pendapatan: Rp ${(
+              parseFloat(totalIncome) / 1000000
+            ).toFixed(2)} Jt`,
+            icon: <FaMoneyBillWave className="text-success" />,
+          },
+        ];
+
+        // Update Stats
+        const updatedStats = [
+          {
+            title: "Konsumsi Pakan (hari ini)",
+            value: `${todayFeedQuantity} kg`,
+            icon: <Wheat className="text-warning" />,
+            color: "warning",
+          },
+          {
+            title: "Produksi Susu (hari ini)",
+            value: `${todayMilkVolume} L`,
+            icon: <Droplet className="text-info" />,
+            color: "info",
+          },
+          {
+            title: "Pendapatan (minggu ini)",
+            value: `Rp ${(parseFloat(totalIncome) / 1000000).toFixed(2)} Jt`,
+            icon: <FaMoneyBillWave className="text-success" />,
+            color: "success",
+          },
+          {
+            title: "Pemeriksaan Kesehatan",
+            value: totalHealthChecks.toString(),
+            icon: <Activity className="text-purple" />,
+            color: "purple",
+          },
+        ];
+
+        setMilkProductionData(milkProductionData);
+        setFeedUsageData(feedUsageData);
+        setFinanceData(financeChartData);
+        setHealthCheckData(healthCheckData);
+        setEfficiencyData(efficiencyData);
+        setRecentActivities(recentActivities);
+        setOrders(ordersData);
+        setProductStocks(stocksData);
+        setStats(updatedStats);
+      } catch (err) {
+        console.error("Error in fetchData:", err);
+        setError(err.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err.message || "Failed to load dashboard data.",
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Update Stats
-      const updatedStats = [
-        {
-          title: "Konsumsi Pakan (hari ini)",
-          value: `${todayFeedQuantity} kg`,
-          icon: <Wheat className="text-warning" />,
-          color: "warning",
-        },
-        {
-          title: "Produksi Susu (hari ini)",
-          value: `${todayMilkVolume} L`,
-          icon: <Droplet className="text-info" />,
-          color: "info",
-        },
-        {
-          title: "Pendapatan (bulan ini)",
-          value: "Rp 12.5 Jt",
-          icon: <FaMoneyBillWave className="text-success" />,
-          color: "success",
-        },
-        {
-          title: "Pemeriksaan Kesehatan",
-          value: totalHealthChecks.toString(),
-          icon: <Activity className="text-purple" />,
-          color: "purple",
-        },
-      ];
-
-      // Mock data for income and efficiency charts
-      const mockIncomeData = [
-        { date: "18 Mei", income: 4.5 },
-        { date: "19 Mei", income: 4.3 },
-        { date: "20 Mei", income: 4.2 },
-      ];
-
-      const mockEfficiencyData = feedUsageData.map((feed, i) => ({
-        date: feed.date,
-        efficiency:
-          milkProductionData[i] && feed.feed > 0
-            ? (milkProductionData[i].volume / feed.feed).toFixed(2)
-            : 0,
-      }));
-
-      const mockActivities = [
-        {
-          time: "2 jam lalu",
-          content: "Pemeriksaan kesehatan: Sapi #1542 - Sehat",
-          icon: <Activity className="text-purple" />,
-        },
-        {
-          time: "5 jam lalu",
-          content: `Produksi susu: ${todayMilkVolume} L`,
-          icon: <Droplet className="text-info" />,
-        },
-        {
-          time: "8 jam lalu",
-          content: `Konsumsi pakan: ${todayFeedQuantity} kg`,
-          icon: <Wheat className="text-warning" />,
-        },
-        {
-          time: "1 hari lalu",
-          content: "Penjualan susu: Rp 3.75 Jt",
-          icon: <FaMoneyBillWave className="text-success" />,
-        },
-      ];
-
-      setMilkProductionData(milkProductionData);
-      setFeedUsageData(feedUsageData);
-      setIncomeData(mockIncomeData);
-      setHealthCheckData(healthCheckData);
-      setEfficiencyData(mockEfficiencyData);
-      setStats(updatedStats);
-      setRecentActivities(mockActivities);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (currentUser && userManagedCows !== undefined) {
+      fetchData();
     }
-  };
-
-  if (currentUser && userManagedCows !== undefined) {
-    fetchData();
-  }
-}, [currentUser, userManagedCows]);
+  }, [currentUser, userManagedCows]);
 
   // Current date and time (WIB)
   const currentDate = new Date().toLocaleString("id-ID", {
@@ -703,7 +876,7 @@ const Dashboard = () => {
               </Card.Body>
             </Card>
 
-            {/* Chart 3: Income Trends */}
+            {/* Chart 3: Income vs Expense */}
             <Card
               className="border-0 shadow-sm mb-4"
               style={{
@@ -718,31 +891,11 @@ const Dashboard = () => {
                     fontWeight: "bold",
                   }}
                 >
-                  Tren Pendapatan
+                  Pendapatan vs Pengeluaran Mingguan
                 </Card.Title>
                 <div style={{ height: "300px" }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={incomeData}>
-                      <defs>
-                        <linearGradient
-                          id="incomeColor"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="#198754"
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="#198754"
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
+                    <LineChart data={financeData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis
                         dataKey="date"
@@ -752,32 +905,52 @@ const Dashboard = () => {
                         }}
                       />
                       <YAxis
-                        tickFormatter={(value) => `${value} Jt`}
+                        tickFormatter={(value) => `Rp ${value} Jt`}
                         tick={{
                           fontSize: 12,
                           fontFamily: "'Nunito', sans-serif",
                         }}
                       />
                       <Tooltip
-                        formatter={(value) => [`Rp ${value} Jt`, "Pendapatan"]}
+                        formatter={(value, name) => [
+                          `Rp ${value} Jt`,
+                          name === "income" ? "Pendapatan" : "Pengeluaran",
+                        ]}
                         labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
                         itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
                       />
-                      <Area
+                      <Legend
+                        verticalAlign="top"
+                        height={36}
+                        wrapperStyle={{
+                          fontFamily: "'Nunito', sans-serif",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Line
                         type="monotone"
                         dataKey="income"
+                        name="Pendapatan"
                         stroke="#198754"
                         strokeWidth={2}
-                        fill="url(#incomeColor)"
+                        activeDot={{ r: 8 }}
                       />
-                    </AreaChart>
+                      <Line
+                        type="monotone"
+                        dataKey="expense"
+                        name="Pengeluaran"
+                        stroke="#dc3545"
+                        strokeWidth={2}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </Card.Body>
             </Card>
           </Col>
 
-          {/* Sidebar Charts */}
+          {/* Sidebar Charts and Tables */}
           <Col lg={4}>
             {/* Chart 4: Health Check Frequency */}
             <Card
@@ -884,7 +1057,7 @@ const Dashboard = () => {
 
             {/* Recent Activities */}
             <Card
-              className="border-0 shadow-sm"
+              className="border-0 shadow-sm mb-4"
               style={{
                 background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
               }}
@@ -927,6 +1100,102 @@ const Dashboard = () => {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* Incoming Orders */}
+            <Card
+              className="border-0 shadow-sm mb-4"
+              style={{
+                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
+              }}
+            >
+              <Card.Body>
+                <Card.Title
+                  className="text-primary mb-3"
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Pesanan Masuk
+                </Card.Title>
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  <Table
+                    striped
+                    bordered
+                    hover
+                    size="sm"
+                    responsive
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>No. Pesanan</th>
+                        <th>Pelanggan</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order, index) => (
+                        <tr key={index}>
+                          <td>{order.order_no}</td>
+                          <td>{order.customer_name}</td>
+                          <td>{order.total}</td>
+                          <td>{order.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* Product Stocks */}
+            <Card
+              className="border-0 shadow-sm mb-4"
+              style={{
+                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
+              }}
+            >
+              <Card.Body>
+                <Card.Title
+                  className="text-primary mb-3"
+                  style={{
+                    fontFamily: "'Nunito', sans-serif",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Stok Produk (Urut Kadaluarsa)
+                </Card.Title>
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  <Table
+                    striped
+                    bordered
+                    hover
+                    size="sm"
+                    responsive
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Produk</th>
+                        <th>Kuantitas</th>
+                        <th>Kadaluarsa</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productStocks.map((stock, index) => (
+                        <tr key={index}>
+                          <td>{stock.product}</td>
+                          <td>{stock.quantity}</td>
+                          <td>{stock.expiry_date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
                 </div>
               </Card.Body>
             </Card>
