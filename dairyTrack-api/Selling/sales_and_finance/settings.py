@@ -138,33 +138,33 @@ CORS_ALLOW_HEADERS = [
 # }
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Ganti dengan nama database MySQL
-        'USER': 'root',  # Ganti dengan username MySQL
-        'PASSWORD': '',  # Ganti dengan password MySQL
-        'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan
-        'PORT': '3306',  # Port default MySQL
-        'OPTIONS': {
-            'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
-        },
-    }
-}
-
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'DairyTrack_massfortso',  # Nama database MySQL
-#         'USER': 'DairyTrack_massfortso',  # Username MySQL
-#         'PASSWORD': '87237ffa17d18f91ba46b6ba67ac1cc35160d14b',  # Password MySQL
-#         'HOST': 'tcorc.h.filess.io',  # Host MySQL
-#         'PORT': '61002',  # Port MySQL
+#         'NAME': 'dairy_track',  # Ganti dengan nama database MySQL
+#         'USER': 'root',  # Ganti dengan username MySQL
+#         'PASSWORD': '',  # Ganti dengan password MySQL
+#         'HOST': 'localhost',  # Jika menggunakan server lain, ganti sesuai kebutuhan
+#         'PORT': '3306',  # Port default MySQL
 #         'OPTIONS': {
-#             'charset': 'utf8mb4',  # Mendukung emoji dan karakter khusus
+#             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
 #         },
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'DairyTrack_massfortso',  # Nama database MySQL
+        'USER': 'DairyTrack_massfortso',  # Username MySQL
+        'PASSWORD': '87237ffa17d18f91ba46b6ba67ac1cc35160d14b',  # Password MySQL
+        'HOST': 'tcorc.h.filess.io',  # Host MySQL
+        'PORT': '61002',  # Port MySQL
+        'OPTIONS': {
+            'charset': 'utf8mb4',  # Mendukung emoji dan karakter khusus
+        },
+    }
+}
 
 
 
