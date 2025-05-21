@@ -50,23 +50,22 @@ class Cow {
       birth: json['birth'] as String,
       breed: json['breed'] as String,
       lactationPhase: json['lactation_phase'] as String,
-      weight:
-          (json['weight'] is int)
-              ? (json['weight'] as int).toDouble()
-              : json['weight'] as double,
+      weight: (json['weight'] is int)
+          ? (json['weight'] as int).toDouble()
+          : json['weight'] as double,
       gender: json['gender'] as String,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'birth': birth,
-    'breed': breed,
-    'lactation_phase': lactationPhase,
-    'weight': weight,
-    'gender': gender,
-  };
+        'id': id,
+        'name': name,
+        'birth': birth,
+        'breed': breed,
+        'lactation_phase': lactationPhase,
+        'weight': weight,
+        'gender': gender,
+      };
 }
 
 class CowManagementController {
@@ -131,31 +130,20 @@ class CowManagementController {
     }
   }
 
-  // List all cows
-  Future<List<Cow>> listCows() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/list'),
-        headers: _headers,
-      );
+  Future<List<Cow>> listCows({String? sortBy, String? sortOrder}) async {
+    final url = Uri.parse('$baseURL/cows/list');
+    final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        print('Response body: ${response.body}');
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        if (responseData.containsKey('cows') && responseData['cows'] is List) {
-          final List<dynamic> cowsList = responseData['cows'];
-          return cowsList.map((json) => Cow.fromJson(json)).toList();
-        } else {
-          throw Exception('Unexpected response format from API');
-        }
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      if (jsonResponse.containsKey('cows')) {
+        final List<dynamic> cowList = jsonResponse['cows'];
+        return cowList.map((cowJson) => Cow.fromJson(cowJson)).toList();
       } else {
-        throw Exception(
-          jsonDecode(response.body)['error'] ?? 'Failed to fetch cows',
-        );
+        throw Exception('Response does not contain "cows" key');
       }
-    } catch (e) {
-      throw Exception('An error occurred: $e');
+    } else {
+      throw Exception('Failed to load cows: ${response.statusCode}');
     }
   }
 
