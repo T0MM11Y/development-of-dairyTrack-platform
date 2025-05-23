@@ -446,6 +446,7 @@ exports.getAllDailyFeeds = async (req, res) => {
   try {
     const { cow_id, date, session } = req.query;
     const userId = req.user?.id;
+    const userRole = req.user?.role?.toLowerCase(); // Ambil peran pengguna
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Autentikasi gagal. Silakan login kembali." });
@@ -456,10 +457,12 @@ exports.getAllDailyFeeds = async (req, res) => {
     if (date) filter.date = date;
     if (session) filter.session = session;
 
-    // Restrict to cows managed by the user
-    const userCows = await UserCowAssociation.findAll({ where: { user_id: userId }, attributes: ["cow_id"] });
-    const allowedCowIds = userCows.map((uc) => uc.cow_id);
-    filter.cow_id = allowedCowIds.length > 0 ? { [Op.in]: allowedCowIds } : { [Op.eq]: null };
+    // Hanya terapkan filter UserCowAssociation untuk farmer
+    if (userRole === "farmer") {
+      const userCows = await UserCowAssociation.findAll({ where: { user_id: userId }, attributes: ["cow_id"] });
+      const allowedCowIds = userCows.map((uc) => uc.cow_id);
+      filter.cow_id = allowedCowIds.length > 0 ? { [Op.in]: allowedCowIds } : { [Op.eq]: null };
+    }
 
     const feeds = await DailyFeedSchedule.findAll({
       where: filter,
@@ -488,6 +491,7 @@ exports.getAllDailyFeeds = async (req, res) => {
 exports.getDailyFeedById = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
+  const userRole = req.user?.role?.toLowerCase();
 
   if (!userId) {
     return res.status(401).json({ success: false, message: "Autentikasi gagal. Silakan login kembali." });
@@ -512,11 +516,14 @@ exports.getDailyFeedById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Jadwal pakan tidak ditemukan." });
     }
 
-    const userCowAssociation = await UserCowAssociation.findOne({
-      where: { user_id: userId, cow_id: feed.cow_id },
-    });
-    if (!userCowAssociation) {
-      return res.status(403).json({ success: false, message: `Anda tidak memiliki izin untuk melihat jadwal pakan sapi dengan ID ${feed.cow_id}.` });
+    // Hanya terapkan pengecekan UserCowAssociation untuk farmer
+    if (userRole === "farmer") {
+      const userCowAssociation = await UserCowAssociation.findOne({
+        where: { user_id: userId, cow_id: feed.cow_id },
+      });
+      if (!userCowAssociation) {
+        return res.status(403).json({ success: false, message: `Anda tidak memiliki izin untuk melihat jadwal pakan sapi dengan ID ${feed.cow_id}.` });
+      }
     }
 
     return res.status(200).json({ success: true, data: formatFeedResponse(feed) });

@@ -1,12 +1,11 @@
-// src/pages/Admin/FeedManagement/DailyFeedItems/DailyFeedItemsListPage.js
 import React, { useEffect, useState } from "react";
 import {
   getAllFeedItems,
   deleteFeedItem,
-  getFeedItemsByDailyFeedId,
 } from "../../../../controllers/feedItemController";
 import { getAllDailyFeeds } from "../../../../controllers/feedScheduleController";
 import { listCows } from "../../../../controllers/cowsController";
+import { listCowsByUser } from "../../../../controllers/cattleDistributionController";
 import CreateDailyFeedItem from "./CreateDailyFeedItem";
 import EditDailyFeedItem from "./EditDailyFeedItem";
 import Swal from "sweetalert2";
@@ -28,7 +27,8 @@ const DailyFeedItemsListPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
+  const isFarmer = user?.role?.toLowerCase() === "farmer";
 
   const disableIfSupervisor = isSupervisor
     ? {
@@ -49,36 +49,47 @@ const DailyFeedItemsListPage = () => {
           }),
           getAllDailyFeeds({ date: selectedDate }).catch((err) => {
             console.error("Error fetching daily feeds:", err);
-            return { data: [] };
+            return { success: false, data: [] };
           }),
-          listCows().catch((err) => {
-            console.error("Error fetching cows:", err);
-            return [];
-          }),
+          (isFarmer ? listCowsByUser(user.user_id) : listCows()).catch(
+            (err) => {
+              console.error("Error fetching cows:", err);
+              return { success: false, cows: [] };
+            }
+          ),
         ]);
 
       // Log responses for debugging
+      console.log("User role:", user?.role);
       console.log("Feed Items Response:", feedItemsResponse);
       console.log("Daily Feeds Response:", dailyFeedsResponse);
       console.log("Cows Data Response:", cowsData);
 
-      // Handle feedItemsResponse as array
-      setFeedItems(
-        Array.isArray(feedItemsResponse)
-          ? feedItemsResponse
-          : feedItemsResponse.data || []
-      );
-      // Handle dailyFeedsResponse as object with data property
-      const dailyFeedsData = dailyFeedsResponse.data || [];
+      // Handle cowsData, ensuring it's an array
+      const cowsArray = cowsData.success ? (cowsData.cows || []) : [];
+      setCows(cowsArray);
+      const allowedCowIds = new Set(cowsArray.map((cow) => cow.id));
+
+      // Filter dailyFeeds to only include those for allowed cows (for farmers)
+      const dailyFeedsData = dailyFeedsResponse.success
+        ? (dailyFeedsResponse.data || []).filter(
+            (feed) => !isFarmer || allowedCowIds.has(feed.cow_id)
+          )
+        : [];
       setDailyFeeds(dailyFeedsData);
 
-      // Handle cowsData, ensuring it's an array
-      const cowsArray = Array.isArray(cowsData)
-        ? cowsData
-        : cowsData.data || [];
-      setCows(cowsArray);
+      // Filter feedItems to only include those for allowed daily_feed_ids
+      const allowedDailyFeedIds = new Set(dailyFeedsData.map((feed) => feed.id));
+      const feedItemsArray = Array.isArray(feedItemsResponse)
+        ? feedItemsResponse.filter(
+            (item) => !isFarmer || allowedDailyFeedIds.has(item.daily_feed_id)
+          )
+        : (feedItemsResponse.data || []).filter(
+            (item) => !isFarmer || allowedDailyFeedIds.has(item.daily_feed_id)
+          );
+      setFeedItems(feedItemsArray);
 
-      // Use dailyFeeds for cowNames to match CreateDailyFeedItem
+      // Set cow names, birth dates, and weights
       const cowMap = dailyFeedsData.length
         ? Object.fromEntries(
             dailyFeedsData.map((feed) => [
@@ -86,8 +97,9 @@ const DailyFeedItemsListPage = () => {
               feed.cow_name || `Sapi #${feed.cow_id}`,
             ])
           )
-        : {};
-      // Use cowsArray for birth dates and weights
+        : Object.fromEntries(
+            cowsArray.map((cow) => [cow.id, cow.name || `Sapi #${cow.id}`])
+          );
       const birthDateMap = cowsArray.length
         ? Object.fromEntries(
             cowsArray.map((cow) => [cow.id, cow.birth_date || null])
@@ -102,6 +114,15 @@ const DailyFeedItemsListPage = () => {
       setCowNames(cowMap);
       setCowBirthDates(birthDateMap);
       setCowWeights(weightMap);
+
+      console.log("Number of feed items:", feedItemsArray.length);
+      console.log("Number of daily feeds:", dailyFeedsData.length);
+      console.log("Number of cows:", cowsArray.length);
+      console.log("Allowed cow IDs:", Array.from(allowedCowIds));
+      console.log(
+        "Allowed daily feed IDs:",
+        Array.from(allowedDailyFeedIds)
+      );
     } catch (error) {
       console.error("Failed to fetch data:", error.message);
       setFeedItems([]);
@@ -117,11 +138,11 @@ const DailyFeedItemsListPage = () => {
   };
 
   useEffect(() => {
-    if (!user.token) {
+    if (!user.token || !user.user_id || !user.role) {
       Swal.fire({
         icon: "error",
         title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
+        text: "Autentikasi gagal. Silakan login kembali.",
       }).then(() => {
         localStorage.removeItem("user");
         window.location.href = "/";
@@ -196,7 +217,7 @@ const DailyFeedItemsListPage = () => {
         (session) =>
           session.items.some(
             (item) =>
-              (item.feed_name || "").toLowerCase().includes(searchLower) ||
+              (item.Feed?.name || item.feed_name || "").toLowerCase().includes(searchLower) ||
               (item.quantity?.toString() || "").includes(searchLower)
           ) || session.weather.toLowerCase().includes(searchLower)
       )
@@ -313,8 +334,7 @@ const DailyFeedItemsListPage = () => {
               {Object.keys(cowNames).length === 0 && (
                 <div className="alert alert-warning mb-3">
                   <i className="fas fa-exclamation-triangle me-2" /> Data nama
-                  sapi tidak tersedia dari sesi pakan. Nama sapi ditampilkan
-                  sebagai ID.
+                  sapi tidak tersedia. Nama sapi ditampilkan sebagai ID.
                 </div>
               )}
               <Table bordered hover className="align-middle">
@@ -354,7 +374,7 @@ const DailyFeedItemsListPage = () => {
                                     style={{ minWidth: "100px" }}
                                   >
                                     <div className="fw-medium">
-                                      {feedItem.feed_name || "-"}
+                                      {feedItem.Feed?.name || feedItem.feed_name || "-"}
                                     </div>
                                     <small className="text-muted">
                                       {feedItem.quantity} kg
