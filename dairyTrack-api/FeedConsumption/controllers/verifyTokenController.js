@@ -22,12 +22,12 @@ const verifyToken = async (req, res, next) => {
     }
 
     const tokenCreatedAt = user.token_created_at;
-    const TOKEN_EXPIRATION = 3600 * 1000;
+    const TOKEN_EXPIRATION = 3600 * 1000; // 1 jam
     if (tokenCreatedAt && Date.now() - new Date(tokenCreatedAt).getTime() > TOKEN_EXPIRATION) {
       return res.status(401).json({ success: false, message: "Token has expired" });
     }
 
-    req.user = { id: user.id };
+    req.user = { id: user.id, role: user.role };
     next();
   } catch (err) {
     console.error("Error in verifyToken:", err);

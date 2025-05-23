@@ -5,15 +5,16 @@ const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 
 // Utility function to create a feed stock notification
-const createFeedStockNotification = async (feedStockId, message, userId) => {
+const createFeedStockNotification = async (feedStockId, message) => {
   try {
-    console.log("Creating notification", { feedStockId, message, userId });
+    console.log("Creating notification", { feedStockId, message });
     const notification = await Notification.create({
       feed_stock_id: feedStockId,
       message,
       created_at: new Date(),
-      user_id: userId,
-      type: "FEED_STOCK",
+      user_id: 0,
+      cow_id: 0,
+      type: "Sisa Pakan Menipis",
       is_read: false,
     });
     console.log("Notification created", { notificationId: notification.id });
@@ -69,7 +70,7 @@ const notificationController = {
           );
           const feedName = notificationData.FeedStock.Feed.name;
           const feedUnit = notificationData.FeedStock.Feed.unit;
-          notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit} segera tambahkan stok nya`;
+          notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit}, segera tambah pakan!!`;
           notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
@@ -167,7 +168,7 @@ const notificationController = {
 
       for (const stockItem of criticalStocks) {
         const stockAsInteger = Math.floor(parseFloat(stockItem.stock));
-        const message = `Pakan ${stockItem.Feed.name} sisa ${stockAsInteger} ${stockItem.Feed.unit} segera tambahkan stok nya`;
+        const message = `Pakan ${stockItem.Feed.name} sisa ${stockAsInteger} ${stockItem.Feed.unit}, segera tambah pakan!!`;
         console.log("Checking for existing notification", {
           feedStockId: stockItem.id,
           message,
@@ -185,8 +186,7 @@ const notificationController = {
         if (!recentNotification) {
           const notification = await createFeedStockNotification(
             stockItem.id,
-            message,
-            stockItem.user_id
+            message
           );
           notifications.push(notification);
           console.log("New notification created", {
@@ -257,7 +257,7 @@ const notificationController = {
           );
           const feedName = notificationData.FeedStock.Feed.name;
           const feedUnit = notificationData.FeedStock.Feed.unit;
-          notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit} segera tambahkan stok nya`;
+          notificationData.message = `Pakan ${feedName} sisa ${stockAsInteger} ${feedUnit}, segera tambah pakan!!`;
           notificationData.name = `Stok Feed ${feedName}`;
         } else if (notificationData.feed_stock_id) {
           notificationData.message =
