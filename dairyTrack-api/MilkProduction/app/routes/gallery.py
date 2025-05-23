@@ -120,7 +120,7 @@ def get_all_galleries():
     Mengambil semua galeri dari database.
     """
     try:
-        galleries = Gallery.query.all()
+        galleries = Gallery.query.order_by(Gallery.created_at.desc()).all()
         result = [{
             "id": gallery.id,
             "title": gallery.title,

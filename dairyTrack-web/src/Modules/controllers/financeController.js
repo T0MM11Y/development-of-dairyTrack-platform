@@ -5,7 +5,7 @@ import { API_URL2 } from "../../api/apiController.js";
 const getFinanceList = async (queryString = "") => {
   try {
     const response = await fetch(
-      `${API_URL2}/finance/${queryString ? `?${queryString}` : ""}`,
+      `${API_URL2}/finance/finance/${queryString ? `?${queryString}` : ""}`,
       {
         method: "GET",
         headers: {

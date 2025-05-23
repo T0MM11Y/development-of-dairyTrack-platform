@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from django.utils.timezone import localtime
+from pytz import timezone
 
 
 
@@ -225,13 +226,13 @@ class ReproductionCreateUpdateSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="cow.name", read_only=True)
-    farmer_id = serializers.IntegerField(source='farmer.id', read_only=True)  # ✅ WAJIB
-
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    created_at = serializers.DateTimeField(default_timezone=timezone('Asia/Jakarta'))
 
     class Meta:
         model = Notification
-        fields = ['id','farmer_id', 'cow', 'name', 'message', 'date', 'created_at']
+        fields = ['id', 'user_id', 'cow', 'name', 'message', 'is_read', 'created_at']
+
     def get_created_at(self, obj):
-        # Pastikan waktu dibuat dalam local timezone (WIB dari settings.py)
-        local_created_at = localtime(obj.created_at)
-        return local_created_at.strftime("%Y-%m-%d %H:%M:%S")
+        jakarta = timezone('Asia/Jakarta')
+        return obj.created_at.astimezone(jakarta).isoformat()

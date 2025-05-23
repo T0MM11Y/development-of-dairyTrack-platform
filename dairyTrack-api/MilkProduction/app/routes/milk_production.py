@@ -87,7 +87,7 @@ def add_milking_session():
         
         db.session.commit()
         #cek evening kosong apatidak
-        if summary.evening_volume != 0 or summary.afternoon_volume != 0:
+        if summary.evening_volume != 0 or summary.afternoon_volume != 0 or summary.morning_volume != 0:
             check_milk_production_and_notify()
             check_milk_expiry_and_notify()
 
@@ -372,8 +372,6 @@ def delete_milking_session(session_id):
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 400
 
-# ...existing code...
-
 @milk_production_bp.route('/milking-sessions/<int:session_id>', methods=['PUT'])
 def update_milking_session(session_id):
     try:
@@ -510,6 +508,17 @@ def update_milking_session(session_id):
         
         db.session.commit()
         
+        # Get the latest summary data for notification checks
+        updated_summary = DailyMilkSummary.query.filter_by(
+            cow_id=new_cow_id,
+            date=new_date
+        ).first()
+        
+        # Check if evening or afternoon volumes exist to trigger notifications
+        if updated_summary and (updated_summary.evening_volume != 0 or updated_summary.afternoon_volume != 0):
+            check_milk_production_and_notify()
+            check_milk_expiry_and_notify()
+        
         return jsonify({
             "success": True,
             "message": "Milking session updated successfully",
@@ -519,7 +528,6 @@ def update_milking_session(session_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 400
-    
 
 
 @milk_production_bp.route('/export/daily-summaries/pdf', methods=['GET'])
