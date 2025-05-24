@@ -9,6 +9,7 @@ import {
   Tabs,
   Tab,
 } from "react-bootstrap";
+import { getUsersWithCows } from "../../controllers/cattleDistributionController"; // Import
 import {
   BarChart,
   CartesianGrid,
@@ -37,6 +38,8 @@ import { listCowsByUser } from "../../controllers/cattleDistributionController";
 import financeController from "../../controllers/financeController.js";
 import { getHealthChecks } from "../../controllers/healthCheckController";
 import { getOrders } from "../../controllers/orderController";
+
+import Modal from "react-bootstrap/Modal"; // Tambahkan import Modal jika belum ada
 
 // CSS styles defined in a separate object for consistency
 const styles = {
@@ -182,7 +185,6 @@ const Dashboard = () => {
   // State declarations
   const [loading, setLoading] = useState(true);
   const [isFarmer, setIsFarmer] = useState(false);
-
   const [totalCows, setTotalCows] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [totalFarmers, setTotalFarmers] = useState(0);
@@ -190,7 +192,6 @@ const Dashboard = () => {
   const [feedUsageData, setFeedUsageData] = useState([]);
   const [healthCheckData, setHealthCheckData] = useState([]);
   const [activeTab, setActiveTab] = useState("production");
-
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -199,6 +200,56 @@ const Dashboard = () => {
     startDate: "2025-05-18",
     endDate: "2025-05-24",
   });
+
+  // State for modal
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState([]);
+
+  const handleTotalCowsClick = async () => {
+    try {
+      if (isFarmer) {
+        // Untuk farmer, tampilkan sapi yang mereka kelola
+        const formattedData = userManagedCows.map((cow) => ({
+          cowName: cow.name || "Unknown",
+          cowId: cow.id || "N/A",
+        }));
+        setModalData(formattedData);
+      } else {
+        // Untuk admin, tampilkan siapa yang mengelola setiap sapi
+        const usersWithCowsResponse = await getUsersWithCows();
+        console.log("Users with cows response:", usersWithCowsResponse);
+        if (usersWithCowsResponse.success) {
+          const usersWithCows = usersWithCowsResponse.usersWithCows || [];
+          const cowsWithManagers = [];
+
+          usersWithCows.forEach((farmer) => {
+            farmer.cows.forEach((cow) => {
+              cowsWithManagers.push({
+                cowName: cow.name || "Unknown",
+                manager: farmer.user.username || "Unknown", // Ambil username dari farmer.user
+              });
+            });
+          });
+
+          setModalData(cowsWithManagers);
+        } else {
+          throw new Error(
+            usersWithCowsResponse.message || "Failed to fetch data."
+          );
+        }
+      }
+      setShowModal(true);
+    } catch (err) {
+      console.error("Error fetching cow data:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to fetch cow data.",
+      });
+    }
+  };
+  // Function to close modal
+  const handleCloseModal = () => setShowModal(false);
 
   // Animation hooks
   const { ref: statsRef, inView: statsInView } = useInView({
@@ -677,6 +728,7 @@ const Dashboard = () => {
                   description: isFarmer
                     ? "Jumlah sapi yang Anda kelola."
                     : "Jumlah total sapi yang terdaftar dalam sistem.",
+                  onClick: handleTotalCowsClick, // Tambahkan event handler
                 },
                 {
                   title: "Total Peternak",
@@ -718,7 +770,12 @@ const Dashboard = () => {
                 },
               ].map((stat, index) => (
                 <Col md={6} lg={3} className="mb-3" key={index}>
-                  <motion.div variants={animations.item} whileHover={{ y: -5 }}>
+                  <motion.div
+                    variants={animations.item}
+                    whileHover={{ y: -5 }}
+                    onClick={stat.onClick} // Tambahkan event handler di sini
+                    style={{ cursor: stat.onClick ? "pointer" : "default" }} // Tambahkan gaya pointer jika ada onClick
+                  >
                     <Card style={styles.statCard}>
                       <Card.Body className="p-3">
                         <div className="d-flex align-items-center">
@@ -1404,6 +1461,47 @@ const Dashboard = () => {
           </motion.div>
         </Card.Body>
       </Card>
+
+      <Modal show={showModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title>
+            <i className="fas fa-info-circle me-2"></i>
+            {isFarmer ? "Sapi yang Anda Kelola" : "Daftar Sapi dan Pengelola"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {modalData.length > 0 ? (
+            <Table striped bordered hover responsive className="text-center">
+              <thead className="bg-light">
+                <tr>
+                  <th>#</th>
+                  <th>Nama Sapi</th>
+                  <th>{isFarmer ? "ID Sapi" : "Pengelola"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modalData.map((item, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{item.cowName}</td>
+                    <td>{isFarmer ? item.cowId : item.manager}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <div className="text-center py-4">
+              <i className="fas fa-exclamation-circle text-muted fs-1 mb-3"></i>
+              <p className="text-muted">Tidak ada data yang tersedia.</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Tutup
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

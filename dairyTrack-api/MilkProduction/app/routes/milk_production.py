@@ -87,7 +87,7 @@ def add_milking_session():
         
         db.session.commit()
         #cek evening kosong apatidak
-        if summary.evening_volume != 0 or summary.afternoon_volume != 0 or summary.morning_volume != 0:
+        if summary.evening_volume != 0 or summary.afternoon_volume != 0:
             check_milk_production_and_notify()
             check_milk_expiry_and_notify()
 

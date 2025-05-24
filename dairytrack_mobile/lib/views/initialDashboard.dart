@@ -398,6 +398,50 @@ class _InitialDashboardState extends State<InitialDashboard>
             },
           ),
           SizedBox(width: 8),
+          IconButton(
+            icon: Icon(
+              _isLoggedIn
+                  ? Icons.logout
+                  : Icons.login, // Ganti ikon berdasarkan status login
+              color: Colors.white,
+            ),
+            onPressed: () {
+              if (_isLoggedIn) {
+                // Tampilkan dialog konfirmasi sebelum logout
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text("Logout"),
+                      content: Text("Are you sure you want to logout?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Tutup dialog
+                          },
+                          child: Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Tutup dialog
+                            _logout(); // Panggil fungsi logout
+                          },
+                          child: Text("Logout"),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          LoginView()), // Navigasi ke halaman login
+                );
+              }
+            },
+          ),
         ],
       ),
       drawer: Drawer(
