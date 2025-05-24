@@ -5,7 +5,7 @@ class Config:
     DEBUG = os.environ.get('FLASK_DEBUG') or False
     TESTING = os.environ.get('FLASK_TESTING') or False
     # local development
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'mysql+pymysql://root:@localhost/dairy_track' 
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'mysql+pymysql://root:@localhost/dairytrack_massfortso' 
     
     # production
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or (

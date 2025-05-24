@@ -20,7 +20,6 @@ import Tooltip from "react-bootstrap/Tooltip";
 const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -42,15 +41,6 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
     } catch (error) {
       console.error("Error loading user data:", error);
     }
-  }, []);
-
-  // Update time every minute instead of every second for better performance
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, []);
 
   // Detect clicks outside dropdown
@@ -284,7 +274,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
     dateTime: {
       fontFamily: "Roboto, sans-serif",
       fontSize: "14px",
-      fontWeight: "400",
+      fontWeight: "300",
       color: "#8F87F1",
     },
     userAvatar: {
@@ -426,28 +416,6 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
               </div>
             )}
             <h1 style={styles.title}>Dashboard</h1>
-          </div>
-          <div
-            style={{
-              ...styles.dateTime,
-              fontFamily: "Roboto Mono, monospace",
-              letterSpacing: "1.5px",
-              color: "#3A59D1",
-              fontWeight: "700",
-            }}
-          >
-            {currentTime.toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}{" "}
-            |{" "}
-            {currentTime.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit", // Tambahkan opsi ini untuk menampilkan detik
-            })}
           </div>
         </div>
       </div>

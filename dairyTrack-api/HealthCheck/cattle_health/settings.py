@@ -102,7 +102,7 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dairy_track',  # Nama database MySQL
+        'NAME': 'dairytrack_massfortso',  # Nama database MySQL
         'USER': 'root',  # Username MySQL
         'PASSWORD': '',  # Password MySQL (kosong)
         'HOST': 'localhost',  # Host MySQL

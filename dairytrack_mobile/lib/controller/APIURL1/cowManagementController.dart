@@ -130,20 +130,31 @@ class CowManagementController {
     }
   }
 
-  Future<List<Cow>> listCows({String? sortBy, String? sortOrder}) async {
-    final url = Uri.parse('$baseURL/cows/list');
-    final response = await http.get(url);
+  // List all cows
+  Future<List<Cow>> listCows() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/list'),
+        headers: _headers,
+      );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = json.decode(response.body);
-      if (jsonResponse.containsKey('cows')) {
-        final List<dynamic> cowList = jsonResponse['cows'];
-        return cowList.map((cowJson) => Cow.fromJson(cowJson)).toList();
+      if (response.statusCode == 200) {
+        print('Response body: ${response.body}');
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        if (responseData.containsKey('cows') && responseData['cows'] is List) {
+          final List<dynamic> cowsList = responseData['cows'];
+          return cowsList.map((json) => Cow.fromJson(json)).toList();
+        } else {
+          throw Exception('Unexpected response format from API');
+        }
       } else {
-        throw Exception('Response does not contain "cows" key');
+        throw Exception(
+          jsonDecode(response.body)['error'] ?? 'Failed to fetch cows',
+        );
       }
-    } else {
-      throw Exception('Failed to load cows: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('An error occurred: $e');
     }
   }
 

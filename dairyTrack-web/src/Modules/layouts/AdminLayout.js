@@ -60,20 +60,34 @@ function AdminLayout({ children }) {
   return (
     <div
       className={`admin-layout ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
+      style={{ display: "flex", flexDirection: "column", minHeight: "120vh" }}
     >
       <AdminHeader
         toggleSidebar={toggleSidebar}
         sidebarCollapsed={sidebarCollapsed}
       />
-      <div className="admin-main-container">
+      <div
+        className="admin-main-container"
+        style={{ flex: "1", display: "flex", overflow: "hidden" }}
+      >
         <AdminSidebar
           collapsed={sidebarCollapsed}
           activeMenu={activeMenu}
           onMenuToggle={handleMenuToggle}
           className={getSidebarClassName()}
         />
-        <div className="admin-content-wrapper">
-          <main className="admin-content">{children}</main>
+        <div
+          className="admin-content-wrapper"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: "1",
+            overflow: "auto",
+          }}
+        >
+          <main className="admin-content" style={{ flex: "1" }}>
+            {children}
+          </main>
           <AdminFooter />
         </div>
       </div>

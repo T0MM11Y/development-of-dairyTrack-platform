@@ -13,7 +13,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.4.0
   intl: ^0.20.2
-  open_file: ^3.3.2
   path_provider: ^2.0.15
   shared_preferences: ^2.0.15
   fl_chart: ^0.64.0 # Upgrade fl_chart
