@@ -2,128 +2,136 @@ import { API_URL4 } from "../../api/apiController.js";
 
 const getAllDailyFeeds = async (params = {}) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
-  const role = user.role?.toLowerCase(); // e.g., "admin", "supervisor", "farmer"
-  const userId = user.id; // User ID for farmer filtering
+  const token = user.token || null;
+  const role = user.role?.toLowerCase();
+  const userId = user.id;
 
-  if (!token) {
-    throw new Error("Token tidak ditemukan. Silakan login ulang.");
-  }
-
-  // For farmers, add user_id to filter cows they are associated with
   if (role === "farmer" && userId) {
     params.user_id = userId;
   }
 
-  const response = await fetch(
-    `${API_URL4}/dailyFeedSchedule?${new URLSearchParams(params).toString()}`,
-    {
+  try {
+    const response = await fetch(
+      `${API_URL4}/dailyFeedSchedule?${new URLSearchParams(params).toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const result = await response.json();
+    return response.ok
+      ? result
+      : { success: false, message: result.message || "Gagal mengambil data jadwal pakan" };
+  } catch (error) {
+    console.error("getAllDailyFeeds - Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat mengambil data jadwal pakan" };
+  }
+};
+
+const getDailyFeedById = async (id) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = user.token || null;
+  const role = user.role?.toLowerCase();
+  const userId = user.id;
+
+  try {
+    const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      return { success: false, message: result.message || "Gagal mengambil jadwal pakan" };
     }
-  );
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal mengambil data jadwal pakan");
-  }
-
-  return result;
-};
-
-const getDailyFeedById = async (id) => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
-  const role = user.role?.toLowerCase();
-  const userId = user.id;
-
-  if (!token) {
-    throw new Error("Token tidak ditemukan. Silakan login ulang.");
-  }
-
-  const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal mengambil jadwal pakan");
-  }
-
-  // For farmers, verify that the daily feed belongs to a cow they are associated with
-  if (role === "farmer" && userId) {
-    if (!result.data || result.data.user_id !== userId) {
-      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk melihat jadwal pakan ini.");
+    if (role === "farmer" && userId && (!result.data || result.data.user_id !== userId)) {
+      return { success: false, message: "Akses ditolak: Anda tidak memiliki izin untuk melihat jadwal pakan ini" };
     }
-  }
 
-  return result;
+    return result;
+  } catch (error) {
+    console.error("getDailyFeedById - Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat mengambil jadwal pakan" };
+  }
 };
 
 const createDailyFeed = async (data) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
+  const token = user.token || null;
 
-  const response = await fetch(`${API_URL4}/dailyFeedSchedule`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch(`${API_URL4}/dailyFeedSchedule`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal membuat jadwal pakan");
+    const result = await response.json();
+    return response.ok
+      ? result
+      : { success: false, message: result.message || "Gagal membuat jadwal pakan" };
+  } catch (error) {
+    console.error("createDailyFeed - Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat membuat jadwal pakan" };
   }
-  return result;
 };
 
 const updateDailyFeed = async (id, data) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
+  const token = user.token || null;
 
-  const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal memperbarui jadwal pakan");
+    const result = await response.json();
+    return response.ok
+      ? result
+      : { success: false, message: result.message || "Gagal memperbarui jadwal pakan" };
+  } catch (error) {
+    console.error("updateDailyFeed - Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat memperbarui jadwal pakan" };
   }
-  return result;
 };
 
 const deleteDailyFeed = async (id) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = user.token;
+  const token = user.token || null;
 
-  const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL4}/dailyFeedSchedule/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.message || "Gagal menghapus jadwal pakan");
+    const result = await response.json();
+    return response.ok
+      ? result
+      : { success: false, message: result.message || "Gagal menghapus jadwal pakan" };
+  } catch (error) {
+    console.error("deleteDailyFeed - Error:", error);
+    return { success: false, message: "Terjadi kesalahan saat menghapus jadwal pakan" };
   }
-  return result;
 };
 
 export { getAllDailyFeeds, getDailyFeedById, createDailyFeed, updateDailyFeed, deleteDailyFeed };

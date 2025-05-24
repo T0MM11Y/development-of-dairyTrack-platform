@@ -1,6 +1,3 @@
-// Keep the Notification model as is
-
-// Update the FeedStock model with modified hooks
 const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -101,7 +98,11 @@ const FeedStock = sequelize.define(
       },
       afterCreate: async (feedStock, options) => {
         try {
-          console.log("afterCreate hook triggered", { feedStockId: feedStock.id, stock: feedStock.stock });
+          console.log("afterCreate hook triggered", {
+            feedStockId: feedStock.id,
+            stock: feedStock.stock,
+            feedId: feedStock.feedId,
+          });
           const Notification = sequelize.models.Notification;
           const Feed = sequelize.models.Feed;
           const feed = await Feed.findByPk(feedStock.feedId);
@@ -109,38 +110,33 @@ const FeedStock = sequelize.define(
             console.error("Feed not found for feedId:", feedStock.feedId);
             return;
           }
-          console.log("Feed found", { feedId: feed.id, name: feed.name, min_stock: feed.min_stock, unit: feed.unit });
+          console.log("Feed found", {
+            feedId: feed.id,
+            name: feed.name,
+            min_stock: feed.min_stock,
+            unit: feed.unit,
+          });
           const stock = parseFloat(feedStock.stock);
           const minStock = parseFloat(feed.min_stock);
+          if (isNaN(stock) || isNaN(minStock)) {
+            console.error("Invalid stock or minStock values", { stock, minStock });
+            return;
+          }
           console.log("Stock comparison", { stock, minStock, isLow: stock <= minStock });
           if (stock <= minStock) {
-            const recentNotification = await Notification.findOne({
-              where: {
-                feed_stock_id: feedStock.id,
-                created_at: {
-                  [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                },
-              },
+            const stockAsInteger = Math.floor(stock);
+            const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
+            const notification = await Notification.create({
+              feed_stock_id: feedStock.id,
+              message,
+              created_at: new Date(),
+              type: "Sisa Pakan Menipis",
+              is_read: false,
             });
-            if (!recentNotification) {
-              const stockAsInteger = Math.floor(stock);
-              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
-              await Notification.create({
-                feed_stock_id: feedStock.id,
-                message,
-                created_at: new Date(),
-                user_id: 0, // Global notification
-                cow_id: 0, // Global notification
-                product_stock_id: null, // Set to null as it's not related to product stock
-                order_id: null, // Set to null as it's not related to an order
-                milking_session_id: null, // Set to null as it's not related to milking session
-                type: "Sisa Pakan Menipis",
-                is_read: false,
-              });
-              console.log(`Created notification for low stock of ${feed.name}`, { message });
-            } else {
-              console.log("Recent notification exists, skipping creation", { notificationId: recentNotification.id });
-            }
+            console.log("Created notification", {
+              notificationId: notification.id,
+              message,
+            });
           }
         } catch (error) {
           console.error("Error in afterCreate hook for FeedStock:", {
@@ -152,7 +148,11 @@ const FeedStock = sequelize.define(
       },
       afterUpdate: async (feedStock, options) => {
         try {
-          console.log("afterUpdate hook triggered", { feedStockId: feedStock.id, stock: feedStock.stock });
+          console.log("afterUpdate hook triggered", {
+            feedStockId: feedStock.id,
+            stock: feedStock.stock,
+            feedId: feedStock.feedId,
+          });
           const Notification = sequelize.models.Notification;
           const Feed = sequelize.models.Feed;
           const feed = await Feed.findByPk(feedStock.feedId);
@@ -160,38 +160,33 @@ const FeedStock = sequelize.define(
             console.error("Feed not found for feedId:", feedStock.feedId);
             return;
           }
-          console.log("Feed found", { feedId: feed.id, name: feed.name, min_stock: feed.min_stock, unit: feed.unit });
+          console.log("Feed found", {
+            feedId: feed.id,
+            name: feed.name,
+            min_stock: feed.min_stock,
+            unit: feed.unit,
+          });
           const stock = parseFloat(feedStock.stock);
           const minStock = parseFloat(feed.min_stock);
+          if (isNaN(stock) || isNaN(minStock)) {
+            console.error("Invalid stock or minStock values", { stock, minStock });
+            return;
+          }
           console.log("Stock comparison", { stock, minStock, isLow: stock <= minStock });
           if (stock <= minStock) {
-            const recentNotification = await Notification.findOne({
-              where: {
-                feed_stock_id: feedStock.id,
-                created_at: {
-                  [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                },
-              },
+            const stockAsInteger = Math.floor(stock);
+            const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
+            const notification = await Notification.create({
+              feed_stock_id: feedStock.id,
+              message,
+              created_at: new Date(),
+              type: "Sisa Pakan Menipis",
+              is_read: false,
             });
-            if (!recentNotification) {
-              const stockAsInteger = Math.floor(stock);
-              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
-              await Notification.create({
-                feed_stock_id: feedStock.id,
-                message,
-                created_at: new Date(),
-                user_id: 0, // Global notification
-                cow_id: 0, // Global notification
-                product_stock_id: null, // Set to null as it's not related to product stock
-                order_id: null, // Set to null as it's not related to an order
-                milking_session_id: null, // Set to null as it's not related to milking session
-                type: "Sisa Pakan Menipis",
-                is_read: false,
-              });
-              console.log(`Created notification for low stock of ${feed.name}`, { message });
-            } else {
-              console.log("Recent notification exists, skipping creation", { notificationId: recentNotification.id });
-            }
+            console.log("Created notification", {
+              notificationId: notification.id,
+              message,
+            });
           }
         } catch (error) {
           console.error("Error in afterUpdate hook for FeedStock:", {

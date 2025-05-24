@@ -126,18 +126,13 @@ const FeedTypeListPage = () => {
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
-    if (!user.token) {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
-      });
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    } else {
-      fetchData();
-    }
-  }, []);
+  if (!user.token) {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  } else {
+    fetchData();
+  }
+}, []);
 
   useEffect(() => {
     if (deleteId) {

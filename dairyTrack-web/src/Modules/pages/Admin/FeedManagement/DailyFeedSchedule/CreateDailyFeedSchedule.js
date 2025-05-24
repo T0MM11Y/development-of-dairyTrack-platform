@@ -30,19 +30,14 @@ const CreateDailyFeed = ({
 
   // Cek sesi pengguna
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    if (userData.user_id && userData.token) {
-      setCurrentUser(userData);
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
-      });
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    }
-  }, []);
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  if (userData.user_id && userData.token) {
+    setCurrentUser(userData);
+  } else {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  }
+}, []);
 
   // Ambil sapi yang dikelola pengguna
   useEffect(() => {

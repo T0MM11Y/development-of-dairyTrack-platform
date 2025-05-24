@@ -22,87 +22,81 @@ const CreateDailyFeedItem = ({ dailyFeeds, onFeedItemAdded, onClose, defaultDate
   };
 
   useEffect(() => {
-    const fetchFeedsAndStocks = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchFeedsAndStocks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const token = user.token || null;
-        console.log("fetchFeedsAndStocks - Token:", token);
-        if (!token) {
-          setError("Token tidak ditemukan. Silakan login ulang.");
-          Swal.fire({
-            icon: "error",
-            title: "Sesi Berakhir",
-            text: "Token tidak ditemukan. Silakan login kembali.",
-          });
-          localStorage.removeItem("user");
-          window.location.href = "/";
-          return;
-        }
-
-        const [feedResponse, stockResponse] = await Promise.all([
-          listFeeds(),
-          getAllFeedStocks(),
-        ]);
-
-        console.log("CreateDailyFeedItem - Feeds Response:", JSON.stringify(feedResponse, null, 2));
-        console.log("CreateDailyFeedItem - Stocks Response:", JSON.stringify(stockResponse, null, 2));
-
-        if (!feedResponse.success || !Array.isArray(feedResponse.feeds)) {
-          console.error("Invalid feed response:", feedResponse);
-          setError("Gagal memuat daftar pakan: Data tidak valid.");
-          setFeeds([]);
-          return;
-        }
-
-        if (!stockResponse.success || !Array.isArray(stockResponse.data)) {
-          console.error("Invalid stock response:", stockResponse);
-          setError("Gagal memuat data stok pakan: Data tidak valid.");
-          setFeeds([]);
-          return;
-        }
-
-        const feedsWithStock = feedResponse.feeds
-          .map((feed) => {
-            const stockData = stockResponse.data.find((s) => String(s.id) === String(feed.id));
-            console.log(`Matching Feed ID: ${feed.id}, Stock Data:`, stockData);
-
-            let stockValue = 0;
-            let unitValue = feed.unit || "kg";
-
-            if (stockData && stockData.stock) {
-              stockValue = parseFloat(stockData.stock.stock) || 0;
-              unitValue = stockData.stock.unit || unitValue;
-            } else {
-              console.warn(`No valid stock for feed ID ${feed.id}`);
-            }
-
-            return {
-              id: feed.id,
-              name: feed.name || feed.type_name || `Feed #${feed.id}`,
-              stock: stockValue,
-              unit: unitValue,
-            };
-          })
-          .filter((feed) => feed.stock > 0); // Only include feeds with stock
-
-        console.log("CreateDailyFeedItem - Feeds with Stock:", JSON.stringify(feedsWithStock, null, 2));
-        setFeeds(feedsWithStock);
-
-        if (feedsWithStock.length === 0) {
-          setError("Tidak ada pakan dengan stok tersedia.");
-        }
-      } catch (err) {
-        console.error("CreateDailyFeedItem - Fetch Error:", err);
-        setError("Gagal memuat data: " + err.message);
-      } finally {
-        setLoading(false);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = user.token || null;
+      console.log("fetchFeedsAndStocks - Token:", token);
+      if (!token) {
+        localStorage.removeItem("user");
+        window.location.href = "/";
+        return;
       }
-    };
-    fetchFeedsAndStocks();
-  }, []);
+
+      const [feedResponse, stockResponse] = await Promise.all([
+        listFeeds(),
+        getAllFeedStocks(),
+      ]);
+
+      console.log("CreateDailyFeedItem - Feeds Response:", JSON.stringify(feedResponse, null, 2));
+      console.log("CreateDailyFeedItem - Stocks Response:", JSON.stringify(stockResponse, null, 2));
+
+      if (!feedResponse.success || !Array.isArray(feedResponse.feeds)) {
+        console.error("Invalid feed response:", feedResponse);
+        setError("Gagal memuat daftar pakan: Data tidak valid.");
+        setFeeds([]);
+        return;
+      }
+
+      if (!stockResponse.success || !Array.isArray(stockResponse.data)) {
+        console.error("Invalid stock response:", stockResponse);
+        setError("Gagal memuat data stok pakan: Data tidak valid.");
+        setFeeds([]);
+        return;
+      }
+
+      const feedsWithStock = feedResponse.feeds
+        .map((feed) => {
+          const stockData = stockResponse.data.find((s) => String(s.id) === String(feed.id));
+          console.log(`Matching Feed ID: ${feed.id}, Stock Data:`, stockData);
+
+          let stockValue = 0;
+          let unitValue = feed.unit || "kg";
+
+          if (stockData && stockData.stock) {
+            stockValue = parseFloat(stockData.stock.stock) || 0;
+            unitValue = stockData.stock.unit || unitValue;
+          } else {
+            console.warn(`No valid stock for feed ID ${feed.id}`);
+          }
+
+          return {
+            id: feed.id,
+            name: feed.name || feed.type_name || `Feed #${feed.id}`,
+            stock: stockValue,
+            unit: unitValue,
+          };
+        })
+        .filter((feed) => feed.stock > 0); // Only include feeds with stock
+
+      console.log("CreateDailyFeedItem - Feeds with Stock:", JSON.stringify(feedsWithStock, null, 2));
+      setFeeds(feedsWithStock);
+
+      if (feedsWithStock.length === 0) {
+        setError("Tidak ada pakan dengan stok tersedia.");
+      }
+    } catch (err) {
+      console.error("CreateDailyFeedItem - Fetch Error:", err);
+      setError("Gagal memuat data: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchFeedsAndStocks();
+}, []);
 
   const availableFeeds = feeds.filter(
     (feed) => !selectedFeeds.some((selected) => selected.feedId === feed.id)

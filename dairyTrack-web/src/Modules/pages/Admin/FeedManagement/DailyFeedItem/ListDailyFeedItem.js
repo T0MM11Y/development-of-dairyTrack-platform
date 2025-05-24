@@ -138,19 +138,13 @@ const DailyFeedItemsListPage = () => {
   };
 
   useEffect(() => {
-    if (!user.token || !user.user_id || !user.role) {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Autentikasi gagal. Silakan login kembali.",
-      }).then(() => {
-        localStorage.removeItem("user");
-        window.location.href = "/";
-      });
-    } else {
-      fetchData();
-    }
-  }, [selectedDate]);
+  if (!user.token || !user.user_id || !user.role) {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  } else {
+    fetchData();
+  }
+}, [selectedDate]);
 
   const calculateAge = (birthDate) => {
     if (!birthDate) return "Tidak Diketahui";

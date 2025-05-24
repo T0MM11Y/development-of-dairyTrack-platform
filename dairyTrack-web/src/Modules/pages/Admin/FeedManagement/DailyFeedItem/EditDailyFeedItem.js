@@ -27,9 +27,12 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
 
   // Function to format numbers without trailing zeros
   const formatNumber = (number) => {
-    if (Number.isNaN(number) || number === null || number === undefined) return "0";
+    if (Number.isNaN(number) || number === null || number === undefined)
+      return "0";
     const num = parseFloat(number);
-    return num % 1 === 0 ? num.toString() : num.toFixed(2).replace(/\.?0+$/, "");
+    return num % 1 === 0
+      ? num.toString()
+      : num.toFixed(2).replace(/\.?0+$/, "");
   };
 
   useEffect(() => {
@@ -40,6 +43,15 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
     let isMounted = true;
 
     const fetchData = async () => {
+      // Check for user token
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = user.token || null;
+      if (!token) {
+        localStorage.removeItem("user");
+        window.location.href = "/";
+        return;
+      }
+
       if (!dailyFeedId || !isMounted) return;
 
       try {
@@ -320,7 +332,9 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
         }
         const availableStock = getFeedStockInfo(parseInt(item.feed_id));
         if (parseFloat(item.quantity) > availableStock) {
-          errors[i] = `Jumlah melebihi stok: ${formatNumber(availableStock)} kg`;
+          errors[i] = `Jumlah melebihi stok: ${formatNumber(
+            availableStock
+          )} kg`;
         }
       }
 
@@ -350,7 +364,10 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
 
       // Prepare confirmation
       const feedDetails = formList
-        .map((item) => `${displayFeedName(item.feed_id)} ${formatNumber(item.quantity)} kg`)
+        .map(
+          (item) =>
+            `${displayFeedName(item.feed_id)} ${formatNumber(item.quantity)} kg`
+        )
         .join(", ");
       const cowName = getCowName();
       const date = formatDate(dailyFeed?.date);
@@ -680,8 +697,9 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                     {feedItems.length === 0 ? (
                       <div className="alert alert-info">
                         <i className="ri-information-line me-2"></i> Tidak ada
-                        data item pakan untuk sesi ini (Daily Feed ID: {dailyFeedId}). Klik tombol 'Edit'
-                        untuk menambahkan pakan.
+                        data item pakan untuk sesi ini (Daily Feed ID:{" "}
+                        {dailyFeedId}). Klik tombol 'Edit' untuk menambahkan
+                        pakan.
                       </div>
                     ) : (
                       <div className="table-responsive mb-4">
@@ -718,9 +736,7 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
                                   {formatNumber(item.quantity)} kg
                                 </td>
                                 <td className="text-center">
-                                  {formatNumber(
-                                    getFeedStockInfo(item.feed_id)
-                                  )}{" "}
+                                  {formatNumber(getFeedStockInfo(item.feed_id))}{" "}
                                   kg
                                 </td>
                               </tr>
