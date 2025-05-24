@@ -13,23 +13,18 @@ const FeedTypeCreatePage = ({ onClose, onSaved }) => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    if (userData.user_id) {
-      setCurrentUser(userData);
-      setForm((prev) => ({
-        ...prev,
-        created_by: userData.user_id || "",
-      }));
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
-      });
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    }
-  }, []);
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  if (userData.user_id && userData.token) {
+    setCurrentUser(userData);
+    setForm((prev) => ({
+      ...prev,
+      created_by: userData.user_id || "",
+    }));
+  } else {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  }
+}, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

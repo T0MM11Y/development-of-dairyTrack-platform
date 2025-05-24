@@ -13,19 +13,14 @@ const EditFeedStock = ({ id, onClose, onSaved }) => {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    if (userData.user_id) {
-      setCurrentUser(userData);
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Token tidak ditemukan. Silakan login kembali.",
-      });
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    }
-  }, []);
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  if (userData.user_id && userData.token) {
+    setCurrentUser(userData);
+  } else {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  }
+}, []);
 
   useEffect(() => {
     const fetchData = async () => {

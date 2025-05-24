@@ -70,7 +70,6 @@ const DailyFeedListPage = () => {
       if (err.message.includes("Autentikasi gagal")) {
         Swal.fire({
           icon: "error",
-          title: "Sesi Berakhir",
           text: err.message,
         }).then(() => {
           localStorage.removeItem("user");
@@ -166,20 +165,14 @@ const DailyFeedListPage = () => {
   };
 
   useEffect(() => {
-    if (!user.token || !user.user_id || !user.role) {
-      Swal.fire({
-        icon: "error",
-        title: "Sesi Berakhir",
-        text: "Autentikasi gagal. Silakan login kembali.",
-      }).then(() => {
-        localStorage.removeItem("user");
-        window.location.href = "/";
-      });
-    } else {
-      fetchData();
-      console.log("User:", user);
-    }
-  }, [selectedDate]);
+  if (!user.token || !user.user_id || !user.role) {
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  } else {
+    fetchData();
+    console.log("User:", user);
+  }
+}, [selectedDate]);
 
   const groupedFeeds = feeds.reduce((acc, feed) => {
     const key = `${feed.cow_id}_${feed.date}`;
