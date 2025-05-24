@@ -1097,11 +1097,21 @@ const CattleDistribution = () => {
                 }}
               >
                 <option value="">-- Select Cow --</option>
-                {allCows.map((cow) => (
-                  <option key={cow.id} value={cow.id}>
-                    {cow.name} ({cow.breed}, {cow.gender})
-                  </option>
-                ))}
+                {allCows.map((cow) => {
+                  // Find the farmer managing this cow
+                  const managingFarmer = usersWithCows.find((farmer) =>
+                    farmer.cows.some((assignedCow) => assignedCow.id === cow.id)
+                  );
+
+                  return (
+                    <option key={cow.id} value={cow.id}>
+                      {cow.name} ({cow.breed}, {cow.gender}){" "}
+                      {managingFarmer
+                        ? `- Managed by ${managingFarmer.user.username}`
+                        : ""}
+                    </option>
+                  );
+                })}
               </Form.Select>
             </Form.Group>
           </Form>

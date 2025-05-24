@@ -145,7 +145,7 @@ const Header = () => {
           setSuccessMessage("");
           resetForm();
           toggleModal();
-          history.push("/admin");
+          history.push("/admin"); // Redirect to admin page
         }, 3000);
         setLoginAttempts(0);
       } else {
@@ -375,6 +375,7 @@ const Header = () => {
                   className="btn-close"
                   onClick={toggleModal}
                   aria-label="Close"
+                  disabled={loading} // Disable close button during loading
                 ></button>
               </div>
               <div className="modal-body px-4 py-4">
@@ -392,6 +393,7 @@ const Header = () => {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        disabled={loading} // Disable input during loading
                       />
                     </div>
                   </div>
@@ -408,6 +410,7 @@ const Header = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={loading} // Disable input during loading
                       />
                       <span
                         className="input-group-text bg-light border-start-0 cursor-pointer"

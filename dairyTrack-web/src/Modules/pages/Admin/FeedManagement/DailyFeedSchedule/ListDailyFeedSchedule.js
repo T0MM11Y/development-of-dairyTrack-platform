@@ -1,4 +1,3 @@
-// DailyFeedListPage.js
 import React, { useEffect, useState } from "react";
 import { getAllDailyFeeds, deleteDailyFeed, createDailyFeed } from "../../../../controllers/feedScheduleController";
 import { listCowsByUser } from "../../../../../Modules/controllers/cattleDistributionController";
@@ -30,17 +29,30 @@ const DailyFeedListPage = () => {
       setLoading(true);
       console.log("Fetching data for date:", selectedDate);
 
+      // Fetch feed schedules
       const feedResponse = await getAllDailyFeeds({ date: selectedDate });
       console.log("Feed response:", feedResponse);
 
+      // Fetch cows (all for admin/supervisor, associated for farmer)
       const cowResponse = isReadOnly
         ? await listCows()
         : await listCowsByUser(user.user_id);
       console.log("Cow response:", cowResponse);
 
+      let feedData = [];
       if (feedResponse.success && Array.isArray(feedResponse.data)) {
-        setFeeds(feedResponse.data);
-        console.log("Feeds:", feedResponse.data);
+        // For farmers, filter feeds to include only those for associated cows
+        if (isFarmer && cowResponse.success && Array.isArray(cowResponse.cows)) {
+          const cowIds = cowResponse.cows.map((cow) => cow.id);
+          feedData = feedResponse.data.filter((feed) =>
+            cowIds.includes(parseInt(feed.cow_id))
+          );
+        } else {
+          // For admin/supervisor, use all feeds
+          feedData = feedResponse.data;
+        }
+        setFeeds(feedData);
+        console.log("Filtered feeds:", feedData);
       } else {
         setFeeds([]);
         console.log("Feed fetch failed:", feedResponse.message || "No data");

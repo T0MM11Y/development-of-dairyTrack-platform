@@ -125,10 +125,12 @@ const SymptomListPage = () => {
   });
 
   // ⏩ Data yang ditampilkan sesuai halaman
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+ const sortedFilteredData = [...filteredData].sort((a, b) => b.id - a.id); // atau pakai created_at jika ada
+const paginatedData = sortedFilteredData.slice(
+  (currentPage - 1) * PAGE_SIZE,
+  currentPage * PAGE_SIZE
+);
+
 
   // 🔢 Total halaman berdasarkan filteredData
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);

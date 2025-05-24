@@ -17,8 +17,12 @@ const formatFeedItemResponse = (item) => ({
   feed_name: item.Feed ? item.Feed.name : null,
   quantity: parseFloat(item.quantity) || 0,
   user_id: item.user_id,
-  created_by: item.Creator ? { id: item.Creator.id, name: item.Creator.name } : null,
-  updated_by: item.Updater ? { id: item.Updater.id, name: item.Updater.name } : null,
+  created_by: item.Creator
+    ? { id: item.Creator.id, name: item.Creator.name }
+    : null,
+  updated_by: item.Updater
+    ? { id: item.Updater.id, name: item.Updater.name }
+    : null,
   created_at: item.createdAt,
   updated_at: item.updatedAt,
   nutrients: item.Feed?.FeedNutrisiRecords
@@ -44,7 +48,11 @@ exports.addFeedItem = async (req, res) => {
       });
     }
 
-    if (!daily_feed_id || !Array.isArray(feed_items) || feed_items.length === 0) {
+    if (
+      !daily_feed_id ||
+      !Array.isArray(feed_items) ||
+      feed_items.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "daily_feed_id dan feed_items (array non-kosong) diperlukan",
@@ -103,8 +111,12 @@ exports.addFeedItem = async (req, res) => {
       });
     }
 
-    const existingFeedIds = dailyFeed.DailyFeedItems.map((item) => item.feed_id);
-    const duplicateFeedIds = feedIdsInRequest.filter((id) => existingFeedIds.includes(id));
+    const existingFeedIds = dailyFeed.DailyFeedItems.map(
+      (item) => item.feed_id
+    );
+    const duplicateFeedIds = feedIdsInRequest.filter((id) =>
+      existingFeedIds.includes(id)
+    );
     if (duplicateFeedIds.length > 0) {
       const duplicateFeedNames = await Feed.findAll({
         where: { id: duplicateFeedIds },
@@ -122,24 +134,26 @@ exports.addFeedItem = async (req, res) => {
       });
     }
 
-    const feedItems = feed_items.map((item) => {
-      const qtyNum = parseFloat(item.quantity);
-      if (!item.feed_id || isNaN(qtyNum) || qtyNum <= 0) {
-        errors.push({
+    const feedItems = feed_items
+      .map((item) => {
+        const qtyNum = parseFloat(item.quantity);
+        if (!item.feed_id || isNaN(qtyNum) || qtyNum <= 0) {
+          errors.push({
+            feed_id: item.feed_id,
+            error: "feed_id dan quantity valid diperlukan",
+          });
+          return null;
+        }
+        return {
+          daily_feed_id,
           feed_id: item.feed_id,
-          error: "feed_id dan quantity valid diperlukan",
-        });
-        return null;
-      }
-      return {
-        daily_feed_id,
-        feed_id: item.feed_id,
-        quantity: qtyNum,
-        user_id: userId,
-        created_by: userId,
-        updated_by: userId,
-      };
-    }).filter((item) => item !== null);
+          quantity: qtyNum,
+          user_id: userId,
+          created_by: userId,
+          updated_by: userId,
+        };
+      })
+      .filter((item) => item !== null);
 
     if (feedItems.length === 0) {
       await transaction.rollback();
@@ -162,7 +176,10 @@ exports.addFeedItem = async (req, res) => {
         transaction,
       });
       if (!feedStock) {
-        errors.push({ feed_id: item.feed_id, error: `Stok pakan dengan ID ${item.feed_id} tidak ditemukan` });
+        errors.push({
+          feed_id: item.feed_id,
+          error: `Stok pakan dengan ID ${item.feed_id} tidak ditemukan`,
+        });
       } else if (parseFloat(feedStock.stock) < parseFloat(item.quantity)) {
         errors.push({
           feed_id: item.feed_id,
@@ -543,7 +560,9 @@ exports.bulkUpdateFeedItems = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `${results.filter((r) => r.success).length} dari ${results.length} item berhasil diperbarui`,
+      message: `${results.filter((r) => r.success).length} dari ${
+        results.length
+      } item berhasil diperbarui`,
       results,
     });
   } catch (error) {
@@ -561,6 +580,7 @@ exports.getAllFeedItems = async (req, res) => {
   try {
     const { daily_feed_id, feed_id } = req.query;
     const userId = req.user?.id;
+    const userRole = req.user?.role?.toLowerCase(); // Ambil peran pengguna
 
     if (!userId) {
       return res.status(401).json({
@@ -573,55 +593,62 @@ exports.getAllFeedItems = async (req, res) => {
     if (daily_feed_id) filter.daily_feed_id = daily_feed_id;
     if (feed_id) filter.feed_id = feed_id;
 
-    const userCows = await UserCowAssociation.findAll({
-      where: { user_id: userId },
-      attributes: ["cow_id"],
-    });
-    const allowedCowIds = userCows.map((uc) => uc.cow_id);
+    const include = [
+      {
+        model: DailyFeedSchedule,
+        as: "DailyFeedSchedule",
+        attributes: ["id", "cow_id"],
+        required: true,
+      },
+      {
+        model: Feed,
+        as: "Feed",
+        attributes: ["id", "name"],
+        include: [
+          {
+            model: FeedNutrisi,
+            as: "FeedNutrisiRecords",
+            include: [
+              {
+                model: Nutrisi,
+                as: "Nutrisi",
+                attributes: ["id", "name", "unit"],
+              },
+            ],
+            required: false,
+          },
+        ],
+        required: false,
+      },
+      {
+        model: User,
+        as: "Creator",
+        attributes: ["id", "name"],
+        required: false,
+      },
+      {
+        model: User,
+        as: "Updater",
+        attributes: ["id", "name"],
+        required: false,
+      },
+    ];
+
+    // Tambahkan filter cow_id hanya untuk farmer
+    if (userRole === "farmer") {
+      const userCows = await UserCowAssociation.findAll({
+        where: { user_id: userId },
+        attributes: ["cow_id"],
+      });
+      const allowedCowIds = userCows.map((uc) => uc.cow_id);
+      include[0].where = {
+        cow_id: { [Op.in]: allowedCowIds.length > 0 ? allowedCowIds : [null] },
+      };
+    }
 
     const items = await DailyFeedItems.findAll({
       where: filter,
-      include: [
-        {
-          model: DailyFeedSchedule,
-          as: "DailyFeedSchedule",
-          where: { cow_id: { [Op.in]: allowedCowIds } },
-          attributes: ["id", "cow_id"],
-          required: true,
-        },
-        {
-          model: Feed,
-          as: "Feed",
-          attributes: ["id", "name"],
-          include: [
-            {
-              model: FeedNutrisi,
-              as: "FeedNutrisiRecords",
-              include: [
-                {
-                  model: Nutrisi,
-                  as: "Nutrisi",
-                  attributes: ["id", "name", "unit"],
-                },
-              ],
-              required: false,
-            },
-          ],
-          required: false,
-        },
-        {
-          model: User,
-          as: "Creator",
-          attributes: ["id", "name"],
-          required: false,
-        },
-        {
-          model: User,
-          as: "Updater",
-          attributes: ["id", "name"],
-          required: false,
-        },
-      ],
+      include,
       order: [["id", "ASC"]],
     });
 
@@ -639,6 +666,7 @@ exports.getAllFeedItems = async (req, res) => {
 exports.getFeedItemById = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
+  const userRole = req.user?.role?.toLowerCase();
 
   try {
     if (!userId) {
@@ -698,14 +726,17 @@ exports.getFeedItemById = async (req, res) => {
       });
     }
 
-    const userCowAssociation = await UserCowAssociation.findOne({
-      where: { user_id: userId, cow_id: item.DailyFeedSchedule.cow_id },
-    });
-    if (!userCowAssociation) {
-      return res.status(403).json({
-        success: false,
-        message: `Anda tidak memiliki izin untuk melihat pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
+    // Hanya terapkan pengecekan UserCowAssociation untuk farmer
+    if (userRole === "farmer") {
+      const userCowAssociation = await UserCowAssociation.findOne({
+        where: { user_id: userId, cow_id: item.DailyFeedSchedule.cow_id },
       });
+      if (!userCowAssociation) {
+        return res.status(403).json({
+          success: false,
+          message: `Anda tidak memiliki izin untuk melihat pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
+        });
+      }
     }
 
     return res.status(200).json(formatFeedItemResponse(item));
@@ -720,10 +751,11 @@ exports.getFeedItemById = async (req, res) => {
 };
 
 exports.getFeedItemsByDailyFeedId = async (req, res) => {
-  const { daily_feed_id } = req.params;
-  const userId = req.user?.id;
-
   try {
+    const { daily_feed_id } = req.params;
+    const userId = req.user?.id;
+    const userRole = req.user?.role?.toLowerCase();
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -731,65 +763,68 @@ exports.getFeedItemsByDailyFeedId = async (req, res) => {
       });
     }
 
-    const dailyFeed = await DailyFeedSchedule.findByPk(daily_feed_id);
-    if (!dailyFeed) {
-      return res.status(404).json({
-        success: false,
-        message: "Sesi pakan harian tidak ditemukan",
+    const include = [
+      {
+        model: DailyFeedSchedule,
+        as: "DailyFeedSchedule",
+        attributes: ["id", "cow_id"],
+        required: true,
+      },
+      {
+        model: Feed,
+        as: "Feed",
+        attributes: ["id", "name"],
+        include: [
+          {
+            model: FeedNutrisi,
+            as: "FeedNutrisiRecords",
+            include: [
+              {
+                model: Nutrisi,
+                as: "Nutrisi",
+                attributes: ["id", "name", "unit"],
+              },
+            ],
+            required: false,
+          },
+        ],
+        required: false,
+      },
+      {
+        model: User,
+        as: "Creator",
+        attributes: ["id", "name"],
+        required: false,
+      },
+      {
+        model: User,
+        as: "Updater",
+        attributes: ["id", "name"],
+        required: false,
+      },
+    ];
+
+    // Tambahkan filter cow_id hanya untuk farmer
+    if (userRole === "farmer") {
+      const userCows = await UserCowAssociation.findAll({
+        where: { user_id: userId },
+        attributes: ["cow_id"],
       });
+      const allowedCowIds = userCows.map((uc) => uc.cow_id);
+      include[0].where = {
+        cow_id: { [Op.in]: allowedCowIds.length > 0 ? allowedCowIds : [null] },
+      };
     }
 
-    const userCowAssociation = await UserCowAssociation.findOne({
-      where: { user_id: userId, cow_id: dailyFeed.cow_id },
-    });
-    if (!userCowAssociation) {
-      return res.status(403).json({
-        success: false,
-        message: `Anda tidak memiliki izin untuk melihat pakan sapi dengan ID ${dailyFeed.cow_id}`,
-      });
-    }
-
-    const feedItems = await DailyFeedItems.findAll({
+    const items = await DailyFeedItems.findAll({
       where: { daily_feed_id },
-      include: [
-        {
-          model: Feed,
-          as: "Feed",
-          attributes: ["id", "name"],
-          include: [
-            {
-              model: FeedNutrisi,
-              as: "FeedNutrisiRecords",
-              include: [
-                {
-                  model: Nutrisi,
-                  as: "Nutrisi",
-                  attributes: ["id", "name", "unit"],
-                },
-              ],
-              required: false,
-            },
-          ],
-          required: false,
-        },
-        {
-          model: User,
-          as: "Creator",
-          attributes: ["id", "name"],
-          required: false,
-        },
-        {
-          model: User,
-          as: "Updater",
-          attributes: ["id", "name"],
-          required: false,
-        },
-      ],
+      include,
+      order: [["id", "ASC"]],
     });
 
-    return res.status(200).json(feedItems.map(formatFeedItemResponse));
+    return res.status(200).json(items.map(formatFeedItemResponse));
   } catch (error) {
-    console.error("Error fetching feed items:", error);
+    console.error("Error fetching feed items by daily feed ID:", error);
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
@@ -838,7 +873,8 @@ exports.getFeedUsageByDate = async (req, res) => {
     const whereClause = {};
     if (start_date || end_date) {
       whereClause["$DailyFeedSchedule.date$"] = {};
-      if (start_date) whereClause["$DailyFeedSchedule.date$"][Op.gte] = start_date;
+      if (start_date)
+        whereClause["$DailyFeedSchedule.date$"][Op.gte] = start_date;
       if (end_date) whereClause["$DailyFeedSchedule.date$"][Op.lte] = end_date;
     }
     whereClause["$DailyFeedSchedule.cow_id$"] = { [Op.in]: allowedCowIds };

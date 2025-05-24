@@ -1,3 +1,6 @@
+// Keep the Notification model as is
+
+// Update the FeedStock model with modified hooks
 const { DataTypes, Op } = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -121,13 +124,17 @@ const FeedStock = sequelize.define(
             });
             if (!recentNotification) {
               const stockAsInteger = Math.floor(stock);
-              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit} segera tambahkan stok nya`;
+              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
               await Notification.create({
                 feed_stock_id: feedStock.id,
                 message,
                 created_at: new Date(),
-                user_id: feedStock.user_id,
-                type: "FEED_STOCK",
+                user_id: 0, // Global notification
+                cow_id: 0, // Global notification
+                product_stock_id: null, // Set to null as it's not related to product stock
+                order_id: null, // Set to null as it's not related to an order
+                milking_session_id: null, // Set to null as it's not related to milking session
+                type: "Sisa Pakan Menipis",
                 is_read: false,
               });
               console.log(`Created notification for low stock of ${feed.name}`, { message });
@@ -168,13 +175,17 @@ const FeedStock = sequelize.define(
             });
             if (!recentNotification) {
               const stockAsInteger = Math.floor(stock);
-              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit} segera tambahkan stok nya`;
+              const message = `Pakan ${feed.name} sisa ${stockAsInteger} ${feed.unit}, segera tambah pakan!!`;
               await Notification.create({
                 feed_stock_id: feedStock.id,
                 message,
                 created_at: new Date(),
-                user_id: feedStock.user_id,
-                type: "FEED_STOCK",
+                user_id: 0, // Global notification
+                cow_id: 0, // Global notification
+                product_stock_id: null, // Set to null as it's not related to product stock
+                order_id: null, // Set to null as it's not related to an order
+                milking_session_id: null, // Set to null as it's not related to milking session
+                type: "Sisa Pakan Menipis",
                 is_read: false,
               });
               console.log(`Created notification for low stock of ${feed.name}`, { message });

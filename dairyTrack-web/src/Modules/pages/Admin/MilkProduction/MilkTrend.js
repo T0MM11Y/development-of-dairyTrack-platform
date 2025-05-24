@@ -5,6 +5,8 @@ import {
   exportDailySummariesToExcel,
 } from "../../../../Modules/controllers/milkProductionController";
 import { listCows } from "../../../../Modules/controllers/cowsController";
+import { listCowsByUser } from "../../../../Modules/controllers/cattleDistributionController";
+
 import {
   Card,
   Row,
@@ -39,6 +41,10 @@ const MilkTrend = () => {
   // State for loading and error handling
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Add user state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userManagedCows, setUserManagedCows] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(true);
 
   // State for data
   const [summaries, setSummaries] = useState([]);
@@ -62,19 +68,57 @@ const MilkTrend = () => {
   // State for advanced metrics
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
 
-  // Fetch cows for dropdown
+  // Fetch current user info
+  useEffect(() => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (userData) {
+        setCurrentUser(userData);
+        // Determine if user is admin (assuming role_id 1 is for admins)
+        // Adjust according to your role system
+        setIsAdmin(userData.role_id === 1 || userData.role_id === 2);
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+    }
+  }, []);
+
+  // Fetch user-managed cows
+  useEffect(() => {
+    const fetchUserManagedCows = async () => {
+      if (currentUser?.user_id && !isAdmin) {
+        try {
+          const { success, cows } = await listCowsByUser(currentUser.user_id);
+          if (success && cows) {
+            setUserManagedCows(cows);
+          }
+        } catch (err) {
+          console.error("Error fetching user's cows:", err);
+        }
+      }
+    };
+
+    fetchUserManagedCows();
+  }, [currentUser, isAdmin]);
+  // Modified fetch cows for dropdown
   useEffect(() => {
     const fetchCows = async () => {
       try {
-        const response = await listCows();
-        if (response.success) {
-          // Filter only female cows which are the ones producing milk
-          const femaleCows = response.cows.filter(
+        if (isAdmin) {
+          // Admin gets all cows
+          const response = await listCows();
+          if (response.success) {
+            const femaleCows = response.cows.filter(
+              (cow) => cow.gender === "Female"
+            );
+            setCowList(femaleCows);
+          }
+        } else if (userManagedCows.length > 0) {
+          // Regular users only get their managed cows
+          const femaleCows = userManagedCows.filter(
             (cow) => cow.gender === "Female"
           );
           setCowList(femaleCows);
-        } else {
-          console.error("Error fetching cows:", response.message);
         }
       } catch (error) {
         console.error("Error fetching cows:", error);
@@ -82,7 +126,7 @@ const MilkTrend = () => {
     };
 
     fetchCows();
-  }, []);
+  }, [isAdmin, userManagedCows]);
 
   useEffect(() => {
     const fetchMilkSummaries = async () => {
@@ -92,6 +136,8 @@ const MilkTrend = () => {
           start_date: startDate,
           end_date: endDate,
           cow_id: selectedCow || undefined,
+          // Add user filtering if not admin
+          user_id: !isAdmin ? currentUser?.user_id : undefined,
         };
 
         const response = await getDailySummaries(filters);
@@ -149,8 +195,11 @@ const MilkTrend = () => {
       }
     };
 
-    fetchMilkSummaries();
-  }, [startDate, endDate, selectedCow]);
+    // Only fetch if we have user info
+    if (currentUser) {
+      fetchMilkSummaries();
+    }
+  }, [startDate, endDate, selectedCow, currentUser, isAdmin]);
 
   // Process the data for charts according to selected time grouping
   const processedData = useMemo(() => {
@@ -465,7 +514,7 @@ const MilkTrend = () => {
             }}
           >
             <i className="fas fa-chart-line me-2" /> Milk Production Trend
-            Analysis
+            Analysis {!isAdmin && " - Your Managed Cows"}
           </h4>
         </Card.Header>
 
@@ -516,7 +565,7 @@ const MilkTrend = () => {
                 <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
                   <Button
                     variant="danger"
-                    className="shadow-sm opacity-75"
+                    className="shadow-sm "
                     onClick={handleExportToPDF}
                   >
                     <i className="fas fa-file-pdf me-2" /> PDF
@@ -525,7 +574,7 @@ const MilkTrend = () => {
                 <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
                   <Button
                     variant="success"
-                    className="shadow-sm opacity-75"
+                    className="shadow-sm "
                     onClick={handleExportToExcel}
                   >
                     <i className="fas fa-file-excel me-2" /> Excel
@@ -1035,7 +1084,7 @@ const MilkTrend = () => {
             </Row>
           )}
 
-          {/* Main Chart */}
+          {/* Main Chart - Update title to show context */}
           <div className="mb-4">
             <Card className="border-0 shadow-sm">
               <Card.Header className="bg-light d-flex justify-content-between align-items-center">
@@ -1048,7 +1097,12 @@ const MilkTrend = () => {
                 >
                   <i className="fas fa-chart-line me-2"></i>
                   Milk Production Trend -{" "}
-                  {selectedCow ? `Cow #${selectedCow}` : "All Cows"}(
+                  {selectedCow
+                    ? `Cow #${selectedCow}`
+                    : isAdmin
+                    ? "All Cows"
+                    : "Your Cows"}
+                  (
                   {timeGrouping.charAt(0).toUpperCase() + timeGrouping.slice(1)}{" "}
                   View)
                 </h5>

@@ -1,29 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Button, Table } from "react-bootstrap";
 import {
-  FaPaw,
-  FaMoneyBillWave,
-  FaShoppingCart,
-  FaBoxOpen,
-} from "react-icons/fa";
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Table,
+  Tabs,
+  Tab,
+} from "react-bootstrap";
+import { getUsersWithCows } from "../../controllers/cattleDistributionController"; // Import
 import {
-  LineChart,
-  Line,
   BarChart,
-  Bar,
-  AreaChart,
-  Area,
-  Legend,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
+  Bar,
   ResponsiveContainer,
+  Legend,
+  LabelList,
+  ComposedChart,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useInView } from "react-intersection-observer";
 import { motion } from "framer-motion";
-import { Droplet, Wheat, Activity, PawPrint, LucideUsers } from "lucide-react";
+import { Droplet, Wheat, PawPrint, LucideUsers } from "lucide-react";
 import Swal from "sweetalert2";
+// Import controllers
 import { listCows } from "../../controllers/cowsController";
 import { getAllUsers } from "../../controllers/usersController";
 import { getMilkingSessions } from "../../controllers/milkProductionController";
@@ -32,7 +38,132 @@ import { listCowsByUser } from "../../controllers/cattleDistributionController";
 import financeController from "../../controllers/financeController.js";
 import { getHealthChecks } from "../../controllers/healthCheckController";
 import { getOrders } from "../../controllers/orderController";
-import { getProductStocks } from "../../controllers/productStockController";
+
+import Modal from "react-bootstrap/Modal"; // Tambahkan import Modal jika belum ada
+
+// CSS styles defined in a separate object for consistency
+const styles = {
+  // Typography
+  fontFamily: "'Roboto', sans-serif",
+  heading: {
+    fontWeight: "500",
+    color: "#3D90D7",
+    fontSize: "21px",
+    fontFamily: "Roboto, Monospace",
+    letterSpacing: "0.5px",
+  },
+  subheading: {
+    fontSize: "14px",
+    color: "#6c757d",
+    fontFamily: "Roboto, sans-serif",
+  },
+  value: {
+    fontWeight: "700",
+    fontSize: "1.25rem",
+    color: "#2c3e50",
+  },
+  // Cards
+  card: {
+    borderRadius: "10px",
+    border: "none",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)",
+  },
+  cardHeader: {
+    fontSize: "1rem",
+    fontWeight: "600",
+    color: "#2c3e50",
+    borderBottom: "none",
+  },
+  // Icons
+  iconContainer: {
+    borderRadius: "50%",
+    width: "45px",
+    height: "45px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: "12px",
+  },
+  // Badges
+  badge: {
+    fontSize: "0.75rem",
+    fontWeight: "500",
+    padding: "4px 10px",
+    borderRadius: "6px",
+  },
+  // Charts
+  chartContainer: {
+    height: "300px",
+    marginTop: "10px",
+  },
+  // Table
+  table: {
+    fontSize: "0.85rem",
+    borderCollapse: "separate",
+    borderSpacing: "0 4px",
+  },
+  tableHeader: {
+    backgroundColor: "#f8f9fa",
+    color: "#495057",
+    fontWeight: "600",
+    border: "none",
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+    fontSize: "13px",
+    fontFamily: "Roboto, sans-serif",
+    letterSpacing: "0.9px",
+    textTransform: "capitalize",
+  },
+  // Tab styles
+  tabContainer: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: "8px",
+    padding: "10px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+  },
+  // Stat cards
+  statCard: {
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)",
+    borderRadius: "19px",
+    border: "0",
+  },
+  statValue: {
+    fontSize: "14px",
+    fontWeight: "800",
+    fontFamily: "Roboto, Monospace",
+    fontStyle: "italic",
+  },
+  statLabel: {
+    fontSize: "15px",
+  },
+  statDescription: {
+    fontSize: "12px",
+    fontStyle: "italic",
+    lineHeight: "1.4",
+  },
+};
+
+// Animation variants
+const animations = {
+  card: {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  },
+  container: {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+      },
+    },
+  },
+  item: {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  },
+};
 
 // Validate financeController
 if (
@@ -41,7 +172,7 @@ if (
   typeof financeController.getExpenses !== "function"
 ) {
   console.error(
-    "Error: financeController is not a valid module or missing getIncomes/getExpenses functions"
+    "Error: financeController is not valid or missing required functions"
   );
   Swal.fire({
     icon: "error",
@@ -50,52 +181,145 @@ if (
   });
 }
 
-// Animation variants for Framer Motion
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
 const Dashboard = () => {
+  // State declarations
   const [loading, setLoading] = useState(true);
+  const [isFarmer, setIsFarmer] = useState(false);
   const [totalCows, setTotalCows] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [totalFarmers, setTotalFarmers] = useState(0);
-  const [stats, setStats] = useState([]);
   const [milkProductionData, setMilkProductionData] = useState([]);
   const [feedUsageData, setFeedUsageData] = useState([]);
-  const [financeData, setFinanceData] = useState([]);
   const [healthCheckData, setHealthCheckData] = useState([]);
-  const [efficiencyData, setEfficiencyData] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [activeTab, setActiveTab] = useState("production");
   const [orders, setOrders] = useState([]);
-  const [productStocks, setProductStocks] = useState([]);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userManagedCows, setUserManagedCows] = useState([]);
+  const [dateRange, setDateRange] = useState({
+    startDate: "2025-05-18",
+    endDate: "2025-05-24",
+  });
+
+  // State for modal
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState([]);
+
+  const handleTotalCowsClick = async () => {
+    try {
+      if (isFarmer) {
+        // Untuk farmer, tampilkan sapi yang mereka kelola
+        const formattedData = userManagedCows.map((cow) => ({
+          cowName: cow.name || "Unknown",
+          cowId: cow.id || "N/A",
+        }));
+        setModalData(formattedData);
+      } else {
+        // Untuk admin, tampilkan siapa yang mengelola setiap sapi
+        const usersWithCowsResponse = await getUsersWithCows();
+        console.log("Users with cows response:", usersWithCowsResponse);
+        if (usersWithCowsResponse.success) {
+          const usersWithCows = usersWithCowsResponse.usersWithCows || [];
+          const cowsWithManagers = [];
+
+          usersWithCows.forEach((farmer) => {
+            farmer.cows.forEach((cow) => {
+              cowsWithManagers.push({
+                cowName: cow.name || "Unknown",
+                manager: farmer.user.username || "Unknown", // Ambil username dari farmer.user
+              });
+            });
+          });
+
+          setModalData(cowsWithManagers);
+        } else {
+          throw new Error(
+            usersWithCowsResponse.message || "Failed to fetch data."
+          );
+        }
+      }
+      setShowModal(true);
+    } catch (err) {
+      console.error("Error fetching cow data:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to fetch cow data.",
+      });
+    }
+  };
+  // Function to close modal
+  const handleCloseModal = () => setShowModal(false);
 
   // Animation hooks
-  const { ref: headerRef, inView: headerInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.2,
-  });
   const { ref: statsRef, inView: statsInView } = useInView({
     triggerOnce: true,
-    threshold: 0.2,
-  });
-  const { ref: chartsRef, inView: chartsInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.2,
+    threshold: 0.1,
   });
 
-  // Fetch current user from localStorage
+  const { ref: chartsRef, inView: chartsInView } = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
+  const { startDate, endDate } = dateRange;
+
+  // Automatic tab switching logic
+  useEffect(() => {
+    const tabOrder = ["production", "health", "orders", "feed"];
+    let tabIndex = 0;
+
+    const intervalId = setInterval(() => {
+      tabIndex = (tabIndex + 1) % tabOrder.length;
+      setActiveTab(tabOrder[tabIndex]);
+    }, 6500);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Main data fetching
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!currentUser || userManagedCows === undefined) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // ...existing data fetching logic...
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(err.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err.message || "Failed to load dashboard data.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentUser, userManagedCows, dateRange]);
+
+  // Update current time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     try {
       const userData = JSON.parse(localStorage.getItem("user"));
       if (userData) {
         setCurrentUser(userData);
+        // Check if user is a farmer (assuming role_id 3 is for farmers)
+        setIsFarmer(userData.role_id === 3);
       }
     } catch (error) {
-      console.error("Error parsing user data from localStorage:", error);
+      console.error("Error parsing user data:", error);
     }
   }, []);
 
@@ -117,8 +341,11 @@ const Dashboard = () => {
     fetchUserManagedCows();
   }, [currentUser]);
 
+  // Main data fetching
   useEffect(() => {
     const fetchData = async () => {
+      if (!currentUser || userManagedCows === undefined) return;
+
       setLoading(true);
       setError(null);
 
@@ -126,51 +353,48 @@ const Dashboard = () => {
         // Fetch Total Cows
         const cowsResponse = await listCows();
         if (cowsResponse.success) {
-          setTotalCows(cowsResponse.cows.length);
+          if (isFarmer && userManagedCows.length > 0) {
+            // For farmers, only count managed cows
+            setTotalCows(userManagedCows.length);
+          } else {
+            // For admins and supervisors, count all cows
+            setTotalCows(cowsResponse.cows.length);
+          }
         } else {
           throw new Error(cowsResponse.message || "Failed to fetch cows.");
         }
 
         // Fetch Total Farmers
-        const usersResponse = await getAllUsers();
-        if (usersResponse.success) {
-          const farmers = usersResponse.users.filter(
-            (user) => user.role === "farmer"
+        const farmersResponse = await getAllUsers();
+        if (farmersResponse.success) {
+          const farmers = farmersResponse.users.filter(
+            (user) => user.role_id === 3
           );
           setTotalFarmers(farmers.length);
         } else {
-          throw new Error(usersResponse.message || "Failed to fetch users.");
+          throw new Error(
+            farmersResponse.message || "Failed to fetch farmers."
+          );
         }
-
-        // Define shared date variables
-        const today = "2025-05-20";
-        const startDate = new Date("2025-05-18");
-        const endDate = new Date("2025-05-24");
 
         // Fetch Milking Sessions
         const milkingResponse = await getMilkingSessions();
-        let todayMilkVolume = "0.00";
-        let milkProductionData = [];
-
         if (milkingResponse.success && milkingResponse.sessions) {
           let filteredSessions = milkingResponse.sessions;
 
-          if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
+          // Filter by user's managed cows if farmer only
+          if (isFarmer && userManagedCows.length > 0) {
             const managedCowIds = userManagedCows.map((cow) => String(cow.id));
             filteredSessions = filteredSessions.filter((session) =>
               managedCowIds.includes(String(session.cow_id))
             );
           }
 
-          todayMilkVolume = filteredSessions
-            .filter((session) => session.milking_time.startsWith(today))
-            .reduce((sum, session) => sum + parseFloat(session.volume || 0), 0)
-            .toFixed(2);
-
+          // Process milk production data by date
           const milkByDate = {};
           for (
             let date = new Date(startDate);
-            date <= endDate;
+            date <= new Date(endDate);
             date.setDate(date.getDate() + 1)
           ) {
             const formattedDate = date.toLocaleDateString("id-ID", {
@@ -190,45 +414,32 @@ const Dashboard = () => {
             }
           });
 
-          milkProductionData = Object.entries(milkByDate).map(
+          const formattedMilkData = Object.entries(milkByDate).map(
             ([date, volume]) => ({
               date,
               volume: parseFloat(volume.toFixed(2)),
             })
           );
+
+          setMilkProductionData(formattedMilkData);
         } else {
           throw new Error(
             milkingResponse.message || "Failed to fetch milking sessions."
           );
         }
 
-        // Fetch Feed Usage Data
+        // In the feed usage data fetch section
         const feedResponse = await getFeedUsageByDate({
-          start_date: "2025-05-18",
-          end_date: "2025-05-24",
+          start_date: startDate,
+          end_date: endDate,
         });
 
-        let todayFeedQuantity = "0.00";
-        let feedUsageData = [];
-
         if (feedResponse.success && Array.isArray(feedResponse.data)) {
-          todayFeedQuantity = feedResponse.data
-            .filter((item) => item.date.startsWith(today))
-            .reduce((sum, day) => {
-              return (
-                sum +
-                day.feeds.reduce(
-                  (daySum, feed) => daySum + parseFloat(feed.quantity_kg || 0),
-                  0
-                )
-              );
-            }, 0)
-            .toFixed(2);
-
+          // Process feed usage data by date
           const feedByDate = {};
           for (
             let date = new Date(startDate);
-            date <= endDate;
+            date <= new Date(endDate);
             date.setDate(date.getDate() + 1)
           ) {
             const formattedDate = date.toLocaleDateString("id-ID", {
@@ -238,117 +449,63 @@ const Dashboard = () => {
             feedByDate[formattedDate] = 0;
           }
 
-          feedResponse.data.forEach((day) => {
+          let filteredFeedData = feedResponse.data;
+
+          // Filter by user's managed cows if farmer
+          if (isFarmer && userManagedCows.length > 0) {
+            const managedCowIds = userManagedCows.map((cow) => String(cow.id));
+            filteredFeedData = filteredFeedData.filter((day) => {
+              return day.feeds.some(
+                (feed) =>
+                  feed.cow_id && managedCowIds.includes(String(feed.cow_id))
+              );
+            });
+          }
+
+          filteredFeedData.forEach((day) => {
             const date = new Date(day.date).toLocaleDateString("id-ID", {
               day: "numeric",
               month: "short",
             });
             if (feedByDate[date] !== undefined) {
-              feedByDate[date] += day.feeds.reduce(
-                (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
-                0
-              );
+              if (isFarmer && userManagedCows.length > 0) {
+                const managedCowIds = userManagedCows.map((cow) =>
+                  String(cow.id)
+                );
+                // For farmers, only sum feed for their managed cows
+                feedByDate[date] += day.feeds
+                  .filter(
+                    (feed) =>
+                      feed.cow_id && managedCowIds.includes(String(feed.cow_id))
+                  )
+                  .reduce(
+                    (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
+                    0
+                  );
+              } else {
+                // For admins, sum all feeds
+                feedByDate[date] += day.feeds.reduce(
+                  (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
+                  0
+                );
+              }
             }
           });
 
-          feedUsageData = Object.entries(feedByDate).map(
+          const formattedFeedData = Object.entries(feedByDate).map(
             ([date, quantity]) => ({
               date,
               feed: parseFloat(quantity.toFixed(2)),
             })
           );
+
+          setFeedUsageData(formattedFeedData);
         } else {
-          console.error("Unexpected feed usage response:", feedResponse);
+          console.warn("Unexpected feed usage response:", feedResponse);
         }
-
-        // Fetch Finance Data
-        const queryParams = new URLSearchParams();
-        queryParams.append("start_date", "2025-05-18");
-        queryParams.append("end_date", "2025-05-24");
-        const queryString = queryParams.toString();
-
-        let incomes, expenses;
-        try {
-          const [incomeResponse, expenseResponse] = await Promise.all([
-            financeController.getIncomes(queryString),
-            financeController.getExpenses(queryString),
-          ]);
-
-          if (!incomeResponse.success) {
-            throw new Error(
-              incomeResponse.message || "Failed to fetch incomes."
-            );
-          }
-          if (!expenseResponse.success) {
-            throw new Error(
-              expenseResponse.message || "Failed to fetch expenses."
-            );
-          }
-
-          incomes = incomeResponse.incomes || [];
-          expenses = expenseResponse.expenses || [];
-        } catch (err) {
-          console.error("Error fetching finance data:", err);
-          throw new Error("Failed to fetch finance data: " + err.message);
-        }
-
-        let totalIncome = "0.00";
-        let totalExpense = "0.00";
-        let financeChartData = [];
-
-        const financeByDate = {};
-        for (
-          let date = new Date(startDate);
-          date <= endDate;
-          date.setDate(date.getDate() + 1)
-        ) {
-          const formattedDate = date.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          });
-          financeByDate[formattedDate] = { income: 0, expense: 0 };
-        }
-
-        incomes.forEach((transaction) => {
-          const date = new Date(
-            transaction.transaction_date
-          ).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-          if (financeByDate[date]) {
-            const amount = parseFloat(transaction.amount) / 1000000; // Convert to millions
-            financeByDate[date].income += amount;
-          }
-        });
-
-        expenses.forEach((transaction) => {
-          const date = new Date(
-            transaction.transaction_date
-          ).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
-          if (financeByDate[date]) {
-            const amount = parseFloat(transaction.amount) / 1000000; // Convert to millions
-            financeByDate[date].expense += amount;
-          }
-        });
-
-        totalIncome = incomes
-          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-          .toFixed(2);
-
-        totalExpense = expenses
-          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-          .toFixed(2);
-
-        financeChartData = Object.entries(financeByDate).map(
-          ([date, values]) => ({
-            date,
-            income: parseFloat(values.income.toFixed(2)),
-            expense: parseFloat(values.expense.toFixed(2)),
-          })
-        );
 
         // Fetch Health Checks
         const healthResponse = await getHealthChecks();
-        let totalHealthChecks = 0;
-        let healthCheckData = [];
 
         if (Array.isArray(healthResponse)) {
           const uniqueHealthChecks = Array.from(
@@ -357,23 +514,19 @@ const Dashboard = () => {
 
           let filteredHealthChecks = uniqueHealthChecks;
 
-          if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
+          // Filter by user's managed cows if farmer only
+          if (isFarmer && userManagedCows.length > 0) {
             const managedCowIds = userManagedCows.map((cow) => cow.id);
             filteredHealthChecks = filteredHealthChecks.filter((check) =>
               managedCowIds.includes(check?.cow?.id)
             );
           }
 
-          if (currentUser?.role_id === 2 && userManagedCows.length === 0) {
-            filteredHealthChecks = uniqueHealthChecks;
-          }
-
-          totalHealthChecks = filteredHealthChecks.length;
-
+          // Process health check data by date
           const healthByDate = {};
           for (
             let date = new Date(startDate);
-            date <= endDate;
+            date <= new Date(endDate);
             date.setDate(date.getDate() + 1)
           ) {
             const formattedDate = date.toLocaleDateString("id-ID", {
@@ -398,24 +551,24 @@ const Dashboard = () => {
             }
           });
 
-          healthCheckData = Object.entries(healthByDate).map(
+          const formattedHealthData = Object.entries(healthByDate).map(
             ([date, checks]) => ({
               date,
               checks,
             })
           );
+
+          setHealthCheckData(formattedHealthData);
         } else {
-          console.error("Unexpected health checks response:", healthResponse);
+          console.warn("Unexpected health checks response:", healthResponse);
         }
 
         // Fetch Orders
-        // Fetch Orders
-        let ordersData = [];
-        try {
-          const ordersResponse = await getOrders();
-          console.log("Orders Response:", ordersResponse); // Debug log
-          if (ordersResponse.success && Array.isArray(ordersResponse.orders)) {
-            ordersData = ordersResponse.orders.map((order) => ({
+        const ordersResponse = await getOrders();
+        if (ordersResponse.success && Array.isArray(ordersResponse.orders)) {
+          const formattedOrders = ordersResponse.orders
+            .slice(0, 8) // Limit to prevent overflow
+            .map((order) => ({
               order_no: order.order_no || "N/A",
               customer_name: order.customer_name || "Unknown",
               total: parseFloat(order.total_price || 0).toLocaleString(
@@ -428,138 +581,13 @@ const Dashboard = () => {
               ),
               status: order.status || "Unknown",
             }));
-          } else {
-            console.error("Invalid orders response:", ordersResponse);
-            throw new Error("Failed to fetch valid orders data.");
-          }
-        } catch (err) {
-          console.error("Error fetching orders:", err);
-          setError(err.message || "Failed to fetch orders.");
+
+          setOrders(formattedOrders);
+        } else {
+          console.warn("Invalid orders response:", ordersResponse);
         }
-        setOrders(ordersData);
-        console.log("Orders State Updated:", ordersData); // Debug log
-
-        // Fetch Product Stocks
-        let stocksData = [];
-        try {
-          const stocksResponse = await getProductStocks();
-          if (
-            stocksResponse.success &&
-            Array.isArray(stocksResponse.product_stocks)
-          ) {
-            stocksData = stocksResponse.product_stocks
-              .map((stock) => ({
-                product: stock.product?.name || "Unknown",
-                quantity: stock.quantity || "0",
-                expiry_date: stock.expiry_date
-                  ? new Date(stock.expiry_date).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "N/A",
-              }))
-              .sort(
-                (a, b) => new Date(a.expiry_date) - new Date(b.expiry_date)
-              );
-          } else {
-            console.warn("Failed to fetch product stocks, using mock data.");
-            stocksData = [
-              {
-                product: "Susu Coklat",
-                quantity: "5 liter",
-                expiry_date: "20 Mei 2025",
-              },
-              {
-                product: "Susu Strawberry",
-                quantity: "5 liter",
-                expiry_date: "20 Mei 2025",
-              },
-              {
-                product: "Susu Strawberry",
-                quantity: "1 liter",
-                expiry_date: "22 Mei 2025",
-              },
-            ];
-          }
-        } catch (err) {
-          console.error("Error fetching product stocks:", err);
-        }
-
-        // Calculate Cow Efficiency
-        const efficiencyData = feedUsageData.map((feed, i) => ({
-          date: feed.date,
-          efficiency:
-            milkProductionData[i] && feed.feed > 0
-              ? (milkProductionData[i].volume / feed.feed).toFixed(2)
-              : 0,
-        }));
-
-        // Generate Recent Activities
-        const recentActivities = [
-          {
-            time: "2 jam lalu",
-            content: `Pemeriksaan kesehatan: ${totalHealthChecks} sapi diperiksa`,
-            icon: <Activity className="text-purple" />,
-          },
-          {
-            time: "5 jam lalu",
-            content: `Produksi susu: ${todayMilkVolume} L`,
-            icon: <Droplet className="text-info" />,
-          },
-          {
-            time: "8 jam lalu",
-            content: `Konsumsi pakan: ${todayFeedQuantity} kg`,
-            icon: <Wheat className="text-warning" />,
-          },
-          {
-            time: "1 hari lalu",
-            content: `Pendapatan: Rp ${(
-              parseFloat(totalIncome) / 1000000
-            ).toFixed(2)} Jt`,
-            icon: <FaMoneyBillWave className="text-success" />,
-          },
-        ];
-
-        // Update Stats
-        const updatedStats = [
-          {
-            title: "Konsumsi Pakan (hari ini)",
-            value: `${todayFeedQuantity} kg`,
-            icon: <Wheat className="text-warning" />,
-            color: "warning",
-          },
-          {
-            title: "Produksi Susu (hari ini)",
-            value: `${todayMilkVolume} L`,
-            icon: <Droplet className="text-info" />,
-            color: "info",
-          },
-          {
-            title: "Pendapatan (minggu ini)",
-            value: `Rp ${(parseFloat(totalIncome) / 1000000).toFixed(2)} Jt`,
-            icon: <FaMoneyBillWave className="text-success" />,
-            color: "success",
-          },
-          {
-            title: "Pemeriksaan Kesehatan",
-            value: totalHealthChecks.toString(),
-            icon: <Activity className="text-purple" />,
-            color: "purple",
-          },
-        ];
-
-        setMilkProductionData(milkProductionData);
-        setFeedUsageData(feedUsageData);
-        setFinanceData(financeChartData);
-        setHealthCheckData(healthCheckData);
-        setEfficiencyData(efficiencyData);
-        setRecentActivities(recentActivities);
-        setOrders(ordersData);
-        setProductStocks(stocksData);
-        setStats(updatedStats);
       } catch (err) {
-        console.error("Error in fetchData:", err);
+        console.error("Error fetching dashboard data:", err);
         setError(err.message);
         Swal.fire({
           icon: "error",
@@ -571,21 +599,10 @@ const Dashboard = () => {
       }
     };
 
-    if (currentUser && userManagedCows !== undefined) {
-      fetchData();
-    }
-  }, [currentUser, userManagedCows]);
+    fetchData();
+  }, [currentUser, userManagedCows, dateRange]);
 
-  // Current date and time (WIB)
-  const currentDate = new Date().toLocaleString("id-ID", {
-    timeZone: "Asia/Jakarta",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
+  // Render loading state
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
@@ -599,6 +616,7 @@ const Dashboard = () => {
     );
   }
 
+  // Render error state
   if (error) {
     return (
       <div className="text-center py-5 bg-light">
@@ -606,14 +624,7 @@ const Dashboard = () => {
         <Button
           variant="primary"
           onClick={() => window.location.reload()}
-          style={{
-            borderRadius: "8px",
-            background: "linear-gradient(90deg, #3498db 0%, #2c3e50 100%)",
-            border: "none",
-            letterSpacing: "1.3px",
-            fontWeight: "600",
-            fontSize: "0.8rem",
-          }}
+          className="mt-3 rounded-pill"
         >
           Coba Lagi
         </Button>
@@ -621,588 +632,877 @@ const Dashboard = () => {
     );
   }
 
+  // Helper functions for status badges
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "Completed":
+        return "bg-success";
+      case "Pending":
+        return "bg-warning text-dark";
+      case "Processed":
+        return "bg-info";
+      default:
+        return "bg-secondary";
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "Completed":
+        return "✓ Selesai";
+      case "Pending":
+        return "⏳ Menunggu";
+      case "Processed":
+        return "⟳ Diproses";
+      case "Requested":
+        return "↓ Diminta";
+      default:
+        return status;
+    }
+  };
+
   return (
-    <Container fluid className="py-4 bg-light min-vh-100">
-      {/* Header: Total Sapi and Total Peternak */}
-      <motion.div
-        ref={headerRef}
-        initial="hidden"
-        animate={headerInView ? "visible" : "hidden"}
-        variants={cardVariants}
-      >
-        <Row className="mb-4">
-          <Col md={6} className="mb-3">
-            <Card
-              className="border-0 shadow-sm h-100"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body className="d-flex align-items-center">
-                <div className="p-3 bg-primary bg-opacity-10 rounded-circle me-3">
-                  <PawPrint size={32} className="text-primary" />
+    <div className="container-fluid ">
+      <Card className="shadow-lg border-0 rounded-lg mb-1">
+        <Card.Header className="bg-gradient-primary text-grey py-3">
+          <div className="d-flex justify-content-between align-items-center">
+            <h4 style={styles.heading}>
+              <i className="fas fa-chart-line me-2"></i>
+              Dairy Track Dashboard
+            </h4>
+          </div>
+          <p style={styles.subheading} className="mt-2 mb-0">
+            <i className="fas fa-info-circle me-2"></i>
+            This dashboard provides real-time insights into your dairy farm
+            operations, including cattle management, milk production, and order
+            tracking.
+          </p>
+        </Card.Header>
+        <Card.Body>
+          {/* Welcome Banner */}
+          <div className="mb-4 p-3 bg-light rounded-3">
+            <Row className="align-items-center">
+              <Col md={8}>
+                <h5
+                  className="mb-1"
+                  style={{ color: "#3D90D7", fontWeight: "500" }}
+                >
+                  Selamat datang, {currentUser?.name || "Admin"}!
+                </h5>
+                <div style={styles.subheading}>
+                  {currentTime.toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}{" "}
+                  |{" "}
+                  {currentTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
-                <div>
-                  <Card.Title
-                    className="text-muted mb-1"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Total Sapi
-                  </Card.Title>
-                  <h2 className="mb-1 text-primary">{totalCows}</h2>
-                  <small className="text-success">+3.5% dari minggu lalu</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} className="mb-3">
-            <Card
-              className="border-0 shadow-sm h-100"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body className="d-flex align-items-center">
-                <div className="p-3 bg-info bg-opacity-10 rounded-circle me-3">
-                  <LucideUsers size={32} className="text-info" />
-                </div>
-                <div>
-                  <Card.Title
-                    className="text-muted mb-1"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Total Peternak
-                  </Card.Title>
-                  <h2 className="mb-1 text-info">{totalFarmers}</h2>
-                  <small className="text-success">+1 peternak baru</small>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-        <p
-          className="text-muted text-end"
-          style={{ fontFamily: "'Nunito', sans-serif" }}
-        >
-          Terakhir diperbarui: {currentDate} WIB
-        </p>
-      </motion.div>
+              </Col>
+              <Col md={4} className="text-md-end"></Col>
+            </Row>
+          </div>
 
-      {/* Stats Cards */}
-      <motion.div
-        ref={statsRef}
-        initial="hidden"
-        animate={statsInView ? "visible" : "hidden"}
-        variants={cardVariants}
-      >
-        <Row className="mb-4">
-          {stats.map((stat, index) => (
-            <Col key={index} xs={12} md={6} lg={3} className="mb-3">
-              <Card
-                className={`border-0 shadow-sm border-start border-5 border-${
-                  stat.color === "purple" ? "primary" : stat.color
-                }`}
-                style={{
-                  background:
-                    "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-                }}
+          {/* Stats Cards */}
+          <motion.div
+            ref={statsRef}
+            initial="hidden"
+            animate={statsInView ? "visible" : "hidden"}
+            variants={animations.container}
+            className="mb-4"
+          >
+            <Row>
+              {[
+                {
+                  title: "Total Sapi",
+                  value: totalCows,
+                  badge: isFarmer ? "Sapi Dikelola" : "Sapi Terdaftar",
+                  icon: <PawPrint size={22} color="#0d6efd" />,
+                  bgColor: "#e3f2fd",
+                  iconColor: "#0d6efd",
+                  badgeClass: "bg-primary-subtle text-primary",
+                  description: isFarmer
+                    ? "Jumlah sapi yang Anda kelola."
+                    : "Jumlah total sapi yang terdaftar dalam sistem.",
+                  onClick: handleTotalCowsClick, // Tambahkan event handler
+                },
+                {
+                  title: "Total Peternak",
+                  value: totalFarmers,
+                  badge: "Peternak Aktif",
+                  icon: <LucideUsers size={22} color="#0dcaf0" />,
+                  bgColor: "#e0f7fa",
+                  iconColor: "#0dcaf0",
+                  badgeClass: "bg-info-subtle text-info",
+                  description:
+                    "Jumlah peternak yang aktif mengelola peternakan.",
+                },
+                {
+                  title: "Produksi Susu",
+                  value: `${milkProductionData
+                    .reduce((sum, item) => sum + item.volume, 0)
+                    .toFixed(2)} L`,
+                  badge: isFarmer ? "Sapi Dikelola" : "Produksi Mingguan",
+                  icon: <Droplet size={22} color="#198754" />,
+                  bgColor: "#e8f5e9",
+                  iconColor: "#198754",
+                  badgeClass: "bg-success-subtle text-success",
+                  description: isFarmer
+                    ? "yang dihasilkan sapi kelolaan Anda minggu ini."
+                    : "Total volume susu yang diproduksi minggu ini.",
+                },
+                {
+                  title: "Penggunaan Pakan",
+                  value: `${feedUsageData
+                    .reduce((sum, item) => sum + item.feed, 0)
+                    .toFixed(2)} kg`,
+                  badge: "Konsumsi Mingguan",
+                  icon: <Wheat size={22} color="#ffc107" />,
+                  bgColor: "#fff8e1",
+                  iconColor: "#ffc107",
+                  badgeClass: "bg-warning-subtle text-warning",
+                  description:
+                    "Total penggunaan pakan seluruh sapi minggu ini.",
+                },
+              ].map((stat, index) => (
+                <Col md={6} lg={3} className="mb-3" key={index}>
+                  <motion.div
+                    variants={animations.item}
+                    whileHover={{ y: -5 }}
+                    onClick={stat.onClick} // Tambahkan event handler di sini
+                    style={{ cursor: stat.onClick ? "pointer" : "default" }} // Tambahkan gaya pointer jika ada onClick
+                  >
+                    <Card style={styles.statCard}>
+                      <Card.Body className="p-3">
+                        <div className="d-flex align-items-center">
+                          <div
+                            style={{
+                              ...styles.iconContainer,
+                              backgroundColor: stat.bgColor,
+                            }}
+                          >
+                            {stat.icon}
+                          </div>
+                          <div>
+                            <div style={styles.subheading}>{stat.title}</div>
+                            <div style={styles.statValue}>{stat.value}</div>
+                            <div className="mt-1">
+                              <span
+                                className={`badge ${stat.badgeClass}`}
+                                style={styles.badge}
+                              >
+                                {stat.badge}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2" style={styles.statDescription}>
+                          <i className="fas fa-info-circle me-1 text-muted"></i>
+                          {stat.description}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </motion.div>
+                </Col>
+              ))}
+            </Row>
+          </motion.div>
+
+          {/* Tabs for Charts and Tables */}
+          <motion.div
+            ref={chartsRef}
+            initial="hidden"
+            animate={chartsInView ? "visible" : "hidden"}
+            variants={animations.container}
+          >
+            <Tabs
+              activeKey={activeTab}
+              onSelect={(key) => setActiveTab(key)}
+              className="mb-3"
+              fill
+              style={styles.tabContainer}
+            >
+              {/* Milk Production Tab */}
+              <Tab
+                eventKey="production"
+                title={
+                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                    <i className="fas fa-tint me-2"></i>Produksi Susu
+                  </span>
+                }
               >
-                <Card.Body className="d-flex align-items-center">
-                  <div
-                    className={`p-3 bg-${
-                      stat.color === "purple" ? "primary" : stat.color
-                    } bg-opacity-10 rounded-circle me-3`}
-                  >
-                    {stat.icon}
-                  </div>
-                  <div>
-                    <Card.Title
-                      className="text-muted mb-1"
-                      style={{
-                        fontFamily: "'Nunito', sans-serif",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {stat.title}
-                    </Card.Title>
-                    <h4
-                      className="mb-0"
-                      style={{
-                        fontFamily: "'Roboto', sans-serif",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {stat.value}
-                    </h4>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </motion.div>
-
-      {/* Charts Section */}
-      <motion.div
-        ref={chartsRef}
-        initial="hidden"
-        animate={chartsInView ? "visible" : "hidden"}
-        variants={cardVariants}
-      >
-        <Row>
-          {/* Main Charts Column */}
-          <Col lg={8} className="mb-4">
-            {/* Chart 1: Milk Production */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-primary mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
+                <motion.div
+                  variants={animations.item}
+                  style={{ minHeight: "450px" }}
                 >
-                  Produksi Susu Mingguan
-                </Card.Title>
-                <div style={{ height: "300px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={milkProductionData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `${value}L`}
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`${value} L`, "Volume"]}
-                        labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                        itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="volume"
-                        stroke="#0d6efd"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card.Body>
-            </Card>
+                  <Row>
+                    <Col lg={8} className="mb-4">
+                      <Card style={styles.card}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">Produksi Susu Mingguan</h5>
+                          <p
+                            className="text-muted mt-1"
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fas fa-info-circle me-2"></i>
+                            Grafik volume produksi susu selama 7 hari terakhir
+                            dari seluruh sapi.
+                          </p>
+                        </Card.Header>
+                        <Card.Body>
+                          <div style={styles.chartContainer} className="mt-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart
+                                data={milkProductionData}
+                                margin={{
+                                  top: 10,
+                                  right: 10,
+                                  left: 10,
+                                  bottom: 20,
+                                }}
+                              >
+                                <CartesianGrid
+                                  strokeDasharray="3 3"
+                                  stroke="#f0f0f0"
+                                />
+                                <XAxis
+                                  dataKey="date"
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <YAxis
+                                  tickFormatter={(value) => `${value}L`}
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <Tooltip
+                                  formatter={(value) => [
+                                    `${value} Liter`,
+                                    "Volume",
+                                  ]}
+                                  contentStyle={{
+                                    backgroundColor: "#fff",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                  }}
+                                />
+                                <Legend verticalAlign="top" height={36} />
+                                <Bar
+                                  dataKey="volume"
+                                  name="Volume Susu"
+                                  fill="#0d6efd"
+                                  radius={[4, 4, 0, 0]}
+                                  barSize={36}
+                                >
+                                  <LabelList
+                                    dataKey="volume"
+                                    position="top"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      fill: "#495057",
+                                    }}
+                                    formatter={(value) => `${value}L`}
+                                  />
+                                </Bar>
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
 
-            {/* Chart 2: Feed Usage */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-warning mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Penggunaan Pakan Mingguan
-                </Card.Title>
-                <div style={{ height: "300px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={feedUsageData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `${value}kg`}
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`${value} kg`, "Pakan"]}
-                        labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                        itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                      />
-                      <Bar
-                        dataKey="feed"
-                        fill="url(#feedGradient)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <defs>
-                        <linearGradient
-                          id="feedGradient"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="#ffc107"
-                            stopOpacity={0.8}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="#ffca28"
-                            stopOpacity={0.2}
-                          />
-                        </linearGradient>
-                      </defs>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card.Body>
-            </Card>
+                    <Col lg={4}>
+                      <Card style={{ ...styles.card, height: "88%" }}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">Statistik Produksi</h5>
+                        </Card.Header>
+                        <Card.Body>
+                          <div className="d-flex flex-column mt-3">
+                            {[
+                              {
+                                label: "Total Produksi",
+                                value: `${milkProductionData
+                                  .reduce((sum, item) => sum + item.volume, 0)
+                                  .toFixed(2)} L`,
+                                icon: "fa-fill-drip",
+                                color: "primary",
+                              },
+                              {
+                                label: "Rata-Rata Harian",
+                                value: `${(
+                                  milkProductionData.reduce(
+                                    (sum, item) => sum + item.volume,
+                                    0
+                                  ) / 7
+                                ).toFixed(2)} L`,
+                                icon: "fa-calendar-day",
+                                color: "success",
+                              },
+                              {
+                                label: "Produksi Tertinggi",
+                                value: `${Math.max(
+                                  ...milkProductionData.map(
+                                    (item) => item.volume
+                                  )
+                                ).toFixed(2)} L`,
+                                icon: "fa-arrow-up",
+                                color: "danger",
+                              },
+                              {
+                                label: "Produksi Terendah",
+                                value: `${Math.min(
+                                  ...milkProductionData
+                                    .filter((item) => item.volume > 0)
+                                    .map((item) => item.volume)
+                                ).toFixed(2)} L`,
+                                icon: "fa-arrow-down text-light",
+                                color: "warning",
+                              },
+                            ].map((stat, idx) => (
+                              <div
+                                key={idx}
+                                className="d-flex align-items-center mb-2 p-2 rounded"
+                                style={{ backgroundColor: "#f8f9fa" }}
+                              >
+                                <div
+                                  className={`rounded-circle bg-${stat.color} bg-opacity-10 d-flex align-items-center justify-content-center me-2`}
+                                  style={{ width: "36px", height: "36px" }}
+                                >
+                                  <i
+                                    className={`fas ${stat.icon} text-${stat.color}`}
+                                  ></i>
+                                </div>
+                                <div>
+                                  <div
+                                    className="text-muted"
+                                    style={{
+                                      fontSize: "13px",
+                                      fontFamily: "'Roboto Mono', monospace",
+                                      fontWeight: "500",
+                                      letterSpacing: "0.2px",
+                                    }}
+                                  >
+                                    {stat.label}
+                                  </div>
+                                  <div
+                                    className="fw-400"
+                                    style={{
+                                      fontSize: "17px",
+                                      fontFamily: "'Roboto Mono', monospace",
+                                      fontWeight: "400",
+                                      letterSpacing: "0.5px",
+                                      lineHeight: "1.2",
+                                    }}
+                                  >
+                                    {stat.value}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </motion.div>
+              </Tab>
 
-            {/* Chart 3: Income vs Expense */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-success mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
+              {/* Health Checks Tab */}
+              <Tab
+                eventKey="health"
+                title={
+                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                    <i className="fas fa-heartbeat me-2"></i>Kesehatan
+                  </span>
+                }
+              >
+                <motion.div
+                  variants={animations.item}
+                  style={{ minHeight: "450px" }}
                 >
-                  Pendapatan vs Pengeluaran Mingguan
-                </Card.Title>
-                <div style={{ height: "300px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={financeData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `Rp ${value} Jt`}
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value, name) => [
-                          `Rp ${value} Jt`,
-                          name === "income" ? "Pendapatan" : "Pengeluaran",
-                        ]}
-                        labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                        itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                      />
-                      <Legend
-                        verticalAlign="top"
-                        height={36}
-                        wrapperStyle={{
-                          fontFamily: "'Nunito', sans-serif",
-                          fontSize: "12px",
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="income"
-                        name="Pendapatan"
-                        stroke="#198754"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="expense"
-                        name="Pengeluaran"
-                        stroke="#dc3545"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+                  <Row>
+                    <Col lg={8} className="mb-4">
+                      <Card style={styles.card}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">
+                            Pemeriksaan Kesehatan Mingguan
+                          </h5>
+                          <p
+                            className="text-muted mt-1"
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fas fa-info-circle me-2"></i>
+                            Grafik jumlah pemeriksaan kesehatan yang dilakukan
+                            selama 7 hari terakhir.
+                          </p>
+                        </Card.Header>
+                        <Card.Body>
+                          <div style={styles.chartContainer} className="mt-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={healthCheckData}
+                                margin={{
+                                  top: 10,
+                                  right: 10,
+                                  left: 10,
+                                  bottom: 20,
+                                }}
+                              >
+                                <CartesianGrid
+                                  strokeDasharray="3 3"
+                                  stroke="#f0f0f0"
+                                />
+                                <XAxis
+                                  dataKey="date"
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <YAxis
+                                  allowDecimals={false}
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <Tooltip
+                                  formatter={(value) => [
+                                    `${value} kali`,
+                                    "Pemeriksaan",
+                                  ]}
+                                  contentStyle={{
+                                    backgroundColor: "#fff",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                  }}
+                                />
+                                <Legend verticalAlign="top" height={36} />
+                                <Bar
+                                  dataKey="checks"
+                                  name="Jumlah Pemeriksaan"
+                                  fill="#6f42c1"
+                                  radius={[4, 4, 0, 0]}
+                                  barSize={36}
+                                >
+                                  <LabelList
+                                    dataKey="checks"
+                                    position="top"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      fill: "#495057",
+                                    }}
+                                  />
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
 
-          {/* Sidebar Charts and Tables */}
-          <Col lg={4}>
-            {/* Chart 4: Health Check Frequency */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-primary mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Frekuensi Pemeriksaan Kesehatan
-                </Card.Title>
-                <div style={{ height: "250px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={healthCheckData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <YAxis
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`${value} kali`, "Pemeriksaan"]}
-                        labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                        itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                      />
-                      <Bar
-                        dataKey="checks"
-                        fill="#6f42c1"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card.Body>
-            </Card>
+                    <Col lg={4}>
+                      <Card style={{ ...styles.card, height: "100%" }}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">Panduan Kesehatan Sapi</h5>
+                        </Card.Header>
+                        <Card.Body>
+                          <div className="d-flex flex-column">
+                            <h6 className="text-primary mb-2">
+                              Tips Menjaga Kesehatan Sapi
+                            </h6>
+                            <ul
+                              className="text-muted"
+                              style={{ fontSize: "14px", lineHeight: "1.6" }}
+                            >
+                              <li>Lakukan pemeriksaan rutin setiap minggu</li>
+                              <li>
+                                Perhatikan asupan nutrisi dan kualitas pakan
+                              </li>
+                              <li>
+                                Jaga kebersihan kandang untuk mencegah penyakit
+                              </li>
+                              <li>
+                                Amati perubahan perilaku yang dapat
+                                mengindikasikan masalah kesehatan
+                              </li>
+                              <li>
+                                Segera konsultasi dengan dokter hewan jika ada
+                                gejala tidak normal
+                              </li>
+                            </ul>
+                            <div
+                              className="alert alert-info mt-auto"
+                              style={{ fontSize: "13px" }}
+                            >
+                              <i className="fas fa-info-circle me-2"></i>
+                              Total pemeriksaan minggu ini:{" "}
+                              <strong>
+                                {healthCheckData.reduce(
+                                  (sum, item) => sum + item.checks,
+                                  0
+                                )}{" "}
+                                kali
+                              </strong>
+                            </div>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </motion.div>
+              </Tab>
 
-            {/* Chart 5: Cow Efficiency */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-danger mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
+              {/* Orders Tab */}
+              <Tab
+                eventKey="orders"
+                title={
+                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                    <i className="fas fa-shopping-cart me-2"></i>Pesanan
+                  </span>
+                }
+              >
+                <motion.div
+                  variants={animations.item}
+                  style={{ minHeight: "450px" }}
                 >
-                  Efisiensi Sapi
-                </Card.Title>
-                <div style={{ height: "250px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={efficiencyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `${value} L/kg`}
-                        tick={{
-                          fontSize: 12,
-                          fontFamily: "'Nunito', sans-serif",
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`${value} L/kg`, "Efisiensi"]}
-                        labelStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                        itemStyle={{ fontFamily: "'Nunito', sans-serif" }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="efficiency"
-                        stroke="#dc3545"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Recent Activities */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-primary mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Aktivitas Terkini
-                </Card.Title>
-                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                  {recentActivities.map((activity, index) => (
-                    <motion.div
-                      key={index}
-                      className="d-flex align-items-start mb-3"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="p-2 bg-light rounded-circle me-3">
-                        {activity.icon}
+                  <Card style={styles.card}>
+                    <Card.Header className="bg-white">
+                      <h5 className="mb-0">Pesanan Terbaru</h5>
+                      <p
+                        className="text-muted mt-1"
+                        style={{ fontSize: "14px" }}
+                      >
+                        <i className="fas fa-info-circle me-2"></i>
+                        Daftar pesanan terbaru dari pelanggan.
+                      </p>
+                    </Card.Header>
+                    <Card.Body>
+                      <div className="table-responsive rounded-3">
+                        <table className="table table-hover table-bordered mb-0">
+                          <thead>
+                            <tr>
+                              <th
+                                scope="col"
+                                className="text-center fw-medium"
+                                style={styles.tableHeader}
+                              >
+                                #
+                              </th>
+                              <th
+                                scope="col"
+                                className="fw-medium"
+                                style={styles.tableHeader}
+                              >
+                                No. Pesanan
+                              </th>
+                              <th
+                                scope="col"
+                                className="fw-medium"
+                                style={styles.tableHeader}
+                              >
+                                Pelanggan
+                              </th>
+                              <th
+                                scope="col"
+                                className="fw-medium"
+                                style={styles.tableHeader}
+                              >
+                                Total
+                              </th>
+                              <th
+                                scope="col"
+                                className="fw-medium"
+                                style={styles.tableHeader}
+                              >
+                                Status
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {orders.length > 0 ? (
+                              orders.map((order, index) => (
+                                <tr key={index}>
+                                  <td className="text-center text-muted">
+                                    {index + 1}
+                                  </td>
+                                  <td className="fw-medium">
+                                    {order.order_no}
+                                  </td>
+                                  <td>
+                                    <div className="d-flex align-items-center">
+                                      <div
+                                        className="rounded-circle d-flex justify-content-center align-items-center me-2 bg-primary bg-opacity-10"
+                                        style={{
+                                          width: "32px",
+                                          height: "32px",
+                                        }}
+                                      >
+                                        <i className="fas fa-user-circle text-primary"></i>
+                                      </div>
+                                      <div className="text-dark">
+                                        {order.customer_name}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td>{order.total}</td>
+                                  <td>
+                                    <span
+                                      className={`badge ${getStatusBadgeClass(
+                                        order.status
+                                      )}`}
+                                      style={styles.badge}
+                                    >
+                                      {getStatusLabel(order.status)}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="5" className="text-center py-3">
+                                  <div className="text-muted">
+                                    <i className="fas fa-shopping-cart fs-3 d-block mb-2"></i>
+                                    Tidak ada pesanan
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                      <div>
-                        <small
-                          className="text-muted"
-                          style={{ fontFamily: "'Nunito', sans-serif" }}
-                        >
-                          {activity.time}
-                        </small>
-                        <p
-                          className="mb-0"
-                          style={{ fontFamily: "'Nunito', sans-serif" }}
-                        >
-                          {activity.content}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </Card.Body>
-            </Card>
+                    </Card.Body>
+                  </Card>
+                </motion.div>
+              </Tab>
 
-            {/* Incoming Orders */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-primary mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
+              {/* Feed Usage Tab */}
+              <Tab
+                eventKey="feed"
+                title={
+                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
+                    <i className="fas fa-leaf me-2"></i>Pakan
+                  </span>
+                }
+              >
+                <motion.div
+                  variants={animations.item}
+                  style={{ minHeight: "450px" }}
                 >
-                  Pesanan Masuk
-                </Card.Title>
-                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                  <Table
-                    striped
-                    bordered
-                    hover
-                    size="sm"
-                    responsive
-                    style={{ fontSize: "0.85rem" }}
-                  >
-                    <thead>
-                      <tr>
-                        <th>No. Pesanan</th>
-                        <th>Pelanggan</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orders.map((order, index) => (
-                        <tr key={index}>
-                          <td>{order.order_no}</td>
-                          <td>{order.customer_name}</td>
-                          <td>{order.total}</td>
-                          <td>{order.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              </Card.Body>
-            </Card>
+                  <Row>
+                    <Col lg={6} className="mb-4">
+                      <Card style={{ ...styles.card, height: "100%" }}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">Penggunaan Pakan Mingguan</h5>
+                          <p
+                            className="text-muted mt-1"
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fas fa-info-circle me-2"></i>
+                            Grafik penggunaan pakan selama 7 hari terakhir.
+                          </p>
+                        </Card.Header>
+                        <Card.Body>
+                          <div style={styles.chartContainer} className="mt-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={feedUsageData}
+                                margin={{
+                                  top: 10,
+                                  right: 10,
+                                  left: 10,
+                                  bottom: 20,
+                                }}
+                              >
+                                <CartesianGrid
+                                  strokeDasharray="3 3"
+                                  stroke="#f0f0f0"
+                                />
+                                <XAxis
+                                  dataKey="date"
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <YAxis
+                                  tickFormatter={(value) => `${value}kg`}
+                                  tick={{ fontSize: 12 }}
+                                  axisLine={{ stroke: "#e0e0e0" }}
+                                />
+                                <Tooltip
+                                  formatter={(value) => [
+                                    `${value} kg`,
+                                    "Jumlah",
+                                  ]}
+                                  contentStyle={{
+                                    backgroundColor: "#fff",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                  }}
+                                />
+                                <Legend verticalAlign="top" height={36} />
+                                <Bar
+                                  dataKey="feed"
+                                  name="Penggunaan Pakan"
+                                  fill="#ffc107"
+                                  radius={[4, 4, 0, 0]}
+                                  barSize={36}
+                                >
+                                  <LabelList
+                                    dataKey="feed"
+                                    position="top"
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      fill: "#495057",
+                                    }}
+                                    formatter={(value) => `${value}kg`}
+                                  />
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
 
-            {/* Product Stocks */}
-            <Card
-              className="border-0 shadow-sm mb-4"
-              style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
-              }}
-            >
-              <Card.Body>
-                <Card.Title
-                  className="text-primary mb-3"
-                  style={{
-                    fontFamily: "'Nunito', sans-serif",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Stok Produk (Urut Kadaluarsa)
-                </Card.Title>
-                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                  <Table
-                    striped
-                    bordered
-                    hover
-                    size="sm"
-                    responsive
-                    style={{ fontSize: "0.85rem" }}
-                  >
-                    <thead>
-                      <tr>
-                        <th>Produk</th>
-                        <th>Kuantitas</th>
-                        <th>Kadaluarsa</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productStocks.map((stock, index) => (
-                        <tr key={index}>
-                          <td>{stock.product}</td>
-                          <td>{stock.quantity}</td>
-                          <td>{stock.expiry_date}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </motion.div>
-    </Container>
+                    <Col lg={6}>
+                      <Card style={{ ...styles.card, height: "100%" }}>
+                        <Card.Header className="bg-white">
+                          <h5 className="mb-0">Komposisi Pakan</h5>
+                          <p
+                            className="text-muted mt-1"
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fas fa-info-circle me-2"></i>
+                            Persentase komposisi pakan yang digunakan.
+                          </p>
+                        </Card.Header>
+                        <Card.Body>
+                          <div style={styles.chartContainer} className="mt-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={[
+                                    {
+                                      name: "Rumput Segar",
+                                      value:
+                                        feedUsageData.reduce(
+                                          (sum, item) => sum + item.feed,
+                                          0
+                                        ) * 0.65,
+                                    },
+                                    {
+                                      name: "Konsentrat",
+                                      value:
+                                        feedUsageData.reduce(
+                                          (sum, item) => sum + item.feed,
+                                          0
+                                        ) * 0.25,
+                                    },
+                                    {
+                                      name: "Vitamin & Mineral",
+                                      value:
+                                        feedUsageData.reduce(
+                                          (sum, item) => sum + item.feed,
+                                          0
+                                        ) * 0.1,
+                                    },
+                                  ]}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={90}
+                                  label={(entry) =>
+                                    `${entry.name}: ${(
+                                      entry.percent * 100
+                                    ).toFixed(0)}%`
+                                  }
+                                  labelLine={false}
+                                >
+                                  <Cell key="Rumput Segar" fill="#2ecc71" />
+                                  <Cell key="Konsentrat" fill="#f39c12" />
+                                  <Cell
+                                    key="Vitamin & Mineral"
+                                    fill="#3498db"
+                                  />
+                                </Pie>
+                                <Tooltip
+                                  formatter={(value) => [
+                                    `${value.toFixed(1)} kg`,
+                                    "",
+                                  ]}
+                                  contentStyle={{
+                                    backgroundColor: "#fff",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                  }}
+                                />
+                                <Legend
+                                  verticalAlign="bottom"
+                                  layout="horizontal"
+                                  iconSize={10}
+                                  iconType="circle"
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </motion.div>
+              </Tab>
+            </Tabs>
+          </motion.div>
+        </Card.Body>
+      </Card>
+
+      <Modal show={showModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title>
+            <i className="fas fa-info-circle me-2"></i>
+            {isFarmer ? "Sapi yang Anda Kelola" : "Daftar Sapi dan Pengelola"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {modalData.length > 0 ? (
+            <Table striped bordered hover responsive className="text-center">
+              <thead className="bg-light">
+                <tr>
+                  <th>#</th>
+                  <th>Nama Sapi</th>
+                  <th>{isFarmer ? "ID Sapi" : "Pengelola"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modalData.map((item, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{item.cowName}</td>
+                    <td>{isFarmer ? item.cowId : item.manager}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <div className="text-center py-4">
+              <i className="fas fa-exclamation-circle text-muted fs-1 mb-3"></i>
+              <p className="text-muted">Tidak ada data yang tersedia.</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Tutup
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </div>
   );
 };
 

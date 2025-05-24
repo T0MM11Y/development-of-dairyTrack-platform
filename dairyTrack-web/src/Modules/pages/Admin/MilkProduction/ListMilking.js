@@ -479,10 +479,15 @@ const ListMilking = () => {
 
   // Open edit modal with session data
   const openEditModal = useCallback((session) => {
+    const localMilkingTime = new Date(session.milking_time);
+    localMilkingTime.setMinutes(
+      localMilkingTime.getMinutes() - localMilkingTime.getTimezoneOffset()
+    );
+
     setSelectedSession({
       ...session,
       cow_id: String(session.cow_id),
-      milking_time: new Date(session.milking_time).toISOString().slice(0, 16),
+      milking_time: localMilkingTime.toISOString().slice(0, 16), // Format sesuai input datetime-local
     });
     setShowEditModal(true);
   }, []);

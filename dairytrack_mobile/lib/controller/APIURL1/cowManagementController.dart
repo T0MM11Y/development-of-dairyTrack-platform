@@ -50,23 +50,22 @@ class Cow {
       birth: json['birth'] as String,
       breed: json['breed'] as String,
       lactationPhase: json['lactation_phase'] as String,
-      weight:
-          (json['weight'] is int)
-              ? (json['weight'] as int).toDouble()
-              : json['weight'] as double,
+      weight: (json['weight'] is int)
+          ? (json['weight'] as int).toDouble()
+          : json['weight'] as double,
       gender: json['gender'] as String,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'birth': birth,
-    'breed': breed,
-    'lactation_phase': lactationPhase,
-    'weight': weight,
-    'gender': gender,
-  };
+        'id': id,
+        'name': name,
+        'birth': birth,
+        'breed': breed,
+        'lactation_phase': lactationPhase,
+        'weight': weight,
+        'gender': gender,
+      };
 }
 
 class CowManagementController {
