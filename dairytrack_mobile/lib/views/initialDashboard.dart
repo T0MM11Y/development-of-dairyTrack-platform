@@ -4,6 +4,10 @@ import 'package:dairytrack_mobile/views/highlights/blogView.dart';
 import 'package:dairytrack_mobile/views/highlights/galleryView.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:dairytrack_mobile/views/usersManagement/listOfUsersView.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
 import 'package:flutter/material.dart';
 import 'loginView.dart'; // Import LoginView
 import 'package:shared_preferences/shared_preferences.dart';
@@ -563,6 +567,51 @@ class _InitialDashboardState extends State<InitialDashboard>
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => CattleDistribution()),
+                );
+              },
+            ),
+            Divider(),
+            _buildDrawerItem(
+              icon: Icons.photo_library,
+              title: "Feed Type",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedTypeView()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.photo_library,
+              title: "Nutrition",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NutrisiView()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.photo_library,
+              title: "Feed",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedView()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.photo_library,
+              title: "Feed Stock",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedStockView()),
                 );
               },
             ),
