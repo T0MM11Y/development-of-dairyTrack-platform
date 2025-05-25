@@ -1,10 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/apiController.dart';
 
 class DailyFeedManagementController {
-  final String baseUrl = '$API_URL1/daily_feed';
-  final Map<String, String> _headers = {'Content-Type': 'application/json'};
+  final String baseUrl = '$API_URL4/dailyFeedSchedule';
+  final Duration _timeoutDuration = Duration(seconds: 10);
+
+  // Helper method to get headers with token
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+
+    if (token == null) {
+      throw Exception('No auth token found. Please login first.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   // Create a new Daily Feed
   Future<Map<String, dynamic>> createDailyFeed({
@@ -16,19 +32,27 @@ class DailyFeedManagementController {
   }) async {
     try {
       final url = Uri.parse('$baseUrl');
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'cow_id': cowId,
-          'date': date,
-          'session': session,
-          'items': items ?? [],
-          'user_id': userId,
-          'created_by': userId,
-          'updated_by': userId,
-        }),
-      );
+      final headers = await _getHeaders();
+      print('Creating daily feed: cowId=$cowId, date=$date, session=$session');
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'cow_id': cowId,
+              'date': date,
+              'session': session,
+              'items': items ?? [],
+              'user_id': userId,
+              'created_by': userId,
+              'updated_by': userId,
+            }),
+          )
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Create Daily Feed Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseData = jsonDecode(response.body);
@@ -49,11 +73,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Failed to create daily feed',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error creating daily feed: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
@@ -69,18 +94,26 @@ class DailyFeedManagementController {
   }) async {
     try {
       final url = Uri.parse('$baseUrl/$id');
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: jsonEncode({
-          'cow_id': cowId,
-          'date': date,
-          'session': session,
-          'items': items ?? [],
-          'user_id': userId,
-          'updated_by': userId,
-        }),
-      );
+      final headers = await _getHeaders();
+      print('Updating daily feed: id=$id, cowId=$cowId, date=$date, session=$session');
+      final response = await http
+          .put(
+            url,
+            headers: headers,
+            body: jsonEncode({
+              'cow_id': cowId,
+              'date': date,
+              'session': session,
+              'items': items ?? [],
+              'user_id': userId,
+              'updated_by': userId,
+            }),
+          )
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Update Daily Feed Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseData = jsonDecode(response.body);
@@ -101,11 +134,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Jadwal pakan tidak ditemukan',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error updating daily feed: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
@@ -124,7 +158,15 @@ class DailyFeedManagementController {
       if (session != null) queryParameters['session'] = session;
 
       final url = Uri.parse('$baseUrl').replace(queryParameters: queryParameters);
-      final response = await http.get(url, headers: _headers);
+      final headers = await _getHeaders();
+      print('Fetching daily feeds: cowId=$cowId, date=$date, session=$session');
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Get All Daily Feeds Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -143,11 +185,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Failed to get daily feeds',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error getting daily feeds: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
@@ -156,7 +199,15 @@ class DailyFeedManagementController {
   Future<Map<String, dynamic>> getDailyFeedById(int id, int userId) async {
     try {
       final url = Uri.parse('$baseUrl/$id');
-      final response = await http.get(url, headers: _headers);
+      final headers = await _getHeaders();
+      print('Fetching daily feed by id: id=$id');
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Get Daily Feed by ID Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -174,11 +225,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Jadwal pakan tidak ditemukan',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error getting daily feed by ID: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
@@ -187,7 +239,15 @@ class DailyFeedManagementController {
   Future<Map<String, dynamic>> deleteDailyFeed(int id, int userId) async {
     try {
       final url = Uri.parse('$baseUrl/$id');
-      final response = await http.delete(url, headers: _headers);
+      final headers = await _getHeaders();
+      print('Deleting daily feed: id=$id');
+      final response = await http
+          .delete(url, headers: headers)
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Delete Daily Feed Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseData = jsonDecode(response.body);
@@ -205,11 +265,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Jadwal pakan tidak ditemukan',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error deleting daily feed: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
@@ -230,7 +291,15 @@ class DailyFeedManagementController {
       if (session != null) queryParameters['session'] = session;
 
       final url = Uri.parse('$baseUrl/search').replace(queryParameters: queryParameters);
-      final response = await http.get(url, headers: _headers);
+      final headers = await _getHeaders();
+      print('Searching daily feeds: cowId=$cowId, startDate=$startDate, endDate=$endDate, session=$session');
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(_timeoutDuration, onTimeout: () {
+        throw Exception('Request timed out. Please check your connection.');
+      });
+
+      print('Search Daily Feeds Response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -249,11 +318,12 @@ class DailyFeedManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Failed to search daily feeds',
+            'message': 'Invalid response format: ${response.body}',
           };
         }
       }
     } catch (e) {
+      print('Error searching daily feeds: $e');
       return {'success': false, 'message': 'An error occurred: $e'};
     }
   }

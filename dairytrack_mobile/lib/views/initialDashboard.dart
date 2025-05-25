@@ -8,6 +8,7 @@ import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dar
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
 import 'package:flutter/material.dart';
 import 'loginView.dart'; // Import LoginView
 import 'package:shared_preferences/shared_preferences.dart';
@@ -572,7 +573,7 @@ class _InitialDashboardState extends State<InitialDashboard>
             ),
             Divider(),
             _buildDrawerItem(
-              icon: Icons.photo_library,
+              icon: Icons.category,
               title: "Feed Type",
               onTap: () {
                 Navigator.pop(context);
@@ -583,7 +584,7 @@ class _InitialDashboardState extends State<InitialDashboard>
               },
             ),
             _buildDrawerItem(
-              icon: Icons.photo_library,
+              icon: Icons.local_dining,
               title: "Nutrition",
               onTap: () {
                 Navigator.pop(context);
@@ -594,7 +595,7 @@ class _InitialDashboardState extends State<InitialDashboard>
               },
             ),
             _buildDrawerItem(
-              icon: Icons.photo_library,
+              icon: Icons.fastfood,
               title: "Feed",
               onTap: () {
                 Navigator.pop(context);
@@ -605,13 +606,24 @@ class _InitialDashboardState extends State<InitialDashboard>
               },
             ),
             _buildDrawerItem(
-              icon: Icons.photo_library,
+              icon: Icons.inventory,
               title: "Feed Stock",
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => FeedStockView()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              icon: Icons.schedule,
+              title: "Feed Schedule",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => DailyFeedView()),
                 );
               },
             ),
