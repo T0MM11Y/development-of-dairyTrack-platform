@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency lock files (opsional, jika tidak ingin menyertakan lock file)
+package-lock.json
+yarn.lock
+
+# Uploads (jika folder uploads digunakan untuk menyimpan file sementara)
+uploads/
+
+# IDE/editor specific files
+.vscode/
+.idea/
+.DS_Store
+
+# Compiled files
+dist/
+build/

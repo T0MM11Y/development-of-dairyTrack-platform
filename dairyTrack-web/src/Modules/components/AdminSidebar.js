@@ -75,30 +75,61 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         link: "/admin/list-milking",
         showForRoles: ["admin", "supervisor", "farmer"],
       },
-       {
-      id: "health-check",
-      title: "Health Check Management",
-      icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
-      submenu: [
-        {
-          id: "health-checks",
-          title: "Health Checks",
-          link: "/admin/list-health-checks",
-        },
-        { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
-        {
-          id: "disease-history",
-          title: "Disease History",
-          link: "/admin/list-disease-history",
-        },
-        {
-          id: "reproduction",
-          title: "Reproduction",
-          link: "/admin/list-reproduction",
-        },
-      ],
-      showForRoles: ["admin", "supervisor", "farmer"],
-    },
+      {
+        id: "feed-management",
+        title: "Feed Management",
+        icon: "fas fa-seedling",
+        submenu: [
+          { id: "feed-type", title: "Feed Type", link: "/admin/list-feedType" },
+          {
+            id: "nutrition-type",
+            title: "Nutrition Type",
+            link: "/admin/list-nutrition",
+          },
+          { id: "feed", title: "Feed", link: "/admin/list-feed" },
+          { id: "feed-stock", title: "Feed Stock", link: "/admin/list-stock" },
+          {
+            id: "daily-feed-schedule",
+            title: "Daily Feed Schedule",
+            link: "/admin/list-schedule",
+          },
+          {
+            id: "daily-feed-item",
+            title: "Daily Feed Item",
+            link: "/admin/list-feedItem",
+          },
+          {
+            id: "daily-feed-nutrition",
+            title: "Daily Feed Nutrition",
+            link: "/admin/daily-feed-nutrition",
+          },
+        ],
+        showForRoles: ["admin", "farmer", "supervisor"],
+      },
+      {
+        id: "health-check",
+        title: "Health Check Management",
+        icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
+        submenu: [
+          {
+            id: "health-checks",
+            title: "Health Checks",
+            link: "/admin/list-health-checks",
+          },
+          { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
+          {
+            id: "disease-history",
+            title: "Disease History",
+            link: "/admin/list-disease-history",
+          },
+          {
+            id: "reproduction",
+            title: "Reproduction",
+            link: "/admin/list-reproduction",
+          },
+        ],
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
       {
         id: "analytics",
         title: "Reports & Analytics",
@@ -114,11 +145,11 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             title: "Milk Quality Control",
             link: "/admin/milk-expiry-check",
           },
-             {
-          id: "health-dashboard",
-          title: "Health Dashboard",
-          link: "/admin/health-dashboard",
-        },
+          {
+            id: "health-dashboard",
+            title: "Health Dashboard",
+            link: "/admin/health-dashboard",
+          },
         ],
         showForRoles: ["admin", "supervisor", "farmer"],
       },
