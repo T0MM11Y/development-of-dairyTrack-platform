@@ -228,61 +228,98 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
     }
   };
 
-  // Style objects
+  // Style objects with retro background
   const styles = {
     header: {
-      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+      // Fixed positioning and z-index
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1200, // Increased z-index
+      // Retro gradient background
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      boxShadow:
+        "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
       padding: "12px 20px",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      backgroundColor: "#fff",
-      borderBottom: "1px solid #eaeaea",
+      borderBottom: "3px solid #FF6B35",
       flexWrap: "wrap",
+      overflow: "visible", // Changed from hidden to visible
+      height: "70px",
+    },
+    // Retro overlay pattern
+    headerOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: `
+        radial-gradient(circle at 25% 25%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(107, 115, 255, 0.1) 0%, transparent 50%),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)
+      `,
+      pointerEvents: "none",
+      zIndex: 1,
     },
     sidebarToggle: {
-      backgroundColor: "#2DAA9E",
-      color: "white",
-      border: "none",
-      borderRadius: "5px",
+      // Retro button styling
+      background: "linear-gradient(145deg, #FF6B35, #E55A2B)",
+      color: "#F7F7F7",
+      border: "2px solid #FF8C42",
+      borderRadius: "8px",
       padding: "10px",
       marginRight: "15px",
       cursor: "pointer",
-      transition: "all 0.3s ease",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       width: "40px",
       height: "40px",
       flexShrink: 0,
+      boxShadow:
+        "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+      textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+      zIndex: 3,
     },
     headerLeft: {
       display: "flex",
       alignItems: "center",
       flexGrow: 1,
+      zIndex: 3,
+      position: "relative",
     },
     headerRight: {
       display: "flex",
       alignItems: "center",
+      zIndex: 3,
+      position: "relative",
     },
     title: {
       fontSize: "1.2rem",
       margin: 0,
       fontWeight: "600",
-      color: "#333",
+      // Retro text styling
+      color: "#F7F7F7",
+      textShadow: "0 2px 4px rgba(0,0,0,0.5)",
     },
     dateTime: {
       fontFamily: "Roboto, sans-serif",
       fontSize: "14px",
       fontWeight: "300",
-      color: "#8F87F1",
+      color: "#E8E8E8",
     },
     userAvatar: {
       width: "38px",
       height: "38px",
       borderRadius: "50%",
-      backgroundColor: "#FFAD60",
-      color: "white",
+      // Retro avatar styling
+      background: "linear-gradient(145deg, #FF6B35, #E55A2B)",
+      color: "#F7F7F7",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -290,6 +327,10 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       fontWeight: "bold",
       marginLeft: "10px",
       flexShrink: 0,
+      border: "2px solid #FF8C42",
+      boxShadow:
+        "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+      textShadow: "0 1px 2px rgba(0,0,0,0.3)",
     },
     userDropdown: {
       position: "relative",
@@ -298,18 +339,32 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       cursor: "pointer",
       padding: "5px 10px",
       borderRadius: "20px",
-      transition: "background-color 0.3s ease",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      // Retro glassmorphism effect
+      background: "rgba(255,255,255,0.1)",
+      backdropFilter: "blur(10px)",
+      border: "1px solid rgba(255,255,255,0.2)",
+      zIndex: 10, // Added z-index
+    },
+    notificationContainer: {
+      position: "relative",
+      zIndex: 10, // Added z-index
+      marginRight: "15px",
     },
     dropdown: {
       position: "absolute",
-      top: "50px",
+      top: "100%", // Changed from 50px to 100%
       right: "0",
-      backgroundColor: "#fff",
-      borderRadius: "8px",
-      boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
+      marginTop: "5px", // Small gap
+      // Retro dropdown styling
+      background: "linear-gradient(145deg, #2A2A2A, #1A1A1A)",
+      borderRadius: "12px",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1)",
       minWidth: "180px",
-      zIndex: 1000,
-      overflow: "hidden",
+      zIndex: 9999, // Very high z-index
+      overflow: "visible",
+      border: "2px solid #FF6B35",
+      backdropFilter: "blur(10px)",
     },
     dropdownItem: {
       display: "block",
@@ -321,11 +376,12 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       fontFamily: "Roboto, sans-serif",
       fontSize: "14px",
       letterSpacing: "0.4px",
-      borderBottom: "1px solid #eee",
-      color: "#333",
+      borderBottom: "1px solid rgba(255, 107, 53, 0.3)",
+      // Retro text color
+      color: "#F7F7F7",
       fontWeight: "400",
       cursor: "pointer",
-      transition: "background-color 0.2s",
+      transition: "all 0.3s ease",
     },
     passwordField: {
       position: "relative",
@@ -355,290 +411,98 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       display: "inline-flex",
       alignItems: "center",
       marginRight: "10px",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      // Enhanced retro badge styling
+      border: "2px solid",
+      textTransform: "uppercase",
+      letterSpacing: "0.5px",
     },
     infoIcon: {
       marginLeft: "5px",
       fontSize: "14px",
       cursor: "help",
     },
+    usernameDisplay: {
+      marginRight: "10px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      maxWidth: "150px",
+      // Retro username styling
+      color: "#F7F7F7",
+      fontWeight: "600",
+      textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+    },
   };
 
   return (
-    <header style={styles.header} className="admin-header">
-      <div style={styles.headerLeft}>
-        <button
-          className="sidebar-toggle"
-          onClick={toggleSidebar}
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          style={styles.sidebarToggle}
-          onMouseEnter={(e) => {
-            e.target.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = "scale(1)";
-          }}
-        >
-          {sidebarCollapsed ? <FaBars /> : <FaTimes />}
-        </button>
-
-        <div className="header-content">
-          <div className="d-flex align-items-center flex-wrap">
-            {userData && (
-              <div
-                style={{
-                  ...styles.roleBadge,
-                  backgroundColor:
-                    userData.role_id === 1
-                      ? "#e3f2fd"
-                      : userData.role_id === 2
-                      ? "#fff3cd"
-                      : "#e8f5e9",
-                  color:
-                    userData.role_id === 1
-                      ? "#1976d2"
-                      : userData.role_id === 2
-                      ? "#b8860b"
-                      : "#388e3c",
-                }}
-              >
-                {userData.role}
-                <OverlayTrigger
-                  placement="bottom"
-                  overlay={
-                    <Tooltip id="role-tooltip">{getRoleExplanation()}</Tooltip>
-                  }
-                >
-                  <span style={styles.infoIcon}>
-                    <FaInfoCircle />
-                  </span>
-                </OverlayTrigger>
-              </div>
-            )}
-            <h1 style={styles.title}>Dashboard</h1>
-          </div>
-        </div>
-      </div>
-
-      <div style={styles.headerRight}>
-        <div className="notification-container me-3">
-          <NotificationDropdown />
-        </div>
-
-        <div
-          className="user-profile"
-          style={styles.userDropdown}
-          ref={dropdownRef}
-          onClick={toggleDropdown}
-        >
-          {userData ? (
-            <>
-              <span className="username-display">{userData.username}</span>
-              <div style={styles.userAvatar}>
-                {userData.username
-                  ? userData.username.substring(0, 2).toUpperCase()
-                  : "AU"}
-              </div>
-
-              {dropdownOpen && (
-                <div style={styles.dropdown} className="dropdown-menu show">
-                  <button
-                    className="dropdown-item"
-                    style={styles.dropdownItem}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowChangePasswordModal(true);
-                      setDropdownOpen(false);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    Change Password
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    style={styles.dropdownItem}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      confirmLogout();
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = "#f8f9fa";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-
-              {/* Change Password Modal */}
-              <Modal
-                show={showChangePasswordModal}
-                onHide={() => {
-                  if (!changeLoading) {
-                    setShowChangePasswordModal(false);
-                    setOldPassword("");
-                    setNewPassword("");
-                    setPasswordStrength(0);
-                    setPasswordFeedback("");
-                  }
-                }}
-                centered
-                backdrop="static"
-                keyboard={!changeLoading}
-              >
-                <Modal.Header closeButton={!changeLoading}>
-                  <Modal.Title>Change Password</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                  <div style={styles.passwordField}>
-                    <label htmlFor="oldPassword">Current Password</label>
-                    <input
-                      id="oldPassword"
-                      type={showOldPassword ? "text" : "password"}
-                      className="form-control"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      disabled={changeLoading}
-                      placeholder="Enter your current password"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      style={styles.passwordToggle}
-                      onClick={() => setShowOldPassword((prev) => !prev)}
-                      disabled={changeLoading}
-                      aria-label={
-                        showOldPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showOldPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-
-                  <div style={styles.passwordField}>
-                    <label htmlFor="newPassword">New Password</label>
-                    <input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      className="form-control"
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        calculatePasswordStrength(e.target.value);
-                      }}
-                      disabled={changeLoading}
-                      placeholder="Enter your new password"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      style={styles.passwordToggle}
-                      onClick={() => setShowNewPassword((prev) => !prev)}
-                      disabled={changeLoading}
-                      aria-label={
-                        showNewPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-
-                    <div style={styles.strengthMeter}>
-                      <ProgressBar
-                        now={passwordStrength}
-                        variant={
-                          passwordStrength < 30
-                            ? "danger"
-                            : passwordStrength < 60
-                            ? "warning"
-                            : passwordStrength < 80
-                            ? "info"
-                            : "success"
-                        }
-                      />
-                      <small
-                        className={
-                          passwordStrength < 30
-                            ? "text-danger"
-                            : passwordStrength < 60
-                            ? "text-warning"
-                            : passwordStrength < 80
-                            ? "text-info"
-                            : "text-success"
-                        }
-                      >
-                        {passwordFeedback}
-                      </small>
-                    </div>
-                  </div>
-                </Modal.Body>
-                <Modal.Footer>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setShowChangePasswordModal(false);
-                      setOldPassword("");
-                      setNewPassword("");
-                      setPasswordStrength(0);
-                      setPasswordFeedback("");
-                    }}
-                    disabled={changeLoading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleChangePassword}
-                    disabled={
-                      changeLoading ||
-                      !oldPassword ||
-                      !newPassword ||
-                      newPassword.length < 8
-                    }
-                  >
-                    {changeLoading ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        Changing...
-                      </>
-                    ) : (
-                      "Change Password"
-                    )}
-                  </Button>
-                </Modal.Footer>
-              </Modal>
-            </>
-          ) : (
-            <div className="d-flex align-items-center">
-              <div
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-              >
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <span>Loading...</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Improved responsive styles */}
+    <>
+      {/* Global CSS untuk memastikan dropdown tidak tertutup */}
       <style>
         {`
+        /* Header base styles */
+        .admin-header-fixed {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 1200 !important;
+          overflow: visible !important;
+        }
+        
+        /* Notification dropdown styles */
+        .notification-container {
+          position: relative;
+          z-index: 1300 !important;
+        }
+        
+        .notification-container .dropdown-menu,
+        .notification-container .dropdown-toggle,
+        .notification-container .btn-group {
+          z-index: 1300 !important;
+        }
+        
+        /* User dropdown styles */
+        .user-dropdown-container {
+          position: relative;
+          z-index: 1300 !important;
+        }
+        
+        .user-dropdown-menu {
+          position: absolute !important;
+          top: 100% !important;
+          right: 0 !important;
+          margin-top: 5px !important;
+          z-index: 9999 !important;
+          display: block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          transform: translateY(0) !important;
+          pointer-events: auto !important;
+        }
+        
+        /* Bootstrap dropdown overrides */
+        .dropdown-menu.show {
+          z-index: 9999 !important;
+          display: block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        
+        /* Ensure tooltips and overlays don't interfere */
+        .tooltip,
+        .tooltip-inner,
+        .bs-tooltip-bottom .tooltip-arrow,
+        .bs-tooltip-top .tooltip-arrow {
+          z-index: 10000 !important;
+        }
+        
+        /* Header content styles */
         .header-content {
           flex-grow: 1;
           min-width: 0;
+          z-index: 3;
+          position: relative;
         }
         
         .username-display {
@@ -647,6 +511,51 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           overflow: hidden;
           text-overflow: ellipsis;
           max-width: 150px;
+        }
+        
+        /* Retro animations */
+        @keyframes retroGlow {
+          0%, 100% {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+          }
+          50% {
+            box-shadow: 0 4px 25px rgba(255, 107, 53, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+          }
+        }
+        
+        .admin-header {
+          animation: retroGlow 4s ease-in-out infinite;
+        }
+        
+        /* Dropdown retro animation */
+        .dropdown-menu.show,
+        .user-dropdown-menu {
+          animation: retroSlideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes retroSlideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        /* Fix for Bootstrap modal z-index conflicts */
+        .modal {
+          z-index: 10500 !important;
+        }
+        
+        .modal-backdrop {
+          z-index: 10400 !important;
+        }
+        
+        /* SweetAlert z-index fix */
+        .swal2-container {
+          z-index: 10600 !important;
         }
         
         @media (max-width: 768px) {
@@ -664,6 +573,8 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
             flex-direction: column;
             align-items: flex-start;
             gap: 15px;
+            height: auto;
+            min-height: 70px;
           }
           
           .admin-header > div {
@@ -696,7 +607,318 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
         }
         `}
       </style>
-    </header>
+
+      <header style={styles.header} className="admin-header admin-header-fixed">
+        {/* Retro overlay pattern */}
+        <div style={styles.headerOverlay}></div>
+
+        <div style={styles.headerLeft}>
+          <button
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            aria-label={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+            style={styles.sidebarToggle}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.1) rotate(5deg)";
+              e.target.style.boxShadow =
+                "0 6px 20px rgba(255, 107, 53, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1) rotate(0deg)";
+              e.target.style.boxShadow =
+                "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)";
+            }}
+          >
+            {sidebarCollapsed ? <FaBars /> : <FaTimes />}
+          </button>
+
+          <div className="header-content">
+            <div className="d-flex align-items-center flex-wrap">
+              {userData && (
+                <div
+                  style={{
+                    ...styles.roleBadge,
+                    backgroundColor:
+                      userData.role_id === 1
+                        ? "#4ECDC4"
+                        : userData.role_id === 2
+                        ? "#FFE66D"
+                        : "#95E1D3",
+                    color: "#2A2A2A",
+                    borderColor:
+                      userData.role_id === 1
+                        ? "#26A69A"
+                        : userData.role_id === 2
+                        ? "#FFC107"
+                        : "#4CAF50",
+                  }}
+                >
+                  {userData.role}
+                  <OverlayTrigger
+                    placement="bottom"
+                    overlay={
+                      <Tooltip id="role-tooltip">
+                        {getRoleExplanation()}
+                      </Tooltip>
+                    }
+                  >
+                    <span style={styles.infoIcon}>
+                      <FaInfoCircle />
+                    </span>
+                  </OverlayTrigger>
+                </div>
+              )}
+              <h1 style={styles.title}>Dashboard</h1>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.headerRight}>
+          <div
+            className="notification-container"
+            style={styles.notificationContainer}
+          >
+            <NotificationDropdown />
+          </div>
+
+          <div
+            className="user-profile user-dropdown-container"
+            style={{
+              ...styles.userDropdown,
+              background: dropdownOpen
+                ? "rgba(255,255,255,0.2)"
+                : "rgba(255,255,255,0.1)",
+              transform: dropdownOpen ? "translateY(-2px)" : "translateY(0)",
+              boxShadow: dropdownOpen
+                ? "0 4px 15px rgba(255, 107, 53, 0.3)"
+                : "none",
+            }}
+            ref={dropdownRef}
+            onClick={toggleDropdown}
+          >
+            {userData ? (
+              <>
+                <span
+                  className="username-display"
+                  style={styles.usernameDisplay}
+                >
+                  {userData.username}
+                </span>
+                <div style={styles.userAvatar}>
+                  {userData.username
+                    ? userData.username.substring(0, 2).toUpperCase()
+                    : "AU"}
+                </div>
+
+                {dropdownOpen && (
+                  <div
+                    style={styles.dropdown}
+                    className="dropdown-menu show user-dropdown-menu"
+                  >
+                    <button
+                      className="dropdown-item"
+                      style={styles.dropdownItem}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowChangePasswordModal(true);
+                        setDropdownOpen(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor =
+                          "rgba(255, 107, 53, 0.2)";
+                        e.target.style.color = "#FF6B35";
+                        e.target.style.transform = "translateX(5px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "transparent";
+                        e.target.style.color = "#F7F7F7";
+                        e.target.style.transform = "translateX(0)";
+                      }}
+                    >
+                      Change Password
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      style={styles.dropdownItem}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmLogout();
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor =
+                          "rgba(255, 107, 53, 0.2)";
+                        e.target.style.color = "#FF6B35";
+                        e.target.style.transform = "translateX(5px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "transparent";
+                        e.target.style.color = "#F7F7F7";
+                        e.target.style.transform = "translateX(0)";
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+
+                {/* Change Password Modal */}
+                <Modal
+                  show={showChangePasswordModal}
+                  onHide={() => {
+                    if (!changeLoading) {
+                      setShowChangePasswordModal(false);
+                      setOldPassword("");
+                      setNewPassword("");
+                      setPasswordStrength(0);
+                      setPasswordFeedback("");
+                    }
+                  }}
+                  centered
+                  backdrop="static"
+                  keyboard={!changeLoading}
+                >
+                  <Modal.Header closeButton={!changeLoading}>
+                    <Modal.Title>Change Password</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <div style={styles.passwordField}>
+                      <label htmlFor="oldPassword">Current Password</label>
+                      <input
+                        id="oldPassword"
+                        type={showOldPassword ? "text" : "password"}
+                        className="form-control"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        disabled={changeLoading}
+                        placeholder="Enter your current password"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        style={styles.passwordToggle}
+                        onClick={() => setShowOldPassword((prev) => !prev)}
+                        disabled={changeLoading}
+                        aria-label={
+                          showOldPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+
+                    <div style={styles.passwordField}>
+                      <label htmlFor="newPassword">New Password</label>
+                      <input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        className="form-control"
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          calculatePasswordStrength(e.target.value);
+                        }}
+                        disabled={changeLoading}
+                        placeholder="Enter your new password"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        style={styles.passwordToggle}
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        disabled={changeLoading}
+                        aria-label={
+                          showNewPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+
+                      <div style={styles.strengthMeter}>
+                        <ProgressBar
+                          now={passwordStrength}
+                          variant={
+                            passwordStrength < 30
+                              ? "danger"
+                              : passwordStrength < 60
+                              ? "warning"
+                              : passwordStrength < 80
+                              ? "info"
+                              : "success"
+                          }
+                        />
+                        <small
+                          className={
+                            passwordStrength < 30
+                              ? "text-danger"
+                              : passwordStrength < 60
+                              ? "text-warning"
+                              : passwordStrength < 80
+                              ? "text-info"
+                              : "text-success"
+                          }
+                        >
+                          {passwordFeedback}
+                        </small>
+                      </div>
+                    </div>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setShowChangePasswordModal(false);
+                        setOldPassword("");
+                        setNewPassword("");
+                        setPasswordStrength(0);
+                        setPasswordFeedback("");
+                      }}
+                      disabled={changeLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleChangePassword}
+                      disabled={
+                        changeLoading ||
+                        !oldPassword ||
+                        !newPassword ||
+                        newPassword.length < 8
+                      }
+                    >
+                      {changeLoading ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          Changing...
+                        </>
+                      ) : (
+                        "Change Password"
+                      )}
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+              </>
+            ) : (
+              <div className="d-flex align-items-center">
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                >
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <span style={{ color: "#F7F7F7" }}>Loading...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+    </>
   );
 };
 

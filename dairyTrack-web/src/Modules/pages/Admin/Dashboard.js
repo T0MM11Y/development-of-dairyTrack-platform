@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Row,
@@ -8,10 +8,11 @@ import {
   Table,
   Tabs,
   Tab,
+  Spinner,
+  Badge,
+  Alert,
 } from "react-bootstrap";
-import { getUsersWithCows } from "../../controllers/cattleDistributionController"; // Import
 import {
-  BarChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -19,31 +20,36 @@ import {
   Bar,
   ResponsiveContainer,
   Legend,
-  LabelList,
-  ComposedChart,
+  AreaChart,
+  Area,
   PieChart,
   Pie,
   Cell,
 } from "recharts";
-import { useInView } from "react-intersection-observer";
 import { motion } from "framer-motion";
 import { Droplet, Wheat, PawPrint, LucideUsers } from "lucide-react";
-import Swal from "sweetalert2";
-// Import controllers
-import { listCows } from "../../controllers/cowsController";
-import { getAllUsers } from "../../controllers/usersController";
 import { getMilkingSessions } from "../../controllers/milkProductionController";
-import { getFeedUsageByDate } from "../../controllers/feedItemController";
-import { listCowsByUser } from "../../controllers/cattleDistributionController";
-import financeController from "../../controllers/financeController.js";
-import { getHealthChecks } from "../../controllers/healthCheckController";
-import { getOrders } from "../../controllers/orderController";
+import {
+  listCowsByUser,
+  getUsersWithCows,
+  getAllUsersAndAllCows,
+} from "../../controllers/cattleDistributionController";
+import { format, subDays, parseISO } from "date-fns";
+import { id } from "date-fns/locale";
+import { listBlogs } from "../../controllers/blogController";
+import { listGalleries } from "../../controllers/galleryController";
+import { getAllUsers } from "../../controllers/usersController";
 
-import Modal from "react-bootstrap/Modal"; // Tambahkan import Modal jika belum ada
+const COLORS = [
+  "#3D90D7",
+  "#28a745",
+  "#ffc107",
+  "#dc3545",
+  "#6f42c1",
+  "#fd7e14",
+];
 
-// CSS styles defined in a separate object for consistency
 const styles = {
-  // Typography
   fontFamily: "'Roboto', sans-serif",
   heading: {
     fontWeight: "500",
@@ -57,1451 +63,1798 @@ const styles = {
     color: "#6c757d",
     fontFamily: "Roboto, sans-serif",
   },
-  value: {
-    fontWeight: "700",
-    fontSize: "1.25rem",
-    color: "#2c3e50",
-  },
-  // Cards
   card: {
     borderRadius: "10px",
     border: "none",
     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)",
+    transition: "transform 0.2s ease-in-out",
   },
-  cardHeader: {
-    fontSize: "1rem",
-    fontWeight: "600",
-    color: "#2c3e50",
-    borderBottom: "none",
-  },
-  // Icons
-  iconContainer: {
-    borderRadius: "50%",
-    width: "45px",
-    height: "45px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "12px",
-  },
-  // Badges
-  badge: {
-    fontSize: "0.75rem",
-    fontWeight: "500",
-    padding: "4px 10px",
-    borderRadius: "6px",
-  },
-  // Charts
   chartContainer: {
     height: "300px",
     marginTop: "10px",
   },
-  // Table
-  table: {
-    fontSize: "0.85rem",
-    borderCollapse: "separate",
-    borderSpacing: "0 4px",
-  },
-  tableHeader: {
-    backgroundColor: "#f8f9fa",
-    color: "#495057",
-    fontWeight: "600",
+  welcomeCard: {
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    color: "white",
+    borderRadius: "15px",
     border: "none",
-    position: "sticky",
-    top: 0,
-    zIndex: 1,
-    fontSize: "13px",
-    fontFamily: "Roboto, sans-serif",
-    letterSpacing: "0.9px",
-    textTransform: "capitalize",
   },
-  // Tab styles
-  tabContainer: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: "8px",
-    padding: "10px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  // Stat cards
   statCard: {
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06)",
-    borderRadius: "19px",
-    border: "0",
+    borderLeft: "4px solid #3D90D7",
+    borderRadius: "10px",
+    transition: "transform 0.2s ease-in-out",
   },
-  statValue: {
-    fontSize: "14px",
-    fontWeight: "800",
-    fontFamily: "Roboto, Monospace",
-    fontStyle: "italic",
+  floatingContainer: {
+    position: "relative",
+    minHeight: "200px",
+    background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+    borderRadius: "20px",
+    padding: "30px",
+    overflow: "hidden",
   },
-  statLabel: {
-    fontSize: "15px",
+  floatingItem: {
+    position: "absolute",
+    background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+    borderRadius: "15px",
+    padding: "20px",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1), 0 6px 10px rgba(0, 0, 0, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(10px)",
+    animation: "float 6s ease-in-out infinite",
+    transition: "all 0.3s ease",
   },
-  statDescription: {
+  floatingCow: {
+    top: "20px",
+    left: "10%",
+    animationDelay: "0s",
+    transform: "rotate(-2deg)",
+  },
+  floatingMilk: {
+    top: "60px",
+    right: "15%",
+    animationDelay: "2s",
+    transform: "rotate(3deg)",
+  },
+  floatingStats: {
+    bottom: "30px",
+    left: "20%",
+    animationDelay: "4s",
+    transform: "rotate(-1deg)",
+  },
+  floatingExtra: {
+    top: "40px",
+    left: "50%",
+    animationDelay: "1s",
+    transform: "rotate(2deg)",
     fontSize: "12px",
-    fontStyle: "italic",
-    lineHeight: "1.4",
+  },
+  welcomeCardAnimated: {
+    background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    color: "white",
+    borderRadius: "20px",
+    border: "none",
+    position: "relative",
+    overflow: "hidden",
+    boxShadow: "0 20px 40px rgba(79, 172, 254, 0.3)",
+  },
+  welcomeOverlay: {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    bottom: "0",
+    background:
+      "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+    zIndex: 1,
+  },
+  welcomeContent: {
+    position: "relative",
+    zIndex: 2,
+  },
+  floatingIcon: {
+    position: "absolute",
+    animation: "floatIcon 4s ease-in-out infinite",
+    opacity: 0.2,
+  },
+  welcomeUserName: {
+    background: "linear-gradient(45deg, #fff, #f0f8ff)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    fontWeight: "700",
+    textShadow: "0 2px 4px rgba(0,0,0,0.1)",
   },
 };
 
-// Animation variants
-const animations = {
-  card: {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  },
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-      },
-    },
-  },
-  item: {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
-  },
-};
-
-// Validate financeController
-if (
-  !financeController ||
-  typeof financeController.getIncomes !== "function" ||
-  typeof financeController.getExpenses !== "function"
-) {
-  console.error(
-    "Error: financeController is not valid or missing required functions"
-  );
-  Swal.fire({
-    icon: "error",
-    title: "Error",
-    text: "Failed to load finance controller. Please check the application configuration.",
-  });
-}
+// Enhanced CSS animation
+const floatingAnimation = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(var(--rotation, 0deg)); }
+    50% { transform: translateY(-20px) rotate(var(--rotation, 0deg)); }
+  }
+  
+  @keyframes floatIcon {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(5deg); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .welcome-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  .floating-item {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .floating-item:nth-child(1) { --rotation: -2deg; animation-delay: 0s; }
+  .floating-item:nth-child(2) { --rotation: 3deg; animation-delay: 2s; }
+  .floating-item:nth-child(3) { --rotation: -1deg; animation-delay: 4s; }
+  .floating-item:nth-child(4) { --rotation: 2deg; animation-delay: 1s; }
+  
+  .floating-item:hover {
+    transform: translateY(-10px) scale(1.05) rotate(var(--rotation, 0deg));
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), 0 10px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .role-badge {
+    animation: pulse 2s ease-in-out infinite;
+  }
+`;
 
 const Dashboard = () => {
-  // State declarations
-  const [loading, setLoading] = useState(true);
-  const [isFarmer, setIsFarmer] = useState(false);
-  const [totalCows, setTotalCows] = useState(0);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [totalFarmers, setTotalFarmers] = useState(0);
-  const [milkProductionData, setMilkProductionData] = useState([]);
-  const [feedUsageData, setFeedUsageData] = useState([]);
-  const [healthCheckData, setHealthCheckData] = useState([]);
-  const [activeTab, setActiveTab] = useState("production");
-  const [orders, setOrders] = useState([]);
-  const [error, setError] = useState(null);
+  // State management
   const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [milkingSessions, setMilkingSessions] = useState([]);
   const [userManagedCows, setUserManagedCows] = useState([]);
-  const [dateRange, setDateRange] = useState({
-    startDate: "2025-05-18",
-    endDate: "2025-05-24",
+  const [allUsersWithCows, setAllUsersWithCows] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCows: 0,
+    totalFarmers: 0,
+    totalMilkToday: 0,
+    avgMilkPerCow: 0,
   });
 
-  // State for modal
-  const [showModal, setShowModal] = useState(false);
-  const [modalData, setModalData] = useState([]);
-
-  const handleTotalCowsClick = async () => {
-    try {
-      if (isFarmer) {
-        // Untuk farmer, tampilkan sapi yang mereka kelola
-        const formattedData = userManagedCows.map((cow) => ({
-          cowName: cow.name || "Unknown",
-          cowId: cow.id || "N/A",
-        }));
-        setModalData(formattedData);
-      } else {
-        // Untuk admin, tampilkan siapa yang mengelola setiap sapi
-        const usersWithCowsResponse = await getUsersWithCows();
-        console.log("Users with cows response:", usersWithCowsResponse);
-        if (usersWithCowsResponse.success) {
-          const usersWithCows = usersWithCowsResponse.usersWithCows || [];
-          const cowsWithManagers = [];
-
-          usersWithCows.forEach((farmer) => {
-            farmer.cows.forEach((cow) => {
-              cowsWithManagers.push({
-                cowName: cow.name || "Unknown",
-                manager: farmer.user.username || "Unknown", // Ambil username dari farmer.user
-              });
-            });
-          });
-
-          setModalData(cowsWithManagers);
-        } else {
-          throw new Error(
-            usersWithCowsResponse.message || "Failed to fetch data."
-          );
-        }
-      }
-      setShowModal(true);
-    } catch (err) {
-      console.error("Error fetching cow data:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.message || "Failed to fetch cow data.",
-      });
-    }
-  };
-  // Function to close modal
-  const handleCloseModal = () => setShowModal(false);
-
-  // Animation hooks
-  const { ref: statsRef, inView: statsInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
+  // Add new state for blog and gallery counts
+  const [contentStats, setContentStats] = useState({
+    totalBlogs: 0,
+    totalGalleries: 0,
   });
 
-  const { ref: chartsRef, inView: chartsInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
-  const { startDate, endDate } = dateRange;
-
-  // Automatic tab switching logic
-  useEffect(() => {
-    const tabOrder = ["production", "health", "orders", "feed"];
-    let tabIndex = 0;
-
-    const intervalId = setInterval(() => {
-      tabIndex = (tabIndex + 1) % tabOrder.length;
-      setActiveTab(tabOrder[tabIndex]);
-    }, 6500);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // Main data fetching
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!currentUser || userManagedCows === undefined) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        // ...existing data fetching logic...
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(err.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: err.message || "Failed to load dashboard data.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [currentUser, userManagedCows, dateRange]);
-
-  // Update current time
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData) {
-        setCurrentUser(userData);
-        // Check if user is a farmer (assuming role_id 3 is for farmers)
-        setIsFarmer(userData.role_id === 3);
-      }
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-    }
-  }, []);
-
-  // Fetch user-managed cows
-  useEffect(() => {
-    const fetchUserManagedCows = async () => {
-      if (currentUser?.user_id) {
+  // Get current user from localStorage
+  const getCurrentUser = () => {
+    if (typeof localStorage !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
         try {
-          const { success, cows } = await listCowsByUser(currentUser.user_id);
-          if (success && cows) {
-            setUserManagedCows(cows);
-          }
-        } catch (err) {
-          console.error("Error fetching user's cows:", err);
+          return JSON.parse(storedUser);
+        } catch {
+          return null;
         }
       }
-    };
+    }
+    return null;
+  };
 
-    fetchUserManagedCows();
-  }, [currentUser]);
-
-  // Main data fetching
   useEffect(() => {
-    const fetchData = async () => {
-      if (!currentUser || userManagedCows === undefined) return;
+    const user = localStorage.getItem("user");
+    if (!user) {
+      // Redirect to login if no user data found
+      window.location.href = "/"; // Adjust the path as needed
+    }
+  }, []);
+  // Function to calculate age from birth date
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return null;
 
-      setLoading(true);
-      setError(null);
+    const birth = new Date(birthDate);
+    const now = new Date();
 
+    // Check if birth date is valid
+    if (isNaN(birth.getTime())) return null;
+
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+
+    // Adjust if current month/day is before birth month/day
+    if (months < 0) {
+      years--;
+      months += 12;
+    } else if (months === 0 && now.getDate() < birth.getDate()) {
+      years--;
+      months = 11;
+    } else if (now.getDate() < birth.getDate()) {
+      months--;
+    }
+
+    return { years, months };
+  };
+
+  // Function to format age display
+  const formatAge = (birthDate) => {
+    const age = calculateAge(birthDate);
+    if (!age) return "N/A";
+
+    const { years, months } = age;
+
+    if (years === 0) {
+      return `${months} bulan`;
+    } else if (months === 0) {
+      return `${years} tahun`;
+    } else {
+      return `${years}th ${months}bln`;
+    }
+  };
+
+  // Utility function to get local date string
+  const getLocalDateString = (date = new Date()) => {
+    return date.toLocaleDateString("sv-SE"); // YYYY-MM-DD format
+  };
+
+  // Convert timestamp to local date string for filtering
+  const getSessionLocalDate = (timestamp) => {
+    const date = new Date(timestamp);
+    return getLocalDateString(date);
+  };
+
+  // Calculate total milk production per cow
+  const cowMilkProduction = useMemo(() => {
+    if (!milkingSessions.length || !userManagedCows.length) return {};
+
+    const production = {};
+
+    // Initialize with cow data
+    userManagedCows.forEach((cow) => {
+      production[cow.id] = {
+        cowData: cow,
+        totalVolume: 0,
+        sessionsCount: 0,
+        avgPerSession: 0,
+        todayVolume: 0,
+      };
+    });
+
+    const today = getLocalDateString();
+
+    // Calculate production for each cow
+    milkingSessions.forEach((session) => {
+      const cowId = session.cow_id;
+      if (production[cowId]) {
+        const volume = parseFloat(session.volume || 0);
+        production[cowId].totalVolume += volume;
+        production[cowId].sessionsCount += 1;
+
+        // Check if session is today
+        if (getSessionLocalDate(session.milking_time) === today) {
+          production[cowId].todayVolume += volume;
+        }
+      }
+    });
+
+    // Calculate averages
+    Object.keys(production).forEach((cowId) => {
+      const cow = production[cowId];
+      cow.avgPerSession =
+        cow.sessionsCount > 0 ? cow.totalVolume / cow.sessionsCount : 0;
+    });
+
+    return production;
+  }, [milkingSessions, userManagedCows]);
+
+  // Fetch data on component mount
+  // Fetch data on component mount
+  useEffect(() => {
+    const initializeDashboard = async () => {
       try {
-        // Fetch Total Cows
-        const cowsResponse = await listCows();
-        if (cowsResponse.success) {
-          if (isFarmer && userManagedCows.length > 0) {
-            // For farmers, only count managed cows
-            setTotalCows(userManagedCows.length);
-          } else {
-            // For admins and supervisors, count all cows
-            setTotalCows(cowsResponse.cows.length);
-          }
-        } else {
-          throw new Error(cowsResponse.message || "Failed to fetch cows.");
-        }
+        const userData = getCurrentUser();
+        if (userData) {
+          setCurrentUser(userData);
 
-        // Fetch Total Farmers
-        const farmersResponse = await getAllUsers();
-        if (farmersResponse.success) {
-          const farmers = farmersResponse.users.filter(
-            (user) => user.role_id === 3
-          );
-          setTotalFarmers(farmers.length);
-        } else {
-          throw new Error(
-            farmersResponse.message || "Failed to fetch farmers."
-          );
-        }
-
-        // Fetch Milking Sessions
-        const milkingResponse = await getMilkingSessions();
-        if (milkingResponse.success && milkingResponse.sessions) {
-          let filteredSessions = milkingResponse.sessions;
-
-          // Filter by user's managed cows if farmer only
-          if (isFarmer && userManagedCows.length > 0) {
-            const managedCowIds = userManagedCows.map((cow) => String(cow.id));
-            filteredSessions = filteredSessions.filter((session) =>
-              managedCowIds.includes(String(session.cow_id))
-            );
+          // Fetch milking sessions
+          const sessionsResponse = await getMilkingSessions();
+          if (sessionsResponse.success && sessionsResponse.sessions) {
+            setMilkingSessions(sessionsResponse.sessions);
           }
 
-          // Process milk production data by date
-          const milkByDate = {};
-          for (
-            let date = new Date(startDate);
-            date <= new Date(endDate);
-            date.setDate(date.getDate() + 1)
-          ) {
-            const formattedDate = date.toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            });
-            milkByDate[formattedDate] = 0;
-          }
+          // Fetch blog and gallery data for all users
+          const fetchContentData = async () => {
+            try {
+              const [blogsResponse, galleriesResponse] = await Promise.all([
+                listBlogs(),
+                listGalleries(),
+              ]);
 
-          filteredSessions.forEach((session) => {
-            const date = new Date(session.milking_time).toLocaleDateString(
-              "id-ID",
-              { day: "numeric", month: "short" }
-            );
-            if (milkByDate[date] !== undefined) {
-              milkByDate[date] += parseFloat(session.volume || 0);
+              setContentStats({
+                totalBlogs: blogsResponse.success
+                  ? blogsResponse.blogs?.length || 0
+                  : 0,
+                totalGalleries: galleriesResponse.success
+                  ? galleriesResponse.galleries?.length || 0
+                  : 0,
+              });
+            } catch (error) {
+              console.error("Error fetching content data:", error);
+              setContentStats({
+                totalBlogs: 0,
+                totalGalleries: 0,
+              });
             }
-          });
+          };
 
-          const formattedMilkData = Object.entries(milkByDate).map(
-            ([date, volume]) => ({
-              date,
-              volume: parseFloat(volume.toFixed(2)),
-            })
-          );
+          await fetchContentData();
 
-          setMilkProductionData(formattedMilkData);
-        } else {
-          throw new Error(
-            milkingResponse.message || "Failed to fetch milking sessions."
-          );
-        }
-
-        // In the feed usage data fetch section
-        const feedResponse = await getFeedUsageByDate({
-          start_date: startDate,
-          end_date: endDate,
-        });
-
-        if (feedResponse.success && Array.isArray(feedResponse.data)) {
-          // Process feed usage data by date
-          const feedByDate = {};
-          for (
-            let date = new Date(startDate);
-            date <= new Date(endDate);
-            date.setDate(date.getDate() + 1)
-          ) {
-            const formattedDate = date.toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            });
-            feedByDate[formattedDate] = 0;
-          }
-
-          let filteredFeedData = feedResponse.data;
-
-          // Filter by user's managed cows if farmer
-          if (isFarmer && userManagedCows.length > 0) {
-            const managedCowIds = userManagedCows.map((cow) => String(cow.id));
-            filteredFeedData = filteredFeedData.filter((day) => {
-              return day.feeds.some(
-                (feed) =>
-                  feed.cow_id && managedCowIds.includes(String(feed.cow_id))
-              );
-            });
-          }
-
-          filteredFeedData.forEach((day) => {
-            const date = new Date(day.date).toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            });
-            if (feedByDate[date] !== undefined) {
-              if (isFarmer && userManagedCows.length > 0) {
-                const managedCowIds = userManagedCows.map((cow) =>
-                  String(cow.id)
-                );
-                // For farmers, only sum feed for their managed cows
-                feedByDate[date] += day.feeds
-                  .filter(
-                    (feed) =>
-                      feed.cow_id && managedCowIds.includes(String(feed.cow_id))
-                  )
-                  .reduce(
-                    (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
-                    0
-                  );
-              } else {
-                // For admins, sum all feeds
-                feedByDate[date] += day.feeds.reduce(
-                  (sum, feed) => sum + parseFloat(feed.quantity_kg || 0),
-                  0
-                );
-              }
+          // Fetch user's managed cows if user is a farmer
+          if (userData.role_id === 3) {
+            const userId = userData.id || userData.user_id;
+            const cowsResponse = await listCowsByUser(userId);
+            if (cowsResponse.success && cowsResponse.cows) {
+              setUserManagedCows(cowsResponse.cows);
             }
-          });
-
-          const formattedFeedData = Object.entries(feedByDate).map(
-            ([date, quantity]) => ({
-              date,
-              feed: parseFloat(quantity.toFixed(2)),
-            })
-          );
-
-          setFeedUsageData(formattedFeedData);
-        } else {
-          console.warn("Unexpected feed usage response:", feedResponse);
-        }
-
-        // Fetch Health Checks
-        const healthResponse = await getHealthChecks();
-
-        if (Array.isArray(healthResponse)) {
-          const uniqueHealthChecks = Array.from(
-            new Map(healthResponse.map((check) => [check.id, check])).values()
-          );
-
-          let filteredHealthChecks = uniqueHealthChecks;
-
-          // Filter by user's managed cows if farmer only
-          if (isFarmer && userManagedCows.length > 0) {
-            const managedCowIds = userManagedCows.map((cow) => cow.id);
-            filteredHealthChecks = filteredHealthChecks.filter((check) =>
-              managedCowIds.includes(check?.cow?.id)
-            );
           }
 
-          // Process health check data by date
-          const healthByDate = {};
-          for (
-            let date = new Date(startDate);
-            date <= new Date(endDate);
-            date.setDate(date.getDate() + 1)
-          ) {
-            const formattedDate = date.toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            });
-            healthByDate[formattedDate] = 0;
+          // Fetch all users with cows for admin/supervisor
+          if (userData.role_id === 1 || userData.role_id === 2) {
+            const usersWithCowsResponse = await getUsersWithCows();
+            if (usersWithCowsResponse.success) {
+              setAllUsersWithCows(usersWithCowsResponse.usersWithCows || []);
+            }
+
+            const allDataResponse = await getAllUsersAndAllCows();
+            const allUsersResponse = await getAllUsers();
+            if (allDataResponse.success) {
+              const totalCows = allDataResponse.cows?.length || 0;
+              const totalFarmers =
+                allDataResponse.users?.filter((user) => user.role_id === 3)
+                  .length || 0;
+              const totalSupervisors =
+                allUsersResponse.users?.filter((user) => user.role_id === 2)
+                  .length || 0;
+              const totalAdmins =
+                allUsersResponse.users?.filter((user) => user.role_id === 1)
+                  .length || 0;
+
+              setDashboardStats((prev) => ({
+                ...prev,
+                totalCows,
+                totalFarmers,
+                totalSupervisors,
+                totalAdmins,
+              }));
+            }
           }
-
-          filteredHealthChecks.forEach((check) => {
-            const checkupDate = new Date(check.checkup_date);
-            if (isNaN(checkupDate.getTime())) {
-              console.warn("Invalid checkup_date:", check.checkup_date);
-              return;
-            }
-            const date = checkupDate.toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "short",
-            });
-            if (healthByDate[date] !== undefined) {
-              healthByDate[date] += 1;
-            }
-          });
-
-          const formattedHealthData = Object.entries(healthByDate).map(
-            ([date, checks]) => ({
-              date,
-              checks,
-            })
-          );
-
-          setHealthCheckData(formattedHealthData);
-        } else {
-          console.warn("Unexpected health checks response:", healthResponse);
         }
-
-        // Fetch Orders
-        const ordersResponse = await getOrders();
-        if (ordersResponse.success && Array.isArray(ordersResponse.orders)) {
-          const formattedOrders = ordersResponse.orders
-            .slice(0, 8) // Limit to prevent overflow
-            .map((order) => ({
-              order_no: order.order_no || "N/A",
-              customer_name: order.customer_name || "Unknown",
-              total: parseFloat(order.total_price || 0).toLocaleString(
-                "id-ID",
-                {
-                  style: "currency",
-                  currency: "IDR",
-                  minimumFractionDigits: 0,
-                }
-              ),
-              status: order.status || "Unknown",
-            }));
-
-          setOrders(formattedOrders);
-        } else {
-          console.warn("Invalid orders response:", ordersResponse);
-        }
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(err.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: err.message || "Failed to load dashboard data.",
-        });
+      } catch (error) {
+        console.error("Error initializing dashboard:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [currentUser, userManagedCows, dateRange]);
+    initializeDashboard();
+  }, []);
 
-  // Render loading state
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3 text-muted">Memuat dashboard...</p>
-        </div>
-      </div>
+  // Calculate milk production trends
+  const milkProductionTrend = useMemo(() => {
+    if (!milkingSessions.length) return [];
+
+    // Get last 7 days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      last7Days.push(getLocalDateString(date));
+    }
+
+    // Filter sessions based on user role
+    let filteredSessions = milkingSessions;
+    if (currentUser?.role_id === 3 && userManagedCows.length > 0) {
+      const managedCowIds = userManagedCows.map((cow) => cow.id);
+      filteredSessions = milkingSessions.filter((session) =>
+        managedCowIds.includes(session.cow_id)
+      );
+    }
+
+    // Group sessions by date and calculate total volume
+    const dailyProduction = last7Days.map((date) => {
+      const daysSessions = filteredSessions.filter(
+        (session) => getSessionLocalDate(session.milking_time) === date
+      );
+
+      const totalVolume = daysSessions.reduce(
+        (sum, session) => sum + parseFloat(session.volume || 0),
+        0
+      );
+
+      return {
+        date: format(new Date(date), "dd MMM", { locale: id }),
+        volume: totalVolume,
+        sessions: daysSessions.length,
+      };
+    });
+
+    return dailyProduction;
+  }, [milkingSessions, currentUser, userManagedCows]);
+
+  // Calculate today's statistics
+  const todayStats = useMemo(() => {
+    const today = getLocalDateString();
+    let todaySessions = milkingSessions.filter(
+      (session) => getSessionLocalDate(session.milking_time) === today
     );
-  }
 
-  // Render error state
-  if (error) {
-    return (
-      <div className="text-center py-5 bg-light">
-        <p className="text-danger">Error: {error}</p>
-        <Button
-          variant="primary"
-          onClick={() => window.location.reload()}
-          className="mt-3 rounded-pill"
-        >
-          Coba Lagi
-        </Button>
-      </div>
+    // Filter for farmer's cows only
+    if (currentUser?.role_id === 3 && userManagedCows.length > 0) {
+      const managedCowIds = userManagedCows.map((cow) => cow.id);
+      todaySessions = todaySessions.filter((session) =>
+        managedCowIds.includes(session.cow_id)
+      );
+    }
+
+    const totalMilkToday = todaySessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
     );
-  }
 
-  // Helper functions for status badges
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "Completed":
-        return "bg-success";
-      case "Pending":
-        return "bg-warning text-dark";
-      case "Processed":
-        return "bg-info";
+    const activeCows =
+      currentUser?.role_id === 3
+        ? userManagedCows.length
+        : dashboardStats.totalCows;
+    const avgMilkPerCow = activeCows > 0 ? totalMilkToday / activeCows : 0;
+
+    return {
+      totalMilkToday: totalMilkToday.toFixed(1),
+      avgMilkPerCow: avgMilkPerCow.toFixed(1),
+      sessionsToday: todaySessions.length,
+      // Add blog and gallery counts
+      totalBlogs: contentStats.totalBlogs,
+      totalGalleries: contentStats.totalGalleries,
+    };
+  }, [
+    milkingSessions,
+    currentUser,
+    userManagedCows,
+    dashboardStats.totalCows,
+    contentStats,
+  ]);
+
+  // Get user role display
+  const getUserRole = (roleId) => {
+    switch (roleId) {
+      case 1:
+        return { name: "Admin", color: "danger" };
+      case 2:
+        return { name: "Supervisor", color: "warning" };
+      case 3:
+        return { name: "Farmer", color: "success" };
       default:
-        return "bg-secondary";
+        return { name: "Unknown", color: "secondary" };
     }
   };
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "Completed":
-        return "✓ Selesai";
-      case "Pending":
-        return "⏳ Menunggu";
-      case "Processed":
-        return "⟳ Diproses";
-      case "Requested":
-        return "↓ Diminta";
-      default:
-        return status;
-    }
-  };
+  // Cow lactation distribution for pie chart
+  const lactationDistribution = useMemo(() => {
+    const cows =
+      currentUser?.role_id === 3
+        ? userManagedCows
+        : allUsersWithCows.flatMap((farmer) => farmer.cows || []);
+
+    const lactationCount = {};
+    cows.forEach((cow) => {
+      const phase = cow.lactation_phase || "Unknown";
+      lactationCount[phase] = (lactationCount[phase] || 0) + 1;
+    });
+
+    return Object.entries(lactationCount).map(([phase, count]) => ({
+      name: phase,
+      value: count,
+    }));
+  }, [userManagedCows, allUsersWithCows, currentUser]);
+
+  if (!currentUser) {
+    return (
+      <Alert variant="danger">
+        <Alert.Heading>Authentication Error</Alert.Heading>
+        <p>Please log in to access the dashboard.</p>
+      </Alert>
+    );
+  }
+
+  const userRole = getUserRole(currentUser.role_id);
 
   return (
-    <div className="container-fluid ">
-      <Card className="shadow-lg border-0 rounded-lg mb-1">
-        <Card.Header className="bg-gradient-primary text-grey py-3">
-          <div className="d-flex justify-content-between align-items-center">
-            <h4 style={styles.heading}>
-              <i className="fas fa-chart-line me-2"></i>
-              Dairy Track Dashboard
-            </h4>
+    <div className="container-fluid">
+      {/* Add CSS Animation */}
+      <style jsx>{floatingAnimation}</style>
+      {/* Enhanced Welcome Card */}
+      <motion.div
+        initial={{ opacity: 0, y: -30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{
+          duration: 0.8,
+          type: "spring",
+          stiffness: 100,
+          damping: 15,
+        }}
+      >
+        <Card style={styles.welcomeCardAnimated} className="mb-4">
+          {/* Shimmer Effect */}
+          <div className="welcome-shimmer"></div>
+
+          {/* Background Overlay */}
+          <div style={styles.welcomeOverlay}></div>
+
+          {/* Floating Background Icons */}
+          <div
+            style={{
+              ...styles.floatingIcon,
+              top: "10px",
+              right: "20px",
+              fontSize: "120px",
+              color: "rgba(255,255,255,0.1)",
+              animationDelay: "0s",
+            }}
+          >
+            🐄
           </div>
-          <p style={styles.subheading} className="mt-2 mb-0">
-            <i className="fas fa-info-circle me-2"></i>
-            This dashboard provides real-time insights into your dairy farm
-            operations, including cattle management, milk production, and order
-            tracking.
-          </p>
-        </Card.Header>
-        <Card.Body>
-          {/* Welcome Banner */}
-          <div className="mb-4 p-3 bg-light rounded-3">
+          <div
+            style={{
+              ...styles.floatingIcon,
+              bottom: "10px",
+              left: "30px",
+              fontSize: "80px",
+              color: "rgba(255,255,255,0.08)",
+              animationDelay: "2s",
+            }}
+          >
+            🥛
+          </div>
+          <div
+            style={{
+              ...styles.floatingIcon,
+              top: "50%",
+              right: "100px",
+              fontSize: "60px",
+              color: "rgba(255,255,255,0.06)",
+              animationDelay: "1s",
+            }}
+          >
+            🌾
+          </div>
+
+          <Card.Body className="py-5" style={styles.welcomeContent}>
             <Row className="align-items-center">
               <Col md={8}>
-                <h5
-                  className="mb-1"
-                  style={{ color: "#3D90D7", fontWeight: "500" }}
-                >
-                  Selamat datang, {currentUser?.name || "Admin"}!
-                </h5>
-                <div style={styles.subheading}>
-                  {currentTime.toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}{" "}
-                  |{" "}
-                  {currentTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </Col>
-              <Col md={4} className="text-md-end"></Col>
-            </Row>
-          </div>
-
-          {/* Stats Cards */}
-          <motion.div
-            ref={statsRef}
-            initial="hidden"
-            animate={statsInView ? "visible" : "hidden"}
-            variants={animations.container}
-            className="mb-4"
-          >
-            <Row>
-              {[
-                {
-                  title: "Total Sapi",
-                  value: totalCows,
-                  badge: isFarmer ? "Sapi Dikelola" : "Sapi Terdaftar",
-                  icon: <PawPrint size={22} color="#0d6efd" />,
-                  bgColor: "#e3f2fd",
-                  iconColor: "#0d6efd",
-                  badgeClass: "bg-primary-subtle text-primary",
-                  description: isFarmer
-                    ? "Jumlah sapi yang Anda kelola."
-                    : "Jumlah total sapi yang terdaftar dalam sistem.",
-                  onClick: handleTotalCowsClick, // Tambahkan event handler
-                },
-                {
-                  title: "Total Peternak",
-                  value: totalFarmers,
-                  badge: "Peternak Aktif",
-                  icon: <LucideUsers size={22} color="#0dcaf0" />,
-                  bgColor: "#e0f7fa",
-                  iconColor: "#0dcaf0",
-                  badgeClass: "bg-info-subtle text-info",
-                  description:
-                    "Jumlah peternak yang aktif mengelola peternakan.",
-                },
-                {
-                  title: "Produksi Susu",
-                  value: `${milkProductionData
-                    .reduce((sum, item) => sum + item.volume, 0)
-                    .toFixed(2)} L`,
-                  badge: isFarmer ? "Sapi Dikelola" : "Produksi Mingguan",
-                  icon: <Droplet size={22} color="#198754" />,
-                  bgColor: "#e8f5e9",
-                  iconColor: "#198754",
-                  badgeClass: "bg-success-subtle text-success",
-                  description: isFarmer
-                    ? "yang dihasilkan sapi kelolaan Anda minggu ini."
-                    : "Total volume susu yang diproduksi minggu ini.",
-                },
-                {
-                  title: "Penggunaan Pakan",
-                  value: `${feedUsageData
-                    .reduce((sum, item) => sum + item.feed, 0)
-                    .toFixed(2)} kg`,
-                  badge: "Konsumsi Mingguan",
-                  icon: <Wheat size={22} color="#ffc107" />,
-                  bgColor: "#fff8e1",
-                  iconColor: "#ffc107",
-                  badgeClass: "bg-warning-subtle text-warning",
-                  description:
-                    "Total penggunaan pakan seluruh sapi minggu ini.",
-                },
-              ].map((stat, index) => (
-                <Col md={6} lg={3} className="mb-3" key={index}>
-                  <motion.div
-                    variants={animations.item}
-                    whileHover={{ y: -5 }}
-                    onClick={stat.onClick} // Tambahkan event handler di sini
-                    style={{ cursor: stat.onClick ? "pointer" : "default" }} // Tambahkan gaya pointer jika ada onClick
-                  >
-                    <Card style={styles.statCard}>
-                      <Card.Body className="p-3">
-                        <div className="d-flex align-items-center">
-                          <div
-                            style={{
-                              ...styles.iconContainer,
-                              backgroundColor: stat.bgColor,
-                            }}
-                          >
-                            {stat.icon}
-                          </div>
-                          <div>
-                            <div style={styles.subheading}>{stat.title}</div>
-                            <div style={styles.statValue}>{stat.value}</div>
-                            <div className="mt-1">
-                              <span
-                                className={`badge ${stat.badgeClass}`}
-                                style={styles.badge}
-                              >
-                                {stat.badge}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-2" style={styles.statDescription}>
-                          <i className="fas fa-info-circle me-1 text-muted"></i>
-                          {stat.description}
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </motion.div>
-                </Col>
-              ))}
-            </Row>
-          </motion.div>
-
-          {/* Tabs for Charts and Tables */}
-          <motion.div
-            ref={chartsRef}
-            initial="hidden"
-            animate={chartsInView ? "visible" : "hidden"}
-            variants={animations.container}
-          >
-            <Tabs
-              activeKey={activeTab}
-              onSelect={(key) => setActiveTab(key)}
-              className="mb-3"
-              fill
-              style={styles.tabContainer}
-            >
-              {/* Milk Production Tab */}
-              <Tab
-                eventKey="production"
-                title={
-                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                    <i className="fas fa-tint me-2"></i>Produksi Susu
-                  </span>
-                }
-              >
                 <motion.div
-                  variants={animations.item}
-                  style={{ minHeight: "450px" }}
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  <Row>
-                    <Col lg={8} className="mb-4">
-                      <Card style={styles.card}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">Produksi Susu Mingguan</h5>
-                          <p
-                            className="text-muted mt-1"
-                            style={{ fontSize: "14px" }}
-                          >
-                            <i className="fas fa-info-circle me-2"></i>
-                            Grafik volume produksi susu selama 7 hari terakhir
-                            dari seluruh sapi.
-                          </p>
-                        </Card.Header>
-                        <Card.Body>
-                          <div style={styles.chartContainer} className="mt-3">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart
-                                data={milkProductionData}
-                                margin={{
-                                  top: 10,
-                                  right: 10,
-                                  left: 10,
-                                  bottom: 20,
-                                }}
-                              >
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#f0f0f0"
-                                />
-                                <XAxis
-                                  dataKey="date"
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <YAxis
-                                  tickFormatter={(value) => `${value}L`}
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <Tooltip
-                                  formatter={(value) => [
-                                    `${value} Liter`,
-                                    "Volume",
-                                  ]}
-                                  contentStyle={{
-                                    backgroundColor: "#fff",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                  }}
-                                />
-                                <Legend verticalAlign="top" height={36} />
-                                <Bar
-                                  dataKey="volume"
-                                  name="Volume Susu"
-                                  fill="#0d6efd"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={36}
-                                >
-                                  <LabelList
-                                    dataKey="volume"
-                                    position="top"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      fill: "#495057",
-                                    }}
-                                    formatter={(value) => `${value}L`}
-                                  />
-                                </Bar>
-                              </ComposedChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
+                  <h2 className="mb-3" style={styles.welcomeUserName}>
+                    <motion.i
+                      className="fas fa-hand-wave me-3"
+                      animate={{ rotate: [0, 20, 0] }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                      }}
+                      style={{ display: "inline-block", fontSize: "32px" }}
+                    ></motion.i>
+                    Selamat Datang, {currentUser.name || currentUser.username}!
+                  </h2>
+                </motion.div>
 
-                    <Col lg={4}>
-                      <Card style={{ ...styles.card, height: "88%" }}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">Statistik Produksi</h5>
-                        </Card.Header>
-                        <Card.Body>
-                          <div className="d-flex flex-column mt-3">
-                            {[
-                              {
-                                label: "Total Produksi",
-                                value: `${milkProductionData
-                                  .reduce((sum, item) => sum + item.volume, 0)
-                                  .toFixed(2)} L`,
-                                icon: "fa-fill-drip",
-                                color: "primary",
-                              },
-                              {
-                                label: "Rata-Rata Harian",
-                                value: `${(
-                                  milkProductionData.reduce(
-                                    (sum, item) => sum + item.volume,
-                                    0
-                                  ) / 7
-                                ).toFixed(2)} L`,
-                                icon: "fa-calendar-day",
-                                color: "success",
-                              },
-                              {
-                                label: "Produksi Tertinggi",
-                                value: `${Math.max(
-                                  ...milkProductionData.map(
-                                    (item) => item.volume
-                                  )
-                                ).toFixed(2)} L`,
-                                icon: "fa-arrow-up",
-                                color: "danger",
-                              },
-                              {
-                                label: "Produksi Terendah",
-                                value: `${Math.min(
-                                  ...milkProductionData
-                                    .filter((item) => item.volume > 0)
-                                    .map((item) => item.volume)
-                                ).toFixed(2)} L`,
-                                icon: "fa-arrow-down text-light",
-                                color: "warning",
-                              },
-                            ].map((stat, idx) => (
-                              <div
-                                key={idx}
-                                className="d-flex align-items-center mb-2 p-2 rounded"
-                                style={{ backgroundColor: "#f8f9fa" }}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                  <p
+                    className="mb-3"
+                    style={{ fontSize: "18px", opacity: 0.95, lineHeight: 1.6 }}
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.1 }}
+                      className="role-badge"
+                    >
+                      <Badge
+                        bg={userRole.color}
+                        className="me-3 px-3 py-2"
+                        style={{
+                          fontSize: "14px",
+                          borderRadius: "20px",
+                          boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+                        }}
+                      >
+                        {userRole.name}
+                      </Badge>
+                    </motion.span>
+                    Dashboard Dairy Track - Kelola peternakan Anda dengan mudah
+                    dan efisien
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.6 }}
+                  className="d-flex align-items-center"
+                >
+                  <div className="d-flex align-items-center me-4">
+                    <motion.i
+                      className="fas fa-calendar-alt me-2"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      style={{ color: "rgba(255,255,255,0.9)" }}
+                    ></motion.i>
+                    <span
+                      style={{
+                        opacity: 0.9,
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+                    </span>
+                  </div>
+
+                  <div className="d-flex align-items-center">
+                    <motion.i
+                      className="fas fa-clock me-2"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 10,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      style={{ color: "rgba(255,255,255,0.9)" }}
+                    ></motion.i>
+                    <span
+                      style={{
+                        opacity: 0.9,
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {new Date().toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </motion.div>
+              </Col>
+
+              <Col md={4} className="text-end">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{
+                    delay: 0.9,
+                    duration: 0.8,
+                    type: "spring",
+                    stiffness: 120,
+                  }}
+                  whileHover={{
+                    scale: 1.1,
+                    rotate: 5,
+                    transition: { duration: 0.3 },
+                  }}
+                  style={{
+                    fontSize: "80px",
+                    opacity: 0.8,
+                    filter: "drop-shadow(0 4px 20px rgba(255,255,255,0.3))",
+                    cursor: "pointer",
+                  }}
+                >
+                  <motion.div
+                    animate={{
+                      y: [0, -10, 0],
+                      rotate: [0, 5, -5, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    {currentUser.role_id === 3
+                      ? "👨‍🌾"
+                      : currentUser.role_id === 2
+                      ? "👨‍💼"
+                      : "👨‍💻"}
+                  </motion.div>
+                </motion.div>
+
+                {/* Updated Stats Preview - Hide blog, gallery, and farmer counts for farmers */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.1, duration: 0.6 }}
+                  className="mt-3"
+                >
+                  <div className="d-flex justify-content-center gap-2 flex-wrap">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="text-center"
+                      style={{
+                        background: "rgba(255,255,255,0.2)",
+                        borderRadius: "12px",
+                        padding: "8px 12px",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div style={{ fontSize: "20px" }}>🐄</div>
+                      <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                        {currentUser.role_id === 3
+                          ? userManagedCows.length
+                          : dashboardStats.totalCows}{" "}
+                        Sapi
+                      </small>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="text-center"
+                      style={{
+                        background: "rgba(255,255,255,0.2)",
+                        borderRadius: "12px",
+                        padding: "8px 12px",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div style={{ fontSize: "20px" }}>🥛</div>
+                      <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                        {todayStats.totalMilkToday}L Hari Ini
+                      </small>
+                    </motion.div>
+
+                    {/* Hide blog count for farmers */}
+                    {currentUser.role_id !== 3 && (
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        className="text-center"
+                        style={{
+                          background: "rgba(255,255,255,0.2)",
+                          borderRadius: "12px",
+                          padding: "8px 12px",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <div style={{ fontSize: "20px" }}>📝</div>
+                        <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                          {todayStats.totalBlogs} Blog
+                        </small>
+                      </motion.div>
+                    )}
+
+                    {/* Hide gallery count for farmers */}
+                    {currentUser.role_id !== 3 && (
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        className="text-center"
+                        style={{
+                          background: "rgba(255,255,255,0.2)",
+                          borderRadius: "12px",
+                          padding: "8px 12px",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <div style={{ fontSize: "20px" }}>📸</div>
+                        <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                          {todayStats.totalGalleries} Gallery
+                        </small>
+                      </motion.div>
+                    )}
+
+                    {/* Show supervisor and admin counts only for non-farmers */}
+                    {currentUser.role_id !== 3 && (
+                      <>
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          className="text-center"
+                          style={{
+                            background: "rgba(255,255,255,0.2)",
+                            borderRadius: "12px",
+                            padding: "8px 12px",
+                            backdropFilter: "blur(10px)",
+                          }}
+                        >
+                          <div style={{ fontSize: "20px" }}>👨‍💼</div>
+                          <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                            {dashboardStats.totalSupervisors} Supervisor
+                          </small>
+                        </motion.div>
+
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          className="text-center"
+                          style={{
+                            background: "rgba(255,255,255,0.2)",
+                            borderRadius: "12px",
+                            padding: "8px 12px",
+                            backdropFilter: "blur(10px)",
+                          }}
+                        >
+                          <div style={{ fontSize: "20px" }}>👨‍💻</div>
+                          <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                            {dashboardStats.totalAdmins} Admin
+                          </small>
+                        </motion.div>
+
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          className="text-center"
+                          style={{
+                            background: "rgba(255,255,255,0.2)",
+                            borderRadius: "12px",
+                            padding: "8px 12px",
+                            backdropFilter: "blur(10px)",
+                          }}
+                        >
+                          <div style={{ fontSize: "20px" }}>👩‍🌾</div>
+                          <small style={{ fontSize: "11px", opacity: 0.9 }}>
+                            {dashboardStats.totalFarmers} Farmer
+                          </small>
+                        </motion.div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </motion.div>
+      {/* Charts Section */}
+      <Row>
+        {currentUser?.role_id === 1 ? (
+          // Admin Dashboard - Show Recent Data Overview
+          <>
+            <Col lg={6} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-chart-bar me-2"></i>
+                    Statistik Sistem
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Ringkasan data keseluruhan sistem
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  <Row className="g-3">
+                    <Col md={6}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="text-center p-3"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(33, 150, 243, 0.2)",
+                        }}
+                      >
+                        <div style={{ fontSize: "32px", marginBottom: "10px" }}>
+                          🐄
+                        </div>
+                        <h4 style={{ color: "#1565c0", fontWeight: "bold" }}>
+                          {dashboardStats.totalCows}
+                        </h4>
+                        <small style={{ color: "#1565c0", opacity: 0.8 }}>
+                          Total Sapi
+                        </small>
+                      </motion.div>
+                    </Col>
+                    <Col md={6}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="text-center p-3"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(76, 175, 80, 0.2)",
+                        }}
+                      >
+                        <div style={{ fontSize: "32px", marginBottom: "10px" }}>
+                          👩‍🌾
+                        </div>
+                        <h4 style={{ color: "#2e7d32", fontWeight: "bold" }}>
+                          {dashboardStats.totalFarmers}
+                        </h4>
+                        <small style={{ color: "#2e7d32", opacity: 0.8 }}>
+                          Total Farmer
+                        </small>
+                      </motion.div>
+                    </Col>
+                    <Col md={6}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="text-center p-3"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(156, 39, 176, 0.2)",
+                        }}
+                      >
+                        <div style={{ fontSize: "32px", marginBottom: "10px" }}>
+                          🧑‍💼
+                        </div>
+                        <h4 style={{ color: "#7b1fa2", fontWeight: "bold" }}>
+                          {dashboardStats.totalSupervisors}
+                        </h4>
+                        <small style={{ color: "#7b1fa2", opacity: 0.8 }}>
+                          Total Supervisor
+                        </small>
+                      </motion.div>
+                    </Col>
+                    <Col md={6}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="text-center p-3"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255, 152, 0, 0.2)",
+                        }}
+                      >
+                        <div style={{ fontSize: "32px", marginBottom: "10px" }}>
+                          👤
+                        </div>
+                        <h4 style={{ color: "#ef6c00", fontWeight: "bold" }}>
+                          {dashboardStats.totalAdmins}
+                        </h4>
+                        <small style={{ color: "#ef6c00", opacity: 0.8 }}>
+                          Total Admin
+                        </small>
+                      </motion.div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={6} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-chart-pie me-2"></i>
+                    Distribusi Fase Laktasi
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Komposisi fase laktasi sapi di peternakan
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  {lactationDistribution.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={lactationDistribution}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {lactationDistribution.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-5">
+                      <i
+                        className="fas fa-cow text-muted"
+                        style={{ fontSize: "48px" }}
+                      ></i>
+                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </>
+        ) : currentUser?.role_id === 2 ? (
+          // Supervisor Dashboard - Show Map & Location and Lactation Distribution
+          <>
+            <Col lg={8} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-map-marked-alt me-2"></i>
+                    Lokasi Peternakan DairyTrack
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Temukan lokasi peternakan kami untuk kunjungan supervisi
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  <motion.div
+                    className="map-container mb-4"
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <iframe
+                      src="https://maps.google.com/maps?width=600&height=350&hl=en&q=Taman%20Sains%20Teknologi%20Herbal%20dan%20Hortikultura%20(TSTH2)&t=p&z=6&ie=UTF8&iwloc=B&output=embed"
+                      title="Lokasi DairyTrack - Taman Sains Teknologi Herbal dan Hortikultura"
+                      style={{
+                        width: "100%",
+                        height: "280px",
+                        border: "none",
+                        borderRadius: "8px",
+                      }}
+                      loading="lazy"
+                      frameBorder="0"
+                      allowFullScreen=""
+                    ></iframe>
+                  </motion.div>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={4} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-chart-pie me-2"></i>
+                    Distribusi Fase Laktasi
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Komposisi fase laktasi sapi di seluruh peternakan
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  {lactationDistribution.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={lactationDistribution}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {lactationDistribution.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-5">
+                      <i
+                        className="fas fa-cow text-muted"
+                        style={{ fontSize: "48px" }}
+                      ></i>
+                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </>
+        ) : (
+          // Farmer Dashboard - Show Trend Production and Lactation Distribution
+          <>
+            <Col lg={8} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-chart-area me-2"></i>
+                    Analisis Produksi Susu (7 Hari Terakhir)
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Grafik area menampilkan tren total produksi susu harian dari
+                    sapi yang Anda kelola
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={milkProductionTrend}>
+                      <defs>
+                        <linearGradient
+                          id="colorVolume"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#3D90D7"
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#3D90D7"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 12 }}
+                        axisLine={{ stroke: "#e0e6ed" }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        axisLine={{ stroke: "#e0e6ed" }}
+                        label={{
+                          value: "Volume (L)",
+                          angle: -90,
+                          position: "insideLeft",
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e0e6ed",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                        }}
+                        formatter={(value, name) => [
+                          `${value}L`,
+                          name === "volume" ? "Total Produksi" : name,
+                        ]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="volume"
+                        stroke="#3D90D7"
+                        fill="url(#colorVolume)"
+                        strokeWidth={3}
+                        activeDot={{ r: 6, stroke: "#3D90D7", strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col lg={4} className="mb-4">
+              <Card style={styles.card}>
+                <Card.Header className="bg-white border-bottom-0 pb-0">
+                  <h5 style={styles.heading}>
+                    <i className="fas fa-chart-pie me-2"></i>
+                    Distribusi Fase Laktasi
+                  </h5>
+                  <p style={styles.subheading} className="mb-0">
+                    Komposisi fase laktasi sapi yang Anda kelola
+                  </p>
+                </Card.Header>
+                <Card.Body>
+                  {lactationDistribution.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={lactationDistribution}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {lactationDistribution.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-5">
+                      <i
+                        className="fas fa-cow text-muted"
+                        style={{ fontSize: "48px" }}
+                      ></i>
+                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </>
+        )}
+      </Row>
+      {/* Enhanced Cows List - Show for all roles but with different data */}
+      {((currentUser.role_id === 3 && userManagedCows.length > 0) ||
+        (currentUser.role_id !== 3 && allUsersWithCows.length > 0)) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-4"
+        >
+          <div
+            style={{
+              ...styles.floatingContainer,
+              minHeight: "auto",
+              background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+            }}
+          >
+            <h5 style={styles.heading} className="mb-3">
+              <i className="fas fa-list me-2"></i>
+              {currentUser.role_id === 3
+                ? "Sapi yang Anda Kelola & Produksi Susu"
+                : "Semua Sapi di Peternakan & Produksi Susu"}
+            </h5>
+
+            <div className="row g-3">
+              {(currentUser.role_id === 3
+                ? userManagedCows
+                : allUsersWithCows.flatMap((farmer) =>
+                    (farmer.cows || []).map((cow) => ({
+                      ...cow,
+                      farmerName: farmer.name || farmer.username,
+                      farmerId: farmer.id,
+                    }))
+                  )
+              ).map((cow, index) => {
+                const production =
+                  currentUser.role_id === 3
+                    ? cowMilkProduction[cow.id] || {
+                        totalVolume: 0,
+                        sessionsCount: 0,
+                        avgPerSession: 0,
+                        todayVolume: 0,
+                      }
+                    : // Calculate production for all cows (admin/supervisor view)
+                      (() => {
+                        const cowSessions = milkingSessions.filter(
+                          (session) => session.cow_id === cow.id
+                        );
+                        const today = getLocalDateString();
+                        const todaySessions = cowSessions.filter(
+                          (session) =>
+                            getSessionLocalDate(session.milking_time) === today
+                        );
+
+                        const totalVolume = cowSessions.reduce(
+                          (sum, session) =>
+                            sum + parseFloat(session.volume || 0),
+                          0
+                        );
+                        const todayVolume = todaySessions.reduce(
+                          (sum, session) =>
+                            sum + parseFloat(session.volume || 0),
+                          0
+                        );
+                        const avgPerSession =
+                          cowSessions.length > 0
+                            ? totalVolume / cowSessions.length
+                            : 0;
+
+                        return {
+                          totalVolume,
+                          sessionsCount: cowSessions.length,
+                          avgPerSession,
+                          todayVolume,
+                        };
+                      })();
+
+                return (
+                  <div key={cow.id} className="col-md-6 col-lg-4">
+                    <motion.div
+                      className="floating-item"
+                      style={{
+                        position: "relative",
+                        background:
+                          "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                        borderRadius: "12px",
+                        padding: "15px",
+                        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
+                        border: "1px solid rgba(255, 255, 255, 0.9)",
+                        animationDelay: `${index * 0.2}s`,
+                      }}
+                      whileHover={{
+                        scale: 1.03,
+                        y: -5,
+                        boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
+                      }}
+                    >
+                      <div className="d-flex align-items-start">
+                        <div className="me-3" style={{ fontSize: "24px" }}>
+                          {/* Gender-specific emoji */}
+                          {cow.gender?.toLowerCase() === "female" ||
+                          cow.gender?.toLowerCase() === "betina"
+                            ? "🐄"
+                            : "🐂"}
+                        </div>
+                        <div className="flex-grow-1">
+                          <h6 className="fw-bold mb-1">{cow.name}</h6>
+
+                          {/* Show farmer name for admin/supervisor */}
+                          {currentUser.role_id !== 3 && cow.farmerName && (
+                            <div className="mb-2">
+                              <Badge
+                                bg="outline-primary"
+                                text="dark"
+                                style={{ fontSize: "10px" }}
                               >
-                                <div
-                                  className={`rounded-circle bg-${stat.color} bg-opacity-10 d-flex align-items-center justify-content-center me-2`}
-                                  style={{ width: "36px", height: "36px" }}
-                                >
-                                  <i
-                                    className={`fas ${stat.icon} text-${stat.color}`}
-                                  ></i>
-                                </div>
-                                <div>
-                                  <div
-                                    className="text-muted"
-                                    style={{
-                                      fontSize: "13px",
-                                      fontFamily: "'Roboto Mono', monospace",
-                                      fontWeight: "500",
-                                      letterSpacing: "0.2px",
-                                    }}
-                                  >
-                                    {stat.label}
+                                <i className="fas fa-user me-1"></i>
+                                Farmer: {cow.farmerName}
+                              </Badge>
+                            </div>
+                          )}
+
+                          {/* Cow Basic Info */}
+                          <div className="d-flex flex-wrap gap-1 mb-2">
+                            <Badge
+                              bg="outline-primary"
+                              text="dark"
+                              style={{ fontSize: "10px" }}
+                            >
+                              ID: {cow.id}
+                            </Badge>
+                            <Badge
+                              bg="outline-secondary"
+                              text="dark"
+                              style={{ fontSize: "10px" }}
+                            >
+                              {cow.breed}
+                            </Badge>
+                            <Badge
+                              bg={
+                                cow.gender?.toLowerCase() === "female" ||
+                                cow.gender?.toLowerCase() === "betina"
+                                  ? "outline-info"
+                                  : "outline-warning"
+                              }
+                              text="dark"
+                              style={{ fontSize: "10px" }}
+                            >
+                              {cow.gender?.toLowerCase() === "female" ||
+                              cow.gender?.toLowerCase() === "betina"
+                                ? "♀ Betina"
+                                : "♂ Jantan"}
+                            </Badge>
+                            <motion.div whileHover={{ scale: 1.05 }}>
+                              <Badge
+                                bg="outline-success"
+                                text="dark"
+                                style={{
+                                  fontSize: "10px",
+                                  transition: "all 0.2s ease",
+                                  cursor: "pointer",
+                                }}
+                                title={
+                                  cow.birth
+                                    ? `Lahir: ${new Date(
+                                        cow.birth
+                                      ).toLocaleDateString("id-ID")}`
+                                    : "Tanggal lahir tidak tersedia"
+                                }
+                              >
+                                <i
+                                  className="fas fa-birthday-cake me-1"
+                                  style={{ fontSize: "8px" }}
+                                ></i>
+                                {formatAge(cow.birth)}
+                              </Badge>
+                            </motion.div>
+                          </div>
+
+                          {/* Conditional Content Based on Gender */}
+                          {cow.gender?.toLowerCase() === "female" ||
+                          cow.gender?.toLowerCase() === "betina" ? (
+                            // Female Cow - Show Production Statistics
+                            <>
+                              {/* Production Statistics */}
+                              <div className="mb-2">
+                                <div className="row g-1">
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(76, 175, 80, 0.2)",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#2e7d32",
+                                        }}
+                                      >
+                                        {production.totalVolume.toFixed(1)}L
+                                      </div>
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#2e7d32",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Total Produksi
+                                      </small>
+                                    </motion.div>
                                   </div>
-                                  <div
-                                    className="fw-400"
-                                    style={{
-                                      fontSize: "17px",
-                                      fontFamily: "'Roboto Mono', monospace",
-                                      fontWeight: "400",
-                                      letterSpacing: "0.5px",
-                                      lineHeight: "1.2",
-                                    }}
-                                  >
-                                    {stat.value}
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(33, 150, 243, 0.2)",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#1565c0",
+                                        }}
+                                      >
+                                        {production.todayVolume.toFixed(1)}L
+                                      </div>
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#1565c0",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Hari Ini
+                                      </small>
+                                    </motion.div>
+                                  </div>
+                                </div>
+
+                                <div className="row g-1 mt-1">
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(255, 152, 0, 0.2)",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#ef6c00",
+                                        }}
+                                      >
+                                        {production.avgPerSession.toFixed(1)}L
+                                      </div>
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#ef6c00",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Rata-rata/Sesi
+                                      </small>
+                                    </motion.div>
+                                  </div>
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(233, 30, 99, 0.2)",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#c2185b",
+                                        }}
+                                      >
+                                        {production.sessionsCount}
+                                      </div>
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#c2185b",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Total Sesi
+                                      </small>
+                                    </motion.div>
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  </Row>
-                </motion.div>
-              </Tab>
 
-              {/* Health Checks Tab */}
-              <Tab
-                eventKey="health"
-                title={
-                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                    <i className="fas fa-heartbeat me-2"></i>Kesehatan
-                  </span>
-                }
-              >
-                <motion.div
-                  variants={animations.item}
-                  style={{ minHeight: "450px" }}
-                >
-                  <Row>
-                    <Col lg={8} className="mb-4">
-                      <Card style={styles.card}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">
-                            Pemeriksaan Kesehatan Mingguan
-                          </h5>
-                          <p
-                            className="text-muted mt-1"
-                            style={{ fontSize: "14px" }}
-                          >
-                            <i className="fas fa-info-circle me-2"></i>
-                            Grafik jumlah pemeriksaan kesehatan yang dilakukan
-                            selama 7 hari terakhir.
-                          </p>
-                        </Card.Header>
-                        <Card.Body>
-                          <div style={styles.chartContainer} className="mt-3">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart
-                                data={healthCheckData}
-                                margin={{
-                                  top: 10,
-                                  right: 10,
-                                  left: 10,
-                                  bottom: 20,
-                                }}
-                              >
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#f0f0f0"
-                                />
-                                <XAxis
-                                  dataKey="date"
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <YAxis
-                                  allowDecimals={false}
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <Tooltip
-                                  formatter={(value) => [
-                                    `${value} kali`,
-                                    "Pemeriksaan",
-                                  ]}
-                                  contentStyle={{
-                                    backgroundColor: "#fff",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                  }}
-                                />
-                                <Legend verticalAlign="top" height={36} />
-                                <Bar
-                                  dataKey="checks"
-                                  name="Jumlah Pemeriksaan"
-                                  fill="#6f42c1"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={36}
+                              {/* Lactation Phase and Weight for Female */}
+                              <div className="d-flex justify-content-between align-items-center">
+                                <Badge
+                                  bg={
+                                    cow.lactation_phase === "Early"
+                                      ? "success"
+                                      : cow.lactation_phase === "Mid"
+                                      ? "warning"
+                                      : cow.lactation_phase === "Late"
+                                      ? "danger"
+                                      : "secondary"
+                                  }
+                                  style={{ fontSize: "9px" }}
                                 >
-                                  <LabelList
-                                    dataKey="checks"
-                                    position="top"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      fill: "#495057",
+                                  {cow.lactation_phase || "N/A"}
+                                </Badge>
+                                <small className="text-muted">
+                                  {cow.weight ? `${cow.weight} kg` : "N/A"}
+                                </small>
+                              </div>
+
+                              {/* Performance Indicator for Female */}
+                              <div className="mt-2">
+                                <div
+                                  className="d-flex align-items-center justify-content-center"
+                                  style={{
+                                    background:
+                                      production.avgPerSession >= 15
+                                        ? "linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
+                                        : production.avgPerSession >= 10
+                                        ? "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)"
+                                        : "linear-gradient(135deg, #f44336 0%, #ef5350 100%)",
+                                    borderRadius: "12px",
+                                    padding: "4px 8px",
+                                  }}
+                                >
+                                  <motion.span
+                                    animate={{ scale: [1, 1.1, 1] }}
+                                    transition={{
+                                      duration: 2,
+                                      repeat: Infinity,
+                                      ease: "easeInOut",
                                     }}
-                                  />
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
+                                    style={{
+                                      fontSize: "10px",
+                                      color: "white",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {production.avgPerSession >= 15
+                                      ? "🌟 Produksi Tinggi"
+                                      : production.avgPerSession >= 10
+                                      ? "⚡ Produksi Sedang"
+                                      : "📈 Perlu Perhatian"}
+                                  </motion.span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            // Male Cow - Show Non-Production Info
+                            <>
+                              {/* Male Cow Information */}
+                              <div className="mb-2">
+                                <motion.div
+                                  whileHover={{ scale: 1.02 }}
+                                  className="text-center p-3"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
+                                    borderRadius: "12px",
+                                    border:
+                                      "1px solid rgba(158, 158, 158, 0.2)",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: "24px",
+                                      marginBottom: "8px",
+                                    }}
+                                  >
+                                    🚫🥛
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      fontWeight: "bold",
+                                      color: "#757575",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    Sapi Pejantan
+                                  </div>
+                                  <small
+                                    style={{
+                                      fontSize: "9px",
+                                      color: "#757575",
+                                      opacity: 0.8,
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    Tidak memproduksi susu
+                                  </small>
+                                </motion.div>
+                              </div>
 
-                    <Col lg={4}>
-                      <Card style={{ ...styles.card, height: "100%" }}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">Panduan Kesehatan Sapi</h5>
-                        </Card.Header>
-                        <Card.Body>
-                          <div className="d-flex flex-column">
-                            <h6 className="text-primary mb-2">
-                              Tips Menjaga Kesehatan Sapi
-                            </h6>
-                            <ul
-                              className="text-muted"
-                              style={{ fontSize: "14px", lineHeight: "1.6" }}
-                            >
-                              <li>Lakukan pemeriksaan rutin setiap minggu</li>
-                              <li>
-                                Perhatikan asupan nutrisi dan kualitas pakan
-                              </li>
-                              <li>
-                                Jaga kebersihan kandang untuk mencegah penyakit
-                              </li>
-                              <li>
-                                Amati perubahan perilaku yang dapat
-                                mengindikasikan masalah kesehatan
-                              </li>
-                              <li>
-                                Segera konsultasi dengan dokter hewan jika ada
-                                gejala tidak normal
-                              </li>
-                            </ul>
-                            <div
-                              className="alert alert-info mt-auto"
-                              style={{ fontSize: "13px" }}
-                            >
-                              <i className="fas fa-info-circle me-2"></i>
-                              Total pemeriksaan minggu ini:{" "}
-                              <strong>
-                                {healthCheckData.reduce(
-                                  (sum, item) => sum + item.checks,
-                                  0
-                                )}{" "}
-                                kali
-                              </strong>
-                            </div>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  </Row>
-                </motion.div>
-              </Tab>
-
-              {/* Orders Tab */}
-              <Tab
-                eventKey="orders"
-                title={
-                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                    <i className="fas fa-shopping-cart me-2"></i>Pesanan
-                  </span>
-                }
-              >
-                <motion.div
-                  variants={animations.item}
-                  style={{ minHeight: "450px" }}
-                >
-                  <Card style={styles.card}>
-                    <Card.Header className="bg-white">
-                      <h5 className="mb-0">Pesanan Terbaru</h5>
-                      <p
-                        className="text-muted mt-1"
-                        style={{ fontSize: "14px" }}
-                      >
-                        <i className="fas fa-info-circle me-2"></i>
-                        Daftar pesanan terbaru dari pelanggan.
-                      </p>
-                    </Card.Header>
-                    <Card.Body>
-                      <div className="table-responsive rounded-3">
-                        <table className="table table-hover table-bordered mb-0">
-                          <thead>
-                            <tr>
-                              <th
-                                scope="col"
-                                className="text-center fw-medium"
-                                style={styles.tableHeader}
-                              >
-                                #
-                              </th>
-                              <th
-                                scope="col"
-                                className="fw-medium"
-                                style={styles.tableHeader}
-                              >
-                                No. Pesanan
-                              </th>
-                              <th
-                                scope="col"
-                                className="fw-medium"
-                                style={styles.tableHeader}
-                              >
-                                Pelanggan
-                              </th>
-                              <th
-                                scope="col"
-                                className="fw-medium"
-                                style={styles.tableHeader}
-                              >
-                                Total
-                              </th>
-                              <th
-                                scope="col"
-                                className="fw-medium"
-                                style={styles.tableHeader}
-                              >
-                                Status
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {orders.length > 0 ? (
-                              orders.map((order, index) => (
-                                <tr key={index}>
-                                  <td className="text-center text-muted">
-                                    {index + 1}
-                                  </td>
-                                  <td className="fw-medium">
-                                    {order.order_no}
-                                  </td>
-                                  <td>
-                                    <div className="d-flex align-items-center">
+                              {/* Male Cow Additional Info */}
+                              <div className="mb-2">
+                                <div className="row g-1">
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(63, 81, 181, 0.2)",
+                                      }}
+                                    >
                                       <div
-                                        className="rounded-circle d-flex justify-content-center align-items-center me-2 bg-primary bg-opacity-10"
                                         style={{
-                                          width: "32px",
-                                          height: "32px",
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#3f51b5",
                                         }}
                                       >
-                                        <i className="fas fa-user-circle text-primary"></i>
+                                        🐂
                                       </div>
-                                      <div className="text-dark">
-                                        {order.customer_name}
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td>{order.total}</td>
-                                  <td>
-                                    <span
-                                      className={`badge ${getStatusBadgeClass(
-                                        order.status
-                                      )}`}
-                                      style={styles.badge}
-                                    >
-                                      {getStatusLabel(order.status)}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))
-                            ) : (
-                              <tr>
-                                <td colSpan="5" className="text-center py-3">
-                                  <div className="text-muted">
-                                    <i className="fas fa-shopping-cart fs-3 d-block mb-2"></i>
-                                    Tidak ada pesanan
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#3f51b5",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Breeding Girolando
+                                      </small>
+                                    </motion.div>
                                   </div>
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </motion.div>
-              </Tab>
+                                  <div className="col-6">
+                                    <motion.div
+                                      whileHover={{ scale: 1.02 }}
+                                      className="text-center p-2"
+                                      style={{
+                                        background:
+                                          "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)",
+                                        borderRadius: "8px",
+                                        border:
+                                          "1px solid rgba(156, 39, 176, 0.2)",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          fontSize: "12px",
+                                          fontWeight: "bold",
+                                          color: "#7b1fa2",
+                                        }}
+                                      >
+                                        💪
+                                      </div>
+                                      <small
+                                        style={{
+                                          fontSize: "9px",
+                                          color: "#7b1fa2",
+                                          opacity: 0.8,
+                                        }}
+                                      >
+                                        Strong & Healthy
+                                      </small>
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              </div>
 
-              {/* Feed Usage Tab */}
-              <Tab
-                eventKey="feed"
-                title={
-                  <span style={{ color: "#6c757d", fontWeight: "normal" }}>
-                    <i className="fas fa-leaf me-2"></i>Pakan
-                  </span>
-                }
-              >
-                <motion.div
-                  variants={animations.item}
-                  style={{ minHeight: "450px" }}
-                >
-                  <Row>
-                    <Col lg={6} className="mb-4">
-                      <Card style={{ ...styles.card, height: "100%" }}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">Penggunaan Pakan Mingguan</h5>
-                          <p
-                            className="text-muted mt-1"
-                            style={{ fontSize: "14px" }}
-                          >
-                            <i className="fas fa-info-circle me-2"></i>
-                            Grafik penggunaan pakan selama 7 hari terakhir.
-                          </p>
-                        </Card.Header>
-                        <Card.Body>
-                          <div style={styles.chartContainer} className="mt-3">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart
-                                data={feedUsageData}
-                                margin={{
-                                  top: 10,
-                                  right: 10,
-                                  left: 10,
-                                  bottom: 20,
-                                }}
-                              >
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#f0f0f0"
-                                />
-                                <XAxis
-                                  dataKey="date"
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <YAxis
-                                  tickFormatter={(value) => `${value}kg`}
-                                  tick={{ fontSize: 12 }}
-                                  axisLine={{ stroke: "#e0e0e0" }}
-                                />
-                                <Tooltip
-                                  formatter={(value) => [
-                                    `${value} kg`,
-                                    "Jumlah",
-                                  ]}
-                                  contentStyle={{
-                                    backgroundColor: "#fff",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                              {/* Weight Info for Male */}
+                              <div className="d-flex justify-content-between align-items-center">
+                                <Badge bg="info" style={{ fontSize: "9px" }}>
+                                  <i className="fas fa-male me-1"></i>
+                                  Pejantan
+                                </Badge>
+                                <small className="text-muted">
+                                  {cow.weight ? `${cow.weight} kg` : "N/A"}
+                                </small>
+                              </div>
+
+                              {/* Role Indicator for Male */}
+                              <div className="mt-2">
+                                <div
+                                  className="d-flex align-items-center justify-content-center"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, #2196f3 0%, #64b5f6 100%)",
+                                    borderRadius: "12px",
+                                    padding: "4px 8px",
                                   }}
-                                />
-                                <Legend verticalAlign="top" height={36} />
-                                <Bar
-                                  dataKey="feed"
-                                  name="Penggunaan Pakan"
-                                  fill="#ffc107"
-                                  radius={[4, 4, 0, 0]}
-                                  barSize={36}
                                 >
-                                  <LabelList
-                                    dataKey="feed"
-                                    position="top"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      fill: "#495057",
+                                  <motion.span
+                                    animate={{ scale: [1, 1.05, 1] }}
+                                    transition={{
+                                      duration: 3,
+                                      repeat: Infinity,
+                                      ease: "easeInOut",
                                     }}
-                                    formatter={(value) => `${value}kg`}
-                                  />
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-
-                    <Col lg={6}>
-                      <Card style={{ ...styles.card, height: "100%" }}>
-                        <Card.Header className="bg-white">
-                          <h5 className="mb-0">Komposisi Pakan</h5>
-                          <p
-                            className="text-muted mt-1"
-                            style={{ fontSize: "14px" }}
-                          >
-                            <i className="fas fa-info-circle me-2"></i>
-                            Persentase komposisi pakan yang digunakan.
-                          </p>
-                        </Card.Header>
-                        <Card.Body>
-                          <div style={styles.chartContainer} className="mt-3">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={[
-                                    {
-                                      name: "Rumput Segar",
-                                      value:
-                                        feedUsageData.reduce(
-                                          (sum, item) => sum + item.feed,
-                                          0
-                                        ) * 0.65,
-                                    },
-                                    {
-                                      name: "Konsentrat",
-                                      value:
-                                        feedUsageData.reduce(
-                                          (sum, item) => sum + item.feed,
-                                          0
-                                        ) * 0.25,
-                                    },
-                                    {
-                                      name: "Vitamin & Mineral",
-                                      value:
-                                        feedUsageData.reduce(
-                                          (sum, item) => sum + item.feed,
-                                          0
-                                        ) * 0.1,
-                                    },
-                                  ]}
-                                  dataKey="value"
-                                  nameKey="name"
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={60}
-                                  outerRadius={90}
-                                  label={(entry) =>
-                                    `${entry.name}: ${(
-                                      entry.percent * 100
-                                    ).toFixed(0)}%`
-                                  }
-                                  labelLine={false}
-                                >
-                                  <Cell key="Rumput Segar" fill="#2ecc71" />
-                                  <Cell key="Konsentrat" fill="#f39c12" />
-                                  <Cell
-                                    key="Vitamin & Mineral"
-                                    fill="#3498db"
-                                  />
-                                </Pie>
-                                <Tooltip
-                                  formatter={(value) => [
-                                    `${value.toFixed(1)} kg`,
-                                    "",
-                                  ]}
-                                  contentStyle={{
-                                    backgroundColor: "#fff",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                                  }}
-                                />
-                                <Legend
-                                  verticalAlign="bottom"
-                                  layout="horizontal"
-                                  iconSize={10}
-                                  iconType="circle"
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  </Row>
-                </motion.div>
-              </Tab>
-            </Tabs>
-          </motion.div>
-        </Card.Body>
-      </Card>
-
-      <Modal show={showModal} onHide={handleCloseModal} centered>
-        <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>
-            <i className="fas fa-info-circle me-2"></i>
-            {isFarmer ? "Sapi yang Anda Kelola" : "Daftar Sapi dan Pengelola"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {modalData.length > 0 ? (
-            <Table striped bordered hover responsive className="text-center">
-              <thead className="bg-light">
-                <tr>
-                  <th>#</th>
-                  <th>Nama Sapi</th>
-                  <th>{isFarmer ? "ID Sapi" : "Pengelola"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modalData.map((item, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{item.cowName}</td>
-                    <td>{isFarmer ? item.cowId : item.manager}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <div className="text-center py-4">
-              <i className="fas fa-exclamation-circle text-muted fs-1 mb-3"></i>
-              <p className="text-muted">Tidak ada data yang tersedia.</p>
+                                    style={{
+                                      fontSize: "10px",
+                                      color: "white",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    🐂 Pejantan
+                                  </motion.span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer className="d-flex justify-content-between">
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Tutup
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

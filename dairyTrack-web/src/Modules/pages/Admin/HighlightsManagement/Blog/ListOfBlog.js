@@ -12,10 +12,11 @@ import {
   InputGroup,
   Modal,
   OverlayTrigger,
-  Pagination,
   Spinner,
-  Tooltip,
   Table,
+  Row,
+  Badge,
+  Tooltip,
 } from "react-bootstrap";
 import {
   assignCategoryToBlog,
@@ -54,10 +55,11 @@ const getCurrentUser = () => {
 const ListOfBlog = () => {
   const [blogs, setBlogs] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false); // State untuk modal assign
-  const [selectedCategory, setSelectedCategory] = useState(null); // Kategori yang dipilih
   const [blogCategories, setBlogCategories] = useState({}); // State untuk menyimpan kategori per blog
   const [selectedFilterCategory, setSelectedFilterCategory] = useState(null); // State untuk filter kategori
   const [loading, setLoading] = useState(true);
+  const [selectedCategories, setSelectedCategories] = useState([]); // Changed to array for multiple categories
+
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,24 +82,91 @@ const ListOfBlog = () => {
 
   const [selectedBlog, setSelectedBlog] = useState(null);
   // Fungsi untuk menghasilkan warna berdasarkan nama atau ID kategori
+  // Fungsi yang diperbaiki untuk menghasilkan warna kategori
   const getCategoryColor = (categoryName) => {
+    // Expanded color palette dengan kontras yang lebih baik
     const colors = [
-      "#FF5733", // Merah
-      "#33FF57", // Hijau
-      "#3357FF", // Biru
-      "#FF33A1", // Pink
-      "#FFC300", // Kuning
-      "#8E44AD", // Ungu
-      "#16A085", // Teal
+      "#E74C3C", // Red
+      "#3498DB", // Blue
+      "#2ECC71", // Green
+      "#F39C12", // Orange
+      "#9B59B6", // Purple
+      "#1ABC9C", // Turquoise
+      "#E67E22", // Carrot
+      "#34495E", // Wet Asphalt
+      "#16A085", // Green Sea
+      "#27AE60", // Nephritis
+      "#2980B9", // Belize Hole
+      "#8E44AD", // Wisteria
+      "#F1C40F", // Sun Flower
+      "#E74C3C", // Alizarin
+      "#95A5A6", // Concrete
+      "#BDC3C7", // Silver
+      "#D35400", // Pumpkin
+      "#C0392B", // Pomegranate
+      "#7F8C8D", // Asbestos
+      "#2C3E50", // Midnight Blue
     ];
-    const index = categoryName.charCodeAt(0) % colors.length;
+
+    // Improved hash function untuk distribusi yang lebih merata
+    let hash = 0;
+    for (let i = 0; i < categoryName.length; i++) {
+      const char = categoryName.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+
+    const index = Math.abs(hash) % colors.length;
     return colors[index];
+  };
+
+  // Fungsi untuk mendapatkan warna teks yang kontras
+  const getContrastTextColor = (backgroundColor) => {
+    // Convert hex to RGB
+    const hex = backgroundColor.replace("#", "");
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return white text for dark colors, black for light colors
+    return luminance > 0.5 ? "#000000" : "#FFFFFF";
+  };
+
+  // Cache untuk menyimpan warna kategori agar konsisten
+  const categoryColorCache = new Map();
+
+  const getCachedCategoryColor = (categoryName) => {
+    if (!categoryColorCache.has(categoryName)) {
+      categoryColorCache.set(categoryName, getCategoryColor(categoryName));
+    }
+    return categoryColorCache.get(categoryName);
   };
   const blogsPerPage = 4;
   // Handler untuk membuka modal assign
   const handleOpenAssignModal = () => {
     fetchCategories(); // Pastikan kategori sudah dimuat
+    setSelectedCategories([]); // Reset selected categories
+    setSelectedBlog(null); // Reset selected blog
     setShowAssignModal(true);
+  };
+  const handleCategoryToggle = (category) => {
+    setSelectedCategories((prev) => {
+      const isSelected = prev.some((cat) => cat.id === category.id);
+      if (isSelected) {
+        return prev.filter((cat) => cat.id !== category.id);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+  // Handler untuk menghapus kategori dari pill
+  const handleRemoveCategoryPill = (categoryId) => {
+    setSelectedCategories((prev) =>
+      prev.filter((cat) => cat.id !== categoryId)
+    );
   };
   // Fetch blogs dan kategori terkait
   useEffect(() => {
@@ -247,24 +316,83 @@ const ListOfBlog = () => {
     }
   };
 
-  // Handler untuk assign kategori ke blog
-  const handleAssignCategory = async () => {
-    if (!selectedCategory || !selectedBlog) {
-      Swal.fire("Error!", "Please select both a category and a blog.", "error");
+  // Handler untuk assign multiple categories ke blog
+  const handleAssignCategories = async () => {
+    if (selectedCategories.length === 0 || !selectedBlog) {
+      Swal.fire("Error!", "Please select both categories and a blog.", "error");
       return;
     }
 
-    const { success, message } = await assignCategoryToBlog(
-      selectedBlog.id,
-      selectedCategory.id
-    );
+    try {
+      // Show loading
+      Swal.fire({
+        title: "Assigning Categories...",
+        text: "Please wait while we assign categories to the blog.",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        },
+      });
 
-    if (success) {
-      Swal.fire("Success!", "Category assigned to blog.", "success");
+      let successCount = 0;
+      let failedCategories = [];
+
+      // Assign each category one by one
+      for (const category of selectedCategories) {
+        const { success, message } = await assignCategoryToBlog(
+          selectedBlog.id,
+          category.id
+        );
+
+        if (success) {
+          successCount++;
+        } else {
+          failedCategories.push({ category: category.name, message });
+        }
+      }
+
+      // Close loading dialog
+      Swal.close();
+
+      // Show result
+      if (successCount === selectedCategories.length) {
+        Swal.fire(
+          "Success!",
+          `All ${successCount} categories assigned successfully!`,
+          "success"
+        );
+      } else if (successCount > 0) {
+        let resultMessage = `${successCount} categories assigned successfully.`;
+        if (failedCategories.length > 0) {
+          resultMessage += `\n\nFailed to assign:\n${failedCategories
+            .map((f) => `• ${f.category}: ${f.message}`)
+            .join("\n")}`;
+        }
+        Swal.fire("Partial Success!", resultMessage, "warning");
+      } else {
+        let errorMessage = "Failed to assign any categories.";
+        if (failedCategories.length > 0) {
+          errorMessage += `\n\nErrors:\n${failedCategories
+            .map((f) => `• ${f.category}: ${f.message}`)
+            .join("\n")}`;
+        }
+        Swal.fire("Error!", errorMessage, "error");
+      }
+
+      // Reset and refresh
       setShowAssignModal(false);
+      setSelectedCategories([]);
+      setSelectedBlog(null);
       fetchBlogsAndCategories();
-    } else {
-      Swal.fire("Error!", message || "Failed to assign category.", "error");
+    } catch (error) {
+      Swal.close();
+      console.error("Error assigning categories:", error);
+      Swal.fire(
+        "Error!",
+        "An unexpected error occurred while assigning categories.",
+        "error"
+      );
     }
   };
 
@@ -445,6 +573,7 @@ const ListOfBlog = () => {
               className="me-2"
               style={{ color: "white" }}
               onClick={() => setShowCategoryModal(true)}
+              disabled={isSupervisor}
             >
               <i className="fas fa-folder-plus me-2" /> Category
             </Button>
@@ -453,6 +582,7 @@ const ListOfBlog = () => {
               className="me-2"
               style={{ color: "white" }}
               onClick={handleShowCategoryList}
+              disabled={isSupervisor}
             >
               <i className="fas fa-list me-2" /> View Categories
             </Button>
@@ -816,21 +946,40 @@ const ListOfBlog = () => {
         </Modal.Body>
       </Modal>
       {/* Assign Categories Modal */}
-      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
+      <Modal
+        show={showAssignModal}
+        onHide={() => {
+          setShowAssignModal(false);
+          setSelectedCategories([]);
+          setSelectedBlog(null);
+        }}
+        size="lg"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Assign Categories to Blog</Modal.Title>
+          <Modal.Title
+            style={{
+              fontFamily: "Roboto, Monospace",
+              fontWeight: "500",
+              color: "#3D90D7",
+              letterSpacing: "1.2px",
+              fontSize: "20px",
+            }}
+          >
+            Assign Categories to Blog
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Select Blog</Form.Label>
+            {/* Blog Selection */}
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-bold">Select Blog</Form.Label>
               <Form.Select
                 onChange={(e) =>
                   setSelectedBlog(
                     blogs.find((blog) => blog.id === parseInt(e.target.value))
                   )
                 }
-                defaultValue=""
+                value={selectedBlog?.id || ""}
                 disabled={isSupervisor}
                 tabIndex={isSupervisor ? -1 : 0}
                 aria-disabled={isSupervisor}
@@ -844,41 +993,169 @@ const ListOfBlog = () => {
                   </option>
                 ))}
               </Form.Select>
+              {selectedBlog && (
+                <div className="mt-2 p-2 bg-light rounded">
+                  <small className="text-muted">Selected: </small>
+                  <strong>{selectedBlog.title}</strong>
+                </div>
+              )}
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Select Category</Form.Label>
-              <Form.Select
-                onChange={(e) =>
-                  setSelectedCategory(
-                    categories.find(
-                      (category) => category.id === parseInt(e.target.value)
-                    )
-                  )
+            {/* Category Selection */}
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-bold">Available Categories</Form.Label>
+              <div
+                className="border rounded p-3"
+                style={{ maxHeight: "200px", overflowY: "auto" }}
+              >
+                {categories.length > 0 ? (
+                  <div className="d-flex flex-wrap gap-2">
+                    {categories.map((category) => {
+                      const isSelected = selectedCategories.some(
+                        (cat) => cat.id === category.id
+                      );
+                      const isAlreadyAssigned =
+                        selectedBlog &&
+                        blogCategories[selectedBlog.id]?.some(
+                          (cat) => cat.id === category.id
+                        );
+
+                      return (
+                        <Badge
+                          key={category.id}
+                          pill
+                          bg={
+                            isSelected
+                              ? "primary"
+                              : isAlreadyAssigned
+                              ? "secondary"
+                              : "outline-primary"
+                          }
+                          className={`cursor-pointer user-select-none ${
+                            isAlreadyAssigned ? "text-muted" : ""
+                          }`}
+                          style={{
+                            fontSize: "0.9rem",
+                            padding: "0.5rem 1rem",
+                            cursor: isAlreadyAssigned
+                              ? "not-allowed"
+                              : "pointer",
+                            opacity: isAlreadyAssigned ? 0.6 : 1,
+                            border:
+                              !isSelected && !isAlreadyAssigned
+                                ? "1px solid #0d6efd"
+                                : "none",
+                            color: isSelected
+                              ? "white" // Selected: white text
+                              : isAlreadyAssigned
+                              ? "#6c757d" // Already assigned: muted text
+                              : "grey", // Unselected: black text
+                            backgroundColor: isSelected
+                              ? "#0d6efd" // Selected: primary blue
+                              : isAlreadyAssigned
+                              ? "#6c757d" // Already assigned: secondary gray
+                              : "transparent", // Unselected: transparent
+                          }}
+                          onClick={() => {
+                            if (!isAlreadyAssigned && !isSupervisor) {
+                              handleCategoryToggle(category);
+                            }
+                          }}
+                          title={
+                            isAlreadyAssigned
+                              ? "Already assigned to this blog"
+                              : "Click to select"
+                          }
+                        >
+                          {category.name}
+                          {isAlreadyAssigned && (
+                            <i className="fas fa-check ms-2" />
+                          )}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted py-3">
+                    <i className="fas fa-folder-open fs-4 d-block mb-2"></i>
+                    No categories available
+                  </div>
+                )}
+              </div>
+              <small className="text-muted d-block mt-2">
+                <i className="fas fa-info-circle me-1"></i>
+                Click on categories to select them. Gray categories are already
+                assigned to the selected blog.
+              </small>
+            </Form.Group>
+
+            {/* Selected Categories Pills */}
+            {selectedCategories.length > 0 && (
+              <Form.Group className="mb-4">
+                <Form.Label className="fw-bold">
+                  Selected Categories ({selectedCategories.length})
+                </Form.Label>
+                <div className="border rounded p-3 bg-light">
+                  <div className="d-flex flex-wrap gap-2">
+                    {selectedCategories.map((category) => (
+                      <Badge
+                        key={category.id}
+                        pill
+                        bg="success"
+                        className="d-flex align-items-center"
+                        style={{
+                          fontSize: "0.9rem",
+                          padding: "0.5rem 1rem",
+                        }}
+                      >
+                        {category.name}
+                        <Button
+                          variant="link"
+                          className="text-white ms-2 p-0"
+                          style={{ fontSize: "0.8rem", lineHeight: 1 }}
+                          onClick={() => handleRemoveCategoryPill(category.id)}
+                          disabled={isSupervisor}
+                          tabIndex={isSupervisor ? -1 : 0}
+                          aria-disabled={isSupervisor}
+                        >
+                          <i className="fas fa-times" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </Form.Group>
+            )}
+
+            {/* Action Buttons */}
+            <div className="d-flex justify-content-between">
+              <Button
+                variant="outline-secondary"
+                onClick={() => {
+                  setShowAssignModal(false);
+                  setSelectedCategories([]);
+                  setSelectedBlog(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAssignCategories}
+                disabled={
+                  selectedCategories.length === 0 ||
+                  !selectedBlog ||
+                  isSupervisor
                 }
-                defaultValue=""
-                disabled={isSupervisor}
                 tabIndex={isSupervisor ? -1 : 0}
                 aria-disabled={isSupervisor}
               >
-                <option value="" disabled>
-                  Select a category
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Button
-              variant="primary"
-              onClick={handleAssignCategory}
-              disabled={isSupervisor}
-              tabIndex={isSupervisor ? -1 : 0}
-              aria-disabled={isSupervisor}
-            >
-              Assign
-            </Button>
+                <i className="fas fa-link me-2" />
+                Assign{" "}
+                {selectedCategories.length > 0
+                  ? `${selectedCategories.length} Categories`
+                  : "Categories"}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
       </Modal>

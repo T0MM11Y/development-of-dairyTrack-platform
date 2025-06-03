@@ -278,19 +278,30 @@ class _CattleDistributionState extends State<CattleDistribution>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Unassignment'),
-        content: const Text(
+        backgroundColor: Colors.grey[900], // Latar belakang gelap
+        title: Text(
+          'Confirm Unassignment',
+          style: TextStyle(color: Colors.white), // Teks putih
+        ),
+        content: Text(
           'Do you want to unassign this cow from the farmer?',
+          style: TextStyle(color: Colors.white70), // Teks agak ट्रांसparan
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white), // Teks putih
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Unassign'),
+            child: Text(
+              'Unassign',
+              style: TextStyle(color: Colors.white), // Teks putih
+            ),
           ),
         ],
       ),
@@ -360,9 +371,16 @@ class _CattleDistributionState extends State<CattleDistribution>
           TabBar(
             controller: _tabController,
             tabs: const [
-              Tab(icon: Icon(Icons.table_chart), text: 'Distribution'),
-              Tab(icon: Icon(Icons.analytics), text: 'Analytics'),
+              Tab(
+                  icon: Icon(Icons.table_chart, color: Colors.blueGrey),
+                  text: 'Distribution'),
+              Tab(
+                  icon: Icon(Icons.analytics, color: Colors.blueGrey),
+                  text: 'Analytics'),
             ],
+            indicatorColor: Colors.blueGrey,
+            labelColor: Colors.blueGrey,
+            unselectedLabelColor: Colors.grey[400],
           ),
 
           // Tab content
@@ -378,7 +396,9 @@ class _CattleDistributionState extends State<CattleDistribution>
           ? null
           : FloatingActionButton(
               onPressed: () => setState(() => _isAssignModalVisible = true),
-              child: const Icon(Icons.link),
+              backgroundColor:
+                  Colors.blueGrey[800], // Warna latar belakang tombol
+              child: const Icon(Icons.link, color: Colors.white),
               tooltip: 'Assign Cow to Farmer',
             ),
       // Assign Cow Modal
@@ -425,7 +445,7 @@ class _CattleDistributionState extends State<CattleDistribution>
                   title: 'Assigned Cattle',
                   value: _dashboardStats['assignedCows'].toString(),
                   icon: Icons.link,
-                  color: Colors.purple,
+                  color: Colors.teal,
                 ),
                 _buildStatCard(
                   title: 'Unassigned Cattle',
@@ -791,11 +811,11 @@ class _CattleDistributionState extends State<CattleDistribution>
       height: MediaQuery.of(context).size.height * 0.6,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[900], // Latar belakang gelap
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.5), // Warna bayangan disesuaikan
             blurRadius: 10,
             spreadRadius: 1,
           ),
@@ -809,66 +829,106 @@ class _CattleDistributionState extends State<CattleDistribution>
             children: [
               const Text(
                 'Assign Cow to Farmer',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white), // Teks putih
               ),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon:
+                    const Icon(Icons.close, color: Colors.white), // Ikon putih
                 onPressed: () => setState(() => _isAssignModalVisible = false),
               ),
             ],
           ),
           const Text(
             'Select a farmer and a cow to assign them together.',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(fontSize: 14, color: Colors.white70), // Teks putih
           ),
           const SizedBox(height: 16),
           // Farmer selection
           const Text(
             'Select Farmer',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white), // Teks putih
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
+            dropdownColor: Colors.grey[800], // Warna dropdown gelap
             value: _selectedFarmerId,
             onChanged: (value) => setState(() => _selectedFarmerId = value),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              hintStyle: TextStyle(color: Colors.white70),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[700]!),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue),
+              ),
             ),
+            style: const TextStyle(color: Colors.white),
             items: _allUsers
                 .where((user) =>
                     user['role_id'] == 3) // Filter for farmers (role_id 3)
                 .map<DropdownMenuItem<int>>((user) {
               return DropdownMenuItem<int>(
                 value: user['id'],
-                child: Text(user['username']),
+                child: Text(
+                  user['username'],
+                  style: const TextStyle(color: Colors.white),
+                ),
               );
             }).toList(),
-            hint: const Text('-- Select Farmer --'),
+            hint: const Text(
+              '-- Select Farmer --',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           const SizedBox(height: 16),
           // Cow selection
           const Text(
             'Select Cow',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white), // Teks putih
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
+            dropdownColor: Colors.grey[800],
             value: _selectedCowId,
             onChanged: (value) => setState(() => _selectedCowId = value),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              hintStyle: const TextStyle(color: Colors.white70),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[700]!),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue),
+              ),
             ),
+            style: const TextStyle(color: Colors.white),
             items: _allCows.map<DropdownMenuItem<int>>((cow) {
               return DropdownMenuItem<int>(
                 value: cow['id'],
                 child: Text(
                   '${cow['name']} (${cow['breed']}, ${cow['gender']})',
+                  style: const TextStyle(color: Colors.white),
                 ),
               );
             }).toList(),
-            hint: const Text('-- Select Cow --'),
+            hint: const Text(
+              '-- Select Cow --',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           const Spacer(),
           Row(
@@ -879,8 +939,12 @@ class _CattleDistributionState extends State<CattleDistribution>
                       setState(() => _isAssignModalVisible = false),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(color: Colors.grey[600]!),
                   ),
-                  child: const Text('Cancel'),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -889,7 +953,8 @@ class _CattleDistributionState extends State<CattleDistribution>
                   onPressed: _assignCow,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundColor:
+                        Colors.blueGrey[800], // Warna latar belakang tombol"
                   ),
                   child: const Text(
                     'Assign',
@@ -908,7 +973,9 @@ class _CattleDistributionState extends State<CattleDistribution>
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
       padding: const EdgeInsets.all(16.0),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.grey[900], // Latar belakang gelap
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -917,10 +984,13 @@ class _CattleDistributionState extends State<CattleDistribution>
             children: [
               const Text(
                 'Unassigned Cattle',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white), // Teks putih
               ),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(Icons.close, color: Colors.white),
                 onPressed: () =>
                     setState(() => _isUnassignedModalVisible = false),
               ),
@@ -928,13 +998,16 @@ class _CattleDistributionState extends State<CattleDistribution>
           ),
           const Text(
             'View cattle that are currently unassigned to any farmer.',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(fontSize: 14, color: Colors.white70), // Teks putih
           ),
           const SizedBox(height: 16),
           Expanded(
             child: _unassignedCows.isEmpty
                 ? const Center(
-                    child: Text('No unassigned cattle available.'),
+                    child: Text(
+                      'No unassigned cattle available.',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   )
                 : ListView.builder(
                     itemCount: _unassignedCows.length,
@@ -950,8 +1023,14 @@ class _CattleDistributionState extends State<CattleDistribution>
                                   ? Colors.pink
                                   : Colors.blue,
                         ),
-                        title: Text(cow['name']),
-                        subtitle: Text(cow['breed']),
+                        title: Text(
+                          cow['name'],
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        subtitle: Text(
+                          cow['breed'],
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                       );
                     },
                   ),
@@ -960,7 +1039,13 @@ class _CattleDistributionState extends State<CattleDistribution>
             child: ElevatedButton(
               onPressed: () =>
                   setState(() => _isUnassignedModalVisible = false),
-              child: const Text('Close'),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+              ),
             ),
           ),
         ],

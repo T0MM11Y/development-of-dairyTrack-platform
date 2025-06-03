@@ -15,6 +15,8 @@ import {
   ProgressBar,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { getCowManagers } from "../../../controllers/cattleDistributionController";
+import { listCowsByUser } from "../../../controllers/cattleDistributionController";
 
 const lactationPhaseDescriptions = {
   Dry: "The cow is not producing milk and is in a resting phase before the next lactation cycle.",
@@ -23,6 +25,7 @@ const lactationPhaseDescriptions = {
   Mid: "The cow is in the middle stage of lactation, with milk production gradually decreasing.",
   Late: "The cow is in the late stage of lactation, with milk production significantly reduced.",
 };
+
 // Ambil user dari localStorage
 const getCurrentUser = () => {
   if (typeof localStorage !== "undefined") {
@@ -78,17 +81,32 @@ const Cows = () => {
   const [expandedCow] = useState(null);
   const [selectedGender, setSelectedGender] = useState("");
   const [selectedPhase, setSelectedPhase] = useState("");
+
   // Cek role user
   const currentUser = useMemo(() => getCurrentUser(), []);
   const isSupervisor = currentUser?.role_id === 2;
+  const isFarmer = currentUser?.role_id === 3;
 
   // Fetch cows data
   useEffect(() => {
     const fetchCows = async () => {
       try {
-        const response = await listCows();
+        let response;
+
+        // Jika user adalah farmer (role_id === 3), hanya ambil sapi yang mereka kelola
+        if (isFarmer) {
+          const userId = currentUser?.id || currentUser?.user_id;
+          if (!userId) {
+            throw new Error("User ID not found");
+          }
+          response = await listCowsByUser(userId);
+        } else {
+          // Untuk admin dan supervisor, ambil semua sapi
+          response = await listCows();
+        }
+
         if (response.success) {
-          setCows(response.cows);
+          setCows(response.cows || []);
         } else {
           Swal.fire({
             icon: "error",
@@ -97,6 +115,7 @@ const Cows = () => {
           });
         }
       } catch (error) {
+        console.error("Error fetching cows:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -107,8 +126,10 @@ const Cows = () => {
       }
     };
 
-    fetchCows();
-  }, []);
+    if (currentUser) {
+      fetchCows();
+    }
+  }, [currentUser, isFarmer]);
 
   // Calculate cow statistics
   const cowStats = useMemo(() => {
@@ -149,31 +170,76 @@ const Cows = () => {
   }, []);
 
   // Handle delete cow
-  const handleDeleteCow = useCallback(async (cowId) => {
-    const confirmResult = await Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (confirmResult.isConfirmed) {
-      const response = await deleteCow(cowId);
-      if (response.success) {
-        Swal.fire("Deleted!", response.message, "success");
-        setCows((prevCows) => prevCows.filter((cow) => cow.id !== cowId));
-      } else {
-        Swal.fire(
-          "Error!",
-          response.message || "Failed to delete cow.",
-          "error"
-        );
+  const handleDeleteCow = useCallback(
+    async (cowId) => {
+      // Farmer tidak bisa menghapus sapi
+      if (isFarmer) {
+        Swal.fire({
+          icon: "warning",
+          title: "Access Denied",
+          text: "Farmers cannot delete cows. Please contact an administrator.",
+        });
+        return;
       }
-    }
-  }, []);
+
+      // Sebelum menghapus, tampilkan daftar user yang mengelola sapi
+      const managersResponse = await getCowManagers(cowId);
+      if (managersResponse.success && managersResponse.managers.length > 0) {
+        const managerList = managersResponse.managers
+          .map((manager) => manager.username)
+          .join(", ");
+        Swal.fire({
+          title: "Cow Managers",
+          text: `This cow is managed by: ${managerList}. Are you sure you want to delete this cow?`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, delete it!",
+        }).then(async (confirmResult) => {
+          if (confirmResult.isConfirmed) {
+            const response = await deleteCow(cowId);
+            if (response.success) {
+              Swal.fire("Deleted!", response.message, "success");
+              setCows((prevCows) => prevCows.filter((cow) => cow.id !== cowId));
+            } else {
+              Swal.fire(
+                "Error!",
+                response.message || "Failed to delete cow.",
+                "error"
+              );
+            }
+          }
+        });
+      } else {
+        // Jika tidak ada manager, langsung tampilkan konfirmasi penghapusan
+        const confirmResult = await Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, delete it!",
+        });
+
+        if (confirmResult.isConfirmed) {
+          const response = await deleteCow(cowId);
+          if (response.success) {
+            Swal.fire("Deleted!", response.message, "success");
+            setCows((prevCows) => prevCows.filter((cow) => cow.id !== cowId));
+          } else {
+            Swal.fire(
+              "Error!",
+              response.message || "Failed to delete cow.",
+              "error"
+            );
+          }
+        }
+      }
+    },
+    [isFarmer]
+  );
 
   // Filter, sort, and paginate cows
   const { filteredCows, currentCows, totalPages } = useMemo(() => {
@@ -362,7 +428,7 @@ const Cows = () => {
               }}
             >
               <i className="fas fa-cow me-2"></i>
-              Cow Management
+              {isFarmer ? "My Managed Cows" : "Cow Management"}
             </h4>
             <div
               className="d-flex align-items-center"
@@ -383,7 +449,8 @@ const Cows = () => {
                 pill
                 className="fs-6 me-2"
               >
-                Total Cows: {cowStats.totalCows}
+                {isFarmer ? "My Cows: " : "Total Cows: "}
+                {cowStats.totalCows}
               </Badge>
             </div>
           </div>
@@ -555,42 +622,47 @@ const Cows = () => {
                     </option>
                   ))}
                 </select>
-                <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
-                  <button
-                    className="btn btn-success shadow-sm"
-                    onClick={exportCowsToExcel} // Menggunakan fungsi exportCowsToExcel
-                  >
-                    <i className="fas fa-file-excel me-1"></i> Excel
-                  </button>
-                </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
-                  <button
-                    className="btn btn-danger shadow-sm"
-                    onClick={exportCowsToPDF} // Menggunakan fungsi exportCowsToPDF
-                  >
-                    <i className="fas fa-file-pdf me-1"></i> PDF
-                  </button>
-                </OverlayTrigger>
-                <OverlayTrigger overlay={<Tooltip>Add New Cow</Tooltip>}>
-                  <span>
+
+                {/* Export buttons - hanya untuk admin dan supervisor */}
+                {!isFarmer && (
+                  <>
+                    <OverlayTrigger
+                      overlay={<Tooltip>Export to Excel</Tooltip>}
+                    >
+                      <button
+                        className="btn btn-success shadow-sm"
+                        onClick={exportCowsToExcel}
+                      >
+                        <i className="fas fa-file-excel me-1"></i> Excel
+                      </button>
+                    </OverlayTrigger>
+                    <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
+                      <button
+                        className="btn btn-danger shadow-sm"
+                        onClick={exportCowsToPDF}
+                      >
+                        <i className="fas fa-file-pdf me-1"></i> PDF
+                      </button>
+                    </OverlayTrigger>
+                  </>
+                )}
+
+                {/* Add cow button - hanya untuk admin */}
+                {!isSupervisor && !isFarmer && (
+                  <OverlayTrigger overlay={<Tooltip>Add New Cow</Tooltip>}>
                     <Link
                       to="/admin/add-cow"
-                      className={`btn btn-primary shadow-sm${
-                        isSupervisor ? " disabled" : ""
-                      }`}
-                      tabIndex={isSupervisor ? -1 : 0}
-                      aria-disabled={isSupervisor}
-                      onClick={(e) => {
-                        if (isSupervisor) e.preventDefault();
-                      }}
+                      className="btn btn-primary shadow-sm"
                     >
                       <i className="fas fa-plus me-1"></i> Add Cow
                     </Link>
-                  </span>
-                </OverlayTrigger>
+                  </OverlayTrigger>
+                )}
               </div>
             </div>
           </div>
+
+          {/* ...existing table code... */}
 
           <div className="table-responsive rounded-3">
             <table className="table table-hover table-bordered mb-0">
@@ -682,7 +754,6 @@ const Cows = () => {
                         className={`align-middle ${
                           expandedCow === cow.id ? "table-active" : ""
                         }`}
-                        // onClick={() => toggleExpandUser(cow.id)}
                         style={{
                           cursor: "pointer",
                           backgroundColor:
@@ -738,14 +809,18 @@ const Cows = () => {
                             >
                               <span>
                                 <button
-                                  className="btn btn-sm btn-outline-secondary border-0 me-1"
+                                  className={`btn btn-sm ${
+                                    isSupervisor || isFarmer
+                                      ? "btn-outline-secondary"
+                                      : "btn-outline-warning"
+                                  } border-0 me-1`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleEditCow(cow.id);
                                   }}
-                                  disabled={isSupervisor}
-                                  tabIndex={isSupervisor ? -1 : 0}
-                                  aria-disabled={isSupervisor}
+                                  disabled={isSupervisor || isFarmer}
+                                  tabIndex={isSupervisor || isFarmer ? -1 : 0}
+                                  aria-disabled={isSupervisor || isFarmer}
                                 >
                                   <i className="fas fa-edit"></i>
                                 </button>
@@ -756,14 +831,18 @@ const Cows = () => {
                             >
                               <span>
                                 <button
-                                  className="btn btn-sm btn-outline-secondary border-0"
+                                  className={`btn btn-sm ${
+                                    isSupervisor || isFarmer
+                                      ? "btn-outline-secondary"
+                                      : "btn-outline-danger"
+                                  } border-0`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDeleteCow(cow.id);
                                   }}
-                                  disabled={isSupervisor}
-                                  tabIndex={isSupervisor ? -1 : 0}
-                                  aria-disabled={isSupervisor}
+                                  disabled={isSupervisor || isFarmer}
+                                  tabIndex={isSupervisor || isFarmer ? -1 : 0}
+                                  aria-disabled={isSupervisor || isFarmer}
                                 >
                                   <i className="fas fa-trash-alt"></i>
                                 </button>
@@ -782,7 +861,9 @@ const Cows = () => {
                           className="fas fa-search fs-3 d-block mb-2"
                           style={{ color: "#dee2e6" }}
                         ></i>
-                        No cows found matching your search criteria
+                        {isFarmer
+                          ? "No cows assigned to you. Please contact an administrator."
+                          : "No cows found matching your search criteria"}
                       </div>
                     </td>
                   </tr>

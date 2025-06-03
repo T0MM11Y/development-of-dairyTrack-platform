@@ -4,6 +4,8 @@ import { API_URL1 } from "../../../../api/apiController";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import { Card, Spinner } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CreateUser = () => {
   const history = useHistory();
@@ -15,7 +17,7 @@ const CreateUser = () => {
     religion: "",
     role_id: "",
     password: "",
-    birth: "",
+    birth: new Date(), // Initialize birth as a Date object
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,10 @@ const CreateUser = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleBirthChange = (date) => {
+    setFormData({ ...formData, birth: date });
   };
 
   const togglePasswordVisibility = () => {
@@ -187,15 +193,33 @@ const CreateUser = () => {
                   <label htmlFor="birth" className="form-label">
                     Birth Date <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    selected={formData.birth}
+                    onChange={handleBirthChange}
+                    dateFormat="yyyy-MM-dd"
                     className="form-control"
-                    id="birth"
-                    name="birth"
-                    value={formData.birth}
-                    onChange={handleChange}
+                    placeholderText="Select your birth date"
+                    maxDate={
+                      new Date(
+                        new Date().setFullYear(new Date().getFullYear() - 10)
+                      )
+                    }
+                    showYearDropdown
+                    showMonthDropdown
+                    dropdownMode="select"
                     required
+                    style={{
+                      backgroundColor: "#f9f9f9",
+                      border: "1px solid #007bff",
+                      borderRadius: "8px",
+                      padding: "10px",
+                      fontSize: "14px",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                    }}
                   />
+                  <div className="form-text text-muted">
+                    Please select a date at least 10 years ago.
+                  </div>
                 </div>
                 <div className="col-md-6">
                   <label htmlFor="religion" className="form-label">
@@ -240,8 +264,15 @@ const CreateUser = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                    title="Please enter a valid email address"
                     required
                   />
+                  <div className="form-text text-danger">
+                    {formData.email &&
+                      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+                      "Invalid email format"}
+                  </div>
                   <div className="form-text">Valid email address</div>
                 </div>
                 <div className="col-md-6">
@@ -255,11 +286,17 @@ const CreateUser = () => {
                     name="contact"
                     value={formData.contact}
                     onChange={handleChange}
+                    pattern="^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$"
                     required
                   />
-                  <div className="form-text">
-                    Include country code if needed
+                  <div className="form-text text-danger">
+                    {formData.contact &&
+                      !/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/.test(
+                        formData.contact
+                      ) &&
+                      "Invalid phone number format"}
                   </div>
+                  <div className="form-text">Valid phone number</div>
                 </div>
               </div>
             </div>
@@ -304,6 +341,7 @@ const CreateUser = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
+                      minLength="8"
                       required
                     />
                     <button
@@ -324,7 +362,7 @@ const CreateUser = () => {
             <div className="mt-4 text-end">
               <button
                 type="submit"
-                className="btn btn-info px-4"
+                className="btn btn-primary px-4"
                 style={{ color: "white" }}
                 disabled={loading}
               >

@@ -23,54 +23,11 @@ import EditCow from "./pages/Admin/CowManagement/EditCows";
 import ListOfGallery from "./pages/Admin/HighlightsManagement/Gallery/ListOfGallery";
 import ListOfBlog from "./pages/Admin/HighlightsManagement/Blog/ListOfBlog";
 import ListMilking from "./pages/Admin/MilkProduction/ListMilking";
-import MilkTrend from "./pages/Admin/MilkProduction/MilkTrend";
-import FreshnessMilk from "./pages/Admin/MilkProduction/FreshnessMilk";
 import Blog from "./pages/Blog";
 import Gallery from "./pages/Gallery";
-import Product from "./pages/Product";
-import Order from "./pages/Order";
 import { SocketProvider } from "../socket/socket";
-// HealthCheck
-import ListHealthChecks from "./pages/Admin/HealthCheckManagement/HealthCheck/ListHealthChecks";
-import CreateHealthCheck from "./pages/Admin/HealthCheckManagement/HealthCheck/CreateHealthCheck";
-import EditHealthCheck from "./pages/Admin/HealthCheckManagement/HealthCheck/EditHealthCheck";
-
-// Symptom
-import ListSymptoms from "./pages/Admin/HealthCheckManagement/Symptom/ListSymptoms";
-import CreateSymptom from "./pages/Admin/HealthCheckManagement/Symptom/CreateSymptom";
-import EditSymptom from "./pages/Admin/HealthCheckManagement/Symptom/EditSymptom";
-
-// DiseaseHistory
-import ListDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/ListDiseaseHistory";
-import CreateDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/CreateDiseaseHistory";
-import EditDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/EditDiseaseHistory";
-
-// Reproduction
-import ListReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/ListReproduction";
-import CreateReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/CreateReproduction";
-import EditReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/EditReproduction";
-
-// HealthDashboard
-import HealthDashboard from "./pages/Admin/HealthCheckManagement/HealthDashboard/Dashboard";
-
-// Feed
-import ListFeedTypes from "./pages/Admin/FeedManagement/FeedType/ListFeedType";
-import EditFeedTypes from "./pages/Admin/FeedManagement/FeedType/EditFeedType";
-import ListNutrition from "./pages/Admin/FeedManagement/Nutrition/ListNutrition";
-import ListFeed from "./pages/Admin/FeedManagement/Feed/ListFeed";
-import EditFeed from "./pages/Admin/FeedManagement/Feed/EditFeed";
-import ListStock from "./pages/Admin/FeedManagement/FeedStock/FeedStockList";
-import ListDailyFeedSchedule from "./pages/Admin/FeedManagement/DailyFeedSchedule/ListDailyFeedSchedule";
-import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDailyFeedItem";
-import DailyFeedUsage from "./pages/Admin/FeedManagement/Grafik/DailyFeedUsage";
-import DailyNutrition from "./pages/Admin/FeedManagement/Grafik/DailyNutrition";
-// sales and financial
-import ProductType from "./pages/Admin/ProductType/listProductType";
-import ProductStock from "./pages/Admin/Product/ListProductStock";
-import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
-import SalesOrder from "./pages/Admin/Order/ListOrder";
-import Finance from "./pages/Admin/Finance/Finance";
-import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
+import CowsMilkAnalysis from "./pages/Admin/MilkProduction/Analythics/CowsMilkAnalysis";
+import MilkExpiryCheck from "./pages/Admin/MilkProduction/Analythics/MilkExpiryCheck";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -129,21 +86,13 @@ function App() {
               <Blog />
               <Footer />
             </Route>
-            <Route path="/product">
-              <Header />
-              <Product />
-              <Footer />
-            </Route>
+
             <Route path="/gallery">
               <Header />
               <Gallery />
               <Footer />
             </Route>
-            <Route path="/order">
-              <Header />
-              <Order />
-              <Footer />
-            </Route>
+
             {/* Rute untuk halaman admin - with authentication protection */}
             <ProtectedRoute path="/admin" exact>
               <AdminLayout>
@@ -205,168 +154,14 @@ function App() {
                 <ListMilking />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/milk-trend">
+            <ProtectedRoute path="/admin/cows-milk-analytics">
               <AdminLayout>
-                <MilkTrend />
+                <CowsMilkAnalysis />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/freshness-milk">
+            <ProtectedRoute path="/admin/milk-expiry-check">
               <AdminLayout>
-                <FreshnessMilk />
-              </AdminLayout>
-            </ProtectedRoute>
-
-            <ProtectedRoute path="/admin/list-feedType">
-              <AdminLayout>
-                <ListFeedTypes />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-feedType/:id">
-              <AdminLayout>
-                <ListFeedTypes />
-                <EditFeedTypes />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-nutrition">
-              <AdminLayout>
-                <ListNutrition />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-feed">
-              <AdminLayout>
-                <ListFeed />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-feed/:id">
-              <AdminLayout>
-                <ListFeed />
-                <EditFeed />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-stock">
-              <AdminLayout>
-                <ListStock />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-schedule">
-              <AdminLayout>
-                <ListDailyFeedSchedule />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-feedItem">
-              <AdminLayout>
-                <ListDailyFeedItem />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/daily-feed-usage">
-              <AdminLayout>
-                <DailyFeedUsage />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/daily-nutrition">
-              <AdminLayout>
-                <DailyNutrition />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* HealthCheck */}
-            <ProtectedRoute path="/admin/list-health-checks">
-              <AdminLayout>
-                <ListHealthChecks />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/add-health-check">
-              <AdminLayout>
-                <CreateHealthCheck />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-health-check/:id">
-              <AdminLayout>
-                <EditHealthCheck />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* Symptom */}
-            <ProtectedRoute path="/admin/list-symptoms">
-              <AdminLayout>
-                <ListSymptoms />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/add-symptom">
-              <AdminLayout>
-                <CreateSymptom />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-symptom/:id">
-              <AdminLayout>
-                <EditSymptom />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* DiseaseHistory */}
-            <ProtectedRoute path="/admin/list-disease-history">
-              <AdminLayout>
-                <ListDiseaseHistory />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/add-disease-history">
-              <AdminLayout>
-                <CreateDiseaseHistory />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-disease-history/:id">
-              <AdminLayout>
-                <EditDiseaseHistory />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* Reproduction */}
-            <ProtectedRoute path="/admin/list-reproduction">
-              <AdminLayout>
-                <ListReproduction />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/add-reproduction">
-              <AdminLayout>
-                <CreateReproduction />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-reproduction/:id">
-              <AdminLayout>
-                <EditReproduction />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* Health Dashboard */}
-            <ProtectedRoute path="/admin/health-dashboard">
-              <AdminLayout>
-                <HealthDashboard />
-              </AdminLayout>
-            </ProtectedRoute>
-            {/* Saless and Fincancial Section */}
-            <ProtectedRoute path="/admin/product-type">
-              <AdminLayout>
-                <ProductType />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/product">
-              <AdminLayout>
-                <ProductStock />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/product-history">
-              <AdminLayout>
-                <ProductHistory />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/sales">
-              <AdminLayout>
-                <SalesOrder />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/finance">
-              <AdminLayout>
-                <Finance />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/finance-record">
-              <AdminLayout>
-                <FinanceRecord />
+                <MilkExpiryCheck />
               </AdminLayout>
             </ProtectedRoute>
           </Switch>

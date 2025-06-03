@@ -189,3 +189,31 @@ export const getAllUsersAndAllCows = async () => {
     };
   }
 };
+
+export const getCowManagers = async (cowId) => {
+  try {
+    const response = await fetch(`${API_URL1}/user-cow/cow-managers/${cowId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, managers: data.managers }; // Kembalikan daftar manager
+    } else {
+      const error = await response.json();
+      return {
+        success: false,
+        message: error.error || "Failed to fetch cow managers.",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching cow managers:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching cow managers.",
+    };
+  }
+};

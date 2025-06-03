@@ -353,134 +353,96 @@ export const editMilkingSession = async (sessionId, sessionData) => {
   }
 };
 
-// Function to export daily milk summaries to PDF with optional filters
-export const exportDailySummariesToPDF = async (filters = {}) => {
+// Add these functions to your milkProductionController.js
+
+// Export PDF for cow analysis
+export const exportCowAnalysisPDF = async (cowId, startDate, endDate) => {
   try {
-    // Build query string from filters
-    const queryParams = new URLSearchParams();
-    if (filters.cow_id) queryParams.append("cow_id", filters.cow_id);
-    if (filters.start_date)
-      queryParams.append("start_date", filters.start_date);
-    if (filters.end_date) queryParams.append("end_date", filters.end_date);
+    const params = new URLSearchParams();
+    if (cowId) params.append("cow_id", cowId);
+    if (startDate) params.append("start_date", startDate);
+    if (endDate) params.append("end_date", endDate);
 
-    const queryString = queryParams.toString();
-    const url = `${API_URL1}/milk-production/export/daily-summaries/pdf${
-      queryString ? "?" + queryString : ""
-    }`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-
-      // Generate appropriate filename based on filters
-      let filename = "daily_milk_production.pdf";
-      if (filters.start_date && filters.end_date) {
-        filename = `milk_production_${filters.start_date}_to_${filters.end_date}.pdf`;
-      } else if (filters.cow_id) {
-        filename = `milk_production_cow_${filters.cow_id}.pdf`;
+    const response = await fetch(
+      `${API_URL1}/milk-production/export/daily-summaries/pdf?${params}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Daily milk summaries exported to PDF successfully.",
-      });
-      return { success: true };
-    } else {
-      const error = await response.json();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.error || "Failed to export daily milk summaries to PDF.",
-      });
-      return { success: false, message: error.error };
+    if (!response.ok) {
+      throw new Error("Failed to export PDF");
     }
+
+    // Get filename from response headers
+    const contentDisposition = response.headers.get("content-disposition");
+    const filename = contentDisposition
+      ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+      : "cow_analysis.pdf";
+
+    // Create blob and download
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, message: "PDF exported successfully" };
   } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "An error occurred while exporting daily milk summaries to PDF.",
-    });
-    console.error("Error exporting daily milk summaries to PDF:", error);
-    return { success: false, message: "Export failed" };
+    console.error("Export PDF error:", error);
+    return { success: false, error: error.message };
   }
 };
 
-// Function to export daily milk summaries to Excel with optional filters
-export const exportDailySummariesToExcel = async (filters = {}) => {
+// Export Excel for cow analysis
+export const exportCowAnalysisExcel = async (cowId, startDate, endDate) => {
   try {
-    // Build query string from filters
-    const queryParams = new URLSearchParams();
-    if (filters.cow_id) queryParams.append("cow_id", filters.cow_id);
-    if (filters.start_date)
-      queryParams.append("start_date", filters.start_date);
-    if (filters.end_date) queryParams.append("end_date", filters.end_date);
+    const params = new URLSearchParams();
+    if (cowId) params.append("cow_id", cowId);
+    if (startDate) params.append("start_date", startDate);
+    if (endDate) params.append("end_date", endDate);
 
-    const queryString = queryParams.toString();
-    const url = `${API_URL1}/milk-production/export/daily-summaries/excel${
-      queryString ? "?" + queryString : ""
-    }`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-
-      // Generate appropriate filename based on filters
-      let filename = "daily_milk_production.xlsx";
-      if (filters.start_date && filters.end_date) {
-        filename = `milk_production_${filters.start_date}_to_${filters.end_date}.xlsx`;
-      } else if (filters.cow_id) {
-        filename = `milk_production_cow_${filters.cow_id}.xlsx`;
+    const response = await fetch(
+      `${API_URL1}/milk-production/export/daily-summaries/excel?${params}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Daily milk summaries exported to Excel successfully.",
-      });
-      return { success: true };
-    } else {
-      const error = await response.json();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.error || "Failed to export daily milk summaries to Excel.",
-      });
-      return { success: false, message: error.error };
+    if (!response.ok) {
+      throw new Error("Failed to export Excel");
     }
+
+    // Get filename from response headers
+    const contentDisposition = response.headers.get("content-disposition");
+    const filename = contentDisposition
+      ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+      : "cow_analysis.xlsx";
+
+    // Create blob and download
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, message: "Excel exported successfully" };
   } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "An error occurred while exporting daily milk summaries to Excel.",
-    });
-    console.error("Error exporting daily milk summaries to Excel:", error);
-    return { success: false, message: "Export failed" };
+    console.error("Export Excel error:", error);
+    return { success: false, error: error.message };
   }
 };

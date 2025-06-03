@@ -1,0 +1,344 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:convert';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
+class NotificationService {
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
+
+  final FlutterLocalNotificationsPlugin _notifications = 
+      FlutterLocalNotificationsPlugin();
+
+  Future<void> initialize() async {
+    // Initialize timezone
+    tz.initializeTimeZones();
+
+    // Android settings
+    const AndroidInitializationSettings androidSettings = 
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    // iOS settings
+    const DarwinInitializationSettings iosSettings = 
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _onNotificationTapped,
+    );
+
+    await _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    // Request notification permissions
+    await Permission.notification.request();
+    
+    // For Android 13+ (API level 33)
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+  }
+
+  void _onNotificationTapped(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null) {
+      try {
+        final data = jsonDecode(payload);
+        // Handle notification tap based on data
+        _handleNotificationTap(data);
+      } catch (e) {
+        print('Error parsing notification payload: $e');
+      }
+    }
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    // Navigate to appropriate screen based on notification type
+    final type = data['type'];
+    final notificationId = data['notification_id'];
+    
+    // You can implement navigation logic here
+    print('Notification tapped: Type: $type, ID: $notificationId');
+  }
+
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? type,
+    Map<String, dynamic>? data,
+  }) async {
+    final notificationDetails = _getNotificationDetails(type);
+    
+    final payload = jsonEncode({
+      'notification_id': id,
+      'type': type ?? 'general',
+      'data': data ?? {},
+    });
+
+    await _notifications.show(
+      id,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  NotificationDetails _getNotificationDetails(String? type) {
+    final androidDetails = AndroidNotificationDetails(
+      'dairytrack_channel',
+      'DairyTrack Notifications',
+      channelDescription: 'Notifikasi untuk aplikasi DairyTrack',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: _getNotificationIcon(type),
+      color: _getNotificationColor(type),
+      ledColor: _getNotificationColor(type),
+      ledOnMs: 1000,
+      ledOffMs: 500,
+      enableVibration: true,
+      playSound: true,
+      showProgress: false,
+      maxProgress: 0,
+      ongoing: false,
+      autoCancel: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      badgeNumber: null,
+    );
+
+    return NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+  }
+
+  String _getNotificationIcon(String? type) {
+    switch (type) {
+      case 'milking_reminder':
+        return '@drawable/ic_milk';
+      case 'cow_health':
+        return '@drawable/ic_health';
+      case 'system_update':
+        return '@drawable/ic_update';
+      case 'milk_quality':
+        return '@drawable/ic_quality';
+      case 'warning':
+        return '@drawable/ic_warning';
+      case 'success':
+        return '@drawable/ic_success';
+      default:
+        return '@mipmap/ic_launcher';
+    }
+  }
+
+  Color _getNotificationColor(String? type) {
+    switch (type) {
+      case 'milking_reminder':
+        return Colors.blue;
+      case 'cow_health':
+        return Colors.red;
+      case 'system_update':
+        return Colors.orange;
+      case 'milk_quality':
+        return Colors.purple;
+      case 'warning':
+        return Colors.amber;
+      case 'success':
+        return Colors.green;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await _notifications.cancel(id);
+  }
+
+  Future<void> cancelAllNotifications() async {
+    await _notifications.cancelAll();
+  }
+
+  Future<void> showScheduledNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+    String? type,
+    Map<String, dynamic>? data,
+  }) async {
+    final notificationDetails = _getNotificationDetails(type);
+    
+    final payload = jsonEncode({
+      'notification_id': id,
+      'type': type ?? 'general',
+      'data': data ?? {},
+    });
+
+    await _notifications.zonedSchedule(
+      id,
+      title,
+      body,
+      tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails,
+      payload: payload,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
+  // Method untuk menampilkan notifikasi langsung dengan data custom
+  Future<void> showImmediateNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? type,
+    String? bigText,
+    Map<String, dynamic>? data,
+  }) async {
+    final androidDetails = AndroidNotificationDetails(
+      'dairytrack_channel',
+      'DairyTrack Notifications',
+      channelDescription: 'Notifikasi untuk aplikasi DairyTrack',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: _getNotificationIcon(type),
+      color: _getNotificationColor(type),
+      ledColor: _getNotificationColor(type),
+      ledOnMs: 1000,
+      ledOffMs: 500,
+      enableVibration: true,
+      playSound: true,
+      styleInformation: bigText != null 
+          ? BigTextStyleInformation(
+              bigText,
+              contentTitle: title,
+              summaryText: 'DairyTrack',
+            )
+          : null,
+      ongoing: false,
+      autoCancel: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      badgeNumber: null,
+    );
+
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final payload = jsonEncode({
+      'notification_id': id,
+      'type': type ?? 'general',
+      'data': data ?? {},
+    });
+
+    await _notifications.show(
+      id,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  // Method untuk mengecek permission notifikasi
+  Future<bool> isNotificationPermissionGranted() async {
+    final status = await Permission.notification.status;
+    return status.isGranted;
+  }
+
+  // Method untuk request permission dengan dialog custom
+  Future<bool> requestNotificationPermission() async {
+    final status = await Permission.notification.request();
+    return status.isGranted;
+  }
+
+  // Method untuk mendapatkan pending notifications
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _notifications.pendingNotificationRequests();
+  }
+
+  // Method untuk cancel notifikasi berdasarkan tag
+  Future<void> cancelNotificationsByTag(String tag) async {
+    final pendingNotifications = await getPendingNotifications();
+    for (final notification in pendingNotifications) {
+      // Jika payload mengandung tag tertentu, cancel notifikasi tersebut
+      if (notification.payload?.contains(tag) == true) {
+        await _notifications.cancel(notification.id);
+      }
+    }
+  }
+
+  // Method untuk show notification group (untuk multiple notifications)
+  Future<void> showGroupedNotification({
+    required String groupKey,
+    required List<Map<String, dynamic>> notifications,
+  }) async {
+    // Show individual notifications
+    for (int i = 0; i < notifications.length; i++) {
+      final notif = notifications[i];
+      await showNotification(
+        id: notif['id'],
+        title: notif['title'],
+        body: notif['body'],
+        type: notif['type'],
+        data: notif['data'],
+      );
+    }
+
+    // Show summary notification for group
+    const androidDetails = AndroidNotificationDetails(
+      'dairytrack_channel',
+      'DairyTrack Notifications',
+      channelDescription: 'Notifikasi untuk aplikasi DairyTrack',
+      importance: Importance.high,
+      priority: Priority.high,
+      groupKey: 'dairytrack_group',
+      setAsGroupSummary: true,
+      autoCancel: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      999999, // ID khusus untuk summary
+      'DairyTrack',
+      'Anda memiliki ${notifications.length} notifikasi baru',
+      notificationDetails,
+    );
+  }
+}

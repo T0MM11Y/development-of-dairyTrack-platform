@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../api/apiController.dart';
+import 'package:path_provider/path_provider.dart';
 
 class User {
   final int id;
@@ -40,23 +42,22 @@ class User {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'username': username,
-    'email': email,
-    'contact': contact,
-    'religion': religion,
-    'role_id': roleId,
-    'birth': birth,
-    'token': token,
-  };
+        'id': id,
+        'name': name,
+        'username': username,
+        'email': email,
+        'contact': contact,
+        'religion': religion,
+        'role_id': roleId,
+        'birth': birth,
+        'token': token,
+      };
 }
 
 class UsersManagementController {
   final String baseUrl = '$API_URL1/user';
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
 
-  // Helper method for handling API responses
   Map<String, dynamic> _handleResponse(
     http.Response response, {
     String defaultErrorMsg = 'An error occurred',
@@ -77,7 +78,6 @@ class UsersManagementController {
     }
   }
 
-  // Add new user
   Future<Map<String, dynamic>> addUser(Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('$baseUrl/add');
@@ -104,7 +104,6 @@ class UsersManagementController {
     }
   }
 
-  // Get user by ID
   Future<Map<String, dynamic>> getUserById(int userId) async {
     try {
       final url = Uri.parse('$baseUrl/$userId');
@@ -123,7 +122,6 @@ class UsersManagementController {
     }
   }
 
-  // List all users
   Future<List<User>> listUsers() async {
     try {
       final response = await http.get(
@@ -151,7 +149,6 @@ class UsersManagementController {
     }
   }
 
-  // Update user by ID
   Future<Map<String, dynamic>> updateUser(
     int userId,
     Map<String, dynamic> userData,
@@ -172,7 +169,6 @@ class UsersManagementController {
     }
   }
 
-  // Delete user by ID
   Future<Map<String, dynamic>> deleteUser(int userId) async {
     try {
       final url = Uri.parse('$baseUrl/delete/$userId');
@@ -191,7 +187,7 @@ class UsersManagementController {
     }
   }
 
-  // Export users to PDF
+  // filepath: c:\Users\t0mm11y\Documents\TA\dairytrack_mobile\lib\controller\APIURL1\usersManagementController.dart
   Future<Map<String, dynamic>> exportUsersToPDF() async {
     try {
       final response = await http.get(
@@ -200,7 +196,15 @@ class UsersManagementController {
       );
 
       if (response.statusCode == 200) {
-        return {'success': true, 'pdf': response.bodyBytes};
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/users_export.pdf';
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes); // Save the file
+
+        return {
+          'success': true,
+          'filePath': filePath,
+        };
       } else {
         return {
           'success': false,
@@ -213,7 +217,6 @@ class UsersManagementController {
     }
   }
 
-  // Export users to Excel
   Future<Map<String, dynamic>> exportUsersToExcel() async {
     try {
       final response = await http.get(
@@ -222,7 +225,14 @@ class UsersManagementController {
       );
 
       if (response.statusCode == 200) {
-        return {'success': true, 'excel': response.bodyBytes};
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/users_export.xlsx';
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes); // Save the file
+        return {
+          'success': true,
+          'filePath': filePath,
+        };
       } else {
         return {
           'success': false,
@@ -235,7 +245,6 @@ class UsersManagementController {
     }
   }
 
-  // Get all farmers
   Future<Map<String, dynamic>> getAllFarmers() async {
     try {
       final response = await http.get(
@@ -251,7 +260,6 @@ class UsersManagementController {
     }
   }
 
-  // Reset password
   Future<Map<String, dynamic>> resetPassword(int userId) async {
     try {
       final url = Uri.parse('$baseUrl/reset-password/$userId');
@@ -265,7 +273,6 @@ class UsersManagementController {
     }
   }
 
-  // Change password
   Future<Map<String, dynamic>> changePassword(
     int userId,
     String oldPassword,

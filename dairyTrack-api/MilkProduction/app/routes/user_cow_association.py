@@ -121,13 +121,15 @@ def get_farmers_with_cows():
                 "breed": cow.breed,
                 "lactation_phase": cow.lactation_phase,
                 "weight": cow.weight,
-                "gender": cow.gender
+                "gender": cow.gender,
+                "farmerName": farmer.name if hasattr(farmer, 'name') and farmer.name else farmer.username  # Tambahkan farmerName
             } for cow in cows]
 
             farmers_cows_list.append({
                 "user": {
                     "id": farmer.id,
                     "username": farmer.username,
+                    "name": farmer.name if hasattr(farmer, 'name') else None,  # Tambahkan name juga
                     "email": farmer.email,
                     "contact": farmer.contact,
                     "religion": farmer.religion,
@@ -181,3 +183,30 @@ def get_all_users_and_all_cows():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@user_cow_bp.route('/cow-managers/<int:cow_id>', methods=['GET'])
+def get_cow_managers(cow_id):
+    """
+    Mendapatkan daftar user yang mengelola sapi tertentu.
+    """
+    try:
+        # Cari sapi
+        cow = Cow.query.get(cow_id)
+        if not cow:
+            return jsonify({"error": "Cow not found"}), 404
+
+        # Ambil daftar user yang mengelola sapi
+        users = cow.managers.all()
+        users_list = [{
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "contact": user.contact,
+            "religion": user.religion,
+            "role_id": user.role_id,
+            "token": user.token
+        } for user in users]
+
+        return jsonify({"cow_id": cow_id, "managers": users_list}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

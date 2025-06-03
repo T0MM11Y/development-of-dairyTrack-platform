@@ -130,6 +130,37 @@ class CowManagementController {
     }
   }
 
+// Add this method to CattleDistributionController
+  Future<Map<String, dynamic>> listCowsByUser(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/user-cow/list/$userId'),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'cows': (data['cows'] as List)
+              .map((cowData) => Cow.fromJson(cowData))
+              .toList()
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['error'] ?? 'Failed to fetch user cows',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'An error occurred: $e',
+      };
+    }
+  }
+
   // List all cows
   Future<List<Cow>> listCows() async {
     try {

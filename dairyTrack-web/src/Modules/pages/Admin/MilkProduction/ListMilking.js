@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import { listCows } from "../../../../Modules/controllers/cowsController";
-import { listCowsByUser } from "../../../../Modules/controllers/cattleDistributionController";
+import {
+  listCowsByUser,
+  getCowManagers,
+} from "../../../../Modules/controllers/cattleDistributionController";
 import { getAllFarmers } from "../../../../Modules/controllers/usersController";
 
 import {
@@ -35,6 +38,8 @@ const ListMilking = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [availableFarmersForCow, setAvailableFarmersForCow] = useState([]);
+  const [loadingFarmers, setLoadingFarmers] = useState(false);
   const [userManagedCows, setUserManagedCows] = useState([]);
   const [farmers, setFarmers] = useState([]);
 
@@ -81,7 +86,58 @@ const ListMilking = () => {
       String(date.getDate()).padStart(2, "0")
     );
   }
+  const fetchFarmersForCow = useCallback(
+    async (cowId) => {
+      if (!cowId || currentUser?.role_id !== 1) {
+        setAvailableFarmersForCow([]);
+        return;
+      }
 
+      setLoadingFarmers(true);
+      try {
+        const response = await getCowManagers(cowId);
+        if (response.success) {
+          setAvailableFarmersForCow(response.managers || []);
+        } else {
+          console.error("Error fetching farmers for cow:", response.message);
+          setAvailableFarmersForCow([]);
+        }
+      } catch (err) {
+        console.error("Error fetching farmers for cow:", err);
+        setAvailableFarmersForCow([]);
+      } finally {
+        setLoadingFarmers(false);
+      }
+    },
+    [currentUser]
+  );
+
+  const handleCowSelectionInAdd = (cowId) => {
+    setNewSession({
+      ...newSession,
+      cow_id: cowId,
+      milker_id: "", // Reset milker selection
+    });
+
+    // Fetch farmers for selected cow if admin
+    if (currentUser?.role_id === 1) {
+      fetchFarmersForCow(cowId);
+    }
+  };
+
+  // Handle cow selection in edit modal
+  const handleCowSelectionInEdit = (cowId) => {
+    setSelectedSession({
+      ...selectedSession,
+      cow_id: cowId,
+      milker_id: "", // Reset milker selection
+    });
+
+    // Fetch farmers for selected cow if admin
+    if (currentUser?.role_id === 1) {
+      fetchFarmersForCow(cowId);
+    }
+  };
   // Convert timestamp to local date string for filtering
   const getSessionLocalDate = useCallback((timestamp) => {
     const date = new Date(timestamp);
@@ -95,10 +151,23 @@ const ListMilking = () => {
       const userData = JSON.parse(localStorage.getItem("user"));
       if (userData) {
         setCurrentUser(userData);
+
+        // Debug logging
+        console.log("ListMilking - User data:", userData);
+
+        // Use consistent property name - prefer 'id' over 'user_id'
+        const userId = userData.id || userData.user_id;
+        console.log("ListMilking - User ID:", userId);
+        console.log("ListMilking - Role ID:", userData.role_id);
+
+        // Admin (role_id === 1) bisa pilih milker, farmer otomatis pakai user_id mereka
+        const milkerId = userData.role_id === 1 ? "" : String(userId || "");
         setNewSession((prev) => ({
           ...prev,
-          milker_id: userData.user_id || userData.id || "",
+          milker_id: milkerId,
         }));
+
+        console.log("Initial milker_id set to:", milkerId);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -107,11 +176,13 @@ const ListMilking = () => {
 
   // Fetch user's managed cows
   useEffect(() => {
-    if (!currentUser?.user_id) return;
+    // Use consistent property name
+    const userId = currentUser?.id || currentUser?.user_id;
+    if (!userId) return;
 
     const fetchUserManagedCows = async () => {
       try {
-        const { success, cows } = await listCowsByUser(currentUser.user_id);
+        const { success, cows } = await listCowsByUser(userId);
         if (success && cows) {
           setUserManagedCows(cows);
         }
@@ -223,28 +294,100 @@ const ListMilking = () => {
     return { uniqueCows: cows, uniqueMilkers: milkers };
   }, [sessions]);
 
-  // Calculate milk statistics
+  // Update the milkStats calculation with the same enhanced search
   const milkStats = useMemo(() => {
-    // Base stats
-    const totalVolume = sessions.reduce(
+    // Start with all sessions or filtered by user role
+    let baseSessions = sessions;
+
+    // Filter sessions for farmers (non-admin users)
+    if (currentUser?.role_id !== 1 && userManagedCows.length > 0) {
+      const managedCowIds = userManagedCows.map((cow) => String(cow.id));
+      baseSessions = baseSessions.filter((session) =>
+        managedCowIds.includes(String(session.cow_id))
+      );
+    }
+
+    // Apply current filters to base sessions
+    let filteredSessions = baseSessions.filter((session) => {
+      // Enhanced search term - same logic as above
+      const matchesSearch =
+        !searchTerm ||
+        (() => {
+          const searchLower = searchTerm.toLowerCase().trim();
+
+          const sessionDate = new Date(session.milking_time);
+          const dateString = format(sessionDate, "yyyy-MM-dd");
+          const timeString = format(sessionDate, "HH:mm");
+          const fullDateTimeString = format(sessionDate, "yyyy-MM-dd HH:mm");
+
+          const hours = sessionDate.getHours();
+          let timePeriod = "";
+          if (hours < 12) timePeriod = "morning";
+          else if (hours < 18) timePeriod = "afternoon";
+          else timePeriod = "evening";
+
+          const searchFields = [
+            session.cow_name?.toLowerCase() || "",
+            session.milker_name?.toLowerCase() || "",
+            String(session.cow_id),
+            String(session.milker_id),
+            String(session.id),
+            String(session.volume),
+            String(parseFloat(session.volume || 0).toFixed(1)),
+            String(parseFloat(session.volume || 0).toFixed(2)),
+            String(Math.round(parseFloat(session.volume || 0))),
+            session.notes?.toLowerCase() || "",
+            dateString,
+            timeString,
+            fullDateTimeString,
+            timePeriod,
+            format(sessionDate, "dd/MM/yyyy"),
+            format(sessionDate, "MM/dd/yyyy"),
+            format(sessionDate, "dd-MM-yyyy"),
+            format(sessionDate, "MM-dd-yyyy"),
+            format(sessionDate, "yyyy/MM/dd"),
+            format(sessionDate, "MMMM yyyy").toLowerCase(),
+            format(sessionDate, "MMM yyyy").toLowerCase(),
+            format(sessionDate, "MMMM").toLowerCase(),
+            format(sessionDate, "MMM").toLowerCase(),
+            format(sessionDate, "yyyy"),
+            format(sessionDate, "EEEE").toLowerCase(),
+            format(sessionDate, "EEE").toLowerCase(),
+            format(sessionDate, "h:mm a").toLowerCase(),
+            format(sessionDate, "HH:mm"),
+            `${session.volume}l`,
+            `${session.volume} l`,
+            `${session.volume}liters`,
+            `${session.volume} liters`,
+            `${session.volume}liter`,
+            `${session.volume} liter`,
+          ];
+
+          return searchFields.some((field) => field.includes(searchLower));
+        })();
+
+      // Filter selects
+      const matchesCow = selectedCow
+        ? String(session.cow_id) === selectedCow
+        : true;
+      const matchesMilker = selectedMilker
+        ? String(session.milker_id) === selectedMilker
+        : true;
+
+      // Date filter with local date handling
+      const matchesDate = selectedDate
+        ? getSessionLocalDate(session.milking_time) === selectedDate
+        : true;
+
+      return matchesSearch && matchesCow && matchesMilker && matchesDate;
+    });
+
+    // Calculate statistics for filtered data
+    const totalVolume = filteredSessions.reduce(
       (sum, session) => sum + parseFloat(session.volume || 0),
       0
     );
-    const totalSessions = sessions.length;
-
-    // Filter sessions for farmers
-    const filteredSessions =
-      currentUser?.role_id !== 1
-        ? sessions.filter((session) =>
-            userManagedCows.some((cow) => cow.id === session.cow_id)
-          )
-        : sessions;
-
-    // Total volume for filtered data
-    const filteredVolume = filteredSessions.reduce(
-      (sum, session) => sum + parseFloat(session.volume || 0),
-      0
-    );
+    const totalSessions = filteredSessions.length;
 
     // Today's filtered sessions using local date
     const filteredTodaySessions = filteredSessions.filter(
@@ -256,28 +399,57 @@ const ListMilking = () => {
       0
     );
 
+    // Base statistics (unfiltered, but respecting user role)
+    const baseVolume = baseSessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
+    );
+    const baseTotalSessions = baseSessions.length;
+
+    const baseTodaySessions = baseSessions.filter(
+      (session) => getSessionLocalDate(session.milking_time) === today
+    );
+    const baseTodayVolume = baseTodaySessions.reduce(
+      (sum, session) => sum + parseFloat(session.volume || 0),
+      0
+    );
+
     return {
+      // Filtered statistics (shown when filters are active)
       totalVolume: totalVolume.toFixed(2),
       totalSessions,
-      todayVolume: todayVolume.toFixed(2),
-      todaySessions: todaySessions.length,
+      todayVolume: filteredTodayVolume.toFixed(2),
+      todaySessions: filteredTodaySessions.length,
       avgVolumePerSession: totalSessions
         ? (totalVolume / totalSessions).toFixed(2)
         : "0.00",
-      filteredSessions: filteredSessions.length,
-      filteredVolume: filteredVolume.toFixed(2),
-      filteredTodayVolume: filteredTodayVolume.toFixed(2),
-      filteredAvgVolumePerSession: filteredSessions.length
-        ? (filteredVolume / filteredSessions.length).toFixed(2)
+
+      // Base statistics (shown when no filters are active)
+      baseTotalVolume: baseVolume.toFixed(2),
+      baseTotalSessions,
+      baseTodayVolume: baseTodayVolume.toFixed(2),
+      baseTodaySessions: baseTodaySessions.length,
+      baseAvgVolumePerSession: baseTotalSessions
+        ? (baseVolume / baseTotalSessions).toFixed(2)
         : "0.00",
+
+      // Check if filters are active
+      hasActiveFilters: !!(
+        searchTerm ||
+        selectedCow ||
+        selectedMilker ||
+        selectedDate
+      ),
     };
   }, [
     sessions,
     currentUser,
     userManagedCows,
     today,
-    todayVolume,
-    todaySessions,
+    searchTerm,
+    selectedCow,
+    selectedMilker,
+    selectedDate,
     getSessionLocalDate,
   ]);
 
@@ -296,15 +468,83 @@ const ListMilking = () => {
 
     // Apply search and filter logic
     filteredSessions = filteredSessions.filter((session) => {
-      // Search term
+      // Enhanced search term - search across multiple fields
       const matchesSearch =
-        (session.cow_name?.toLowerCase() || "").includes(
-          searchTerm.toLowerCase()
-        ) ||
-        (session.milker_name?.toLowerCase() || "").includes(
-          searchTerm.toLowerCase()
-        ) ||
-        String(session.volume).includes(searchTerm);
+        !searchTerm ||
+        (() => {
+          const searchLower = searchTerm.toLowerCase().trim();
+
+          // Convert session date to searchable format
+          const sessionDate = new Date(session.milking_time);
+          const dateString = format(sessionDate, "yyyy-MM-dd");
+          const timeString = format(sessionDate, "HH:mm");
+          const fullDateTimeString = format(sessionDate, "yyyy-MM-dd HH:mm");
+
+          // Get time period
+          const hours = sessionDate.getHours();
+          let timePeriod = "";
+          if (hours < 12) timePeriod = "morning";
+          else if (hours < 18) timePeriod = "afternoon";
+          else timePeriod = "evening";
+
+          // Search in various fields
+          const searchFields = [
+            // Basic info
+            session.cow_name?.toLowerCase() || "",
+            session.milker_name?.toLowerCase() || "",
+            String(session.cow_id),
+            String(session.milker_id),
+            String(session.id),
+
+            // Volume - search with and without decimals
+            String(session.volume),
+            String(parseFloat(session.volume || 0).toFixed(1)),
+            String(parseFloat(session.volume || 0).toFixed(2)),
+            String(Math.round(parseFloat(session.volume || 0))),
+
+            // Notes
+            session.notes?.toLowerCase() || "",
+
+            // Date and time in various formats
+            dateString,
+            timeString,
+            fullDateTimeString,
+            timePeriod,
+
+            // Alternative date formats
+            format(sessionDate, "dd/MM/yyyy"),
+            format(sessionDate, "MM/dd/yyyy"),
+            format(sessionDate, "dd-MM-yyyy"),
+            format(sessionDate, "MM-dd-yyyy"),
+            format(sessionDate, "yyyy/MM/dd"),
+
+            // Month and year
+            format(sessionDate, "MMMM yyyy").toLowerCase(),
+            format(sessionDate, "MMM yyyy").toLowerCase(),
+            format(sessionDate, "MMMM").toLowerCase(),
+            format(sessionDate, "MMM").toLowerCase(),
+            format(sessionDate, "yyyy"),
+
+            // Day of week
+            format(sessionDate, "EEEE").toLowerCase(),
+            format(sessionDate, "EEE").toLowerCase(),
+
+            // Time formats
+            format(sessionDate, "h:mm a").toLowerCase(),
+            format(sessionDate, "HH:mm"),
+
+            // Volume with unit
+            `${session.volume}l`,
+            `${session.volume} l`,
+            `${session.volume}liters`,
+            `${session.volume} liters`,
+            `${session.volume}liter`,
+            `${session.volume} liter`,
+          ];
+
+          // Check if search term matches any field
+          return searchFields.some((field) => field.includes(searchLower));
+        })();
 
       // Filter selects
       const matchesCow = selectedCow
@@ -356,11 +596,9 @@ const ListMilking = () => {
     userManagedCows,
     getSessionLocalDate,
   ]);
-
   // Check if user is a supervisor
   const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]);
 
-  // ========== EVENT HANDLERS ==========
   // Handle deletion of a milking session
   const handleDeleteSession = useCallback(async (sessionId) => {
     try {
@@ -372,40 +610,64 @@ const ListMilking = () => {
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
         confirmButtonText: "Yes, delete it!",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
       });
 
       if (result.isConfirmed) {
         const response = await deleteMilkingSession(sessionId);
+
         if (response.success) {
-          Swal.fire(
-            "Deleted!",
-            "The milking session has been deleted.",
-            "success"
-          );
           // Refresh sessions
           const sessionsResponse = await getMilkingSessions();
           if (sessionsResponse.success && sessionsResponse.sessions) {
             setSessions(sessionsResponse.sessions);
           }
+
+          // Show success toast
+          Swal.fire({
+            title: "Deleted!",
+            text: "The milking session has been deleted successfully.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
         } else {
-          Swal.fire(
-            "Error",
-            response.message || "Failed to delete session",
-            "error"
-          );
+          await Swal.fire({
+            title: "Error",
+            text: response.message || "Failed to delete session",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
         }
       }
     } catch (error) {
       console.error("Error deleting session:", error);
-      Swal.fire("Error", "An unexpected error occurred", "error");
+      await Swal.fire({
+        title: "Error",
+        text: "An unexpected error occurred while deleting the session",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     }
   }, []);
 
   // Open add modal with pre-filled data
   const handleOpenAddModal = useCallback(() => {
+    // Use consistent property name
+    const userId = currentUser?.id || currentUser?.user_id;
+
+    // Admin bisa pilih milker, farmer otomatis pakai user_id mereka
+    const milkerId = currentUser?.role_id === 1 ? "" : String(userId || "");
+
+    console.log("Opening add modal - User role:", currentUser?.role_id);
+    console.log("Setting milker_id to:", milkerId);
+
     setNewSession({
       cow_id: "",
-      milker_id: currentUser?.user_id || "",
+      milker_id: milkerId,
       volume: "",
       milking_time: getLocalDateTime(),
       notes: "",
@@ -417,26 +679,74 @@ const ListMilking = () => {
   const handleAddSession = async (e) => {
     e.preventDefault();
 
+    // Enhanced debug logging
+    console.log("=== ADD SESSION DEBUG ===");
+    console.log("Current user:", currentUser);
+    console.log("User role_id:", currentUser?.role_id);
+
+    // Use consistent property name
+    const userId = currentUser?.id || currentUser?.user_id;
+    console.log("User ID:", userId);
+
+    // Validation - ensure milker_id is not empty
+    let finalMilkerId = newSession.milker_id;
+
+    // If admin and no milker selected, show error
+    if (currentUser?.role_id === 1 && !finalMilkerId) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Milker",
+        text: "Please select a milker for this session.",
+      });
+      return;
+    }
+
+    // If farmer and milker_id is empty, use their own ID
+    if (currentUser?.role_id !== 1 && !finalMilkerId) {
+      finalMilkerId = String(userId || "");
+    }
+
+    // Final validation - milker_id must not be empty
+    if (!finalMilkerId) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Milker ID",
+        text: "Unable to determine milker ID. Please try again.",
+      });
+      return;
+    }
+
+    console.log("Final milker_id:", finalMilkerId);
+
     // Add creator info to notes
     const creatorInfo = currentUser
-      ? `Created by: ${currentUser.name} (Role: ${
-          currentUser.role_id === 1 ? "Admin" : "Farmer"
-        })`
+      ? `Created by: ${currentUser.name || currentUser.username} (Role: ${
+          currentUser.role_id === 1
+            ? "Admin"
+            : currentUser.role_id === 2
+            ? "Supervisor"
+            : "Farmer"
+        }, ID: ${userId})`
       : "Created by: Unknown";
 
     // Create session data with creator info
     const sessionData = {
       ...newSession,
+      milker_id: finalMilkerId, // Use the validated milker_id
       volume: parseFloat(newSession.volume),
       notes: newSession.notes
         ? `${newSession.notes}\n\n${creatorInfo}`
         : creatorInfo,
     };
 
+    console.log("Final session data:", sessionData);
+    console.log("=== END DEBUG ===");
+
     try {
       const response = await addMilkingSession(sessionData);
 
       if (response.success) {
+        console.log("Milking session added successfully");
         Swal.fire({
           icon: "success",
           title: "Success",
@@ -452,10 +762,12 @@ const ListMilking = () => {
         }
 
         setShowAddModal(false);
-        // Reset form
+        // Reset form with appropriate milker_id
+        const resetMilkerId =
+          currentUser?.role_id === 1 ? "" : String(userId || "");
         setNewSession({
           cow_id: "",
-          milker_id: currentUser?.user_id || "",
+          milker_id: resetMilkerId,
           volume: "",
           milking_time: getLocalDateTime(),
           notes: "",
@@ -722,17 +1034,59 @@ const ListMilking = () => {
 
           {/* Stats Cards */}
           <Row className="mb-4">
+            {/* Filter indicator */}
+            {milkStats.hasActiveFilters && (
+              <Col xs={12} className="mb-3">
+                <div
+                  className="alert alert-info d-flex align-items-center"
+                  role="alert"
+                >
+                  <i className="fas fa-filter me-2"></i>
+                  <span className="me-2">
+                    Statistics are filtered based on current search and filter
+                    criteria.
+                  </span>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedCow("");
+                      setSelectedMilker("");
+                      setSelectedDate("");
+                    }}
+                  >
+                    <i className="fas fa-times me-1"></i> Clear All Filters
+                  </Button>
+                </div>
+              </Col>
+            )}
+
             <Col md={3}>
               <Card className="bg-primary text-white mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 className="card-title mb-0">Total Sessions</h6>
+                      <h6 className="card-title mb-0">
+                        {milkStats.hasActiveFilters ? "Filtered " : ""}Total
+                        Sessions
+                      </h6>
                       <h2 className="mt-2 mb-0">
-                        {currentUser?.role_id === 1
+                        {milkStats.hasActiveFilters
                           ? milkStats.totalSessions
-                          : milkStats.filteredSessions}
+                          : currentUser?.role_id === 1
+                          ? milkStats.baseTotalSessions
+                          : milkStats.totalSessions}
                       </h2>
+                      {milkStats.hasActiveFilters && (
+                        <small className="text-light opacity-75">
+                          of{" "}
+                          {currentUser?.role_id === 1
+                            ? milkStats.baseTotalSessions
+                            : milkStats.baseTotalSessions}{" "}
+                          total
+                        </small>
+                      )}
                     </div>
                     <div>
                       <i className="fas fa-calendar-check fa-3x opacity-50"></i>
@@ -741,17 +1095,32 @@ const ListMilking = () => {
                 </Card.Body>
               </Card>
             </Col>
+
             <Col md={3}>
               <Card className="bg-success text-white mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 className="card-title mb-0">Total Volume</h6>
+                      <h6 className="card-title mb-0">
+                        {milkStats.hasActiveFilters ? "Filtered " : ""}Total
+                        Volume
+                      </h6>
                       <h2 className="mt-2 mb-0">
-                        {currentUser?.role_id === 1
+                        {milkStats.hasActiveFilters
                           ? `${milkStats.totalVolume} L`
-                          : `${milkStats.filteredVolume} L`}
+                          : currentUser?.role_id === 1
+                          ? `${milkStats.baseTotalVolume} L`
+                          : `${milkStats.totalVolume} L`}
                       </h2>
+                      {milkStats.hasActiveFilters && (
+                        <small className="text-light opacity-75">
+                          of{" "}
+                          {currentUser?.role_id === 1
+                            ? milkStats.baseTotalVolume
+                            : milkStats.baseTotalVolume}{" "}
+                          L total
+                        </small>
+                      )}
                     </div>
                     <div>
                       <i className="fas fa-fill-drip fa-3x opacity-50"></i>
@@ -760,17 +1129,32 @@ const ListMilking = () => {
                 </Card.Body>
               </Card>
             </Col>
+
             <Col md={3}>
               <Card className="bg-info text-white mb-3 shadow-sm">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 className="card-title mb-0">Today's Volume</h6>
+                      <h6 className="card-title mb-0">
+                        {milkStats.hasActiveFilters ? "Filtered " : ""}Today's
+                        Volume
+                      </h6>
                       <h2 className="mt-2 mb-0">
-                        {currentUser?.role_id === 1
+                        {milkStats.hasActiveFilters
                           ? `${milkStats.todayVolume} L`
-                          : `${milkStats.filteredTodayVolume} L`}
+                          : currentUser?.role_id === 1
+                          ? `${milkStats.baseTodayVolume} L`
+                          : `${milkStats.todayVolume} L`}
                       </h2>
+                      {milkStats.hasActiveFilters && (
+                        <small className="text-light opacity-75">
+                          of{" "}
+                          {currentUser?.role_id === 1
+                            ? milkStats.baseTodayVolume
+                            : milkStats.baseTodayVolume}{" "}
+                          L today
+                        </small>
+                      )}
                     </div>
                     <div>
                       <i className="fas fa-glass fa-3x opacity-50"></i>
@@ -779,17 +1163,32 @@ const ListMilking = () => {
                 </Card.Body>
               </Card>
             </Col>
+
             <Col md={3}>
               <Card className="bg-warning text-dark mb-3 shadow-sm opacity-75">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 className="card-title mb-0">Avg Volume/Session</h6>
+                      <h6 className="card-title mb-0">
+                        {milkStats.hasActiveFilters ? "Filtered " : ""}Avg
+                        Volume/Session
+                      </h6>
                       <h2 className="mt-2 mb-0">
-                        {currentUser?.role_id === 1
+                        {milkStats.hasActiveFilters
                           ? `${milkStats.avgVolumePerSession} L`
-                          : `${milkStats.filteredAvgVolumePerSession} L`}
+                          : currentUser?.role_id === 1
+                          ? `${milkStats.baseAvgVolumePerSession} L`
+                          : `${milkStats.avgVolumePerSession} L`}
                       </h2>
+                      {milkStats.hasActiveFilters && (
+                        <small className="text-dark opacity-75">
+                          base avg:{" "}
+                          {currentUser?.role_id === 1
+                            ? milkStats.baseAvgVolumePerSession
+                            : milkStats.baseAvgVolumePerSession}{" "}
+                          L
+                        </small>
+                      )}
                     </div>
                     <div>
                       <i className="fas fa-chart-line fa-3x opacity-50"></i>
@@ -808,7 +1207,7 @@ const ListMilking = () => {
                   <i className="fas fa-search" />
                 </InputGroup.Text>
                 <FormControl
-                  placeholder="Search by cow, milker, etc..."
+                  placeholder="Search by cow, milker, date, time, volume, notes..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -820,10 +1219,23 @@ const ListMilking = () => {
                     variant="outline-secondary"
                     onClick={() => setSearchTerm("")}
                   >
-                    <i className="bi bi-x-lg" />
+                    <i className="fas fa-times" />
                   </Button>
                 )}
               </InputGroup>
+
+              {/* Add search help text */}
+              {searchTerm && (
+                <Form.Text
+                  className="text-muted d-block mb-2"
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  <i className="fas fa-lightbulb me-1"></i>
+                  Search tips: Try cow names, dates (2024-01-15), times
+                  (morning/afternoon/evening), volumes (5.5L), or any notes. Use
+                  formats like "Jan 2024", "Monday", "15:30", etc.
+                </Form.Text>
+              )}
             </Col>
             <Col md={6} lg={3}>
               <Form.Group className="mb-3">
@@ -1212,7 +1624,6 @@ const ListMilking = () => {
           )}
         </Card.Body>
       </Card>
-
       {/* View Milking Session Modal */}
       <Modal
         show={showViewModal}
@@ -1317,7 +1728,7 @@ const ListMilking = () => {
         <Modal.Header closeButton className="bg-light">
           <Modal.Title>
             <i className="fas fa-plus-circle me-2 text-primary"></i>
-            Add New Milking Session
+            Tambah Sesi Pemerahan Baru
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1325,16 +1736,14 @@ const ListMilking = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Cow</Form.Label>
+                  <Form.Label>Sapi</Form.Label>
                   <Form.Select
                     value={newSession.cow_id}
-                    onChange={(e) =>
-                      setNewSession({ ...newSession, cow_id: e.target.value })
-                    }
+                    onChange={(e) => handleCowSelectionInAdd(e.target.value)}
                     required
                     className="shadow-sm"
                   >
-                    <option value="">-- Select Cow --</option>
+                    <option value="">-- Pilih Sapi --</option>
                     {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                       .filter((cow) => cow.gender?.toLowerCase() === "female")
                       .map((cow) => (
@@ -1346,10 +1755,12 @@ const ListMilking = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Milker</Form.Label>
+                  <Form.Label>Pemerah</Form.Label>
                   {currentUser?.role_id === 1 ? (
+                    // Admin bisa memilih milker dari daftar farmers yang mengelola cow yang dipilih
                     <Form.Select
                       value={newSession.milker_id}
                       onChange={(e) =>
@@ -1359,32 +1770,61 @@ const ListMilking = () => {
                         })
                       }
                       required
+                      disabled={!newSession.cow_id || loadingFarmers}
+                      className={!newSession.cow_id ? "bg-light" : ""}
                     >
-                      <option value="">-- Select Milker --</option>
-                      {farmers.map((farmer) => (
-                        <option key={farmer.user_id} value={farmer.user_id}>
-                          {farmer.name} (ID: {farmer.user_id})
+                      <option value="">
+                        {!newSession.cow_id
+                          ? "-- Pilih Sapi Terlebih Dahulu --"
+                          : loadingFarmers
+                          ? "-- Memuat Peternak --"
+                          : "-- Pilih Pemerah --"}
+                      </option>
+                      {availableFarmersForCow.map((farmer) => (
+                        <option key={farmer.user_id} value={farmer.id}>
+                          {farmer.name || farmer.username} (ID:{" "}
+                          {farmer.user_id || farmer.id})
                         </option>
                       ))}
                     </Form.Select>
                   ) : (
+                    // Farmer hanya bisa menggunakan ID mereka sendiri
                     <>
                       <Form.Control
                         type="text"
                         value={
                           currentUser
-                            ? `${currentUser.name} (ID: ${currentUser.user_id})`
+                            ? `${
+                                currentUser.name || currentUser.username
+                              } (ID: ${currentUser.id || currentUser.user_id})`
                             : ""
                         }
                         disabled
                         className="bg-light"
                       />
-                      <Form.Control
-                        type="hidden"
-                        value={newSession.milker_id}
-                      />
+                      <Form.Text className="text-muted">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Anda otomatis diatur sebagai pemerah untuk sesi ini
+                      </Form.Text>
                     </>
                   )}
+                  {currentUser?.role_id === 1 && !newSession.cow_id && (
+                    <Form.Text className="text-muted">
+                      <i className="fas fa-info-circle me-1"></i>
+                      Silakan pilih sapi terlebih dahulu untuk melihat peternak
+                      yang tersedia
+                    </Form.Text>
+                  )}
+                  {currentUser?.role_id === 1 &&
+                    newSession.cow_id &&
+                    availableFarmersForCow.length === 0 &&
+                    !loadingFarmers && (
+                      <Form.Text className="text-warning">
+                        <i className="fas fa-exclamation-triangle me-1"></i>
+                        Tidak ada peternak yang ditugaskan untuk mengelola sapi
+                        ini
+                      </Form.Text>
+                    )}
                 </Form.Group>
               </Col>
             </Row>
@@ -1392,49 +1832,517 @@ const ListMilking = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Volume (Liters)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Enter milk volume in liters"
-                    value={newSession.volume}
-                    onChange={(e) =>
-                      setNewSession({ ...newSession, volume: e.target.value })
-                    }
-                    required
-                  />
+                  <Form.Label>
+                    <i className="fas fa-tint me-2 text-success"></i>
+                    Volume (Liter)
+                  </Form.Label>
+
+                  {/* Volume Input */}
+                  <div className="mb-2">
+                    <Form.Control
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="50"
+                      placeholder="Masukkan volume susu dalam liter"
+                      value={newSession.volume}
+                      onChange={(e) =>
+                        setNewSession({ ...newSession, volume: e.target.value })
+                      }
+                      required
+                      className="shadow-sm"
+                    />
+                  </div>
+
+                  {/* Quick Volume Buttons */}
+                  <div className="mb-2">
+                    <Form.Label className="form-label-sm text-muted">
+                      Volume Cepat:
+                    </Form.Label>
+                    <div className="d-flex gap-1 flex-wrap">
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "3.0",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        3.0L
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "5.0",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        5.0L
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "7.5",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        7.5L
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "10.0",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        10.0L
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "15.0",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        15.0L
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setNewSession({
+                            ...newSession,
+                            volume: "20.0",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                      >
+                        <i className="fas fa-plus me-1"></i>
+                        20.0L
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Volume Info Display */}
+                  {newSession.volume && (
+                    <div className="mt-2 p-2 bg-light rounded">
+                      <small className="text-muted">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Volume terpilih:{" "}
+                        <strong>
+                          {parseFloat(newSession.volume || 0).toFixed(1)} Liter
+                        </strong>
+                        {(() => {
+                          const vol = parseFloat(newSession.volume || 0);
+                          if (vol < 3) return " (Volume Rendah)";
+                          if (vol <= 10) return " (Volume Normal)";
+                          if (vol <= 20) return " (Volume Tinggi)";
+                          return " (Volume Sangat Tinggi)";
+                        })()}
+                      </small>
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Milking Time</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={newSession.milking_time}
-                    onChange={(e) =>
-                      setNewSession({
-                        ...newSession,
-                        milking_time: e.target.value,
-                      })
-                    }
-                    required
-                  />
+                  <Form.Label>
+                    <i className="fas fa-calendar-alt me-2 text-primary"></i>
+                    Waktu Pemerahan
+                  </Form.Label>
+
+                  {/* Date Input */}
+                  <div className="mb-2">
+                    <Form.Label className="form-label-sm text-muted">
+                      Tanggal:
+                    </Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={newSession.milking_time.split("T")[0]}
+                      onChange={(e) => {
+                        const currentTime =
+                          newSession.milking_time.split("T")[1] || "06:00";
+                        setNewSession({
+                          ...newSession,
+                          milking_time: `${e.target.value}T${currentTime}`,
+                        });
+                      }}
+                      required
+                      className="shadow-sm"
+                    />
+                  </div>
+
+                  {/* Time Input with Quick Buttons */}
+                  <div>
+                    <Form.Label className="form-label-sm text-muted">
+                      Waktu:
+                    </Form.Label>
+                    <div className="d-flex gap-2 mb-2">
+                      <Form.Control
+                        type="time"
+                        value={newSession.milking_time.split("T")[1] || "06:00"}
+                        onChange={(e) => {
+                          const currentDate =
+                            newSession.milking_time.split("T")[0];
+                          setNewSession({
+                            ...newSession,
+                            milking_time: `${currentDate}T${e.target.value}`,
+                          });
+                        }}
+                        required
+                        className="shadow-sm"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+
+                    {/* Quick Time Buttons */}
+                    <div className="d-flex gap-1 flex-wrap mb-2">
+                      <Button
+                        variant="outline-warning"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          const currentDate =
+                            newSession.milking_time.split("T")[0];
+                          setNewSession({
+                            ...newSession,
+                            milking_time: `${currentDate}T06:00`,
+                          });
+                        }}
+                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                      >
+                        <i className="fas fa-sun me-1"></i>
+                        Pagi (06:00)
+                      </Button>
+                      <Button
+                        variant="outline-info"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          const currentDate =
+                            newSession.milking_time.split("T")[0];
+                          setNewSession({
+                            ...newSession,
+                            milking_time: `${currentDate}T14:00`,
+                          });
+                        }}
+                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                      >
+                        <i className="fas fa-cloud-sun me-1"></i>
+                        Siang (14:00)
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          const currentDate =
+                            newSession.milking_time.split("T")[0];
+                          setNewSession({
+                            ...newSession,
+                            milking_time: `${currentDate}T18:00`,
+                          });
+                        }}
+                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                      >
+                        <i className="fas fa-moon me-1"></i>
+                        Sore (18:00)
+                      </Button>
+                    </div>
+
+                    {/* Current Selection Display */}
+                    <div className="mt-2 p-2 bg-light rounded">
+                      <small className="text-muted">
+                        <i className="fas fa-clock me-1"></i>
+                        Dipilih:{" "}
+                        {(() => {
+                          const date = new Date(newSession.milking_time);
+                          const options = {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Asia/Jakarta",
+                          };
+                          return date.toLocaleDateString("id-ID", options);
+                        })()}
+                      </small>
+                    </div>
+                  </div>
                 </Form.Group>
               </Col>
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Notes</Form.Label>
+              <Form.Label>
+                <i className="fas fa-sticky-note me-2 text-secondary"></i>
+                Catatan
+              </Form.Label>
+
+              {/* Quick Notes Pills */}
+              <div className="mb-3">
+                <Form.Label className="form-label-sm text-muted mb-2">
+                  Catatan Cepat:
+                </Form.Label>
+                <div className="d-flex gap-1 flex-wrap">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Sapi dalam kondisi sehat dan produktif";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-heart-pulse me-1"></i>
+                    Kondisi Sehat
+                  </Button>
+
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Produksi susu normal sesuai target";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-check-circle me-1"></i>
+                    Produksi Normal
+                  </Button>
+
+                  <Button
+                    variant="outline-info"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText =
+                        "Pemerahan berjalan lancar tanpa hambatan";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-clock me-1"></i>
+                    Pemerahan Lancar
+                  </Button>
+
+                  <Button
+                    variant="outline-warning"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Perlu perhatian khusus pada sapi ini";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-exclamation-triangle me-1"></i>
+                    Perlu Perhatian
+                  </Button>
+
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Kualitas susu baik dan segar";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-thumbs-up me-1"></i>
+                    Kualitas Baik
+                  </Button>
+
+                  <Button
+                    variant="outline-dark"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Sapi tampak stress atau gelisah";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-tired me-1"></i>
+                    Sapi Stress
+                  </Button>
+
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText = "Volume produksi menurun dari biasanya";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-arrow-down me-1"></i>
+                    Produksi Menurun
+                  </Button>
+
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      const noteText =
+                        "Peralatan pemerahan berfungsi dengan baik";
+                      setNewSession({
+                        ...newSession,
+                        notes: newSession.notes
+                          ? `${newSession.notes}\n${noteText}`
+                          : noteText,
+                      });
+                    }}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "4px 8px",
+                      borderRadius: "15px",
+                    }}
+                  >
+                    <i className="fas fa-tools me-1"></i>
+                    Peralatan OK
+                  </Button>
+                </div>
+
+                {/* Clear Notes Button */}
+                {newSession.notes && (
+                  <div className="mt-2">
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        setNewSession({
+                          ...newSession,
+                          notes: "",
+                        });
+                      }}
+                      style={{ fontSize: "0.7rem", padding: "4px 8px" }}
+                    >
+                      <i className="fas fa-trash me-1"></i>
+                      Hapus Semua Catatan
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               <Form.Control
                 as="textarea"
-                rows={3}
-                placeholder="Enter any notes about this milking session"
+                rows={4}
+                placeholder="Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas..."
                 value={newSession.notes}
                 onChange={(e) =>
                   setNewSession({ ...newSession, notes: e.target.value })
                 }
+                className="shadow-sm"
               />
+
+              {newSession.notes && (
+                <Form.Text className="text-muted">
+                  <i className="fas fa-info-circle me-1"></i>
+                  Karakter: {newSession.notes.length}
+                </Form.Text>
+              )}
             </Form.Group>
 
             <div className="d-flex justify-content-end">
@@ -1443,16 +2351,15 @@ const ListMilking = () => {
                 className="me-2"
                 onClick={() => setShowAddModal(false)}
               >
-                Cancel
+                Batal
               </Button>
               <Button variant="primary" type="submit">
-                Add Milking Session
+                Tambah Sesi Pemerahan
               </Button>
             </div>
           </Form>
         </Modal.Body>
       </Modal>
-
       {/* Edit Milking Session Modal */}
       <Modal
         show={showEditModal}
@@ -1462,7 +2369,7 @@ const ListMilking = () => {
         <Modal.Header closeButton className="bg-light">
           <Modal.Title>
             <i className="fas fa-edit me-2 text-primary"></i>
-            Edit Milking Session
+            Edit Sesi Pemerahan
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1471,18 +2378,14 @@ const ListMilking = () => {
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Cow</Form.Label>
+                    <Form.Label>Sapi</Form.Label>
                     <Form.Select
                       value={String(selectedSession.cow_id)}
-                      onChange={(e) =>
-                        setSelectedSession({
-                          ...selectedSession,
-                          cow_id: e.target.value,
-                        })
-                      }
+                      onChange={(e) => handleCowSelectionInEdit(e.target.value)}
                       required
+                      className="shadow-sm"
                     >
-                      <option value="">-- Select Cow --</option>
+                      <option value="">-- Pilih Sapi --</option>
                       {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                         .filter((cow) => cow.gender?.toLowerCase() === "female")
                         .map((cow) => (
@@ -1496,7 +2399,7 @@ const ListMilking = () => {
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Milker</Form.Label>
+                    <Form.Label>Pemerah</Form.Label>
                     {currentUser?.role_id === 1 ? (
                       <Form.Select
                         value={selectedSession.milker_id}
@@ -1507,9 +2410,21 @@ const ListMilking = () => {
                           })
                         }
                         required
+                        disabled={!selectedSession.cow_id || loadingFarmers}
+                        className={
+                          !selectedSession.cow_id
+                            ? "bg-light shadow-sm"
+                            : "shadow-sm"
+                        }
                       >
-                        <option value="">-- Select Milker --</option>
-                        {farmers.map((farmer) => (
+                        <option value="">
+                          {!selectedSession.cow_id
+                            ? "-- Pilih Sapi Terlebih Dahulu --"
+                            : loadingFarmers
+                            ? "-- Memuat Peternak --"
+                            : "-- Pilih Pemerah --"}
+                        </option>
+                        {availableFarmersForCow.map((farmer) => (
                           <option key={farmer.user_id} value={farmer.user_id}>
                             {farmer.name} (ID: {farmer.user_id})
                           </option>
@@ -1521,16 +2436,20 @@ const ListMilking = () => {
                           type="text"
                           value={
                             currentUser
-                              ? `${currentUser.name} (ID: ${currentUser.user_id})`
+                              ? `${
+                                  currentUser.name || currentUser.username
+                                } (ID: ${
+                                  currentUser.user_id || currentUser.id
+                                })`
                               : ""
                           }
                           disabled
-                          className="bg-light"
+                          className="bg-light shadow-sm"
                         />
-                        <Form.Control
-                          type="hidden"
-                          value={selectedSession.milker_id}
-                        />
+                        <Form.Text className="text-muted">
+                          <i className="fas fa-info-circle me-1"></i>
+                          Pemerah tidak dapat diubah untuk sesi Anda sendiri
+                        </Form.Text>
                       </>
                     )}
                   </Form.Group>
@@ -1540,47 +2459,514 @@ const ListMilking = () => {
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Volume (Liters)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Enter milk volume in liters"
-                      value={selectedSession.volume}
-                      onChange={(e) =>
-                        setSelectedSession({
-                          ...selectedSession,
-                          volume: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <Form.Label>
+                      <i className="fas fa-tint me-2 text-success"></i>
+                      Volume (Liter)
+                    </Form.Label>
+
+                    {/* Volume Input */}
+                    <div className="mb-2">
+                      <Form.Control
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        placeholder="Masukkan volume susu dalam liter"
+                        value={selectedSession.volume}
+                        onChange={(e) =>
+                          setSelectedSession({
+                            ...selectedSession,
+                            volume: e.target.value,
+                          })
+                        }
+                        required
+                        className="shadow-sm"
+                      />
+                    </div>
+
+                    {/* Quick Volume Buttons */}
+                    <div className="mb-2">
+                      <Form.Label className="form-label-sm text-muted">
+                        Volume Cepat:
+                      </Form.Label>
+                      <div className="d-flex gap-1 flex-wrap">
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "3.0",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          3.0L
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "5.0",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          5.0L
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "7.5",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          7.5L
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "10.0",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          10.0L
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "15.0",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          15.0L
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setSelectedSession({
+                              ...selectedSession,
+                              volume: "20.0",
+                            });
+                          }}
+                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                        >
+                          <i className="fas fa-plus me-1"></i>
+                          20.0L
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Volume Info Display */}
+                    {selectedSession.volume && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <small className="text-muted">
+                          <i className="fas fa-info-circle me-1"></i>
+                          Volume terpilih:{" "}
+                          <strong>
+                            {parseFloat(selectedSession.volume || 0).toFixed(1)}{" "}
+                            Liter
+                          </strong>
+                          {(() => {
+                            const vol = parseFloat(selectedSession.volume || 0);
+                            if (vol < 3) return " (Volume Rendah)";
+                            if (vol <= 10) return " (Volume Normal)";
+                            if (vol <= 20) return " (Volume Tinggi)";
+                            return " (Volume Sangat Tinggi)";
+                          })()}
+                        </small>
+                      </div>
+                    )}
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Milking Time</Form.Label>
-                    <Form.Control
-                      type="datetime-local"
-                      value={selectedSession.milking_time}
-                      onChange={(e) =>
-                        setSelectedSession({
-                          ...selectedSession,
-                          milking_time: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <Form.Label>
+                      <i className="fas fa-calendar-alt me-2 text-primary"></i>
+                      Waktu Pemerahan
+                    </Form.Label>
+
+                    {/* Date Input */}
+                    <div className="mb-2">
+                      <Form.Label className="form-label-sm text-muted">
+                        Tanggal:
+                      </Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={selectedSession.milking_time.split("T")[0]}
+                        onChange={(e) => {
+                          const currentTime =
+                            selectedSession.milking_time.split("T")[1] ||
+                            "06:00";
+                          setSelectedSession({
+                            ...selectedSession,
+                            milking_time: `${e.target.value}T${currentTime}`,
+                          });
+                        }}
+                        required
+                        className="shadow-sm"
+                      />
+                    </div>
+
+                    {/* Time Input with Quick Buttons */}
+                    <div>
+                      <Form.Label className="form-label-sm text-muted">
+                        Waktu:
+                      </Form.Label>
+                      <div className="d-flex gap-2 mb-2">
+                        <Form.Control
+                          type="time"
+                          value={
+                            selectedSession.milking_time.split("T")[1] ||
+                            "06:00"
+                          }
+                          onChange={(e) => {
+                            const currentDate =
+                              selectedSession.milking_time.split("T")[0];
+                            setSelectedSession({
+                              ...selectedSession,
+                              milking_time: `${currentDate}T${e.target.value}`,
+                            });
+                          }}
+                          required
+                          className="shadow-sm"
+                          style={{ flex: 1 }}
+                        />
+                      </div>
+
+                      {/* Quick Time Buttons */}
+                      <div className="d-flex gap-1 flex-wrap mb-2">
+                        <Button
+                          variant="outline-warning"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            const currentDate =
+                              selectedSession.milking_time.split("T")[0];
+                            setSelectedSession({
+                              ...selectedSession,
+                              milking_time: `${currentDate}T06:00`,
+                            });
+                          }}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        >
+                          <i className="fas fa-sun me-1"></i>
+                          Pagi (06:00)
+                        </Button>
+                        <Button
+                          variant="outline-info"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            const currentDate =
+                              selectedSession.milking_time.split("T")[0];
+                            setSelectedSession({
+                              ...selectedSession,
+                              milking_time: `${currentDate}T14:00`,
+                            });
+                          }}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        >
+                          <i className="fas fa-cloud-sun me-1"></i>
+                          Siang (14:00)
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            const currentDate =
+                              selectedSession.milking_time.split("T")[0];
+                            setSelectedSession({
+                              ...selectedSession,
+                              milking_time: `${currentDate}T18:00`,
+                            });
+                          }}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        >
+                          <i className="fas fa-moon me-1"></i>
+                          Sore (18:00)
+                        </Button>
+                      </div>
+
+                      {/* Current Selection Display */}
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <small className="text-muted">
+                          <i className="fas fa-clock me-1"></i>
+                          Dipilih:{" "}
+                          {(() => {
+                            const date = new Date(selectedSession.milking_time);
+                            const options = {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              timeZone: "Asia/Jakarta",
+                            };
+                            return date.toLocaleDateString("id-ID", options);
+                          })()}
+                        </small>
+                      </div>
+                    </div>
                   </Form.Group>
                 </Col>
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Notes</Form.Label>
+                <Form.Label>
+                  <i className="fas fa-sticky-note me-2 text-secondary"></i>
+                  Catatan
+                </Form.Label>
+
+                {/* Quick Notes Pills */}
+                <div className="mb-3">
+                  <Form.Label className="form-label-sm text-muted mb-2">
+                    Catatan Cepat:
+                  </Form.Label>
+                  <div className="d-flex gap-1 flex-wrap">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText =
+                          "Sapi dalam kondisi sehat dan produktif";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-heart-pulse me-1"></i>
+                      Kondisi Sehat
+                    </Button>
+
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText = "Produksi susu normal sesuai target";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-check-circle me-1"></i>
+                      Produksi Normal
+                    </Button>
+
+                    <Button
+                      variant="outline-info"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText =
+                          "Pemerahan berjalan lancar tanpa hambatan";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-clock me-1"></i>
+                      Pemerahan Lancar
+                    </Button>
+
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText = "Perlu perhatian khusus pada sapi ini";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-exclamation-triangle me-1"></i>
+                      Perlu Perhatian
+                    </Button>
+
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText = "Kualitas susu baik dan segar";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-thumbs-up me-1"></i>
+                      Kualitas Baik
+                    </Button>
+
+                    <Button
+                      variant="outline-dark"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText = "Sapi tampak stress atau gelisah";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-tired me-1"></i>
+                      Sapi Stress
+                    </Button>
+
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText =
+                          "Volume produksi menurun dari biasanya";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-arrow-down me-1"></i>
+                      Produksi Menurun
+                    </Button>
+
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        const noteText =
+                          "Peralatan pemerahan berfungsi dengan baik";
+                        setSelectedSession({
+                          ...selectedSession,
+                          notes: selectedSession.notes
+                            ? `${selectedSession.notes}\n${noteText}`
+                            : noteText,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                    >
+                      <i className="fas fa-tools me-1"></i>
+                      Peralatan OK
+                    </Button>
+                  </div>
+
+                  {/* Clear Notes Button */}
+                  {selectedSession.notes && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setSelectedSession({
+                            ...selectedSession,
+                            notes: "",
+                          });
+                        }}
+                        style={{ fontSize: "0.7rem", padding: "4px 8px" }}
+                      >
+                        <i className="fas fa-trash me-1"></i>
+                        Hapus Semua Catatan
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <Form.Control
                   as="textarea"
-                  rows={3}
-                  placeholder="Enter any notes about this milking session"
+                  rows={4}
+                  placeholder="Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas..."
                   value={selectedSession.notes || ""}
                   onChange={(e) =>
                     setSelectedSession({
@@ -1588,7 +2974,15 @@ const ListMilking = () => {
                       notes: e.target.value,
                     })
                   }
+                  className="shadow-sm"
                 />
+
+                {selectedSession.notes && (
+                  <Form.Text className="text-muted">
+                    <i className="fas fa-info-circle me-1"></i>
+                    Karakter: {selectedSession.notes.length}
+                  </Form.Text>
+                )}
               </Form.Group>
 
               <div className="d-flex justify-content-end">
@@ -1597,10 +2991,10 @@ const ListMilking = () => {
                   className="me-2"
                   onClick={() => setShowEditModal(false)}
                 >
-                  Cancel
+                  Batal
                 </Button>
                 <Button variant="primary" type="submit">
-                  Save Changes
+                  Simpan Perubahan
                 </Button>
               </div>
             </Form>

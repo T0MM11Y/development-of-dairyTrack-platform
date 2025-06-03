@@ -26,6 +26,15 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
   String _password = ''; // Added password field
   bool _obscurePassword = true; // Track password visibility
 
+  // Original values to compare changes
+  String _originalName = '';
+  String _originalUsername = '';
+  String _originalEmail = '';
+  String _originalContact = '';
+  String _originalReligion = '';
+  int _originalRoleId = 2;
+  DateTime? _originalBirth;
+
   @override
   void initState() {
     super.initState();
@@ -36,20 +45,62 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
       _contact = widget.user!.contact;
       _religion = widget.user!.religion;
       _roleId = widget.user!.roleId;
+
+      // Store original values
+      _originalName = widget.user!.name;
+      _originalUsername = widget.user!.username;
+      _originalEmail = widget.user!.email;
+      _originalContact = widget.user!.contact;
+      _originalReligion = widget.user!.religion;
+      _originalRoleId = widget.user!.roleId;
+
       if (widget.user!.birth != null) {
         try {
           _birth = DateFormat('yyyy-MM-dd').parse(widget.user!.birth!);
+          _originalBirth = _birth;
         } catch (e) {
           try {
             _birth = DateFormat(
               "EEE, dd MMM yyyy HH:mm:ss 'GMT'",
             ).parse(widget.user!.birth!);
+            _originalBirth = _birth;
           } catch (e) {
             _birth = null;
+            _originalBirth = null;
           }
         }
       }
     }
+  }
+
+  // Function to check if there are any changes
+  bool _hasChanges() {
+    // For new users, always allow saving if form is not empty
+    if (widget.user == null) {
+      return _name.isNotEmpty ||
+          _username.isNotEmpty ||
+          _email.isNotEmpty ||
+          _contact.isNotEmpty ||
+          _religion.isNotEmpty ||
+          _password.isNotEmpty ||
+          _birth != null;
+    }
+
+    // For existing users, check if any field has changed
+    return _name != _originalName ||
+        _username != _originalUsername ||
+        _email != _originalEmail ||
+        _contact != _originalContact ||
+        _religion != _originalReligion ||
+        _roleId != _originalRoleId ||
+        _birth != _originalBirth;
+  }
+
+  // Function to update field and check for changes
+  void _updateField() {
+    setState(() {
+      // This will trigger a rebuild and re-evaluate _hasChanges()
+    });
   }
 
   @override
@@ -87,16 +138,20 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                       labelText: 'Name',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person),
-                      hintText: 'Enter the user\'s full name',
+                      hintText: 'Enter the full name',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter the user\'s name';
+                        return 'Please enter the name';
                       }
                       if (value.length < 3) {
                         return 'Name must be at least 3 characters';
                       }
                       return null;
+                    },
+                    onChanged: (value) {
+                      _name = value;
+                      _updateField();
                     },
                     onSaved: (value) => _name = value!,
                   ),
@@ -120,6 +175,10 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                         return 'Username can only contain letters, numbers, and underscores';
                       }
                       return null;
+                    },
+                    onChanged: (value) {
+                      _username = value;
+                      _updateField();
                     },
                     onSaved: (value) => _username = value!,
                   ),
@@ -146,6 +205,10 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                       }
                       return null;
                     },
+                    onChanged: (value) {
+                      _email = value;
+                      _updateField();
+                    },
                     onSaved: (value) => _email = value!,
                   ),
                   SizedBox(height: 20),
@@ -169,6 +232,10 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                         return 'Contact number must be between 10 and 12 digits';
                       }
                       return null;
+                    },
+                    onChanged: (value) {
+                      _contact = value;
+                      _updateField();
                     },
                     onSaved: (value) => _contact = value!,
                   ),
@@ -204,15 +271,12 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                       ),
                     ],
                     onChanged: (value) {
-                      setState(() {
-                        _religion = value!;
-                      });
+                      _religion = value!;
+                      _updateField();
                     },
-                    validator:
-                        (value) =>
-                            value == null || value.isEmpty
-                                ? 'Please select a religion'
-                                : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Please select a religion'
+                        : null,
                     onSaved: (value) => _religion = value!,
                   ),
                   SizedBox(height: 20),
@@ -225,19 +289,17 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                         lastDate: DateTime.now(),
                       );
                       if (pickedDate != null) {
-                        setState(() {
-                          _birth = pickedDate;
-                        });
+                        _birth = pickedDate;
+                        _updateField();
                       }
                     },
                     child: InputDecorator(
                       decoration: InputDecoration(
                         labelText: 'Birth Date',
                         border: OutlineInputBorder(),
-                        hintText:
-                            _birth == null
-                                ? 'Select Birth Date'
-                                : DateFormat('yyyy-MM-dd').format(_birth!),
+                        hintText: _birth == null
+                            ? 'Select Birth Date'
+                            : DateFormat('yyyy-MM-dd').format(_birth!),
                         prefixIcon: Icon(Icons.calendar_today),
                       ),
                       child: Row(
@@ -267,13 +329,11 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                       DropdownMenuItem(child: Text('Farmer'), value: 3),
                     ],
                     onChanged: (value) {
-                      setState(() {
-                        _roleId = value!;
-                      });
+                      _roleId = value!;
+                      _updateField();
                     },
-                    validator:
-                        (value) =>
-                            value == null ? 'Please select a role' : null,
+                    validator: (value) =>
+                        value == null ? 'Please select a role' : null,
                     onSaved: (value) => _roleId = value!,
                   ),
                   SizedBox(height: 20),
@@ -304,9 +364,13 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                           return 'Please enter a password';
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return 'Password must be at least 8 characters';
                         }
                         return null;
+                      },
+                      onChanged: (value) {
+                        _password = value;
+                        _updateField();
                       },
                       onSaved: (value) => _password = value!,
                     ),
@@ -314,120 +378,220 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                   SizedBox(height: 30),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey[800],
+                      backgroundColor: _hasChanges() && !_isLoading
+                          ? Colors.blueGrey[800]
+                          : Colors.grey[400],
                       padding: EdgeInsets.symmetric(vertical: 15),
                       textStyle: TextStyle(fontSize: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : () async {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
+                    onPressed: (_isLoading || !_hasChanges())
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              _formKey.currentState!.save();
 
-                                setState(() {
-                                  _isLoading = true;
-                                });
-
-                                try {
-                                  final birthDateFormatted =
-                                      _birth != null
-                                          ? DateFormat(
-                                            'yyyy-MM-dd',
-                                          ).format(_birth!)
-                                          : null;
-
-                                  final userData = {
-                                    'name': _name,
-                                    'username': _username,
-                                    'email': _email,
-                                    'contact': _contact,
-                                    'religion': _religion,
-                                    'role_id': _roleId,
-                                    'birth': birthDateFormatted,
-                                    if (widget.user == null)
-                                      'password':
-                                          _password, // Include password only for new users
-                                  };
-
-                                  Map<String, dynamic> response;
-                                  if (widget.user == null) {
-                                    response = await _userController.addUser(
-                                      userData,
-                                    );
-                                  } else {
-                                    response = await _userController.updateUser(
-                                      widget.user!.id,
-                                      userData,
-                                    );
-                                  }
-
-                                  if (response['success']) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          widget.user == null
-                                              ? 'User added successfully!'
-                                              : 'User updated successfully!',
-                                        ),
-                                        backgroundColor: Colors.green,
+                              // Tampilkan confirmation dialog
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor:
+                                      Colors.grey[900], // Dark background
+                                  title: const Text(
+                                    "Confirm Save",
+                                    style: TextStyle(
+                                        color: Colors.white), // White text
+                                  ),
+                                  content: Text(
+                                    widget.user == null
+                                        ? "Are you sure you want to save this new user?"
+                                        : "Are you sure you want to update this user's information?",
+                                    style: const TextStyle(
+                                        color: Colors.white70), // Dimmed text
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text(
+                                        "Cancel",
+                                        style: TextStyle(
+                                            color: Colors
+                                                .redAccent), // Red for cancel
                                       ),
-                                    );
-                                    Navigator.pop(
-                                      context,
-                                      true,
-                                    ); // Navigate back to the list
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          response['message'] ??
-                                              (widget.user == null
-                                                  ? 'Failed to add user.'
-                                                  : 'Failed to update user.'),
-                                        ),
-                                        backgroundColor: Colors.red,
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text(
+                                        "Confirm",
+                                        style: TextStyle(
+                                            color:
+                                                Colors.amber), // Accent color
                                       ),
-                                    );
-                                  }
-                                } catch (error) {
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm != true) {
+                                return; // Batalkan jika pengguna memilih "Cancel"
+                              }
+
+                              // Validasi tambahan
+                              String? errorMessage;
+
+                              // Validasi username
+                              final usernameRegex =
+                                  RegExp(r'^[a-zA-Z0-9._-]{3,20}$');
+                              if (!usernameRegex.hasMatch(_username)) {
+                                errorMessage =
+                                    "Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, and hyphens.";
+                              }
+
+                              // Validasi email
+                              final emailRegex =
+                                  RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                              if (!emailRegex.hasMatch(_email)) {
+                                errorMessage =
+                                    "Please enter a valid email address.";
+                              }
+
+                              // Validasi kontak
+                              final phoneRegex = RegExp(
+                                  r'^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$');
+                              if (!phoneRegex.hasMatch(_contact)) {
+                                errorMessage =
+                                    "Please enter a valid phone number.";
+                              }
+
+                              // Validasi tanggal lahir
+                              if (_birth != null) {
+                                final today = DateTime.now();
+                                final hundredYearsAgo = DateTime(
+                                    today.year - 100, today.month, today.day);
+                                final fifteenYearsAgo = DateTime(
+                                    today.year - 15, today.month, today.day);
+
+                                if (_birth!.isAfter(today)) {
+                                  errorMessage =
+                                      "Birthdate cannot be today or in the future.";
+                                } else if (_birth!.isAfter(fifteenYearsAgo)) {
+                                  errorMessage =
+                                      "User must be at least 15 years old.";
+                                } else if (_birth!.isBefore(hundredYearsAgo)) {
+                                  errorMessage =
+                                      "Birthdate cannot be more than 100 years ago.";
+                                }
+                              }
+
+                              if (errorMessage != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(errorMessage),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              try {
+                                final birthDateFormatted = _birth != null
+                                    ? DateFormat('yyyy-MM-dd').format(_birth!)
+                                    : null;
+
+                                final userData = {
+                                  'name': _name,
+                                  'username': _username,
+                                  'email': _email,
+                                  'contact': _contact,
+                                  'religion': _religion,
+                                  'role_id': _roleId,
+                                  'birth': birthDateFormatted,
+                                  if (widget.user == null)
+                                    'password':
+                                        _password, // Include password only for new users
+                                };
+
+                                Map<String, dynamic> response;
+                                if (widget.user == null) {
+                                  response =
+                                      await _userController.addUser(userData);
+                                } else {
+                                  response = await _userController.updateUser(
+                                      widget.user!.id, userData);
+                                }
+
+                                if (response['success']) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Error: $error'),
+                                      content: Text(
+                                        widget.user == null
+                                            ? 'User added successfully!'
+                                            : 'User updated successfully!',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pop(context,
+                                      true); // Navigate back to the list
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        response['message'] ??
+                                            (widget.user == null
+                                                ? 'Failed to add user.'
+                                                : 'Failed to update user.'),
+                                      ),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
-                                } finally {
-                                  setState(() {
-                                    _isLoading = false;
-                                  });
                                 }
-                              }
-                            },
-                    child:
-                        _isLoading
-                            ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
+                              } catch (error) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $error'),
+                                    backgroundColor: Colors.red,
                                   ),
+                                );
+                              } finally {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          },
+                    child: _isLoading
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
                                 ),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Saving...',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            )
-                            : Text(
-                              widget.user == null ? 'Save User' : 'Update User',
-                              style: TextStyle(color: Colors.white),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Saving...',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            widget.user == null ? 'Save User' : 'Update User',
+                            style: TextStyle(
+                              color: _hasChanges()
+                                  ? Colors.white
+                                  : Colors.grey[600],
                             ),
+                          ),
                   ),
                 ],
               ),

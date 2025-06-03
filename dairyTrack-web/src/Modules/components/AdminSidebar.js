@@ -1,11 +1,127 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
   const [userData, setUserData] = useState(null);
 
+  // Get user role for filtering
+  const userRole = userData?.role?.toLowerCase() || "";
+
+  // Define all menu items (using useMemo to avoid recreating on every render)
+  const allMenuItems = useMemo(
+    () => [
+      {
+        id: "dashboard",
+        title: "Dashboard",
+        icon: "far fa-tachometer-alt",
+        link: "/admin",
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
+      {
+        id: "users",
+        title: "User Management",
+        icon: "far fa-users",
+        submenu: [
+          {
+            id: "list-users",
+            title: "User List",
+            link: "/admin/list-users",
+          },
+          {
+            id: "add-users",
+            title: "Add New User",
+            link: "/admin/add-users",
+            showForRoles: ["admin", "farmer"],
+          },
+          {
+            id: "reset-password",
+            title: "Reset User Password",
+            link: "/admin/reset-password",
+          },
+        ],
+        showForRoles: ["admin", "supervisor"],
+      },
+      {
+        id: "cow",
+        title: "Livestock Management",
+        icon: "far fa-paw",
+        submenu: [
+          {
+            id: "list-cows",
+            title: userRole === "farmer" ? "My Livestock" : "All Livestock",
+            link: "/admin/list-cows",
+            showForRoles: ["admin", "supervisor", "farmer"],
+          },
+          {
+            id: "add-cow",
+            title: "Register New Livestock",
+            link: "/admin/add-cow",
+            showForRoles: ["admin", "supervisor"],
+          },
+        ],
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
+      {
+        id: "cattle",
+        title: "Livestock Distribution",
+        icon: "far fa-link",
+        link: "/admin/cattle-distribution",
+        showForRoles: ["admin", "supervisor"],
+      },
+      {
+        id: "milking",
+        title: "Milk Production",
+        icon: "far fa-mug-hot",
+        link: "/admin/list-milking",
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
+      {
+        id: "analytics",
+        title: "Reports & Analytics",
+        icon: "far fa-chart-line",
+        submenu: [
+          {
+            id: "cow's-milk-analytics",
+            title: "Milk Production Analytics",
+            link: "/admin/cows-milk-analytics",
+          },
+          {
+            id: "milk-expiry-check",
+            title: "Milk Quality Control",
+            link: "/admin/milk-expiry-check",
+          },
+        ],
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
+      {
+        id: "highlights",
+        title: "Content Management",
+        icon: "far fa-book-open",
+        submenu: [
+          {
+            id: "gallery",
+            title: "Photo Gallery",
+            link: "/admin/list-of-gallery",
+          },
+          {
+            id: "blog",
+            title: "Blog Articles",
+            link: "/admin/list-of-blog",
+          },
+        ],
+        showForRoles: ["admin", "supervisor"],
+      },
+    ],
+    [userRole]
+  );
+
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(
+    (item) => item.showForRoles.includes(userRole) || userRole === "admin"
+  );
+
   useEffect(() => {
-    // Pastikan localStorage tersedia
+    // Ensure localStorage is available
     if (typeof localStorage !== "undefined") {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
@@ -17,195 +133,6 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       }
     }
   }, []);
-
-  // Define all menu items
-  const allMenuItems = [
-    {
-      id: "dashboard",
-      title: "Dashboard",
-      icon: "far fa-tachometer-alt", // Ikon regular tanpa fill
-      link: "/admin",
-      showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
-    },
-    {
-      id: "users",
-      title: "Users Management",
-      icon: "far fa-users", // Ikon regular tanpa fill
-      submenu: [
-        { id: "list-users", title: "List of Users", link: "/admin/list-users" },
-        {
-          id: "add-users",
-          title: "Adding User",
-          link: "/admin/add-users",
-          showForRoles: ["admin", "farmer"],
-        },
-        {
-          id: "reset-password",
-          title: "Reset Password",
-          link: "/admin/reset-password",
-        },
-      ],
-      showForRoles: ["admin", "supervisor"], // Not visible for farmers
-    },
-    {
-      id: "cattle",
-      title: "Cattle Distribution",
-      icon: "far fa-link", // Ikon regular tanpa fill
-      link: "/admin/cattle-distribution",
-      showForRoles: ["admin", "supervisor"], // Not visible for farmers
-    },
-    {
-      id: "highlights",
-      title: "Highlights",
-      icon: "fa-book-open", // Ikon solid dengan fill
-      submenu: [
-        { id: "gallery", title: "Gallery", link: "/admin/list-of-gallery" },
-        { id: "blog", title: "Blog", link: "/admin/list-of-blog" },
-      ],
-      showForRoles: ["admin", "supervisor"], // Not visible for farmers
-    },
-    {
-      id: "cow",
-      title: "Cow Management",
-      icon: "far fa-paw", // Ikon regular tanpa fill
-      submenu: [
-        { id: "list-cows", title: "All Cows", link: "/admin/list-cows" },
-        {
-          id: "add-cow",
-          title: "Add Cow",
-          link: "/admin/add-cow",
-          showForRoles: ["admin", "farmer"],
-        },
-      ],
-      showForRoles: ["admin", "supervisor"], // Visible for farmers
-    },
-
-    {
-      id: "milking",
-      title: "Milking",
-      icon: "far fa-mug-hot", // Ikon regular tanpa fill
-      link: "/admin/list-milking",
-      showForRoles: ["admin", "supervisor", "farmer"], // Visible for all roles
-    },
-    {
-      id: "feed-management",
-      title: "Feed Management",
-      icon: "fas fa-seedling",
-      submenu: [
-        { id: "feed-type", title: "Feed Type", link: "/admin/list-feedType" },
-        {
-          id: "nutrition-type",
-          title: "Nutrition Type",
-          link: "/admin/list-nutrition",
-        },
-        { id: "feed", title: "Feed", link: "/admin/list-feed" },
-        { id: "feed-stock", title: "Feed Stock", link: "/admin/list-stock" },
-        {
-          id: "daily-feed-schedule",
-          title: "Daily Feed Schedule",
-          link: "/admin/list-schedule",
-        },
-        {
-          id: "daily-feed-item",
-          title: "Daily Feed Item",
-          link: "/admin/list-feedItem",
-        },
-        {
-          id: "daily-feed-nutrition",
-          title: "Daily Feed Nutrition",
-          link: "/admin/daily-feed-nutrition",
-        },
-      ],
-      showForRoles: ["admin", "farmer", "supervisor"],
-    },
-    {
-      id: "health-check",
-      title: "Health Check Management",
-      icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
-      submenu: [
-        {
-          id: "health-checks",
-          title: "Health Checks",
-          link: "/admin/list-health-checks",
-        },
-        { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
-        {
-          id: "disease-history",
-          title: "Disease History",
-          link: "/admin/list-disease-history",
-        },
-        {
-          id: "reproduction",
-          title: "Reproduction",
-          link: "/admin/list-reproduction",
-        },
-        {
-          id: "health-dashboard",
-          title: "Health Dashboard",
-          link: "/admin/health-dashboard",
-        },
-      ],
-      showForRoles: ["admin", "supervisor", "farmer"],
-    },
-
-    {
-      id: "analytics",
-      title: "Analytics",
-      icon: "far fa-chart-line", // Using chart icon
-      submenu: [
-        { id: "milk-trend", title: "Milk Trend", link: "/admin/milk-trend" },
-        {
-          id: "freshness-milk",
-          title: "Milk Freshness",
-          link: "/admin/freshness-milk",
-        },
-        {
-          id: "feed-trend",
-          title: "Feed Usage",
-          link: "/admin/daily-feed-usage",
-        },
-        {
-          id: "feed-trend",
-          title: "Daily Nutrition",
-          link: "/admin/daily-nutrition",
-        },
-      ],
-      showForRoles: ["admin", "supervisor", "farmer"], // Only visible for admin, supervisor, and farmer
-    },
-
-    {
-      id: "salesAndFinancial",
-      title: "Sales And Financial",
-      icon: "far fa-chart-bar", // Modified to bar chart for broader sales/finance context
-      submenu: [
-        {
-          id: "product-type",
-          title: "Product Type",
-          link: "/admin/product-type",
-        },
-        { id: "product", title: "Product", link: "/admin/product" },
-        {
-          id: "product-history",
-          title: "Product History",
-          link: "/admin/product-history",
-        },
-        { id: "sales", title: "Sales", link: "/admin/sales" },
-        { id: "finance", title: "Finance", link: "/admin/finance" },
-        {
-          id: "finance-record",
-          title: "Finance Record",
-          link: "/admin/finance-record",
-        },
-      ],
-      showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
-    },
-  ];
-
-  // Filter menu items based on user role
-  const userRole = userData?.role?.toLowerCase() || "";
-  const menuItems = allMenuItems.filter(
-    (item) => item.showForRoles.includes(userRole) || userRole === "admin" // Admin sees everything
-  );
 
   return (
     <aside className={`admin-sidebar ${collapsed ? "collapsed" : ""}`}>

@@ -87,9 +87,9 @@ def add_milking_session():
         
         db.session.commit()
         #cek evening kosong apatidak
-        if summary.evening_volume != 0 or summary.afternoon_volume != 0:
-            check_milk_production_and_notify()
-            check_milk_expiry_and_notify()
+        if summary.evening_volume == 0 or summary.afternoon_volume == 0:
+           check_milk_production_and_notify()
+           check_milk_expiry_and_notify()
 
         return jsonify({
             "success": True, 
@@ -140,6 +140,49 @@ def get_milk_batches():
         })
     
     return jsonify(result), 200
+
+# Di milk_batch_controller.py atau yang sejenisnya
+
+@milk_production_bp.route('/milk-batch/update-status/<int:batch_id>', methods=['PUT'])
+def update_batch_status(batch_id):
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        # Validasi status
+        try:
+            status_enum = MilkStatus(new_status)
+        except ValueError:
+            return jsonify({'error': 'Invalid status value'}), 400
+            
+        batch = db.session.query(MilkBatch).filter_by(id=batch_id).first()
+        if not batch:
+            return jsonify({'error': 'Batch not found'}), 404
+            
+        # Simpan status lama untuk notifikasi
+        old_status = batch.status
+        
+        # Update status batch
+        batch.status = status_enum
+        batch.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        
+        return jsonify({
+            'message': 'Batch status updated successfully',
+            'batch_id': batch_id,
+            'old_status': old_status.value if old_status else None,
+            'new_status': status_enum.value,
+            'notifications_sent': notification_count
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @milk_production_bp.route('/daily-summaries', methods=['GET'])
 def get_daily_summaries():
@@ -577,20 +620,37 @@ def export_daily_summaries_pdf():
         # Execute query and get summaries
         summaries = query.order_by(DailyMilkSummary.date.desc()).all()
         
+        # Check if cow is male (no milk production data)
+        cow_info = None
+        if cow_id and summaries:
+            cow_info = summaries[0].cow
+        elif cow_id:
+            # Get cow info even if no milk production data
+            from app.models.cows import Cow
+            cow_info = Cow.query.get(cow_id)
+        
+        # Check if this is a male cow
+        is_male_cow = cow_info and cow_info.gender and cow_info.gender.lower() == 'male'
+        
         # Create PDF
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         pdf.set_font("Arial", style="B", size=16)
-        pdf.cell(200, 10, txt="Laporan Produksi Susu Harian", ln=True, align='C')
+        
+        # Title based on cow type
+        if is_male_cow:
+            pdf.cell(200, 10, txt="Laporan Sapi Pejantan", ln=True, align='C')
+        else:
+            pdf.cell(200, 10, txt="Laporan Produksi Susu Harian", ln=True, align='C')
         pdf.ln(5)
         
         # Add filter information
         pdf.set_font("Arial", size=10)
         filter_text = "Filter: "
         if cow_id:
-            cow = summaries[0].cow.name if summaries and summaries[0].cow else f"Cow ID: {cow_id}"
-            filter_text += f"Sapi: {cow}, "
+            cow_name = cow_info.name if cow_info else f"Cow ID: {cow_id}"
+            filter_text += f"Sapi: {cow_name}, "
         if start_date:
             filter_text += f"Dari: {start_date.strftime('%Y-%m-%d')}, "
         if end_date:
@@ -604,57 +664,112 @@ def export_daily_summaries_pdf():
         pdf.cell(200, 10, txt=filter_text, ln=True, align='C')
         pdf.ln(10)
 
-        # Create table headers
-        pdf.set_fill_color(173, 216, 230)
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font("Arial", style="B", size=10)
-        pdf.cell(10, 10, "NO", border=1, align='C', fill=True)
-        pdf.cell(50, 10, "Sapi", border=1, align='C', fill=True)
-        pdf.cell(30, 10, "Tanggal", border=1, align='C', fill=True)
-        pdf.cell(25, 10, "Pagi", border=1, align='C', fill=True)
-        pdf.cell(25, 10, "Siang", border=1, align='C', fill=True)
-        pdf.cell(25, 10, "Sore", border=1, align='C', fill=True)
-        pdf.cell(25, 10, "Total", border=1, align='C', fill=True)
-        pdf.ln()
-
-        # Add data rows
-        pdf.set_font("Arial", size=10)
-        for idx, summary in enumerate(summaries, start=1):
-            cow_info = f"{summary.cow_id} - {summary.cow.name}" if summary.cow else str(summary.cow_id)
+        if is_male_cow:
+            # Special content for male cows
+            pdf.set_font("Arial", style="B", size=14)
+            pdf.cell(200, 10, txt="INFORMASI SAPI PEJANTAN", ln=True, align='C')
+            pdf.ln(10)
             
-            pdf.cell(10, 10, str(idx), border=1, align='C')
-            pdf.cell(50, 10, cow_info, border=1)
-            pdf.cell(30, 10, summary.date.strftime('%Y-%m-%d'), border=1, align='C')
-            pdf.cell(25, 10, str(round(float(summary.morning_volume or 0), 2)), border=1, align='R')
-            pdf.cell(25, 10, str(round(float(summary.afternoon_volume or 0), 2)), border=1, align='R')
-            pdf.cell(25, 10, str(round(float(summary.evening_volume or 0), 2)), border=1, align='R')
-            pdf.cell(25, 10, str(round(float(summary.total_volume or 0), 2)), border=1, align='R')
-            pdf.ln()
+            # Cow information
+            pdf.set_font("Arial", size=12)
+            pdf.cell(200, 8, txt=f"Nama Sapi: {cow_info.name}", ln=True)
+            pdf.cell(200, 8, txt=f"ID: {cow_info.id}", ln=True)
+            pdf.cell(200, 8, txt=f"Jenis Kelamin: {cow_info.gender}", ln=True)
+            pdf.cell(200, 8, txt=f"Ras: {cow_info.breed if cow_info.breed else 'N/A'}", ln=True)
+            
+            # Calculate age
+            if cow_info.birth:
+                from datetime import date
+                birth_date = cow_info.birth if isinstance(cow_info.birth, date) else cow_info.birth.date()
+                today = date.today()
+                age_years = today.year - birth_date.year
+                age_months = today.month - birth_date.month
+                if age_months < 0:
+                    age_years -= 1
+                    age_months += 12
+                age_str = f"{age_years} tahun {age_months} bulan"
+            else:
+                age_str = "N/A"
+            
+            pdf.cell(200, 8, txt=f"Umur: {age_str}", ln=True)
+            pdf.ln(10)
+            
+            # Status and function
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.cell(200, 8, txt="STATUS DAN FUNGSI:", ln=True)
+            pdf.set_font("Arial", size=11)
+            pdf.cell(200, 8, txt="• Status: Sapi Pejantan - Aktif untuk pembiakan", ln=True)
+            pdf.cell(200, 8, txt="• Fungsi Utama: Pembiakan dan pemuliaan genetik", ln=True)
+            pdf.cell(200, 8, txt="• Peran: Menghasilkan keturunan dengan genetik unggul", ln=True)
+            pdf.cell(200, 8, txt="• Tidak menghasilkan susu karena jenis kelamin jantan", ln=True)
+            pdf.ln(10)
+            
+            # Add note
+            pdf.set_font("Arial", style="I", size=10)
+            pdf.cell(200, 8, txt="Catatan: Sapi pejantan tidak diperah karena tidak menghasilkan susu.", ln=True)
+            pdf.cell(200, 8, txt="Laporan ini hanya menampilkan informasi dasar tentang sapi pejantan.", ln=True)
+            
+        else:
+            # Normal milk production table for female cows
+            if len(summaries) == 0:
+                pdf.set_font("Arial", size=12)
+                pdf.cell(200, 10, txt="Tidak ada data produksi susu untuk periode yang dipilih", ln=True, align='C')
+            else:
+                # Create table headers
+                pdf.set_fill_color(173, 216, 230)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(10, 10, "NO", border=1, align='C', fill=True)
+                pdf.cell(50, 10, "Sapi", border=1, align='C', fill=True)
+                pdf.cell(30, 10, "Tanggal", border=1, align='C', fill=True)
+                pdf.cell(25, 10, "Pagi", border=1, align='C', fill=True)
+                pdf.cell(25, 10, "Siang", border=1, align='C', fill=True)
+                pdf.cell(25, 10, "Sore", border=1, align='C', fill=True)
+                pdf.cell(25, 10, "Total", border=1, align='C', fill=True)
+                pdf.ln()
 
-        # Add totals row
-        total_morning = sum(float(s.morning_volume or 0) for s in summaries)
-        total_afternoon = sum(float(s.afternoon_volume or 0) for s in summaries)
-        total_evening = sum(float(s.evening_volume or 0) for s in summaries)
-        total_all = sum(float(s.total_volume or 0) for s in summaries)
-        
-        pdf.set_font("Arial", style="B", size=10)
-        pdf.cell(90, 10, "TOTAL", border=1, align='C', fill=True)
-        pdf.cell(25, 10, str(round(total_morning, 2)), border=1, align='R', fill=True)
-        pdf.cell(25, 10, str(round(total_afternoon, 2)), border=1, align='R', fill=True)
-        pdf.cell(25, 10, str(round(total_evening, 2)), border=1, align='R', fill=True)
-        pdf.cell(25, 10, str(round(total_all, 2)), border=1, align='R', fill=True)
+                # Add data rows
+                pdf.set_font("Arial", size=10)
+                for idx, summary in enumerate(summaries, start=1):
+                    cow_info = f"{summary.cow_id} - {summary.cow.name}" if summary.cow else str(summary.cow_id)
+                    
+                    pdf.cell(10, 10, str(idx), border=1, align='C')
+                    pdf.cell(50, 10, cow_info, border=1)
+                    pdf.cell(30, 10, summary.date.strftime('%Y-%m-%d'), border=1, align='C')
+                    pdf.cell(25, 10, str(round(float(summary.morning_volume or 0), 2)), border=1, align='R')
+                    pdf.cell(25, 10, str(round(float(summary.afternoon_volume or 0), 2)), border=1, align='R')
+                    pdf.cell(25, 10, str(round(float(summary.evening_volume or 0), 2)), border=1, align='R')
+                    pdf.cell(25, 10, str(round(float(summary.total_volume or 0), 2)), border=1, align='R')
+                    pdf.ln()
+
+                # Add totals row
+                total_morning = sum(float(s.morning_volume or 0) for s in summaries)
+                total_afternoon = sum(float(s.afternoon_volume or 0) for s in summaries)
+                total_evening = sum(float(s.evening_volume or 0) for s in summaries)
+                total_all = sum(float(s.total_volume or 0) for s in summaries)
+                
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(90, 10, "TOTAL", border=1, align='C', fill=True)
+                pdf.cell(25, 10, str(round(total_morning, 2)), border=1, align='R', fill=True)
+                pdf.cell(25, 10, str(round(total_afternoon, 2)), border=1, align='R', fill=True)
+                pdf.cell(25, 10, str(round(total_evening, 2)), border=1, align='R', fill=True)
+                pdf.cell(25, 10, str(round(total_all, 2)), border=1, align='R', fill=True)
 
         # Output PDF file
         buffer = BytesIO()
         pdf.output(buffer)
         buffer.seek(0)
         
-        filename = "daily_milk_production.pdf"
-        if start_date and end_date:
-            filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
-        elif cow_id:
-            filename = f"milk_production_cow_{cow_id}.pdf"
-            
+        # Generate filename
+        if is_male_cow:
+            filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
+        else:
+            filename = "daily_milk_production.pdf"
+            if start_date and end_date:
+                filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
+            elif cow_id:
+                filename = f"milk_production_cow_{cow_id}.pdf"
+        
         return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     
     except Exception as e:
@@ -707,80 +822,175 @@ def export_daily_summaries_excel():
         # Execute query and get summaries
         summaries = query.order_by(DailyMilkSummary.date.desc()).all()
         
-        # Prepare Excel data
-        summaries_list = []
-        for idx, summary in enumerate(summaries, start=1):
-            cow_info = f"{summary.cow_id} - {summary.cow.name}" if summary.cow else str(summary.cow_id)
-            
-            summaries_list.append({
-                "NO": idx,
-                "Sapi": cow_info,
-                "Tanggal": summary.date.strftime('%Y-%m-%d'),
-                "Produksi Pagi": float(summary.morning_volume or 0),
-                "Produksi Siang": float(summary.afternoon_volume or 0),
-                "Produksi Sore": float(summary.evening_volume or 0),
-                "Total Produksi": float(summary.total_volume or 0)
-            })
+        # Check if cow is male (no milk production data)
+        cow_info = None
+        if cow_id and summaries:
+            cow_info = summaries[0].cow
+        elif cow_id:
+            # Get cow info even if no milk production data
+            from app.models.cows import Cow
+            cow_info = Cow.query.get(cow_id)
         
-        # Add total row
-        if summaries_list:
-            total_morning = sum(float(s.morning_volume or 0) for s in summaries)
-            total_afternoon = sum(float(s.afternoon_volume or 0) for s in summaries)
-            total_evening = sum(float(s.evening_volume or 0) for s in summaries)
-            total_all = sum(float(s.total_volume or 0) for s in summaries)
-            
-            summaries_list.append({
-                "NO": "",
-                "Sapi": "TOTAL",
-                "Tanggal": "",
-                "Produksi Pagi": total_morning,
-                "Produksi Siang": total_afternoon,
-                "Produksi Sore": total_evening,
-                "Total Produksi": total_all
-            })
-
+        # Check if this is a male cow
+        is_male_cow = cow_info and cow_info.gender and cow_info.gender.lower() == 'male'
+        
         # Create DataFrame and Excel file
-        df = pd.DataFrame(summaries_list)
         buffer = BytesIO()
         
-        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='DailyMilkProduction')
-            workbook = writer.book
-            worksheet = writer.sheets['DailyMilkProduction']
+        if is_male_cow:
+            # Create special Excel for male cows
+            data = [{
+                "Informasi": "Nama Sapi",
+                "Detail": cow_info.name
+            }, {
+                "Informasi": "ID Sapi",
+                "Detail": cow_info.id
+            }, {
+                "Informasi": "Jenis Kelamin",
+                "Detail": cow_info.gender
+            }, {
+                "Informasi": "Ras",
+                "Detail": cow_info.breed if cow_info.breed else 'N/A'
+            }, {
+                "Informasi": "Status",
+                "Detail": "Sapi Pejantan - Aktif untuk pembiakan"
+            }, {
+                "Informasi": "Fungsi",
+                "Detail": "Pembiakan dan pemuliaan genetik"
+            }, {
+                "Informasi": "Catatan",
+                "Detail": "Sapi pejantan tidak menghasilkan susu"
+            }]
             
-            # Apply styling
-            from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-            header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
-            header_font = Font(bold=True)
-            total_fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
-            total_font = Font(bold=True)
+            # Add age calculation
+            if cow_info.birth:
+                from datetime import date
+                birth_date = cow_info.birth if isinstance(cow_info.birth, date) else cow_info.birth.date()
+                today = date.today()
+                age_years = today.year - birth_date.year
+                age_months = today.month - birth_date.month
+                if age_months < 0:
+                    age_years -= 1
+                    age_months += 12
+                age_str = f"{age_years} tahun {age_months} bulan"
+                data.insert(4, {
+                    "Informasi": "Umur",
+                    "Detail": age_str
+                })
             
-            # Style headers
-            for cell in worksheet[1]:
-                cell.fill = header_fill
-                cell.font = header_font
-                cell.alignment = Alignment(horizontal='center', vertical='center')
+            df = pd.DataFrame(data)
             
-            # Style totals row if it exists
-            if len(summaries_list) > 1:
-                for cell in worksheet[len(summaries_list) + 1]:  # +1 for header row
-                    cell.fill = total_fill
-                    cell.font = total_font
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='InformasiPejantan')
+                workbook = writer.book
+                worksheet = writer.sheets['InformasiPejantan']
+                
+                # Apply styling
+                from openpyxl.styles import Font, PatternFill, Alignment
+                header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
+                header_font = Font(bold=True)
+                
+                # Style headers
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Auto-adjust column widths
+                for column_cells in worksheet.columns:
+                    max_length = max(len(str(cell.value) or "") for cell in column_cells)
+                    adjusted_width = max_length + 2
+                    worksheet.column_dimensions[column_cells[0].column_letter].width = adjusted_width
+        else:
+            # Normal Excel for female cows with milk production data
+            summaries_list = []
             
-            # Auto-adjust column widths
-            for column_cells in worksheet.columns:
-                max_length = max(len(str(cell.value) or "") for cell in column_cells)
-                adjusted_width = max_length + 2
-                worksheet.column_dimensions[column_cells[0].column_letter].width = adjusted_width
+            if len(summaries) == 0:
+                # Create empty data message
+                summaries_list.append({
+                    "NO": "",
+                    "Sapi": "Tidak ada data",
+                    "Tanggal": "",
+                    "Produksi Pagi": 0,
+                    "Produksi Siang": 0,
+                    "Produksi Sore": 0,
+                    "Total Produksi": 0
+                })
+            else:
+                for idx, summary in enumerate(summaries, start=1):
+                    cow_info = f"{summary.cow_id} - {summary.cow.name}" if summary.cow else str(summary.cow_id)
+                    
+                    summaries_list.append({
+                        "NO": idx,
+                        "Sapi": cow_info,
+                        "Tanggal": summary.date.strftime('%Y-%m-%d'),
+                        "Produksi Pagi": float(summary.morning_volume or 0),
+                        "Produksi Siang": float(summary.afternoon_volume or 0),
+                        "Produksi Sore": float(summary.evening_volume or 0),
+                        "Total Produksi": float(summary.total_volume or 0)
+                    })
+                
+                # Add total row if there's data
+                if summaries_list and len(summaries) > 0:
+                    total_morning = sum(float(s.morning_volume or 0) for s in summaries)
+                    total_afternoon = sum(float(s.afternoon_volume or 0) for s in summaries)
+                    total_evening = sum(float(s.evening_volume or 0) for s in summaries)
+                    total_all = sum(float(s.total_volume or 0) for s in summaries)
+                    
+                    summaries_list.append({
+                        "NO": "",
+                        "Sapi": "TOTAL",
+                        "Tanggal": "",
+                        "Produksi Pagi": total_morning,
+                        "Produksi Siang": total_afternoon,
+                        "Produksi Sore": total_evening,
+                        "Total Produksi": total_all
+                    })
+
+            df = pd.DataFrame(summaries_list)
+            
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='DailyMilkProduction')
+                workbook = writer.book
+                worksheet = writer.sheets['DailyMilkProduction']
+                
+                # Apply styling
+                from openpyxl.styles import Font, PatternFill, Alignment
+                header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
+                header_font = Font(bold=True)
+                total_fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+                total_font = Font(bold=True)
+                
+                # Style headers
+                for cell in worksheet[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Style totals row if it exists and there's actual data
+                if len(summaries_list) > 1 and len(summaries) > 0:
+                    for cell in worksheet[len(summaries_list) + 1]:  # +1 for header row
+                        cell.fill = total_fill
+                        cell.font = total_font
+                
+                # Auto-adjust column widths
+                for column_cells in worksheet.columns:
+                    max_length = max(len(str(cell.value) or "") for cell in column_cells)
+                    adjusted_width = max_length + 2
+                    worksheet.column_dimensions[column_cells[0].column_letter].width = adjusted_width
         
         # Prepare file for download
         buffer.seek(0)
         
-        filename = "daily_milk_production.xlsx"
-        if start_date and end_date:
-            filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
-        elif cow_id:
-            filename = f"milk_production_cow_{cow_id}.xlsx"
+        # Generate filename
+        if is_male_cow:
+            filename = f"bull_report_{cow_info.name.replace(' ', '_')}.xlsx"
+        else:
+            filename = "daily_milk_production.xlsx"
+            if start_date and end_date:
+                filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
+            elif cow_id:
+                filename = f"milk_production_cow_{cow_id}.xlsx"
             
         return send_file(
             buffer, 
@@ -791,7 +1001,6 @@ def export_daily_summaries_excel():
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    
 
 @milk_production_bp.route('/check-production', methods=['POST'])
 def check_production():

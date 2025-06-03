@@ -1,7 +1,12 @@
-import 'package:dairytrack_mobile/views/cowManagement/makeCowsView.dart';
+import 'dart:convert';
+
+import 'package:dairytrack_mobile/views/cowManagement/makeEditCowsView.dart';
 import 'package:flutter/material.dart';
 import 'package:dairytrack_mobile/controller/APIURL1/cowManagementController.dart';
 import 'package:intl/intl.dart';
+import 'package:dairytrack_mobile/controller/APIURL1/cattleDistributionController.dart';
+import 'package:open_file/open_file.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import open_file
 
 class ListOfCowsView extends StatefulWidget {
   @override
@@ -10,6 +15,8 @@ class ListOfCowsView extends StatefulWidget {
 
 class _ListOfCowsViewState extends State<ListOfCowsView> {
   final CowManagementController _controller = CowManagementController();
+  final CattleDistributionController _cattleController =
+      CattleDistributionController();
   List<Cow> _cows = [];
   List<Cow> _filteredCows = [];
   bool _isLoading = true;
@@ -19,6 +26,9 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
   String _selectedPhase = '';
   String _sortField = 'name';
   bool _sortAscending = true;
+  Map<String, dynamic>? currentUser;
+  bool isFarmer = false;
+  bool isSupervisor = false;
 
   final Map<String, String> _lactationPhaseDescriptions = {
     'Dry':
@@ -34,7 +44,98 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
   @override
   void initState() {
     super.initState();
-    _fetchCows();
+    _loadCurrentUser();
+  }
+
+  Future<void> _exportToPDF() async {
+    try {
+      final response = await _controller.exportCowsToPDF();
+      if (response['success']) {
+        final filePath = response['filePath'];
+        OpenFile.open(filePath);
+      } else {
+        _showSnackBar(response['message'] ?? 'Failed to export to PDF');
+      }
+    } catch (e) {
+      _showSnackBar('Error exporting to PDF: $e');
+    }
+  }
+
+  Future<void> _exportToExcel() async {
+    try {
+      final response = await _controller.exportCowsToExcel();
+      if (response['success']) {
+        final filePath = response['filePath'];
+        OpenFile.open(filePath);
+      } else {
+        _showSnackBar(response['message'] ?? 'Failed to export to Excel');
+      }
+    } catch (e) {
+      _showSnackBar('Error exporting to Excel: $e');
+    }
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get user data using individual keys like in initialAdminDashboard.dart
+      final userId = prefs.getInt('userId');
+      final userName = prefs.getString('userName');
+      final userUsername = prefs.getString('userUsername');
+      final userEmail = prefs.getString('userEmail');
+      final userRole = prefs.getString('userRole');
+      final userToken = prefs.getString('userToken');
+      final roleId =
+          prefs.getInt('roleId'); // Add this if you store roleId separately
+
+      print('Debug - User ID: $userId'); // Debug print
+      print('Debug - User Name: $userName'); // Debug print
+      print('Debug - Role ID: $roleId'); // Debug print
+      print('Debug - User Role: $userRole'); // Debug print
+
+      if (userId != null && userName != null) {
+        setState(() {
+          currentUser = {
+            'id': userId,
+            'user_id': userId, // Add both id and user_id for compatibility
+            'name': userName,
+            'username': userUsername ?? '',
+            'email': userEmail ?? '',
+            'role': userRole ?? 'Administrator',
+            'token': userToken ?? '',
+            'role_id': roleId ??
+                (userRole == 'Farmer' ? 3 : (userRole == 'Supervisor' ? 2 : 1)),
+          };
+
+          // Check if user is a farmer (role_id = 3)
+          isFarmer = currentUser?['role_id'] == 3;
+          isSupervisor = currentUser?['role_id'] == 2;
+        });
+
+        print('Debug - Is Farmer: $isFarmer'); // Debug print
+        print('Debug - Current User: $currentUser'); // Debug print
+
+        _fetchCows();
+      } else {
+        print('Debug - User data not found in SharedPreferences');
+        // If individual keys don't exist, try the old JSON string method as fallback
+        final userString = prefs.getString('user');
+        if (userString != null) {
+          print('Debug - Found user string, using JSON method');
+          setState(() {
+            currentUser = jsonDecode(userString);
+            isFarmer = currentUser?['role_id'] == 3;
+          });
+          print('Debug - From JSON - Is Farmer: $isFarmer');
+          print('Debug - From JSON - Current User: $currentUser');
+        }
+        _fetchCows();
+      }
+    } catch (e) {
+      print('Error loading user: $e');
+      _fetchCows();
+    }
   }
 
   Future<void> _fetchCows() async {
@@ -44,7 +145,29 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
     });
 
     try {
-      final cows = await _controller.listCows();
+      List<Cow> cows;
+
+      if (isFarmer && currentUser != null) {
+        // Farmer - get only managed cows
+        final userId = currentUser!['id'] ?? currentUser!['user_id'];
+        if (userId == null) {
+          throw Exception('User ID not found');
+        }
+
+        final response = await _cattleController.listCowsByUser(userId);
+        if (response['success'] == true) {
+          cows = (response['cows'] as List)
+              .map((cowData) => Cow.fromJson(cowData))
+              .toList();
+        } else {
+          throw Exception(
+              response['message'] ?? 'Failed to fetch managed cows');
+        }
+      } else {
+        // Admin/Supervisor - get all cows
+        cows = await _controller.listCows();
+      }
+
       setState(() {
         _cows = cows;
         _applyFiltersAndSort();
@@ -99,272 +222,167 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
   }
 
   void _deleteCow(int cowId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete Cow"),
-        content: Text("Are you sure you want to delete this cow?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text("Cancel", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+    final managersResponse = await _cattleController.getCowManagers(cowId);
 
-    if (confirm == true) {
-      final response = await _controller.deleteCow(cowId);
-      if (response['success'] == true) {
-        _showSnackBar("Cow deleted successfully.");
-        _fetchCows();
-      } else {
-        _showSnackBar(response['message'] ?? "Failed to delete cow.");
+    // Farmers cannot delete cows
+    if (isFarmer) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: Text("Access Denied", style: TextStyle(color: Colors.white)),
+          content: Text(
+            "Farmers cannot delete cows. Please contact an administrator.",
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("OK", style: TextStyle(color: Colors.teal[400])),
+            ),
+          ],
+        ),
+      );
+      return;
+    } // Ambil daftar user yang mengelola sapi
+
+    if (managersResponse['success'] == true &&
+        managersResponse['managers'].isNotEmpty) {
+      final managerList = (managersResponse['managers'] as List)
+          .map((manager) => "${manager['username']}")
+          .join(", ");
+
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900], // Dark theme background
+          title: Text("Delete Cow",
+              style: TextStyle(color: Colors.white)), // White text
+          content: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: "This cow is managed by: ",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                TextSpan(
+                  text: managerList,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(
+                  text: ". Are you sure you want to delete this cow?",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        final response = await _controller.deleteCow(cowId);
+        if (response['success'] == true) {
+          _showSnackBar("Cow deleted successfully.");
+          _fetchCows();
+        } else {
+          _showSnackBar(response['message'] ?? "Failed to delete cow.");
+        }
+      }
+    } else {
+      // Jika tidak ada manager, langsung tampilkan konfirmasi penghapusan
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900], // Dark theme background
+          title: Text("Delete Cow",
+              style: TextStyle(color: Colors.white)), // White text
+          content: Text("Are you sure you want to delete this cow?",
+              style: TextStyle(color: Colors.white70)), // Lighter text
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        final response = await _controller.deleteCow(cowId);
+        if (response['success'] == true) {
+          _showSnackBar("Cow deleted successfully.");
+          _fetchCows();
+        } else {
+          _showSnackBar(response['message'] ?? "Failed to delete cow.");
+        }
       }
     }
   }
 
-  void _viewEditCow(Cow cow) async {
-    String name = cow.name;
-    DateTime? birth = cow.birth != null && cow.birth.isNotEmpty
-        ? DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parse(cow.birth)
-        : null;
-    double weight = cow.weight;
-    String lactationPhase = cow.lactationPhase;
-    String gender = cow.gender;
-
-    final _formKey = GlobalKey<FormState>();
-    bool _isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Cow: ${cow.name}"),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildReadOnlyListTile(Icons.tag, "ID", "${cow.id}"),
-                      _buildTextFormField(
-                        labelText: 'Name',
-                        hintText: 'Enter cow\'s name',
-                        initialValue: name,
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Please enter the cow\'s name'
-                            : null,
-                        onChanged: (value) => name = value,
-                      ),
-                      _buildDateField(
-                        labelText: 'Birth Date',
-                        selectedDate: birth,
-                        onDateSelected: (pickedDate) {
-                          setState(() {
-                            birth = pickedDate;
-                          });
-                        },
-                      ),
-                      _buildGenderDropdown(
-                        selectedGender: gender,
-                        lactationPhase: lactationPhase,
-                        onGenderChanged: (value) {
-                          setState(() {
-                            gender = value!;
-                            lactationPhase = gender == 'Male'
-                                ? '-'
-                                : (lactationPhase == '-' ? '' : lactationPhase);
-                          });
-                        },
-                      ),
-                      _buildReadOnlyTextFormField(
-                        labelText: 'Breed',
-                        initialValue: cow.breed,
-                      ),
-                      _buildLactationPhaseDropdown(
-                        gender: gender,
-                        lactationPhase: lactationPhase,
-                        onPhaseChanged: (newValue) {
-                          setState(() {
-                            lactationPhase = newValue!;
-                          });
-                        },
-                      ),
-                      _buildTextFormField(
-                        labelText: 'Weight (kg)',
-                        hintText: 'Enter cow\'s weight in kg',
-                        keyboardType: TextInputType.number,
-                        initialValue: weight.toString(),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter the cow\'s weight';
-                          }
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          return null;
-                        },
-                        onChanged: (value) =>
-                            weight = double.tryParse(value) ?? weight,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+  void _navigateToEditCow(Cow cow) async {
+    if (isFarmer) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: Text("Access Denied", style: TextStyle(color: Colors.white)),
+          content: Text(
+            "Farmers cannot edit cows. Please contact an administrator.",
+            style: TextStyle(color: Colors.white70),
           ),
           actions: [
             TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.grey),
               onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey[800],
-                textStyle: TextStyle(fontSize: 16),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  _formKey.currentState!.save();
-
-                  setState(() {
-                    _isLoading = true;
-                  });
-
-                  try {
-                    final birthDateFormatted = birth != null
-                        ? DateFormat('yyyy-MM-dd').format(birth!)
-                        : cow.birth;
-
-                    final updatedCowData = {
-                      'name': name,
-                      'birth': birthDateFormatted,
-                      'weight': weight,
-                      'lactation_phase': lactationPhase,
-                      'gender': gender,
-                    };
-
-                    final response = await _controller.updateCow(
-                      cow.id,
-                      updatedCowData,
-                    );
-
-                    if (response['success'] == true) {
-                      _showSnackBar("Cow updated successfully.");
-                      Navigator.of(context).pop();
-                      _fetchCows();
-                    } else {
-                      _showSnackBar(
-                          response['message'] ?? "Failed to update cow.");
-                    }
-                  } catch (e) {
-                    _showSnackBar("Error: ${e.toString()}");
-                  } finally {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  }
-                }
-              },
-              child: _isLoading
-                  ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                  : Text("Save", style: TextStyle(color: Colors.white)),
+              child: Text("OK",
+                  style: TextStyle(
+                    color: Colors.teal[400],
+                  )),
             ),
           ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatisticsCard() {
-    int femaleCount = _cows.where((cow) => cow.gender == 'Female').length;
-    int maleCount = _cows.where((cow) => cow.gender == 'Male').length;
-    double femalePercent =
-        _cows.isEmpty ? 0 : (femaleCount / _cows.length) * 100;
-    double malePercent = _cows.isEmpty ? 0 : (maleCount / _cows.length) * 100;
-
-    Map<String, int> phaseCounts = {};
-    for (var cow in _cows) {
-      phaseCounts[cow.lactationPhase] =
-          (phaseCounts[cow.lactationPhase] ?? 0) + 1;
+        ),
+      );
+      return;
     }
-
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Cow Statistics',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            _buildGenderStatistics(
-                femaleCount, femalePercent, maleCount, malePercent),
-            SizedBox(height: 16),
-            _buildLactationPhaseStatistics(phaseCounts),
-          ],
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MakeCowsView(
+          initialCowData: {
+            '_id': cow.id.toString(),
+            'name': cow.name,
+            // Pastikan cow.birth diubah menjadi DateTime sebelum diformat
+            'birth': cow.birth != null
+                ? DateFormat('yyyy-MM-dd').format(
+                    DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+                        .parse(cow.birth))
+                : '',
+            'breed': cow.breed,
+            'lactation_phase': cow.lactationPhase,
+            'weight': cow.weight,
+            'gender': cow.gender,
+          },
         ),
       ),
     );
-  }
-
-  Widget _buildLactationPhaseInfo() {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Lactation Phase Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            ..._lactationPhaseDescriptions.entries.map((entry) {
-              Color phaseColor = _getPhaseColor(entry.key);
-              return _buildPhaseInfoContainer(
-                  entry.key, entry.value, phaseColor);
-            }).toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getPhaseColor(String phase) {
-    switch (phase) {
-      case 'Dry':
-        return Colors.red[100]!;
-      case 'Early':
-        return Colors.green[100]!;
-      case 'Mid':
-        return Colors.blue[100]!;
-      case 'Late':
-        return Colors.yellow[100]!;
-      default:
-        return Colors.grey[100]!;
+    if (result == true) {
+      _fetchCows();
     }
   }
 
@@ -376,78 +394,144 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        title: Text(
-          "List of Cows",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: Colors.blueGrey[800],
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () {
-              _showFilterBottomSheet(context);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.file_download, color: Colors.white),
-            onPressed: () {
-              _showExportDialog(context);
-            },
-          ),
-        ],
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-              ? Center(child: Text(_errorMessage))
-              : RefreshIndicator(
-                  onRefresh: _fetchCows,
-                  child: Column(
-                    children: [
-                      _buildSearchBar(),
-                      _buildSortingOptions(),
-                      Expanded(
-                        child: _filteredCows.isEmpty
-                            ? Center(child: Text("No cows found"))
-                            : ListView(
-                                children: [
-                                  _buildStatisticsCard(),
-                                  _buildLactationPhaseInfo(),
-                                  ..._filteredCows
-                                      .map((cow) => _buildCowCard(cow))
-                                      .toList(),
-                                  SizedBox(height: 80),
-                                ],
-                              ),
-                      ),
-                    ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            isFarmer ? "My Managed Cows" : "List of Cows",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2,
+              shadows: [Shadow(blurRadius: 8, color: Colors.black26)],
+            ),
+          ),
+          elevation: 8,
+          backgroundColor: isFarmer ? Colors.teal[400] : Colors.blueGrey[800],
+          actions: [
+            IconButton(
+              icon: Icon(Icons.filter_list, color: Colors.white),
+              onPressed: () {
+                _showFilterSheet(context);
+              },
+            ),
+            if (!isFarmer)
+              PopupMenuButton<String>(
+                icon: Icon(Icons.download, color: Colors.white),
+                onSelected: (value) {
+                  if (value == 'pdf') {
+                    _exportToPDF();
+                  } else if (value == 'excel') {
+                    _exportToExcel();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'pdf',
+                    child: Row(
+                      children: [
+                        Icon(Icons.picture_as_pdf, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Export PDF'),
+                      ],
+                    ),
                   ),
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => MakeCowsView()),
-          );
-          if (result == true) {
-            setState(() {
-              _fetchCows();
-            });
-          }
-        },
-        child: Icon(Icons.add, color: Colors.white),
-        backgroundColor: Colors.blueGrey[800],
+                  PopupMenuItem(
+                    value: 'excel',
+                    child: Row(
+                      children: [
+                        Icon(Icons.table_chart, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Export Excel'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+        body: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : _errorMessage.isNotEmpty
+                ? Center(child: Text(_errorMessage))
+                : RefreshIndicator(
+                    onRefresh: _fetchCows,
+                    child: Column(
+                      children: [
+                        _buildSearchBar(),
+                        _buildSortingOptions(),
+                        Expanded(
+                          child: _filteredCows.isEmpty
+                              ? Center(
+                                  child: Text(isFarmer
+                                      ? "No cows assigned to you. Please contact an administrator."
+                                      : "No cows found"))
+                              : ListView(
+                                  children: [
+                                    _buildStatisticsCard(),
+                                    _buildLactationPhaseInfo(),
+                                    ..._filteredCows
+                                        .asMap()
+                                        .entries
+                                        .map((entry) => _buildAnimatedCowCard(
+                                            entry.value, entry.key))
+                                        .toList(),
+                                    SizedBox(height: 80),
+                                  ],
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+        floatingActionButton: (!isFarmer && !isSupervisor)
+            ? FloatingActionButton(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MakeCowsView()),
+                  );
+                  if (result == true) {
+                    setState(() {
+                      _fetchCows();
+                    });
+                  }
+                },
+                child: Icon(Icons.add, color: Colors.white),
+                backgroundColor: Colors.blueGrey[800],
+                elevation: 8,
+              )
+            : null,
       ),
+    );
+  }
+
+  Widget _buildAnimatedCowCard(Cow cow, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 400 + index * 60),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: _buildCowCard(cow),
     );
   }
 
@@ -492,15 +576,42 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Text('Sort by: '),
+          Text(
+            'Sort by:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey[800],
+              fontSize: 15,
+              letterSpacing: 0.5,
+            ),
+          ),
           SizedBox(width: 8),
           ...['name', 'weight', 'age'].map((field) {
             String label = field[0].toUpperCase() + field.substring(1);
+            bool selected = _sortField == field;
             return Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: ChoiceChip(
-                label: Text(label),
-                selected: _sortField == field,
+                label: Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : Colors.blueGrey[800],
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                selected: selected,
+                selectedColor: Colors.teal[400],
+                backgroundColor: Colors.blueGrey[50],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: selected ? Colors.teal : Colors.blueGrey[100]!,
+                    width: selected ? 2 : 1,
+                  ),
+                ),
+                elevation: selected ? 4 : 0,
+                shadowColor: Colors.teal.withOpacity(0.2),
                 onSelected: (selected) {
                   if (selected) {
                     setState(() {
@@ -523,304 +634,322 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
   }
 
   Widget _buildCowCard(Cow cow) {
+    DateTime birthDate;
+    try {
+      birthDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+          .parse(cow.birth, true)
+          .toLocal();
+    } catch (e) {
+      return Card(
+        elevation: 4,
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: ListTile(
+          title: Text(cow.name),
+          subtitle: Text("Invalid birth date format"),
+        ),
+      );
+    }
+    final now = DateTime.now();
+    final ageYears = now.year - birthDate.year;
+    final ageMonths = now.month - birthDate.month + (ageYears * 12);
+    final displayYears = ageMonths ~/ 12;
+    final displayMonths = ageMonths % 12;
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ExpansionTile(
-          leading: CircleAvatar(
-            backgroundColor:
-                cow.gender == 'Female' ? Colors.green[100] : Colors.blue[100],
-            child: Icon(
-              cow.gender == 'Female' ? Icons.female : Icons.male,
-              color: cow.gender == 'Female' ? Colors.green : Colors.blue,
-            ),
-          ),
-          title: Text(
-            cow.name,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _buildListTile(Icons.cake, "Age", "${cow.age} years"),
-                      _buildListTile(
-                          Icons.fitness_center, "Weight", "${cow.weight} kg"),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buildListTile(
-                          Icons.opacity, "Phase", cow.lactationPhase),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, size: 20),
-                              onPressed: () => _viewEditCow(cow),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, size: 20),
-                              onPressed: () => _deleteCow(cow.id),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-          trailing: Chip(
-            label: Text(cow.gender),
-            backgroundColor:
-                cow.gender == 'Female' ? Colors.green[50] : Colors.blue[50],
-            labelStyle: TextStyle(
-              color: cow.gender == 'Female' ? Colors.green : Colors.blue,
-              fontSize: 12,
-            ),
+      elevation: 6,
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shadowColor: Colors.blueGrey.withOpacity(0.2),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          radius: 28,
+          backgroundColor:
+              cow.gender == 'Female' ? Colors.green[100] : Colors.blue[100],
+          child: Icon(
+            cow.gender == 'Female' ? Icons.female : Icons.male,
+            color: cow.gender == 'Female' ? Colors.green : Colors.blue,
+            size: 32,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildListTile(IconData icon, String title, String subtitle) {
-    return Expanded(
-      child: ListTile(
-        leading: Icon(icon, size: 20),
         title: Text(
-          title,
-          style: TextStyle(fontSize: 14),
+          cow.name,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 14),
+          "Age: $displayYears years, $displayMonths months, Weight: ${cow.weight} kg",
+          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
         ),
-        dense: true,
-      ),
-    );
-  }
-
-  void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 16.0,
-              right: 16.0,
-              top: 16.0,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      'Filter Cows',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  _buildGenderFilter(setState),
-                  SizedBox(height: 16),
-                  _buildPhaseFilter(setState),
-                  SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        this.setState(() {
-                          _applyFiltersAndSort();
-                        });
-                      },
-                      child: Text(
-                        'Apply Filters',
-                        style: TextStyle(
+        trailing: Chip(
+          label: Text(cow.gender),
+          backgroundColor:
+              cow.gender == 'Female' ? Colors.green[50] : Colors.blue[50],
+          labelStyle: TextStyle(
+            color: cow.gender == 'Female' ? Colors.green : Colors.blue,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCowInfoRow(
+                    'Age', "$displayYears years, $displayMonths months"),
+                _buildCowInfoRow('Weight', "${cow.weight} kg"),
+                _buildCowInfoRow('Phase', cow.lactationPhase),
+                Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (!isSupervisor)
+                      ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.edit,
+                          size: 20,
                           color: Colors.white,
-                          fontSize: 16,
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey[800],
-                        padding: EdgeInsets.symmetric(
-                          vertical: 12,
+                        label: const Text(
+                          "Edit",
+                          style: TextStyle(fontSize: 14, color: Colors.white),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            8.0,
+                        onPressed: () => _navigateToEditCow(cow),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[400],
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildGenderFilter(StateSetter setState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            'Gender',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Row(
-          children: [
-            _buildRadioListTile(setState, 'All', '', _selectedGender),
-            _buildRadioListTile(setState, 'Female', 'Female', _selectedGender),
-            _buildRadioListTile(setState, 'Male', 'Male', _selectedGender),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhaseFilter(StateSetter setState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            'Lactation Phase',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        DropdownButtonFormField<String>(
-          value: _selectedPhase,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-          ),
-          items: [
-            DropdownMenuItem(
-              value: '',
-              child: Text('All'),
-            ),
-            ..._lactationPhaseDescriptions.keys.map((phase) {
-              return DropdownMenuItem(
-                value: phase,
-                child: Text(phase),
-              );
-            }).toList(),
-          ],
-          onChanged: (value) {
-            setState(() {
-              _selectedPhase = value!;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRadioListTile(
-      StateSetter setState, String title, String value, String groupValue) {
-    return Expanded(
-      child: RadioListTile<String>(
-        title: Text(title),
-        value: value,
-        groupValue: groupValue,
-        onChanged: (newValue) {
-          setState(() {
-            _selectedGender = newValue!;
-          });
-        },
-        contentPadding: EdgeInsets.zero,
-      ),
-    );
-  }
-
-  void _showExportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Export Data"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.picture_as_pdf),
-              title: Text("Export as PDF"),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.exportCowsToPDF().then((response) {
-                  if (response['success']) {
-                    _showSnackBar("PDF export successful");
-                  } else {
-                    _showSnackBar(response['message']);
-                  }
-                }).catchError((e) {
-                  _showSnackBar("Error: ${e.toString()}");
-                });
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.table_chart),
-              title: Text("Export as Excel"),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.exportCowsToExcel().then((response) {
-                  if (response['success']) {
-                    _showSnackBar("Excel export successful");
-                  } else {
-                    _showSnackBar(response['message']);
-                  }
-                }).catchError((e) {
-                  _showSnackBar("Error: ${e.toString()}");
-                });
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: Colors.blueGrey),
+                    SizedBox(width: 8),
+                    if (!isSupervisor)
+                      ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          "Delete",
+                          style: TextStyle(fontSize: 14, color: Colors.white),
+                        ),
+                        onPressed: () => _deleteCow(cow.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[400],
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCowInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          SizedBox(width: 8),
+          Text('$label:', style: TextStyle(fontWeight: FontWeight.w500)),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey[800])),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Center(
+        child: Container(
+          width: 320,
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[700],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Text(
+                    'Filter',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 18),
+                  // Gender filter
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _simpleFilterChip(setState, 'All', '', _selectedGender),
+                      SizedBox(width: 8),
+                      _simpleFilterChip(
+                          setState, 'Female', 'Female', _selectedGender),
+                      SizedBox(width: 8),
+                      _simpleFilterChip(
+                          setState, 'Male', 'Male', _selectedGender),
+                    ],
+                  ),
+                  SizedBox(height: 14),
+                  // Phase filter
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedPhase,
+                        isExpanded: true,
+                        icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                        dropdownColor: Colors.grey[900],
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text('All'),
+                          ),
+                          ..._lactationPhaseDescriptions.keys.map((phase) {
+                            return DropdownMenuItem(
+                              value: phase,
+                              child: Text(phase),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedPhase = value!);
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: Icon(Icons.check, size: 18),
+                      label: Text('Apply', style: TextStyle(fontSize: 15)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal[700],
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        this.setState(() => _applyFiltersAndSort());
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+// Simple filter chip for gender
+  Widget _simpleFilterChip(
+      StateSetter setState, String label, String value, String selectedValue) {
+    final bool isSelected = value == selectedValue;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 13)),
+      selected: isSelected,
+      selectedColor: Colors.teal[400],
+      backgroundColor: Colors.grey[800],
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.white70,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+      visualDensity: VisualDensity.compact,
+      onSelected: (_) => setState(() => _selectedGender = value),
+    );
+  }
+
+  Widget _buildStatisticsCard() {
+    int femaleCount = _cows.where((cow) => cow.gender == 'Female').length;
+    int maleCount = _cows.where((cow) => cow.gender == 'Male').length;
+    double femalePercent =
+        _cows.isEmpty ? 0 : (femaleCount / _cows.length) * 100;
+    double malePercent = _cows.isEmpty ? 0 : (maleCount / _cows.length) * 100;
+    Map<String, int> phaseCounts = {};
+    for (var cow in _cows) {
+      phaseCounts[cow.lactationPhase] =
+          (phaseCounts[cow.lactationPhase] ?? 0) + 1;
+    }
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.bar_chart, color: Colors.blueGrey, size: 28),
+                SizedBox(width: 10),
+                Text(
+                  isFarmer ? 'My Cow Statistics' : 'Cow Statistics',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            SizedBox(height: 18),
+            _buildGenderStatistics(
+                femaleCount, femalePercent, maleCount, malePercent),
+            SizedBox(height: 18),
+            _buildLactationPhaseStatistics(phaseCounts),
+          ],
+        ),
       ),
     );
   }
@@ -832,40 +961,63 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
       children: [
         Text(
           'Gender Distribution',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 10),
         Row(
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Female: $femaleCount (${femalePercent.toStringAsFixed(1)}%)',
+                  Row(
+                    children: [
+                      Icon(Icons.female, color: Colors.pink[300], size: 20),
+                      SizedBox(width: 6),
+                      Text(
+                          'Female: $femaleCount (${femalePercent.toStringAsFixed(1)}%)',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w500, fontSize: 12)),
+                    ],
                   ),
                   SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: femalePercent / 100,
-                    backgroundColor: Colors.grey[200],
-                    color: Colors.green[300],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: femalePercent / 100,
+                      backgroundColor: Colors.pink[50],
+                      color: Colors.pink[300],
+                      minHeight: 8,
+                    ),
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: 18),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Male: $maleCount (${malePercent.toStringAsFixed(1)}%)',
+                  Row(
+                    children: [
+                      Icon(Icons.male, color: Colors.blue[300], size: 20),
+                      SizedBox(width: 6),
+                      Text(
+                        'Male: $maleCount (${malePercent.toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500, fontSize: 12),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: malePercent / 100,
-                    backgroundColor: Colors.grey[200],
-                    color: Colors.blue[300],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: malePercent / 100,
+                      backgroundColor: Colors.blue[50],
+                      color: Colors.blue[300],
+                      minHeight: 8,
+                    ),
                   ),
                 ],
               ),
@@ -895,6 +1047,45 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
     );
   }
 
+  Widget _buildLactationPhaseInfo() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lactation Phase Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            ..._lactationPhaseDescriptions.entries.map((entry) {
+              Color phaseColor = _getPhaseColor(entry.key);
+              return _buildPhaseInfoContainer(
+                  entry.key, entry.value, phaseColor);
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getPhaseColor(String phase) {
+    switch (phase) {
+      case 'Dry':
+        return Colors.brown[100]!;
+      case 'Early':
+        return Colors.green[100]!;
+      case 'Mid':
+        return Colors.yellow[100]!;
+      case 'Late':
+        return Colors.orange[100]!;
+      default:
+        return Colors.grey[100]!;
+    }
+  }
+
   Widget _buildPhaseInfoContainer(
       String phase, String description, Color color) {
     return Container(
@@ -915,198 +1106,6 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
           SizedBox(height: 4),
           Text(description),
         ],
-      ),
-    );
-  }
-
-  Widget _buildReadOnlyListTile(IconData icon, String title, String subtitle) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      contentPadding: EdgeInsets.symmetric(horizontal: 0),
-    );
-  }
-
-  Widget _buildTextFormField({
-    required String labelText,
-    String? hintText,
-    String? initialValue,
-    String? Function(String?)? validator,
-    void Function(String)? onChanged,
-    TextInputType? keyboardType,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextFormField(
-        decoration: InputDecoration(
-          labelText: labelText,
-          hintText: hintText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          prefixIcon: Icon(Icons.text_fields),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-        keyboardType: keyboardType,
-        initialValue: initialValue,
-        validator: validator,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  Widget _buildReadOnlyTextFormField({
-    required String labelText,
-    String? initialValue,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextFormField(
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          prefixIcon: Icon(Icons.text_fields),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-        initialValue: initialValue,
-        readOnly: true,
-      ),
-    );
-  }
-
-  Widget _buildDateField({
-    required String labelText,
-    DateTime? selectedDate,
-    required Function(DateTime?) onDateSelected,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: GestureDetector(
-        onTap: () async {
-          DateTime? pickedDate = await showDatePicker(
-            context: context,
-            initialDate: selectedDate ?? DateTime.now(),
-            firstDate: DateTime(1900),
-            lastDate: DateTime.now(),
-          );
-          if (pickedDate != null) {
-            onDateSelected(pickedDate);
-          }
-        },
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: labelText,
-            hintText: selectedDate == null
-                ? 'Select Date'
-                : DateFormat('yyyy-MM-dd').format(selectedDate),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            prefixIcon: Icon(Icons.calendar_today),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                selectedDate == null
-                    ? 'Select Date'
-                    : DateFormat('yyyy-MM-dd').format(selectedDate),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderDropdown({
-    required String selectedGender,
-    required String lactationPhase,
-    required Function(String?) onGenderChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: 'Gender',
-          hintText: 'Select gender',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          prefixIcon: Icon(Icons.wc),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        ),
-        value: selectedGender,
-        items: ['Male', 'Female'].map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
-        onChanged: onGenderChanged,
-        validator: (value) => value == null ? 'Please select gender' : null,
-      ),
-    );
-  }
-
-  Widget _buildLactationPhaseDropdown({
-    required String gender,
-    required String lactationPhase,
-    required Function(String?) onPhaseChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.0),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.7,
-        child: DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'Lactation Phase',
-            hintText: 'Select lactation phase',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            prefixIcon: Icon(Icons.local_drink),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-          ),
-          value: (gender == 'Male' && lactationPhase == '-')
-              ? '-'
-              : (lactationPhase.isNotEmpty ? lactationPhase : null),
-          items: (gender == 'Male')
-              ? [
-                  DropdownMenuItem<String>(
-                    value: '-',
-                    child: Text('-'),
-                  ),
-                ]
-              : <String>['Dry', 'Early', 'Mid', 'Late']
-                  .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: SizedBox(
-                      width: 100,
-                      child: Text(
-                        value,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  );
-                }).toList(),
-          onChanged: onPhaseChanged,
-          validator: (value) {
-            if (gender == 'Female' && (value == null || value.isEmpty)) {
-              return 'Please select lactation phase';
-            }
-            return null;
-          },
-        ),
       ),
     );
   }

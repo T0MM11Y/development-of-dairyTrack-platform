@@ -123,33 +123,64 @@ const Users = () => {
     },
     [history]
   );
-
   // Handle user deletion
-  const handleDeleteUser = useCallback(async (userId) => {
-    const confirmResult = await Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
+  const handleDeleteUser = useCallback(
+    async (userId) => {
+      const userToDelete = users.find((user) => user.id === userId);
 
-    if (confirmResult.isConfirmed) {
-      const response = await deleteUser(userId);
-      if (response.success) {
-        Swal.fire("Deleted!", response.message, "success");
-        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-      } else {
-        Swal.fire(
-          "Error!",
-          response.message || "Failed to delete user.",
-          "error"
-        );
+      const confirmResult = await Swal.fire({
+        title: "Are you absolutely sure?",
+        text: "This action is irreversible! All data associated with this user will be permanently deleted.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it permanently!",
+        // Tambahkan tombol "Tidak, batalkan!"
+        cancelButtonText: "No, cancel!",
+        // Tambahkan kelas CSS kustom untuk tombol
+        customClass: {
+          confirmButton: "btn btn-danger",
+          cancelButton: "btn btn-secondary ms-2",
+        },
+        buttonsStyling: false, // Menonaktifkan styling default SweetAlert2
+      });
+
+      if (confirmResult.isConfirmed) {
+        // Add name verification
+        const { value: text } = await Swal.fire({
+          title: `Please type "delete ${userToDelete?.username}" to confirm`,
+          input: "text",
+          inputPlaceholder: `Type "delete ${userToDelete?.username}" here`,
+          showCancelButton: true,
+          confirmButtonText: "Verify",
+          cancelButtonText: "Cancel",
+          inputValidator: (value) => {
+            if (value !== `delete ${userToDelete?.username}`) {
+              return `You need to type "delete ${userToDelete?.username}" to confirm!`;
+            }
+          },
+        });
+
+        if (text === `delete ${userToDelete?.username}`) {
+          const response = await deleteUser(userId);
+          if (response.success) {
+            Swal.fire("Deleted!", response.message, "success");
+            setUsers((prevUsers) =>
+              prevUsers.filter((user) => user.id !== userId)
+            );
+          } else {
+            Swal.fire(
+              "Error!",
+              response.message || "Failed to delete user.",
+              "error"
+            );
+          }
+        }
       }
-    }
-  }, []);
+    },
+    [users, deleteUser]
+  );
 
   // Filter, sort, and paginate users
   const { filteredUsers, currentUsers, totalPages } = useMemo(() => {
@@ -644,12 +675,14 @@ const Users = () => {
                                   user.role_id === 1
                                     ? "text-primary"
                                     : user.role_id === 2
-                                    ? "text-dark" /* Changed from text-white to text-dark */
+                                    ? "text-light opacity-75" /* Changed from text-white to text-light */
                                     : "text-info"
                                 }`}
                               ></i>
                             </div>
-                            <div className="text-dark">{user.username}</div>
+                            <div className="text-dark">
+                              {user.username} (ID: {user.id})
+                            </div>
                           </div>
                         </td>
                         <td className="text-dark">{user.name}</td>
@@ -675,9 +708,11 @@ const Users = () => {
                               <span>
                                 <Link
                                   to={`/admin/edit-user/${user.id}`}
-                                  className={`btn btn-sm btn-outline-secondary border-0${
-                                    isSupervisor ? " disabled" : ""
-                                  }`}
+                                  className={`btn btn-sm ${
+                                    currentUser?.role_id === 1
+                                      ? "btn-outline-warning"
+                                      : "btn-outline-secondary"
+                                  } border-0${isSupervisor ? " disabled" : ""}`}
                                   tabIndex={isSupervisor ? -1 : 0}
                                   aria-disabled={isSupervisor}
                                   onClick={(e) => {
@@ -698,7 +733,11 @@ const Users = () => {
                             >
                               <span>
                                 <button
-                                  className="btn btn-sm btn-outline-secondary border-0"
+                                  className={`btn btn-sm ${
+                                    currentUser?.role_id === 1
+                                      ? "btn-outline-danger"
+                                      : "btn-outline-secondary"
+                                  } border-0`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isSupervisor)

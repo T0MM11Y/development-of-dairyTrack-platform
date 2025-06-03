@@ -5,9 +5,9 @@ import enum
 from app.database.database import db
 
 class MilkStatus(enum.Enum):
-    FRESH = "fresh"
-    EXPIRED = "expired"
-    USED = "used"
+    FRESH = "FRESH"  # Changed to match database values
+    EXPIRED = "EXPIRED"  # Changed to match database values
+    USED = "USED"  # Changed to match database values
 
 class MilkBatch(db.Model):
     __tablename__ = 'milk_batches'
@@ -29,3 +29,5 @@ class MilkBatch(db.Model):
         return (f"<MilkBatch(id={self.id}, batch_number='{self.batch_number}', "
                 f"total_volume={self.total_volume}, status={self.status}, "
                 f"production_date={self.production_date}, expiry_date={self.expiry_date})>")
+    
+    

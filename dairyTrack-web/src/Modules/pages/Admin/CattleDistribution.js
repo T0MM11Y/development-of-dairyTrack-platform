@@ -1138,7 +1138,7 @@ const CattleDistribution = () => {
             style={{
               fontSize: "14px",
               fontWeight: "500",
-              backgroundColor: "#3D90D7",
+              backgroundColor: "primary",
               border: "none",
             }}
             aria-label="Confirm assigning cow to farmer"

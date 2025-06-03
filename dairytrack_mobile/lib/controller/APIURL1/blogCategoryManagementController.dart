@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../api/apiController.dart';
 
 class BlogCategoryManagementController {
-  final String baseUrl = '$API_URL1/blog_category';
+  final String baseUrl = '$API_URL1/blog-category';
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
 
   // Assign category to blog

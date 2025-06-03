@@ -64,6 +64,32 @@ const ListOfGallery = () => {
     };
     fetchGalleries();
   }, []);
+  useEffect(() => {
+    return () => {
+      if (newGallery.previewUrl) {
+        URL.revokeObjectURL(newGallery.previewUrl);
+      }
+      if (selectedGallery?.previewUrl) {
+        URL.revokeObjectURL(selectedGallery.previewUrl);
+      }
+    };
+  }, []);
+
+  const handleModalClose = () => {
+    if (newGallery.previewUrl) {
+      URL.revokeObjectURL(newGallery.previewUrl);
+    }
+    setNewGallery({ title: "", image: null, previewUrl: null });
+    setShowModal(false);
+  };
+
+  const handleEditModalClose = () => {
+    if (selectedGallery?.previewUrl) {
+      URL.revokeObjectURL(selectedGallery.previewUrl);
+    }
+    setSelectedGallery(null);
+    setShowEditModal(false);
+  };
 
   const filteredGalleries = useMemo(
     () =>
@@ -111,8 +137,7 @@ const ListOfGallery = () => {
     const { success, gallery } = await addGallery(newGallery);
     if (success) {
       setGalleries([...galleries, gallery]);
-      setShowModal(false);
-      setNewGallery({ title: "", image: null });
+      handleModalClose();
     }
   };
 
@@ -395,7 +420,7 @@ const ListOfGallery = () => {
         </Card.Body>
       </Card>
       {/* Add Gallery Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={handleModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Add New Gallery</Modal.Title>
         </Modal.Header>
@@ -418,11 +443,43 @@ const ListOfGallery = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Image</Form.Label>
+              {/* Image Preview */}
+              {newGallery.previewUrl && (
+                <div className="mb-3 text-center">
+                  <h6>Image Preview</h6>
+                  <img
+                    src={newGallery.previewUrl}
+                    alt="Preview"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "200px",
+                      objectFit: "contain",
+                    }}
+                    className="mb-2 border p-1"
+                  />
+                  <div className="text-muted small">
+                    {newGallery.image?.name}
+                  </div>
+                </div>
+              )}
               <Form.Control
                 type="file"
-                onChange={(e) =>
-                  setNewGallery({ ...newGallery, image: e.target.files[0] })
-                }
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    // Revoke previous URL if exists
+                    if (newGallery.previewUrl) {
+                      URL.revokeObjectURL(newGallery.previewUrl);
+                    }
+                    const previewUrl = URL.createObjectURL(file);
+                    setNewGallery({
+                      ...newGallery,
+                      image: file,
+                      previewUrl: previewUrl,
+                    });
+                  }
+                }}
+                accept="image/*"
                 required
                 disabled={isSupervisor}
                 tabIndex={isSupervisor ? -1 : 0}
@@ -441,8 +498,9 @@ const ListOfGallery = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
       {/* Edit Gallery Modal */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      <Modal show={showEditModal} onHide={handleEditModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Gallery</Modal.Title>
         </Modal.Header>
@@ -471,7 +529,12 @@ const ListOfGallery = () => {
               <div className="d-flex flex-wrap justify-content-between align-items-center">
                 {/* Current Image */}
                 {selectedGallery?.image_url && (
-                  <div className="mb-3" style={{ width: "48%" }}>
+                  <div
+                    className="mb-3"
+                    style={{
+                      width: selectedGallery?.previewUrl ? "48%" : "100%",
+                    }}
+                  >
                     <h6>Current Image</h6>
                     <img
                       src={selectedGallery.image_url}
@@ -515,6 +578,10 @@ const ListOfGallery = () => {
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
+                    // Revoke previous URL if exists
+                    if (selectedGallery.previewUrl) {
+                      URL.revokeObjectURL(selectedGallery.previewUrl);
+                    }
                     const previewUrl = URL.createObjectURL(file);
                     setSelectedGallery({
                       ...selectedGallery,
