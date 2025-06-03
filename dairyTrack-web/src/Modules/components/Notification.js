@@ -386,13 +386,15 @@ const NotificationDropdown = () => {
     });
   }, [notifications, markAsRead]);
 
-  const formatTimeAgo = useCallback((dateString) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch {
-      return "Date unknown";
-    }
-  }, []);
+ const formatTimeAgo = (dateString) => {
+  try {
+    const utcDate = new Date(dateString);
+    const wibDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000); // Geser +7 jam
+    return formatDistanceToNow(wibDate, { addSuffix: true });
+  } catch {
+    return "Tanggal tidak valid";
+  }
+};
 
   // Pagination
   const indexOfLast = currentPage * notificationsPerPage;

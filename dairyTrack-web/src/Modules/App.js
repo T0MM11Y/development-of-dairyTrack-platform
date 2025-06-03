@@ -28,6 +28,28 @@ import Gallery from "./pages/Gallery";
 import { SocketProvider } from "../socket/socket";
 import CowsMilkAnalysis from "./pages/Admin/MilkProduction/Analythics/CowsMilkAnalysis";
 import MilkExpiryCheck from "./pages/Admin/MilkProduction/Analythics/MilkExpiryCheck";
+// HealthCheck
+import ListHealthChecks from "./pages/Admin/HealthCheckManagement/HealthCheck/ListHealthChecks";
+import CreateHealthCheck from "./pages/Admin/HealthCheckManagement/HealthCheck/CreateHealthCheck";
+import EditHealthCheck from "./pages/Admin/HealthCheckManagement/HealthCheck/EditHealthCheck";
+
+// Symptom
+import ListSymptoms from "./pages/Admin/HealthCheckManagement/Symptom/ListSymptoms";
+import CreateSymptom from "./pages/Admin/HealthCheckManagement/Symptom/CreateSymptom";
+import EditSymptom from "./pages/Admin/HealthCheckManagement/Symptom/EditSymptom";
+
+// DiseaseHistory
+import ListDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/ListDiseaseHistory";
+import CreateDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/CreateDiseaseHistory";
+import EditDiseaseHistory from "./pages/Admin/HealthCheckManagement/DiseaseHistory/EditDiseaseHistory";
+
+// Reproduction
+import ListReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/ListReproduction";
+import CreateReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/CreateReproduction";
+import EditReproduction from "./pages/Admin/HealthCheckManagement/Reproduction/EditReproduction";
+
+// HealthDashboard
+import HealthDashboard from "./pages/Admin/HealthCheckManagement/HealthDashboard/Dashboard";
 
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
@@ -162,6 +184,76 @@ function App() {
             <ProtectedRoute path="/admin/milk-expiry-check">
               <AdminLayout>
                 <MilkExpiryCheck />
+              </AdminLayout>
+            </ProtectedRoute>
+              {/* HealthCheck */}
+            <ProtectedRoute path="/admin/list-health-checks">
+              <AdminLayout>
+                <ListHealthChecks />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-health-check">
+              <AdminLayout>
+                <CreateHealthCheck />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-health-check/:id">
+              <AdminLayout>
+                <EditHealthCheck />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* Symptom */}
+            <ProtectedRoute path="/admin/list-symptoms">
+              <AdminLayout>
+                <ListSymptoms />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-symptom">
+              <AdminLayout>
+                <CreateSymptom />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-symptom/:id">
+              <AdminLayout>
+                <EditSymptom />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* DiseaseHistory */}
+            <ProtectedRoute path="/admin/list-disease-history">
+              <AdminLayout>
+                <ListDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-disease-history">
+              <AdminLayout>
+                <CreateDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-disease-history/:id">
+              <AdminLayout>
+                <EditDiseaseHistory />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* Reproduction */}
+            <ProtectedRoute path="/admin/list-reproduction">
+              <AdminLayout>
+                <ListReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/add-reproduction">
+              <AdminLayout>
+                <CreateReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-reproduction/:id">
+              <AdminLayout>
+                <EditReproduction />
+              </AdminLayout>
+            </ProtectedRoute>
+            {/* Health Dashboard */}
+            <ProtectedRoute path="/admin/health-dashboard">
+              <AdminLayout>
+                <HealthDashboard />
               </AdminLayout>
             </ProtectedRoute>
           </Switch>

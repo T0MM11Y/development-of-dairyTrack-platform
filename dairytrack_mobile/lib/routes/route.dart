@@ -22,6 +22,13 @@ import '../views/highlights/galleryView.dart';
 // Guest Views
 import '../views/GuestView/GalleryGuestsView.dart';
 
+//Healthcheck
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
+import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
+import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
+import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
+import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+
 class AppRoutes {
   // Route names
   static const String login = '/login';
@@ -48,6 +55,14 @@ class AppRoutes {
 
   // Guest Routes
   static const String guestGallery = '/guest/gallery';
+
+  // Health Check Management Routes
+static const String healthDashboard = '/health-dashboard';
+static const String healthCheckList = '/health-checks';
+static const String symptomList = '/symptoms';
+static const String diseaseHistoryList = '/disease-history';
+static const String reproductionList = '/reproduction';
+
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -129,6 +144,36 @@ class AppRoutes {
           builder: (_) => GalleryGuestsView(),
           settings: settings,
         );
+// Health Check Management
+case healthDashboard:
+  return MaterialPageRoute(
+    builder: (_) => HealthDashboardView(),
+    settings: settings,
+  );
+
+case healthCheckList:
+  return MaterialPageRoute(
+    builder: (_) => HealthCheckListView(),
+    settings: settings,
+  );
+
+case symptomList:
+  return MaterialPageRoute(
+    builder: (_) => SymptomListView(),
+    settings: settings,
+  );
+
+case diseaseHistoryList:
+  return MaterialPageRoute(
+    builder: (_) => DiseaseHistoryListView(),
+    settings: settings,
+  );
+
+case reproductionList:
+  return MaterialPageRoute(
+    builder: (_) => ReproductionListView(),
+    settings: settings,
+  );
 
       // Default route (fallback)
       default:
