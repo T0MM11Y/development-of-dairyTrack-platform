@@ -63,6 +63,17 @@ import ListDailyFeedItem from "./pages/Admin/FeedManagement/DailyFeedItem/ListDa
 import DailyFeedUsage from "./pages/Admin/FeedManagement/Grafik/DailyFeedUsage";
 import DailyNutrition from "./pages/Admin/FeedManagement/Grafik/DailyNutrition";
 
+// sales and financial
+import ProductType from "./pages/Admin/ProductType/listProductType";
+import ProductStock from "./pages/Admin/Product/ListProductStock";
+import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
+import SalesOrder from "./pages/Admin/Order/ListOrder";
+import Finance from "./pages/Admin/Finance/Finance";
+import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
+import Product from "./pages/Product";
+import Order from "./pages/Order";
+
+
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
   // Check if user data exists in localStorage
@@ -126,6 +137,20 @@ function App() {
               <Gallery />
               <Footer />
             </Route>
+
+            {/* Sales & financial */}
+            <Route path="/products">
+              <Header />
+              <Product />
+              <Footer />
+            </Route>
+
+            <Route path="/orders">
+              <Header />
+              <Order />
+              <Footer />
+            </Route>
+            {/* Sales & financial */}
 
             {/* Rute untuk halaman admin - with authentication protection */}
             <ProtectedRoute path="/admin" exact>
@@ -198,7 +223,7 @@ function App() {
                 <MilkExpiryCheck />
               </AdminLayout>
             </ProtectedRoute>
-              {/* HealthCheck */}
+            {/* HealthCheck */}
             <ProtectedRoute path="/admin/list-health-checks">
               <AdminLayout>
                 <ListHealthChecks />
@@ -269,57 +294,35 @@ function App() {
               </AdminLayout>
             </ProtectedRoute>
 
-            {/*Feed */}
-            <ProtectedRoute path="/admin/list-feedType">
+            {/* Saless and Fincancial Section */}
+            <ProtectedRoute path="/admin/product-type">
               <AdminLayout>
-                <ListFeedTypes />
+                <ProductType />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-feedType/:id">
+            <ProtectedRoute path="/admin/product">
               <AdminLayout>
-                <ListFeedTypes />
-                <EditFeedTypes />
+                <ProductStock />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-nutrition">
+            <ProtectedRoute path="/admin/product-history">
               <AdminLayout>
-                <ListNutrition />
+                <ProductHistory />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-feed">
+            <ProtectedRoute path="/admin/sales">
               <AdminLayout>
-                <ListFeed />
+                <SalesOrder />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/edit-feed/:id">
+            <ProtectedRoute path="/admin/finance">
               <AdminLayout>
-                <ListFeed />
-                <EditFeed />
+                <Finance />
               </AdminLayout>
             </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-stock">
+            <ProtectedRoute path="/admin/finance-record">
               <AdminLayout>
-                <ListStock />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-schedule">
-              <AdminLayout>
-                <ListDailyFeedSchedule />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/list-feedItem">
-              <AdminLayout>
-                <ListDailyFeedItem />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/daily-feed-usage">
-              <AdminLayout>
-                <DailyFeedUsage />
-              </AdminLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/admin/daily-nutrition">
-              <AdminLayout>
-                <DailyNutrition />
+                <FinanceRecord />
               </AdminLayout>
             </ProtectedRoute>
           </Switch>

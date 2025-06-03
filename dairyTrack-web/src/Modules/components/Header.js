@@ -280,6 +280,8 @@ const Header = () => {
     { path: "/about", label: "About", icon: "fas fa-info-circle" },
     { path: "/blog", label: "Blog", icon: "fas fa-blog" },
     { path: "/gallery", label: "Gallery", icon: "fas fa-images" },
+    { path: "/products", label: "Products", icon: "fas fa-glass-whiskey" },
+    { path: "/orders", label: "Orders", icon: "fas fa-shopping-cart" },
   ];
 
   return (
