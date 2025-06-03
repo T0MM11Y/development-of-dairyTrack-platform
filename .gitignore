@@ -1,2 +1,3 @@
 /dairyTrack-web/node_modules
 dairyTrack-api/Selling/whatsapp_errors.log
+*.log

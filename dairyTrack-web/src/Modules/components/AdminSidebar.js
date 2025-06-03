@@ -75,30 +75,30 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         link: "/admin/list-milking",
         showForRoles: ["admin", "supervisor", "farmer"],
       },
-       {
-      id: "health-check",
-      title: "Health Check Management",
-      icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
-      submenu: [
-        {
-          id: "health-checks",
-          title: "Health Checks",
-          link: "/admin/list-health-checks",
-        },
-        { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
-        {
-          id: "disease-history",
-          title: "Disease History",
-          link: "/admin/list-disease-history",
-        },
-        {
-          id: "reproduction",
-          title: "Reproduction",
-          link: "/admin/list-reproduction",
-        },
-      ],
-      showForRoles: ["admin", "supervisor", "farmer"],
-    },
+      {
+        id: "health-check",
+        title: "Health Check Management",
+        icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
+        submenu: [
+          {
+            id: "health-checks",
+            title: "Health Checks",
+            link: "/admin/list-health-checks",
+          },
+          { id: "symptoms", title: "Symptoms", link: "/admin/list-symptoms" },
+          {
+            id: "disease-history",
+            title: "Disease History",
+            link: "/admin/list-disease-history",
+          },
+          {
+            id: "reproduction",
+            title: "Reproduction",
+            link: "/admin/list-reproduction",
+          },
+        ],
+        showForRoles: ["admin", "supervisor", "farmer"],
+      },
       {
         id: "analytics",
         title: "Reports & Analytics",
@@ -114,11 +114,11 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             title: "Milk Quality Control",
             link: "/admin/milk-expiry-check",
           },
-             {
-          id: "health-dashboard",
-          title: "Health Dashboard",
-          link: "/admin/health-dashboard",
-        },
+          {
+            id: "health-dashboard",
+            title: "Health Dashboard",
+            link: "/admin/health-dashboard",
+          },
         ],
         showForRoles: ["admin", "supervisor", "farmer"],
       },
@@ -139,6 +139,32 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
           },
         ],
         showForRoles: ["admin", "supervisor"],
+      },
+      {
+        id: "salesAndFinancial",
+        title: "Sales And Financial",
+        icon: "far fa-chart-bar", // Modified to bar chart for broader sales/finance context
+        submenu: [
+          {
+            id: "product-type",
+            title: "Product Type",
+            link: "/admin/product-type",
+          },
+          { id: "product", title: "Product", link: "/admin/product" },
+          {
+            id: "product-history",
+            title: "Product History",
+            link: "/admin/product-history",
+          },
+          { id: "sales", title: "Sales", link: "/admin/sales" },
+          { id: "finance", title: "Finance", link: "/admin/finance" },
+          {
+            id: "finance-record",
+            title: "Finance Record",
+            link: "/admin/finance-record",
+          },
+        ],
+        showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
       },
     ],
     [userRole]
