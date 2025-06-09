@@ -231,41 +231,47 @@ class _NotificationWidgetState extends State<NotificationWidget>
   }
 
   // Get relative time
-  String _getRelativeTime(String? timestamp) {
-    if (timestamp == null) return 'Tidak diketahui';
+ /// Fungsi untuk menampilkan waktu relatif seperti "2 jam lalu"
+String _getRelativeTime(String? timestamp) {
+  if (timestamp == null) return 'Tidak diketahui';
 
-    try {
-      final now = DateTime.now();
-      final date = DateTime.parse(timestamp);
-      final difference = now.difference(date);
+  try {
+    final now = DateTime.now();
+    final utcDate = DateTime.parse(timestamp);
+    final wibDate = utcDate.add(Duration(hours: 7)); // Geser ke WIB
+    final difference = now.difference(wibDate);
 
-      if (difference.inMinutes < 1) {
-        return 'Baru saja';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} menit lalu';
-      } else if (difference.inHours < 24) {
-        return '${difference.inHours} jam lalu';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays} hari lalu';
-      } else {
-        return DateFormat('dd MMM yyyy', 'id_ID').format(date);
-      }
-    } catch (e) {
-      return 'Tidak diketahui';
+    if (difference.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} menit lalu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} jam lalu';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} hari lalu';
+    } else {
+      return DateFormat('dd MMM yyyy', 'id_ID').format(wibDate);
     }
+  } catch (e) {
+    return 'Tidak diketahui';
   }
+}
 
-  // Format date time
-  String _formatDateTime(String? timestamp) {
-    if (timestamp == null) return 'Tidak diketahui';
+/// Fungsi untuk menampilkan waktu lengkap dalam WIB
+String _formatDateTime(String? timestamp) {
+  if (timestamp == null) return 'Tidak diketahui';
 
-    try {
-      final date = DateTime.parse(timestamp);
-      return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
-    } catch (e) {
-      return 'Tidak diketahui';
-    }
+  try {
+    final parsedDate = DateTime.parse(timestamp); // otomatis parsing dengan offset
+    // Cek apakah timestamp sudah punya zona waktu → jangan add lagi
+    return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(parsedDate);
+  } catch (e) {
+    print('DEBUG - Error parsing date: $e');
+    return 'Tidak diketahui';
   }
+}
+
+
 
   // Show error snackbar
   void _showErrorSnackBar(String message) {

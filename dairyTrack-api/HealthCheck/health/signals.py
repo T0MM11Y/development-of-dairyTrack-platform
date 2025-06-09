@@ -67,7 +67,7 @@ def check_and_update_health_status(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message="⚠️ Pemeriksaan kesehatan mendeteksi: " + " ".join(messages),
+                message="Pemeriksaan kesehatan mendeteksi: " + " ".join(messages),
                 type="health_check",
                 created_at=now()
             )
@@ -86,7 +86,7 @@ def schedule_followup_check(sender, instance, created, **kwargs):
                     Notification.objects.create(
                         cow=refreshed.cow,
                         user=user,
-                        message="🚨 Segera periksa kesehatan sapi! Pemeriksaan belum ditangani lebih dari 1 hari.",
+                        message="Segera periksa kesehatan sapi! Pemeriksaan belum ditangani lebih dari 1 hari.",
                         type="follow_up",
                         created_at=now()
                     )
@@ -124,7 +124,7 @@ def check_reproduction_alert(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message=f"⚠️ Reproduksi: {alert_msg}",
+                message=f"Reproduksi: {alert_msg}",
                 type="reproduction",
                 created_at=now()
             )
