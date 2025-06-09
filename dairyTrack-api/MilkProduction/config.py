@@ -9,7 +9,7 @@ class Config:
     
      # production
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or (
-        'mysql+pymysql://DairyTrackMassfortso_machinefed:4c95497bb9c564ed5490f31089168ae5eb6a65cf@onsrd.h.filess.io:3307/DairyTrackMassfortso_machinefed'
+        'mysql+pymysql://DairyTrack_represent:212bf667b8832e0a530401195b131a542e31a4f0@rlsoy.h.filess.io:3307/DairyTrack_represent'
     )
 
 

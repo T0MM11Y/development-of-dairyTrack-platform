@@ -16,9 +16,20 @@ class LoginController {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        // Simpan token ke local storage
+        // Simpan token dan data user ke local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('authToken', responseData['token']);
+
+        // ✅ Simpan juga data user ke SharedPreferences
+        await prefs.setString('user', jsonEncode({
+          'id': responseData['user_id'],
+          'username': responseData['username'],
+          'name': responseData['name'],
+          'email': responseData['email'],
+          'role': responseData['role'],
+          'role_id': responseData['role_id'],
+          'token': responseData['token'],
+        }));
 
         return responseData;
       } else {

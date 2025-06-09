@@ -170,96 +170,128 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
     setState(() => _submitting = false);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: const Text('Tambah Gejala'),
-        backgroundColor: Colors.green[700],
-        centerTitle: true,
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
+    resizeToAvoidBottomInset: true,
+    appBar: AppBar(
+      title: const Text('Tambah Gejala'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              DropdownButtonFormField(
-                                value: _form['health_check'],
-                                decoration: const InputDecoration(labelText: 'Pemeriksaan'),
-                                items: filteredHealthChecks.map((hc) {
-                                  final cow = hc['cow'] is Map ? hc['cow'] : null;
-                                  return DropdownMenuItem(
-                                    value: hc['id'],
-                                    child: Text('${cow?['name']} - Suhu: ${hc['rectal_temperature']}'),
-                                  );
-                                }).toList(),
-                                onChanged: (val) => setState(() => _form['health_check'] = val),
-                                validator: (val) => val == null ? 'Wajib pilih' : null,
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            DropdownButtonFormField(
+                              value: _form['health_check'],
+                              decoration: InputDecoration(
+                                labelText: '🩺 Pemeriksaan',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               ),
-                              if (filteredHealthChecks.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    'Tidak ada pemeriksaan tersedia. Pastikan belum memiliki gejala dan butuh perhatian.',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              const SizedBox(height: 16),
-                              ...selectOptions.entries.map((entry) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: DropdownButtonFormField(
-  isExpanded: true,
-  decoration: InputDecoration(
-    labelText: entry.key.replaceAll('_', ' ').toUpperCase(),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-  ),
-  value: _form[entry.key],
-  items: entry.value.map((opt) {
-    return DropdownMenuItem(
-      value: opt,
-      child: Text(
-        opt,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-    );
-  }).toList(),
-  onChanged: (val) => setState(() => _form[entry.key] = val),
-                                  ),
+                              items: filteredHealthChecks.map((hc) {
+                                final cow = hc['cow'] is Map ? hc['cow'] : null;
+                                return DropdownMenuItem(
+                                  value: hc['id'],
+                                  child: Text('${cow?['name']} - Suhu: ${hc['rectal_temperature']}'),
                                 );
                               }).toList(),
-                              const Spacer(),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _submitting ? null : _submit,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    backgroundColor: Colors.green[700],
-                                  ),
-                                  child: _submitting
-                                      ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                        )
-                                      : const Text('Simpan'),
+                              onChanged: (val) => setState(() => _form['health_check'] = val),
+                              validator: (val) => val == null ? 'Wajib pilih' : null,
+                            ),
+
+                            if (filteredHealthChecks.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '⚠️ Tidak ada pemeriksaan tersedia. Pastikan belum memiliki gejala dan butuh perhatian.',
+                                  style: TextStyle(color: Colors.red),
                                 ),
                               ),
-                            ],
-                          ),
+
+                            const SizedBox(height: 24),
+
+                            ...selectOptions.entries.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: DropdownButtonFormField(
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    labelText: '📝 ${entry.key.replaceAll('_', ' ').toUpperCase()}',
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  value: _form[entry.key],
+                                  items: entry.value.map((opt) {
+                                    return DropdownMenuItem(
+                                      value: opt,
+                                      child: Text(
+                                        opt,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) => setState(() => _form[entry.key] = val),
+                                ),
+                              );
+                            }).toList(),
+
+                            const Spacer(),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: _submitting
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.save),
+                                label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                                onPressed: _submitting ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: Colors.teal[600],
+                                  foregroundColor: Colors.white,
+                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -267,6 +299,7 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
                 ),
               ),
             ),
-    );
-  }
+          ),
+  );
+}
 }

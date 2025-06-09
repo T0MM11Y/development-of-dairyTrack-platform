@@ -118,13 +118,26 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
     }
   }
 
-  @override
+ @override
 Widget build(BuildContext context) {
   return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
-      title: const Text('Tambah Pemeriksaan'),
-      backgroundColor: Colors.green[700],
       centerTitle: true,
+      elevation: 0,
+      title: const Text(
+        'Tambah Pemeriksaan',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -137,11 +150,16 @@ Widget build(BuildContext context) {
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                      ),
                     ),
 
-                  const Text('📋 Informasi Pemeriksaan',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    '📋 Informasi Pemeriksaan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 12),
 
                   if (_availableCows.isEmpty)
@@ -150,17 +168,28 @@ Widget build(BuildContext context) {
                       decoration: BoxDecoration(
                         color: Colors.orange.shade50,
                         border: Border.all(color: Colors.orange),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
-                        "⚠️ Tidak ada sapi yang tersedia untuk diperiksa. Pastikan tidak ada pemeriksaan aktif.",
-                        style: TextStyle(color: Colors.orange),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.warning, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "Tidak ada sapi yang tersedia untuk diperiksa. Pastikan tidak ada pemeriksaan aktif.",
+                              style: TextStyle(color: Colors.orange),
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   else
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         labelText: '🐄 Pilih Sapi',
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       value: _selectedCowId,
@@ -176,13 +205,25 @@ Widget build(BuildContext context) {
 
                   const SizedBox(height: 16),
                   _inputField(
-                      label: '🌡️ Suhu Rektal (°C)', controller: _tempController, keyboardType: TextInputType.number),
+                    label: '🌡️ Suhu Rektal (°C)',
+                    controller: _tempController,
+                    keyboardType: TextInputType.number,
+                  ),
                   _inputField(
-                      label: '❤️ Denyut Jantung', controller: _heartRateController, keyboardType: TextInputType.number),
+                    label: '❤️ Denyut Jantung (bpm)',
+                    controller: _heartRateController,
+                    keyboardType: TextInputType.number,
+                  ),
                   _inputField(
-                      label: '🫁 Laju Pernapasan', controller: _respirationController, keyboardType: TextInputType.number),
+                    label: '🫁 Laju Pernapasan (bpm)',
+                    controller: _respirationController,
+                    keyboardType: TextInputType.number,
+                  ),
                   _inputField(
-                      label: '🐄 Ruminasi (menit)', controller: _ruminationController, keyboardType: TextInputType.number),
+                    label: '🐄 Ruminasi (menit)',
+                    controller: _ruminationController,
+                    keyboardType: TextInputType.number,
+                  ),
 
                   const SizedBox(height: 24),
                   SizedBox(
@@ -198,9 +239,10 @@ Widget build(BuildContext context) {
                       label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
                       onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        textStyle: const TextStyle(fontSize: 16),
-                        backgroundColor: Colors.green[700],
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.teal[600],
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
@@ -221,9 +263,20 @@ Widget _inputField({
     child: TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
       ),
       validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
     ),

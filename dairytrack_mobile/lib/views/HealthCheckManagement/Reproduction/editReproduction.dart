@@ -189,67 +189,81 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Data Reproduksi'),
-        centerTitle: true,
-        backgroundColor: Colors.green[700],
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Edit Data Reproduksi'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                      ),
-                    TextFormField(
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Sapi',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      initialValue: _cowName,
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(_error!, style: const TextStyle(color: Colors.red)),
                     ),
-                    const SizedBox(height: 16),
-                    _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
-                    _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
-                    _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
-                    _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: _submitting
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(_submitting ? 'Menyimpan...' : 'Perbarui'),
-                        onPressed: _submitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          textStyle: const TextStyle(fontSize: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.green[700],
-                        ),
+                  TextFormField(
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Sapi',
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    initialValue: _cowName,
+                  ),
+                  const SizedBox(height: 16),
+                  _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
+                  const SizedBox(height: 12),
+                  _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
+                  const SizedBox(height: 12),
+                  _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
+                  const SizedBox(height: 12),
+                  _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save),
+                      label: Text(_submitting ? 'Menyimpan...' : 'Perbarui'),
+                      onPressed: _submitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(fontSize: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Colors.green[700],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-    );
-  }
+          ),
+  );
+}
 }

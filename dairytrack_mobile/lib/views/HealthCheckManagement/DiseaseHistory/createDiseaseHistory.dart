@@ -148,7 +148,16 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       title: const Text('Tambah Riwayat Penyakit'),
       centerTitle: true,
-      backgroundColor: Colors.green[700],
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -164,11 +173,12 @@ Widget build(BuildContext context) {
                       child: Text(_error!, style: const TextStyle(color: Colors.red)),
                     ),
 
-                  // 🔽 Pemeriksaan
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
                       labelText: 'Pilih Pemeriksaan',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
                     ),
                     value: _selectedHealthCheckId,
                     items: healthCheckItems,
@@ -184,20 +194,17 @@ Widget build(BuildContext context) {
                       ),
                     ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // 🔍 Detail Pemeriksaan
                   if (_selectedCheck != null && _selectedCheck!.isNotEmpty) ...[
-                    const Text('Detail Pemeriksaan', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    _sectionTitle('📋 Detail Pemeriksaan'),
                     _infoTile('🌡️ Suhu Rektal', '${_selectedCheck?['rectal_temperature']} °C'),
                     _infoTile('❤️ Denyut Jantung', '${_selectedCheck?['heart_rate']} bpm'),
                     _infoTile('🫁 Laju Pernapasan', '${_selectedCheck?['respiration_rate']} bpm'),
                     _infoTile('🐄 Ruminasi', '${_selectedCheck?['rumination']} menit'),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                    const Text('Gejala', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
+                    _sectionTitle('🦠 Gejala'),
                     if (_selectedSymptom != null &&
                         _selectedSymptom!.entries.where((e) {
                           final key = e.key;
@@ -228,30 +235,36 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 20),
                   ],
 
-                  // 📝 Input Form
+                  _sectionTitle('🧬 Nama Penyakit'),
                   TextFormField(
                     controller: _diseaseNameController,
                     decoration: InputDecoration(
                       labelText: 'Nama Penyakit',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
                     ),
                     validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                   ),
+
                   const SizedBox(height: 16),
+
+                  _sectionTitle('📝 Deskripsi'),
                   TextFormField(
                     controller: _descriptionController,
-                    minLines: 2,
-                    maxLines: 4,
+                    minLines: 3,
+                    maxLines: 5,
                     decoration: InputDecoration(
                       labelText: 'Deskripsi',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
                     ),
                     validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 30),
 
-                  // 🔘 Tombol Simpan
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -282,20 +295,34 @@ Widget build(BuildContext context) {
   );
 }
 
-  Widget _infoTile(String title, String value) {
+Widget _infoTile(String title, String value) {
   return Padding(
-    padding: const EdgeInsets.only(bottom: 4),
+    padding: const EdgeInsets.only(bottom: 8),
     child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Text(title)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Expanded(flex: 5, child: Text(title, style: const TextStyle(color: Colors.black87))),
+        Expanded(flex: 5, child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
       ],
     ),
   );
 }
 
+Widget _sectionTitle(String title) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      title,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+    ),
+  );
+}
 
-  String _capitalize(String s) {
-    return s.replaceAll('_', ' ').split(' ').map((e) => e[0].toUpperCase() + e.substring(1)).join(' ');
-  }
+String _capitalize(String s) {
+  return s
+      .replaceAll('_', ' ')
+      .split(' ')
+      .map((e) => e.isNotEmpty ? e[0].toUpperCase() + e.substring(1) : '')
+      .join(' ');
+}
 }

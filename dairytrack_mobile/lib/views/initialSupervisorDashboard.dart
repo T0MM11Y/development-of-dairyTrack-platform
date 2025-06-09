@@ -15,6 +15,12 @@ import '../controller/APIURL1/notificationController.dart';
 import '../widgets/notifications.dart';
 import 'loginView.dart';
 
+//Healthcheck
+import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
+import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
+import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
+import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+
 class InitialSupervisorDashboard extends StatefulWidget {
   @override
   _InitialSupervisorDashboardState createState() =>
@@ -94,6 +100,30 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           route: 'gallery',
           widget: () => Container(), // Replace with actual page
         ),
+              NavigationItem(
+        icon: Icons.medical_services,
+        label: 'Pemeriksaan Kesehatan',
+        route: 'health-checks',
+        widget: () => HealthCheckListView(),
+      ),
+      NavigationItem(
+        icon: Icons.visibility,
+        label: 'Gejala',
+        route: 'symptoms',
+        widget: () => SymptomListView(),
+      ),
+      NavigationItem(
+        icon: Icons.coronavirus,
+        label: 'Riwayat Penyakit',
+        route: 'disease-history',
+        widget: () => DiseaseHistoryListView(),
+      ),
+      NavigationItem(
+        icon: Icons.pregnant_woman,
+        label: 'Reproduksi',
+        route: 'reproduction',
+        widget: () => ReproductionListView(),
+      ),
       ];
 
   @override

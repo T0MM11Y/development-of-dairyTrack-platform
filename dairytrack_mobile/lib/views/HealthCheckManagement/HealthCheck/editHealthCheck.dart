@@ -118,92 +118,116 @@ class _EditHealthCheckViewState extends State<EditHealthCheckView> {
       setState(() => _submitting = false);
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Pemeriksaan'),
-        backgroundColor: Colors.green[700],
-        centerTitle: true,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
+    appBar: AppBar(
+      title: const Text('Edit Pemeriksaan'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _form == null
-              ? Center(child: Text(_error ?? 'Data tidak ditemukan'))
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      children: [
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                          ),
-
-                        _readonlyField('🐄 Sapi', _cowName),
-                        _readonlyField(
-                          '📅 Tanggal Pemeriksaan',
-                          _form?['checkup_date'] != null
-                              ? DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
-                                  .format(DateTime.parse(_form!['checkup_date']).toLocal()) + ' WIB'
-                              : '-',
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _form == null
+            ? Center(child: Text(_error ?? 'Data tidak ditemukan'))
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    children: [
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(_error!,
+                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                         ),
 
-                        _inputField('🌡️ Suhu Rektal (°C)', _tempController),
-                        _inputField('❤️ Denyut Jantung', _heartRateController),
-                        _inputField('🫁 Laju Pernapasan', _respirationController),
-                        _inputField('🐄 Ruminasi (menit)', _ruminationController),
+                      _readonlyField('🐄 Sapi', _cowName),
+                      _readonlyField(
+                        '📅 Tanggal Pemeriksaan',
+                        _form?['checkup_date'] != null
+                            ? DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                                    .format(DateTime.parse(_form!['checkup_date']).toLocal()) +
+                                ' WIB'
+                            : '-',
+                      ),
 
-                        _readonlyField(
-                          '📌 Status',
-                          _form!['status'] == 'handled' ? '✅ Sudah ditangani' : '⏳ Belum ditangani',
-                        ),
+                      _inputField('🌡️ Suhu Rektal (°C)', _tempController),
+                      _inputField('❤️ Denyut Jantung (bpm)', _heartRateController),
+                      _inputField('🫁 Laju Pernapasan (bpm)', _respirationController),
+                      _inputField('🐄 Ruminasi (menit)', _ruminationController),
 
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: _submitting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.save),
-                            label: Text(_submitting ? 'Menyimpan...' : 'Simpan Perubahan'),
-                            onPressed: _submitting ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              textStyle: const TextStyle(fontSize: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              backgroundColor: Colors.green[700],
+                      _readonlyField(
+                        '📌 Status',
+                        _form!['status'] == 'handled' ? '✅ Sudah ditangani' : '⏳ Belum ditangani',
+                      ),
+
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: _submitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.save),
+                          label: Text(_submitting ? 'Menyimpan...' : 'Simpan Perubahan'),
+                          onPressed: _submitting ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.teal[600],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-    );
-  }
+              ),
+  );
+}
 
-  Widget _inputField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+Widget _inputField(String label, TextEditingController controller) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      style: const TextStyle(fontSize: 15),
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
       ),
-    );
-  }
+      validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+    ),
+  );
+}
 
 Widget _readonlyField(String label, String value) {
   return Padding(
@@ -212,23 +236,23 @@ Widget _readonlyField(String label, String value) {
       initialValue: value,
       readOnly: true,
       enabled: false,
-      style: const TextStyle(color: Colors.black87),
+      style: const TextStyle(color: Colors.black87, fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
         filled: true,
         fillColor: Colors.grey.shade200,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         labelStyle: const TextStyle(color: Colors.black54),
         border: OutlineInputBorder(
-          borderSide: BorderSide.none,
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         disabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade400),
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade400),
         ),
       ),
     ),
   );
 }
-
 }

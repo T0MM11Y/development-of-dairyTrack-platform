@@ -21,7 +21,16 @@ class ViewDiseaseHistoryView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Detail Riwayat Penyakit'),
         centerTitle: true,
-        backgroundColor: Colors.green[700],
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -31,10 +40,14 @@ class ViewDiseaseHistoryView extends StatelessWidget {
             _sectionCard(
               title: '🐄 Informasi Sapi',
               children: [
-                _infoTile('Nama Sapi', cow != null ? '${cow!['name']} (${cow!['breed']})' : 'Sapi tidak ditemukan'),
+                _infoTile(
+                  'Nama Sapi',
+                  cow != null
+                      ? '${cow!['name']} (${cow!['breed']})'
+                      : 'Sapi tidak ditemukan',
+                ),
               ],
             ),
-            const SizedBox(height: 12),
             _sectionCard(
               title: '📋 Detail Pemeriksaan',
               children: check.isEmpty
@@ -46,23 +59,34 @@ class ViewDiseaseHistoryView extends StatelessWidget {
                       _infoTile('🐄 Ruminasi', '${check['rumination']} menit'),
                       _infoTile(
                         '🕒 Tanggal Periksa',
-                        DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.parse(check['checkup_date']).toLocal()) + ' WIB',
+                        DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                                .format(DateTime.parse(check['checkup_date']).toLocal()) +
+                            ' WIB',
                       ),
                     ],
             ),
-            const SizedBox(height: 12),
             _sectionCard(
               title: '🦠 Gejala',
               children: symptom.entries
                   .where((entry) =>
-                      !['id', 'health_check', 'created_at', 'created_by', 'edited_by'].contains(entry.key) &&
+                      !['id', 'health_check', 'created_at', 'created_by', 'edited_by']
+                          .contains(entry.key) &&
                       entry.value != null &&
                       entry.value.toString().toLowerCase() != 'normal')
-                  .map((entry) => _infoTile(_capitalize(entry.key.replaceAll('_', ' ')), entry.value.toString()))
+                  .map((entry) => _infoTile(
+                        _capitalize(entry.key.replaceAll('_', ' ')),
+                        entry.value.toString(),
+                      ))
                   .toList()
-                    ..addIf(symptom.entries.every((e) => e.value.toString().toLowerCase() == 'normal'), const Text('Tidak ada gejala dicatat.')),
+                ..addIf(
+                  symptom.entries.every(
+                      (e) => e.value.toString().toLowerCase() == 'normal'),
+                  const Text(
+                    'Tidak ada gejala dicatat.',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ),
             ),
-            const SizedBox(height: 12),
             _sectionCard(
               title: '📝 Deskripsi',
               children: [
@@ -80,16 +104,22 @@ class ViewDiseaseHistoryView extends StatelessWidget {
     );
   }
 
-  Widget _sectionCard({required String title, required List<Widget> children}) {
+  Widget _sectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             ...children,
           ],
@@ -104,9 +134,16 @@ class ViewDiseaseHistoryView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 4, child: Text(label, style: const TextStyle(color: Colors.black54))),
+          Expanded(
+            flex: 4,
+            child: Text(label, style: const TextStyle(color: Colors.black54)),
+          ),
           const SizedBox(width: 8),
-          Expanded(flex: 6, child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Expanded(
+            flex: 6,
+            child: Text(value,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
         ],
       ),
     );
@@ -115,7 +152,8 @@ class ViewDiseaseHistoryView extends StatelessWidget {
   String _capitalize(String input) {
     return input
         .split(' ')
-        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '')
+        .map((word) =>
+            word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
         .join(' ');
   }
 }

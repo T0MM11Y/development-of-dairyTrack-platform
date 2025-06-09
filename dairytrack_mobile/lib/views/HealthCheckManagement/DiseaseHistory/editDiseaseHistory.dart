@@ -102,160 +102,179 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Edit Riwayat Penyakit'), backgroundColor: Colors.green[700]),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _disease == null
-                  ? Text(_error ?? 'Data tidak ditemukan')
-                  : Form(
-                      key: _formKey,
-                      child: ListView(
-                        children: [
-                          if (_error != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                            ),
-
-                          if (_disease?['health_check']?['cow'] != null)
-                            _infoField(
-                              '🐄 Sapi',
-                              '${_disease!['health_check']['cow']['name']} (${_disease!['health_check']['cow']['breed']})',
-                            ),
-
-                          if (_disease?['health_check'] != null)
-                            _checkupDetails(_disease!['health_check']),
-
-                          if (_disease?['symptom'] != null)
-                            _symptomDetails(_disease!['symptom']),
-
-                          const Divider(height: 32),
-
-                          TextFormField(
-                            controller: _diseaseNameController,
-                            decoration: InputDecoration(
-                              labelText: '🧬 Nama Penyakit',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              labelText: '📝 Deskripsi',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            minLines: 3,
-                            maxLines: 5,
-                            validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              icon: _submitting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                    )
-                                  : const Icon(Icons.save),
-                              label: Text(_submitting ? 'Menyimpan...' : 'Perbarui Data'),
-                              onPressed: _submitting ? null : _submit,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                textStyle: const TextStyle(fontSize: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                backgroundColor: Colors.green[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-    );
-  }
-
-  Widget _infoField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        initialValue: value,
-        enabled: false,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Edit Riwayat Penyakit'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ),
-    );
-  }
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _disease == null
+                ? Text(_error ?? 'Data tidak ditemukan')
+                : Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                          ),
 
-  Widget _checkupDetails(Map<String, dynamic> check) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('📋 Detail Pemeriksaan', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('🌡️ Suhu: ${check['rectal_temperature']} °C'),
-                Text('❤️ Denyut Jantung: ${check['heart_rate']} bpm'),
-                Text('🫁 Pernapasan: ${check['respiration_rate']} bpm'),
-                Text('🐄 Ruminasi: ${check['rumination']} menit'),
-                Text('🕒 Tanggal: ${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.parse(check['checkup_date']).toLocal())} WIB'),
-              ],
-            ),
+                        if (_disease?['health_check']?['cow'] != null)
+                          _infoField(
+                            '🐄 Sapi',
+                            '${_disease!['health_check']['cow']['name']} (${_disease!['health_check']['cow']['breed']})',
+                          ),
+
+                        if (_disease?['health_check'] != null)
+                          _checkupDetails(_disease!['health_check']),
+
+                        if (_disease?['symptom'] != null)
+                          _symptomDetails(_disease!['symptom']),
+
+                        const Divider(height: 32),
+
+                        TextFormField(
+                          controller: _diseaseNameController,
+                          decoration: InputDecoration(
+                            labelText: '🧬 Nama Penyakit',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _descriptionController,
+                          decoration: InputDecoration(
+                            labelText: '📝 Deskripsi',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          minLines: 3,
+                          maxLines: 5,
+                          validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: _submitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.save),
+                            label: Text(_submitting ? 'Menyimpan...' : 'Perbarui Data'),
+                            onPressed: _submitting ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(fontSize: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              backgroundColor: Colors.green[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
-        ],
+  );
+}
+
+Widget _infoField(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextFormField(
+      initialValue: value,
+      enabled: false,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.grey.shade100,
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _symptomDetails(Map<String, dynamic> symptom) {
-    final List<Widget> entries = [];
-    symptom.forEach((key, value) {
-      if (!['id', 'health_check', 'created_at', 'created_by', 'edited_by'].contains(key) && value != null) {
-        final label = key.replaceAll('_', ' ').replaceFirstMapped(RegExp(r'^\w'), (m) => m.group(0)!.toUpperCase());
-        entries.add(Text('• $label: $value'));
-      }
-    });
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('🦠 Gejala', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: entries.isNotEmpty
-                ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: entries)
-                : const Text('Tidak ada gejala abnormal dicatat.', style: TextStyle(fontStyle: FontStyle.italic)),
+Widget _checkupDetails(Map<String, dynamic> check) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('📋 Detail Pemeriksaan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
-      ),
-    );
-  }
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('🌡️ Suhu: ${check['rectal_temperature']} °C'),
+              Text('❤️ Denyut Jantung: ${check['heart_rate']} bpm'),
+              Text('🫁 Pernapasan: ${check['respiration_rate']} bpm'),
+              Text('🐄 Ruminasi: ${check['rumination']} menit'),
+              Text('🕒 Tanggal: ${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.parse(check['checkup_date']).toLocal())} WIB'),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _symptomDetails(Map<String, dynamic> symptom) {
+  final List<Widget> entries = [];
+  symptom.forEach((key, value) {
+    if (!['id', 'health_check', 'created_at', 'created_by', 'edited_by'].contains(key) && value != null) {
+      final label = key.replaceAll('_', ' ').replaceFirstMapped(RegExp(r'^\w'), (m) => m.group(0)!.toUpperCase());
+      entries.add(Text('• $label: $value'));
+    }
+  });
+
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('🦠 Gejala', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: entries.isNotEmpty
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: entries)
+              : const Text('Tidak ada gejala abnormal dicatat.', style: TextStyle(fontStyle: FontStyle.italic)),
+        ),
+      ],
+    ),
+  );
+}
 }
