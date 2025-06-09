@@ -231,23 +231,20 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   // Style objects with retro background
   const styles = {
     header: {
-      // Fixed positioning and z-index
       position: "fixed",
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 1200, // Increased z-index
-      // Retro gradient background
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      boxShadow:
-        "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
+      zIndex: 1200,
+      background: "#FFFFFF",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
       padding: "12px 20px",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       borderBottom: "3px solid #FF6B35",
       flexWrap: "wrap",
-      overflow: "visible", // Changed from hidden to visible
+      overflow: "visible",
       height: "70px",
     },
     // Retro overlay pattern
@@ -303,9 +300,8 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       fontSize: "1.2rem",
       margin: 0,
       fontWeight: "600",
-      // Retro text styling
-      color: "#F7F7F7",
-      textShadow: "0 2px 4px rgba(0,0,0,0.5)",
+      color: "#333333", // Ubah dari putih ke hitam
+      textShadow: "none", // Hapus bayangan teks
     },
     dateTime: {
       fontFamily: "Roboto, sans-serif",
@@ -428,10 +424,21 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       overflow: "hidden",
       textOverflow: "ellipsis",
       maxWidth: "150px",
-      // Retro username styling
-      color: "#F7F7F7",
+      color: "#333333", // Ubah dari putih ke hitam
       fontWeight: "600",
-      textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+      textShadow: "none", // Hapus bayangan teks
+    },
+    userDropdown: {
+      position: "relative",
+      display: "flex",
+      alignItems: "center",
+      cursor: "pointer",
+      padding: "5px 10px",
+      borderRadius: "20px",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      background: "rgba(240,240,240,0.5)", // Warna latar lebih terang
+      border: "1px solid rgba(200,200,200,0.5)",
+      zIndex: 10,
     },
   };
 
