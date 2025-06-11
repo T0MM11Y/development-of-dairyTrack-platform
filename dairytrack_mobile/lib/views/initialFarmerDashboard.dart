@@ -26,6 +26,14 @@ import '../controller/APIURL1/milkingSessionController.dart';
 import '../controller/APIURL1/cattleDistributionController.dart';
 import '../controller/APIURL1/notificationController.dart';
 
+//Healthcheck
+import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
+import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
+import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
+import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
+
+
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
 import 'usersManagement/listOfUsersView.dart';
@@ -174,6 +182,37 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
+        NavigationItem(
+        icon: Icons.medical_services,
+        label: 'Pemeriksaan Kesehatan',
+        route: 'health-checks',
+        widget: () => HealthCheckListView(),
+      ),
+      NavigationItem(
+        icon: Icons.visibility,
+        label: 'Gejala',
+        route: 'symptoms',
+        widget: () => SymptomListView(),
+      ),
+      NavigationItem(
+        icon: Icons.coronavirus,
+        label: 'Riwayat Penyakit',
+        route: 'disease-history',
+        widget: () => DiseaseHistoryListView(),
+      ),
+      NavigationItem(
+        icon: Icons.pregnant_woman,
+        label: 'Reproduksi',
+        route: 'reproduction',
+        widget: () => ReproductionListView(),
+      ),
+     NavigationItem(
+  icon: Icons.monitor_heart,
+  label: 'HealthDashboard',
+  route: 'health-dashboard',
+  widget: () => HealthDashboardView(),
+),
+
       ];
 
   @override

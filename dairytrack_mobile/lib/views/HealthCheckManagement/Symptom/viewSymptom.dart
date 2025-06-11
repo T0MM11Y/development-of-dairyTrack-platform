@@ -59,57 +59,92 @@ class _SymptomViewPageState extends State<SymptomViewPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Gejala'),
-        centerTitle: true,
-        backgroundColor: Colors.green[700],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: widget.onClose,
-          )
-        ],
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
+    appBar: AppBar(
+      centerTitle: true,
+      elevation: 0,
+      title: const Text('Detail Gejala'),
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text(_error!))
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ListView.separated(
-                    itemCount: fieldOrder.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final key = fieldOrder[index];
-                      final value = _data?[key]?.toString().trim();
-                      final isNormal = value == null || value.isEmpty || value.toLowerCase() == 'normal';
-
-                      return Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: ListTile(
-                          leading: Icon(
-                            isNormal ? Icons.check_circle : Icons.warning_amber_rounded,
-                            color: isNormal ? Colors.green : Colors.orange,
-                          ),
-                          title: Text(
-                            _formatLabel(key),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            isNormal ? 'Normal' : value!,
-                            style: TextStyle(
-                              color: isNormal ? Colors.black87 : Colors.red[800],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: 'Tutup',
+          onPressed: widget.onClose,
+        ),
+      ],
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _error != null
+            ? Center(
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                 ),
-    );
-  }
+              )
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: ListView.separated(
+                  itemCount: fieldOrder.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final key = fieldOrder[index];
+                    final value = _data?[key]?.toString().trim();
+                    final isNormal = value == null || value.isEmpty || value.toLowerCase() == 'normal';
+
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              isNormal ? Icons.check_circle : Icons.warning_amber_rounded,
+                              color: isNormal ? Colors.green[600] : Colors.orange[700],
+                              size: 28,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _formatLabel(key),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    isNormal ? 'Normal' : value!,
+                                    style: TextStyle(
+                                      color: isNormal ? Colors.black87 : Colors.red[800],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+  );
+}
 }

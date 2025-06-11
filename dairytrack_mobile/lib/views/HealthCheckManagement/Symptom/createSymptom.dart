@@ -150,116 +150,172 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _submitting = true);
-    final response = await _symptomController.createSymptom(_form);
+  setState(() => _submitting = true);
 
-    if (response['success']) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
-        widget.onSaved();
-        Navigator.pop(context);
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Gagal menyimpan data'), backgroundColor: Colors.red),
+  final response = await _symptomController.createSymptom(_form);
+
+  if (response['success']) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Berhasil'),
+          content: Text('Data berhasil disimpan.'),
+        ),
       );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      if (mounted) {
+        Navigator.of(context).pop(); // tutup dialog
+        Navigator.of(context).pop(); // tutup form
+        widget.onSaved(); // panggil callback setelah form ditutup
+      }
     }
-
-    setState(() => _submitting = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: const Text('Tambah Gejala'),
-        backgroundColor: Colors.green[700],
-        centerTitle: true,
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              DropdownButtonFormField(
-                                value: _form['health_check'],
-                                decoration: const InputDecoration(labelText: 'Pemeriksaan'),
-                                items: filteredHealthChecks.map((hc) {
-                                  final cow = hc['cow'] is Map ? hc['cow'] : null;
-                                  return DropdownMenuItem(
-                                    value: hc['id'],
-                                    child: Text('${cow?['name']} - Suhu: ${hc['rectal_temperature']}'),
-                                  );
-                                }).toList(),
-                                onChanged: (val) => setState(() => _form['health_check'] = val),
-                                validator: (val) => val == null ? 'Wajib pilih' : null,
-                              ),
-                              if (filteredHealthChecks.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    'Tidak ada pemeriksaan tersedia. Pastikan belum memiliki gejala dan butuh perhatian.',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              const SizedBox(height: 16),
-                              ...selectOptions.entries.map((entry) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: DropdownButtonFormField(
-  isExpanded: true,
-  decoration: InputDecoration(
-    labelText: entry.key.replaceAll('_', ' ').toUpperCase(),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-  ),
-  value: _form[entry.key],
-  items: entry.value.map((opt) {
-    return DropdownMenuItem(
-      value: opt,
-      child: Text(
-        opt,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Gagal'),
+        content: Text(response['message'] ?? 'Gagal menyimpan data.'),
       ),
     );
-  }).toList(),
-  onChanged: (val) => setState(() => _form[entry.key] = val),
-                                  ),
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // tutup dialog gagal
+  }
+
+  if (mounted) {
+    setState(() => _submitting = false);
+  }
+}
+
+
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
+    resizeToAvoidBottomInset: true,
+    appBar: AppBar(
+      title: const Text('Tambah Gejala'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            DropdownButtonFormField(
+                              value: _form['health_check'],
+                              decoration: InputDecoration(
+                                labelText: '🩺 Pemeriksaan',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                              items: filteredHealthChecks.map((hc) {
+                                final cow = hc['cow'] is Map ? hc['cow'] : null;
+                                return DropdownMenuItem(
+                                  value: hc['id'],
+                                  child: Text('${cow?['name']} - Suhu: ${hc['rectal_temperature']}'),
                                 );
                               }).toList(),
-                              const Spacer(),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _submitting ? null : _submit,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    backgroundColor: Colors.green[700],
-                                  ),
-                                  child: _submitting
-                                      ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                        )
-                                      : const Text('Simpan'),
+                              onChanged: (val) => setState(() => _form['health_check'] = val),
+                              validator: (val) => val == null ? 'Wajib pilih' : null,
+                            ),
+
+                            if (filteredHealthChecks.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '⚠️ Tidak ada pemeriksaan tersedia. Pastikan belum memiliki gejala dan butuh perhatian.',
+                                  style: TextStyle(color: Colors.red),
                                 ),
                               ),
-                            ],
-                          ),
+
+                            const SizedBox(height: 24),
+
+                            ...selectOptions.entries.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: DropdownButtonFormField(
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    labelText: '📝 ${entry.key.replaceAll('_', ' ').toUpperCase()}',
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  value: _form[entry.key],
+                                  items: entry.value.map((opt) {
+                                    return DropdownMenuItem(
+                                      value: opt,
+                                      child: Text(
+                                        opt,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) => setState(() => _form[entry.key] = val),
+                                ),
+                              );
+                            }).toList(),
+
+                            const Spacer(),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: _submitting
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.save),
+                                label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                                onPressed: _submitting ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: Colors.teal[600],
+                                  foregroundColor: Colors.white,
+                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -267,6 +323,7 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
                 ),
               ),
             ),
-    );
-  }
+          ),
+  );
+}
 }

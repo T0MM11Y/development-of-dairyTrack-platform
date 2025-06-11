@@ -9,6 +9,8 @@ import 'package:dairytrack_mobile/controller/APIURL1/cattleDistributionControlle
 import 'createDiseaseHistory.dart';
 import 'editDiseaseHistory.dart';
 import 'ViewDiseaseHistory.dart';
+import 'package:dairytrack_mobile/controller/APIURL1/cowManagementController.dart';
+
 
 class DiseaseHistoryListView extends StatefulWidget {
   const DiseaseHistoryListView({super.key});
@@ -25,6 +27,9 @@ class _DiseaseHistoryListViewState extends State<DiseaseHistoryListView> {
   List<dynamic> _symptoms = [];
   List<dynamic> _cows = [];
   List<dynamic> _userManagedCows = [];
+  bool get _isAdmin => _currentUser?['role_id'] == 1;
+bool get _isSupervisor => _currentUser?['role_id'] == 2;
+
 
   bool _loading = true;
   bool _submitting = false;
@@ -54,34 +59,40 @@ class _DiseaseHistoryListViewState extends State<DiseaseHistoryListView> {
   try {
     final user = await _getUser();
     _currentUser = user;
+    final userId = user['id'];
 
-    // Ambil sapi milik user
-    final cowsByUser = await CattleDistributionController().listCowsByUser(user['id']);
-    final cowList = cowsByUser['data']?['cows'] ?? [];
+    List<Map<String, dynamic>> cowList = [];
 
-    // Ambil semua data yang diperlukan
+    if (_isAdmin || _isSupervisor) {
+      // Admin dan supervisor lihat semua sapi
+      final allCows = await CowManagementController().listCows();
+cowList = allCows.map((c) => c.toJson()).toList().cast<Map<String, dynamic>>();
+    } else {
+      // Farmer hanya sapi miliknya
+      final cowsByUser = await CattleDistributionController().listCowsByUser(userId);
+      cowList = List<Map<String, dynamic>>.from(cowsByUser['data']?['cows'] ?? []);
+    }
+
     final diseaseRes = await _controller.getDiseaseHistories();
     final checkRes = await HealthCheckController().getHealthChecks();
     final symptomRes = await SymptomController().getSymptoms();
 
     setState(() {
-      _userManagedCows = List<Map<String, dynamic>>.from(cowList);
+      _userManagedCows = cowList;
+      _cows = cowList; // agar bisa dipakai di builder juga jika perlu
       _diseaseHistories = List<Map<String, dynamic>>.from(diseaseRes['data'] ?? []);
       _healthChecks = List<Map<String, dynamic>>.from(checkRes['data'] ?? []);
       _symptoms = List<Map<String, dynamic>>.from(symptomRes['data'] ?? []);
       _loading = false;
     });
 
-    // Debug log (opsional, bisa hapus nanti)
-    print("✅ Loaded DiseaseHistories: ${_diseaseHistories.length}");
-    print("✅ Loaded HealthChecks: ${_healthChecks.length}");
-    print("✅ Loaded User Cows: ${_userManagedCows.length}");
+    debugPrint("✅ Loaded DiseaseHistories: ${_diseaseHistories.length}");
   } catch (e, stack) {
-    print("❌ Gagal load data: $e");
-    print(stack);
+    debugPrint("❌ Gagal load data: $e\n$stack");
     setState(() => _loading = false);
   }
 }
+
 
  List<Map<String, dynamic>> get _filteredHistories {
   final keyword = _search.toLowerCase();
@@ -118,30 +129,61 @@ class _DiseaseHistoryListViewState extends State<DiseaseHistoryListView> {
 }
 
 
-  Future<void> _deleteHistory(int id) async {
-    final result = await _controller.deleteDiseaseHistory(id);
-    if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Riwayat berhasil dihapus')),
-      );
-      _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menghapus')),
-      );
+ Future<void> _deleteHistory(int id) async {
+  final result = await _controller.deleteDiseaseHistory(id);
+
+  if (result['success']) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Berhasil'),
+        content: Text('Riwayat berhasil dihapus.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    if (mounted) {
+      Navigator.of(context).pop(); // Tutup dialog
+      _loadData(); // Refresh data
+    }
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Gagal'),
+        content: Text('Gagal menghapus riwayat.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      Navigator.of(context).pop(); // Tutup dialog gagal
     }
   }
+}
 
-  @override
+ @override
 Widget build(BuildContext context) {
   final paginatedData = _filteredHistories.skip((_currentPage - 1) * _pageSize).take(_pageSize).toList();
   final totalPages = (_filteredHistories.length / _pageSize).ceil();
 
   return Scaffold(
+    backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
       title: const Text('Riwayat Penyakit'),
-      backgroundColor: Colors.green[700],
       centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
     ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -153,7 +195,11 @@ Widget build(BuildContext context) {
                   decoration: InputDecoration(
                     labelText: 'Cari nama sapi...',
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   onChanged: (val) => setState(() {
                     _search = val;
@@ -168,10 +214,7 @@ Widget build(BuildContext context) {
                         itemCount: paginatedData.length,
                         itemBuilder: (context, index) {
                           final item = paginatedData[index];
-                          final hcId = item['health_check'] is Map
-                              ? item['health_check']['id']
-                              : item['health_check'];
-
+                          final hcId = item['health_check'] is Map ? item['health_check']['id'] : item['health_check'];
                           final check = _healthChecks.firstWhere(
                             (c) => c['id'].toString() == hcId.toString(),
                             orElse: () => <String, dynamic>{},
@@ -197,11 +240,12 @@ Widget build(BuildContext context) {
                               ' WIB';
 
                           return Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            color: Colors.white,
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Padding(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -216,46 +260,107 @@ Widget build(BuildContext context) {
                                           ),
                                         ),
                                       ),
-                                      PopupMenuButton<String>(
-                                        onSelected: (value) {
-                                          if (value == 'edit') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => EditDiseaseHistoryView(
-                                                  historyId: item['id'],
-                                                  onUpdated: _loadData,
-                                                ),
-                                              ),
-                                            );
-                                          } else if (value == 'view') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => ViewDiseaseHistoryView(
-                                                  history: item,
-                                                  check: check,
-                                                  symptom: symptom,
-                                                  cow: cow,
-                                                ),
-                                              ),
-                                            );
-                                          } else if (value == 'delete') {
-                                            _deleteHistory(item['id']);
-                                          }
-                                        },
-                                        itemBuilder: (context) => const [
-                                          PopupMenuItem(value: 'view', child: Text('Lihat')),
-                                          PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                          PopupMenuItem(value: 'delete', child: Text('Hapus')),
-                                        ],
-                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text('🦠 Penyakit: $disease', style: const TextStyle(fontSize: 14)),
                                   const SizedBox(height: 4),
                                   Text('🕒 Tanggal: $createdAt', style: const TextStyle(color: Colors.grey)),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 10,
+                                    runSpacing: 8,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.visibility, size: 18),
+                                        label: const Text('Lihat'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blueGrey,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ViewDiseaseHistoryView(
+                                                history: item,
+                                                check: check,
+                                                symptom: symptom,
+                                                cow: cow,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.edit, size: 18),
+                                        label: const Text('Edit'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.orange,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        onPressed: () {
+                                          if (_isAdmin || _isSupervisor) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Role ini tidak memiliki izin mengedit')),
+                                            );
+                                            return;
+                                          }
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => EditDiseaseHistoryView(
+                                                historyId: item['id'],
+                                                onUpdated: _loadData,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      ElevatedButton.icon(
+                                        icon: const Icon(Icons.delete, size: 18),
+                                        label: const Text('Hapus'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.redAccent,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        onPressed: () async {
+                                          if (_isAdmin || _isSupervisor) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Role ini tidak memiliki izin menghapus')),
+                                            );
+                                            return;
+                                          }
+                                          final confirm = await showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Konfirmasi Hapus'),
+                                              content: const Text('Yakin ingin menghapus data ini?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(ctx, false),
+                                                  child: const Text('Batal'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () => Navigator.pop(ctx, true),
+                                                  child: const Text('Hapus'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            _deleteHistory(item['id']);
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -284,6 +389,7 @@ Widget build(BuildContext context) {
             ],
           ),
     floatingActionButton: FloatingActionButton(
+      backgroundColor: Colors.green[700],
       tooltip: 'Tambah Riwayat Penyakit',
       child: const Icon(Icons.add),
       onPressed: () {
@@ -299,7 +405,9 @@ Widget build(BuildContext context) {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Tidak Ada Pemeriksaan Tersedia'),
-              content: const Text('Tidak ditemukan pemeriksaan yang dapat dipilih. Pastikan status bukan "handled" atau "healthy" dan sapi merupakan milik Anda.'),
+              content: const Text(
+                'Tidak ditemukan pemeriksaan yang dapat dipilih. Pastikan status bukan "handled" atau "healthy" dan sapi merupakan milik Anda.'
+              ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
               ],

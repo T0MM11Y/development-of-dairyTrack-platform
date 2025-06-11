@@ -1,3 +1,4 @@
+// Tampilan diperbaiki agar lebih rapi dan mobile-friendly
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -58,8 +59,27 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
+  void _showAlertDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadData({bool isFilter = false}) async {
+    if (isFilter && (startDate == null || endDate == null)) {
+      _showAlertDialog('Tanggal Kosong', 'Silakan isi Tanggal Mulai dan Tanggal Berakhir terlebih dahulu.');
+      return;
+    }
+
     setState(() => _loading = true);
+
     try {
       final healthRes = await _healthCheckController.getHealthChecks();
       final diseaseRes = await _diseaseController.getDiseaseHistories();
@@ -104,10 +124,18 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
           'napas': e['respiration_rate']?.toString() ?? '-',
           'ruminasi': e['rumination']?.toString() ?? '-',
         }).toList();
-
-        _loading = false;
       });
+
+      if (isFilter) {
+        final total = healthChecks.length + diseases.length + symptoms.length + reproductions.length;
+        _showAlertDialog(
+          total == 0 ? 'Tidak Ada Data' : 'Filter Berhasil',
+          total == 0 ? 'Tidak ditemukan data dalam rentang tanggal tersebut.' : 'Data berhasil difilter sesuai tanggal.',
+        );
+      }
     } catch (e) {
+      _showAlertDialog('Gagal Mengambil Data', 'Terjadi kesalahan saat mengambil data.');
+    } finally {
       setState(() => _loading = false);
     }
   }
@@ -140,37 +168,17 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Filter Tanggal
-                  Row(
-                    children: [
-                      Expanded(child: _datePickerTile('Tanggal Mulai', startDate, (d) => setState(() => startDate = d))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _datePickerTile('Tanggal Akhir', endDate, (d) => setState(() => endDate = d))),
-                      IconButton(
-                        onPressed: _loadData,
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Terapkan Filter',
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _summaryCard('Pemeriksaan', summary['pemeriksaan'], Colors.blue),
-                      _summaryCard('Gejala', summary['gejala'], Colors.indigo),
-                      _summaryCard('Penyakit', summary['penyakit'], Colors.red),
-                      _summaryCard('Reproduksi', summary['reproduksi'], Colors.orange),
-                    ],
-                  ),
+                  _sectionTitle('Filter Tanggal'),
+                  _buildDateFilter(),
+                  const SizedBox(height: 24),
+                  _sectionTitle('Ringkasan'),
+                  _buildSummaryCards(),
                   const SizedBox(height: 24),
                   _sectionTitle('Statistik Penyakit'),
-                  SizedBox(height: 200, child: BarChart(_barData(chartDiseaseData, Colors.red))),
+                  _buildChart(chartDiseaseData, Colors.red),
                   const SizedBox(height: 24),
                   _sectionTitle('Kondisi Kesehatan Ternak'),
-                  SizedBox(height: 200, child: BarChart(_barData(chartHealthData, Colors.blue))),
+                  _buildChart(chartHealthData, Colors.blue),
                   const SizedBox(height: 24),
                   _sectionTitle('Tabel Riwayat Penyakit'),
                   _buildTable(paginatedDiseaseData, ['cowname', 'penyakit', 'keterangan']),
@@ -185,10 +193,184 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
     );
   }
 
-  Widget _sectionTitle(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  Widget _buildDateFilter() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _datePickerTile('Tanggal Mulai', startDate, (d) => setState(() => startDate = d)),
+        _datePickerTile('Tanggal Akhir', endDate, (d) => setState(() => endDate = d)),
+        ElevatedButton.icon(
+          onPressed: () => _loadData(isFilter: true),
+          icon: const Icon(Icons.search),
+          label: const Text('Cari'),
+        ),
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              startDate = null;
+              endDate = null;
+            });
+            _loadData();
+          },
+          icon: const Icon(Icons.refresh),
+          label: const Text('Reset'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+ Widget _buildSummaryCards() {
+  final items = [
+    ['Pemeriksaan', summary['pemeriksaan'], Colors.blue],
+    ['Gejala', summary['gejala'], Colors.indigo],
+    ['Penyakit', summary['penyakit'], Colors.red],
+    ['Reproduksi', summary['reproduksi'], Colors.orange],
+  ];
+
+  return Wrap(
+    spacing: 12,
+    runSpacing: 12,
+    alignment: WrapAlignment.center, // ✅ Ini agar wrap-nya rata tengah
+    children: items.map((item) => _summaryCard(item[0] as String, item[1] as int, item[2] as Color)).toList(),
   );
+}
+
+
+ Widget _summaryCard(String title, int? value, Color color) {
+  return Container(
+    width: 160,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      border: Border.all(color: color.withOpacity(0.3)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center, // ✅ Vertikal center
+      crossAxisAlignment: CrossAxisAlignment.center, // ✅ Horizontal center
+      children: [
+        Icon(Icons.analytics, color: color, size: 30),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          '$value',
+          style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
+}
+
+
+Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
+  final int barCount = data.length;
+  final double screenWidth = MediaQuery.of(context).size.width;
+  final double barSpacing = 70;
+  final bool isScrollable = barCount > 4;
+  final double chartWidth = isScrollable ? barCount * barSpacing : screenWidth;
+
+  return SizedBox(
+    height: 300,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+      child: SizedBox(
+        width: chartWidth,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: BarChart(
+            BarChartData(
+              alignment: isScrollable ? BarChartAlignment.start : BarChartAlignment.spaceAround,
+              barGroups: List.generate(barCount, (i) {
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: (data[i]['value'] as num).toDouble(),
+                      width: 24,
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(4),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: (data[i]['value'] as num).toDouble() + 2,
+                        color: Colors.grey[200]!,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, _) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= data.length) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: SizedBox(
+                          width: 60,
+                          child: Text(
+                            data[index]['name'],
+                            style: const TextStyle(fontSize: 11),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: false,
+                    reservedSize: 32, // ✅ beri ruang atas agar tooltip tidak terpotong
+                  ),
+                ),
+              ),
+              gridData: FlGridData(show: true),
+              borderData: FlBorderData(show: false),
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  // tooltipBgColor: Colors.black87,
+                  tooltipMargin: 12, // ✅ beri jarak tooltip ke batang
+                  fitInsideVertically: true, // ✅ biar tidak ketimpa atas
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    return BarTooltipItem(
+                      '${data[group.x.toInt()]['name']}\n${rod.toY.toInt()}',
+                      const TextStyle(color: Colors.white),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+
+
+  Widget _sectionTitle(String text) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      );
 
   Widget _datePickerTile(String label, DateTime? value, Function(DateTime) onPicked) {
     return GestureDetector(
@@ -217,64 +399,6 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
       ),
     );
   }
-
-  Widget _summaryCard(String title, int? value, Color color) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        border: Border.all(color: color.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.analytics, color: color, size: 30),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-          Text('$value', style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  BarChartData _barData(List<Map<String, dynamic>> data, Color baseColor) {
-  return BarChartData(
-    alignment: BarChartAlignment.spaceAround,
-    titlesData: FlTitlesData(
-      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-      bottomTitles: AxisTitles(
-        sideTitles: SideTitles(
-          showTitles: true,
-          getTitlesWidget: (value, _) {
-            final index = value.toInt();
-            if (index < 0 || index >= data.length) return const SizedBox.shrink();
-            return Text(
-              data[index]['name'],
-              style: const TextStyle(fontSize: 10),
-              textAlign: TextAlign.center,
-            );
-          },
-        ),
-      ),
-    ),
-    barGroups: List.generate(data.length, (i) {
-      return BarChartGroupData(
-        x: i,
-        barRods: [
-          BarChartRodData(
-            toY: (data[i]['value'] as num).toDouble(),
-            width: 20,
-            color: baseColor,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ],
-      );
-    }),
-    borderData: FlBorderData(show: false),
-  );
-}
-
 
   Widget _buildTable(List<Map<String, dynamic>> data, List<String> keys) {
     return Card(

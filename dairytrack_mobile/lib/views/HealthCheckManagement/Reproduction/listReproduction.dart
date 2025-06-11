@@ -6,6 +6,7 @@ import 'package:dairytrack_mobile/controller/APIURL3/reproductionController.dart
 import 'package:dairytrack_mobile/controller/APIURL1/cattleDistributionController.dart';
 import 'package:dairytrack_mobile/views/HealthCheckManagement/Reproduction/createReproduction.dart';
 import 'package:dairytrack_mobile/views/HealthCheckManagement/Reproduction/editReproduction.dart';
+import 'package:dairytrack_mobile/controller/APIURL1/cowManagementController.dart';
 
 class ReproductionListView extends StatefulWidget {
   const ReproductionListView({super.key});
@@ -21,6 +22,8 @@ class _ReproductionListViewState extends State<ReproductionListView> {
   List<dynamic> _data = [];
   List<dynamic> _userManagedCows = [];
   List<dynamic> _femaleCows = [];
+bool get _isAdmin => _currentUser?['role_id'] == 1;
+bool get _isSupervisor => _currentUser?['role_id'] == 2;
 
   int _currentPage = 1;
   final int _pageSize = 5;
@@ -50,11 +53,19 @@ class _ReproductionListViewState extends State<ReproductionListView> {
     }
 
     final user = jsonDecode(userString);
-    final userCowsRes = await _cowController.listCowsByUser(user['id']);
-final cowList = userCowsRes['data']['cows'] ?? [];
+    _currentUser = user;
+
+    List<Map<String, dynamic>> cowList = [];
+
+    if (_isAdmin || _isSupervisor) {
+      final allCows = await CowManagementController().listCows();
+      cowList = allCows.map((c) => c.toJson()).toList().cast<Map<String, dynamic>>();
+    } else {
+      final userCowsRes = await _cowController.listCowsByUser(user['id']);
+      cowList = List<Map<String, dynamic>>.from(userCowsRes['data']['cows'] ?? []);
+    }
 
     setState(() {
-      _currentUser = user;
       _userManagedCows = cowList;
       _femaleCows = cowList.where((c) => c['gender']?.toLowerCase() == 'female').toList();
     });
@@ -70,33 +81,33 @@ final cowList = userCowsRes['data']['cows'] ?? [];
 }
 
 
+
   Future<void> _fetchData() async {
-    setState(() => _loading = true);
-    try {
-      final res = await _controller.getReproductions();
+  setState(() => _loading = true);
+  try {
+    final res = await _controller.getReproductions();
+    final rawData = res['data'];
+    final reproductions = rawData is List ? rawData : (rawData['reproductions'] ?? []);
 
-final rawData = res['data'];
-final reproductions = rawData is List ? rawData : (rawData['reproductions'] ?? []);
+    final filtered = (_isAdmin || _isSupervisor)
+        ? reproductions
+        : reproductions.where((item) {
+            final cowId = item['cow'] is Map ? item['cow']['id'] : item['cow'];
+            return _userManagedCows.any((c) => c['id'] == cowId);
+          }).toList();
 
-final filtered = _currentUser!['role_id'] == 1
-    ? reproductions
-    : reproductions.where((item) {
-        final cowId = item['cow'] is Map ? item['cow']['id'] : item['cow'];
-        return _userManagedCows.any((c) => c['id'] == cowId);
-      }).toList();
-
-
-      setState(() {
-        _data = filtered;
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Gagal mengambil data.';
-        _loading = false;
-      });
-    }
+    setState(() {
+      _data = filtered;
+      _loading = false;
+    });
+  } catch (e) {
+    setState(() {
+      _error = 'Gagal mengambil data.';
+      _loading = false;
+    });
   }
+}
+
 
   List<Map<String, dynamic>> get _paginatedData {
     final filtered = _data.where((item) {
@@ -107,19 +118,28 @@ final filtered = _currentUser!['role_id'] == 1
     final start = (_currentPage - 1) * _pageSize;
     return filtered.skip(start).take(_pageSize).cast<Map<String, dynamic>>().toList();
   }
-
- @override
+@override
 Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: const Text('Data Reproduksi'),
       centerTitle: true,
-      backgroundColor: Colors.green[700],
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
     ),
     floatingActionButton: _currentUser?['role_id'] == 2
         ? null
         : FloatingActionButton(
             tooltip: 'Tambah Data Reproduksi',
+            backgroundColor: Colors.green[700],
             onPressed: () {
               if (_femaleCows.isEmpty) {
                 showDialog(
@@ -161,6 +181,8 @@ Widget build(BuildContext context) {
                       decoration: InputDecoration(
                         labelText: 'Cari nama sapi...',
                         prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -185,7 +207,7 @@ Widget build(BuildContext context) {
                               final servicePeriod = item['service_period'] ?? '-';
 
                               return Card(
-                                elevation: 4,
+                                elevation: 3,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12)),
                                 margin: const EdgeInsets.symmetric(
@@ -206,60 +228,100 @@ Widget build(BuildContext context) {
                                               ),
                                             ),
                                           ),
-                                          if (_currentUser?['role_id'] != 2)
-                                            PopupMenuButton<String>(
-                                              onSelected: (value) async {
-                                                if (value == 'edit') {
+                                          Wrap(
+                                            spacing: 6,
+                                            children: [
+                                              ElevatedButton.icon(
+                                                icon: const Icon(Icons.edit, size: 18),
+                                                label: const Text('Edit'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.orange,
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                                ),
+                                                onPressed: () async {
+                                                  if (_currentUser?['role_id'] != 3) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Role ini tidak memiliki izin untuk mengedit data'),
+                                                        duration: Duration(seconds: 2),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
                                                   final result = await Navigator.push(
                                                     context,
                                                     MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          ReproductionEditView(
+                                                      builder: (context) => ReproductionEditView(
                                                         reproductionId: item['id'],
                                                         onSaved: _fetchData,
                                                       ),
                                                     ),
                                                   );
                                                   if (result == true) _fetchData();
-                                                } else if (value == 'delete') {
-                                                  final confirm = await showDialog(
+                                                },
+                                              ),
+                                              ElevatedButton.icon(
+                                                icon: const Icon(Icons.delete, size: 18),
+                                                label: const Text('Hapus'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.redAccent,
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                                ),
+                                                onPressed: () async {
+                                                  if (_currentUser?['role_id'] != 3) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Role ini tidak memiliki izin untuk menghapus data'),
+                                                        duration: Duration(seconds: 2),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  final confirm = await showDialog<bool>(
                                                     context: context,
-                                                    builder: (context) =>
-                                                        AlertDialog(
+                                                    builder: (ctx) => AlertDialog(
                                                       title: const Text('Konfirmasi Hapus'),
-                                                      content: const Text(
-                                                          'Yakin ingin menghapus data ini?'),
+                                                      content: const Text('Yakin ingin menghapus data ini?'),
                                                       actions: [
                                                         TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                    context, false),
-                                                            child: const Text('Batal')),
-                                                        TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.pop(
-                                                                    context, true),
-                                                            child: const Text('Hapus')),
+                                                          onPressed: () => Navigator.pop(ctx, false),
+                                                          child: const Text('Batal'),
+                                                        ),
+                                                        ElevatedButton(
+                                                          onPressed: () => Navigator.pop(ctx, true),
+                                                          child: const Text('Hapus'),
+                                                        ),
                                                       ],
                                                     ),
                                                   );
-                                                  if (confirm == true) {
-                                                    await _controller
-                                                        .deleteReproduction(
-                                                            item['id']);
-                                                    _fetchData();
-                                                  }
-                                                }
-                                              },
-                                              itemBuilder: (context) => const [
-                                                PopupMenuItem(
-                                                    value: 'edit',
-                                                    child: Text('Edit')),
-                                                PopupMenuItem(
-                                                    value: 'delete',
-                                                    child: Text('Hapus')),
-                                              ],
-                                            ),
+
+                                                   if (confirm == true) {
+      final res = await _controller.deleteReproduction(item['id']);
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text(res['success'] ? 'Berhasil' : 'Gagal'),
+          content: Text(res['success']
+              ? 'Data berhasil dihapus.'
+              : res['message'] ?? 'Gagal menghapus data.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      if (context.mounted) Navigator.of(context).pop(); // Tutup alert
+
+      if (res['success']) _fetchData();
+    }
+  },
+),
+                                            ],
+                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
@@ -303,5 +365,5 @@ Widget build(BuildContext context) {
                 ],
               ),
   );
-}
+} 
 }

@@ -88,10 +88,10 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'DairyTrackMassfortso_machinefed',
-        'USER': 'DairyTrackMassfortso_machinefed',
-        'PASSWORD': '4c95497bb9c564ed5490f31089168ae5eb6a65cf',
-        'HOST': 'onsrd.h.filess.io',
+        'NAME': 'DairyTrack_represent',
+        'USER': 'DairyTrack_represent',
+        'PASSWORD': '212bf667b8832e0a530401195b131a542e31a4f0',
+        'HOST': 'rlsoy.h.filess.io',
         'PORT': '3307',
         'OPTIONS': {
             'charset': 'utf8mb4',

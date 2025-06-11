@@ -87,59 +87,79 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    final calving = DateTime.tryParse(_form['calving_date']);
-    final prev = DateTime.tryParse(_form['previous_calving_date']);
-    final insemination = DateTime.tryParse(_form['insemination_date']);
-    final total = int.tryParse(_form['total_insemination']);
+  final calving = DateTime.tryParse(_form['calving_date']);
+  final prev = DateTime.tryParse(_form['previous_calving_date']);
+  final insemination = DateTime.tryParse(_form['insemination_date']);
+  final total = int.tryParse(_form['total_insemination']);
 
-    if (prev != null && calving != null && prev.isAfter(calving)) {
-      _showError('Tanggal calving sebelumnya harus lebih awal.');
-      return;
-    }
-    if (insemination != null && calving != null && !insemination.isAfter(calving)) {
-      _showError('Tanggal inseminasi harus setelah calving.');
-      return;
-    }
-    if (total == null || total < 1) {
-      _showError('Jumlah inseminasi minimal 1.');
-      return;
-    }
+  if (prev != null && calving != null && prev.isAfter(calving)) {
+    await _showError('Tanggal calving sebelumnya harus lebih awal.');
+    return;
+  }
+  if (insemination != null && calving != null && !insemination.isAfter(calving)) {
+    await _showError('Tanggal inseminasi harus setelah calving.');
+    return;
+  }
+  if (total == null || total < 1) {
+    await _showError('Jumlah inseminasi minimal 1.');
+    return;
+  }
 
-    setState(() => _submitting = true);
+  setState(() => _submitting = true);
 
-    final res = await _controller.updateReproduction(widget.reproductionId, {
-      'cow': _form['cow'],
-      'calving_date': _form['calving_date'],
-      'previous_calving_date': _form['previous_calving_date'],
-      'insemination_date': _form['insemination_date'],
-      'total_insemination': total,
-      'successful_pregnancy': 1, // Default atau sesuaikan
-      'edited_by': _form['edited_by'],
-    });
+  final res = await _controller.updateReproduction(widget.reproductionId, {
+    'cow': _form['cow'],
+    'calving_date': _form['calving_date'],
+    'previous_calving_date': _form['previous_calving_date'],
+    'insemination_date': _form['insemination_date'],
+    'total_insemination': total,
+    'successful_pregnancy': 1, // Default atau sesuaikan
+    'edited_by': _form['edited_by'],
+  });
 
-    if (res['success']) {
+  if (res['success']) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Berhasil'),
+          content: Text('Data berhasil diperbarui.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil diperbarui')),
-        );
+        Navigator.of(context).pop(); // Tutup dialog
+        Navigator.of(context).pop(); // Tutup form
         widget.onSaved();
-        Navigator.pop(context);
       }
-    } else {
-      _showError(res['message'] ?? 'Gagal memperbarui');
     }
-
-    setState(() => _submitting = false);
+  } else {
+    await _showError(res['message'] ?? 'Gagal memperbarui');
   }
 
-  void _showError(String msg) {
-    setState(() => _error = msg);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
-  }
+  if (mounted) setState(() => _submitting = false);
+}
+
+Future<void> _showError(String msg) async {
+  setState(() => _error = msg);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      title: const Text('Gagal'),
+      content: Text(msg),
+    ),
+  );
+
+  await Future.delayed(const Duration(seconds: 2));
+  if (mounted) Navigator.of(context).pop(); // Tutup dialog error
+}
+
 
   Widget _dateField(String label, String key) {
     return Padding(
@@ -189,67 +209,81 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Data Reproduksi'),
-        centerTitle: true,
-        backgroundColor: Colors.green[700],
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Edit Data Reproduksi'),
+      centerTitle: true,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                      ),
-                    TextFormField(
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Sapi',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      initialValue: _cowName,
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(_error!, style: const TextStyle(color: Colors.red)),
                     ),
-                    const SizedBox(height: 16),
-                    _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
-                    _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
-                    _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
-                    _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: _submitting
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(_submitting ? 'Menyimpan...' : 'Perbarui'),
-                        onPressed: _submitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          textStyle: const TextStyle(fontSize: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.green[700],
-                        ),
+                  TextFormField(
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Sapi',
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    initialValue: _cowName,
+                  ),
+                  const SizedBox(height: 16),
+                  _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
+                  const SizedBox(height: 12),
+                  _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
+                  const SizedBox(height: 12),
+                  _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
+                  const SizedBox(height: 12),
+                  _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save),
+                      label: Text(_submitting ? 'Menyimpan...' : 'Perbarui'),
+                      onPressed: _submitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(fontSize: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Colors.green[700],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-    );
-  }
+          ),
+  );
+}
 }
