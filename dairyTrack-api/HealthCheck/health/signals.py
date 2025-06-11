@@ -67,7 +67,7 @@ def check_and_update_health_status(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message="Pemeriksaan kesehatan mendeteksi: " + " ".join(messages),
+message=f"Pemeriksaan kesehatan sapi {instance.cow.name} mendeteksi: " + " ".join(messages),
                 type="health_check",
                 created_at=now()
             )
@@ -124,7 +124,7 @@ def check_reproduction_alert(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message=f"Reproduksi: {alert_msg}",
+message=f"Reproduksi sapi {instance.cow.name}: {alert_msg}",
                 type="reproduction",
                 created_at=now()
             )
