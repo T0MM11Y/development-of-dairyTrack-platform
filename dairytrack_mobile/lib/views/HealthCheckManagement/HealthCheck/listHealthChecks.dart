@@ -123,15 +123,29 @@ Future<void> _loadData() async {
     }).toList();
   }
 
-  Future<void> _deleteCheck(int id) async {
-    final result = await _controller.deleteHealthCheck(id);
-    if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data berhasil dihapus')),
-      );
-      _loadData();
+ Future<void> _deleteCheck(int id) async {
+  final result = await _controller.deleteHealthCheck(id);
+  
+  if (result['success']) {
+    // Tampilkan dialog sukses tanpa tombol
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Berhasil'),
+        content: Text('Data berhasil dihapus.'),
+      ),
+    );
+
+    // Tunggu 1.5 detik lalu tutup dialog dan refresh data
+    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    if (mounted) {
+      Navigator.of(context).pop(); // Tutup dialog
+      _loadData(); // Refresh list
     }
   }
+}
+
 @override
 Widget build(BuildContext context) {
   final paginated = _filteredChecks.skip((_currentPage - 1) * _pageSize).take(_pageSize).toList();
@@ -265,42 +279,59 @@ Widget build(BuildContext context) {
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                        ElevatedButton.icon(
-                                          icon: const Icon(Icons.edit, size: 18),
-                                          label: const Text('Edit'),
-                                          onPressed: () {
-                                            if (_isAdmin || _isSupervisor) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Role ini tidak memiliki izin untuk mengedit data'),
-                                                  duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              return;
-                                            }
+                                       ElevatedButton.icon(
+  icon: const Icon(Icons.edit, size: 18),
+  label: const Text('Edit'),
+  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk mengedit data'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
-                                            if (status == 'healthy' || status == 'handled') {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Data ini tidak dapat diedit')),
-                                              );
-                                            } else {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => EditHealthCheckView(
-                                                    healthCheckId: item['id'],
-                                                    onUpdated: _loadData,
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.orange,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          ),
-                                        ),
+    if (status == 'healthy' || status == 'handled') {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Tidak Dapat Diedit'),
+          content: const Text('Data ini tidak dapat diedit'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditHealthCheckView(
+            healthCheckId: item['id'],
+            onUpdated: _loadData,
+          ),
+        ),
+      );
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+  ),
+),
                                         const SizedBox(width: 8),
                                         ElevatedButton.icon(
                                           icon: const Icon(Icons.delete, size: 18),

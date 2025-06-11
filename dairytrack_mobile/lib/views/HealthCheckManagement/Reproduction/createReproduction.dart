@@ -66,61 +66,82 @@ class _ReproductionCreateViewState extends State<ReproductionCreateView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    final calving = DateTime.tryParse(_form['calving_date']);
-    final prevCalving = DateTime.tryParse(_form['previous_calving_date']);
-    final insemination = DateTime.tryParse(_form['insemination_date']);
-    final total = int.tryParse(_form['total_insemination']);
-    final success = int.tryParse(_form['successful_pregnancy']);
+  if (!_formKey.currentState!.validate()) return;
 
-    if (prevCalving != null && calving != null && prevCalving.isAfter(calving)) {
-      _showError("Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
-      return;
-    }
-    if (insemination != null && calving != null && !insemination.isAfter(calving)) {
-      _showError("Tanggal inseminasi harus setelah tanggal calving.");
-      return;
-    }
-    if (total == null || total < 1) {
-      _showError("Jumlah inseminasi harus minimal 1.");
-      return;
-    }
-    if (success == null || success < 1 || success > total) {
-      _showError("Kehamilan berhasil harus 1 sampai maksimal total inseminasi.");
-      return;
-    }
+  final calving = DateTime.tryParse(_form['calving_date']);
+  final prevCalving = DateTime.tryParse(_form['previous_calving_date']);
+  final insemination = DateTime.tryParse(_form['insemination_date']);
+  final total = int.tryParse(_form['total_insemination']);
+  final success = int.tryParse(_form['successful_pregnancy']);
 
-    setState(() => _submitting = true);
-    final res = await _controller.createReproduction({
-      'cow': _form['cow'],
-      'calving_date': _form['calving_date'],
-      'previous_calving_date': _form['previous_calving_date'],
-      'insemination_date': _form['insemination_date'],
-      'total_insemination': total,
-      'created_by': _form['created_by'],
-    });
+  if (prevCalving != null && calving != null && prevCalving.isAfter(calving)) {
+    _showError("Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
+    return;
+  }
+  if (insemination != null && calving != null && !insemination.isAfter(calving)) {
+    _showError("Tanggal inseminasi harus setelah tanggal calving.");
+    return;
+  }
+  if (total == null || total < 1) {
+    _showError("Jumlah inseminasi harus minimal 1.");
+    return;
+  }
+  if (success == null || success < 1 || success > total) {
+    _showError("Kehamilan berhasil harus 1 sampai maksimal total inseminasi.");
+    return;
+  }
 
-    if (res['success']) {
+  setState(() => _submitting = true);
+
+  final res = await _controller.createReproduction({
+    'cow': _form['cow'],
+    'calving_date': _form['calving_date'],
+    'previous_calving_date': _form['previous_calving_date'],
+    'insemination_date': _form['insemination_date'],
+    'total_insemination': total,
+    'created_by': _form['created_by'],
+  });
+
+  if (res['success']) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Berhasil'),
+          content: Text('Berhasil menyimpan data.'),
+        ),
+      );
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil menyimpan data')),
-        );
+        Navigator.of(context).pop(); // Tutup dialog
+        Navigator.of(context).pop(); // Tutup form
         widget.onSaved();
-        Navigator.pop(context);
       }
-    } else {
-      _showError(res['message'] ?? 'Gagal menyimpan data');
     }
-
-    setState(() => _submitting = false);
+  } else {
+    _showError(res['message'] ?? 'Gagal menyimpan data');
   }
 
-  void _showError(String msg) {
-    setState(() => _error = msg);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
-  }
+  if (mounted) setState(() => _submitting = false);
+}
+
+Future<void> _showError(String msg) async {
+  setState(() => _error = msg);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      title: const Text('Validasi Gagal'),
+      content: Text(msg),
+    ),
+  );
+
+  await Future.delayed(const Duration(seconds: 2));
+  if (mounted) Navigator.of(context).pop(); // Tutup dialog error
+}
+
 
   Widget _dateField(String label, String key) {
     return Padding(

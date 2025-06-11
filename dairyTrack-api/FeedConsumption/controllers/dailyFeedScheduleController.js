@@ -1,4 +1,3 @@
-// controllers/dailyFeedController.js
 const axios = require("axios");
 const DailyFeedSchedule = require("../models/dailyFeedSchedule");
 const DailyFeedItems = require("../models/dailyFeedItemsModel");
@@ -155,7 +154,7 @@ const calculateTotalNutrients = async (items, transaction) => {
   return totalNutrients;
 };
 
-// Create daily feed
+// Unchanged: createDailyFeed
 exports.createDailyFeed = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -293,7 +292,7 @@ exports.createDailyFeed = async (req, res) => {
   }
 };
 
-// Update daily feed
+// Unchanged: updateDailyFeed
 exports.updateDailyFeed = async (req, res) => {
   const { id } = req.params;
   const { cow_id, date, session, items = [] } = req.body;
@@ -407,7 +406,6 @@ exports.updateDailyFeed = async (req, res) => {
       totalNutrients = await calculateTotalNutrients(feedItems, transaction);
       await feed.update({ total_nutrients: totalNutrients }, { transaction });
     } else {
-      // If no items, clear total_nutrients
       await feed.update({ total_nutrients: [] }, { transaction });
     }
 
@@ -441,12 +439,11 @@ exports.updateDailyFeed = async (req, res) => {
   }
 };
 
-// Get all daily feeds
+// Updated: getAllDailyFeeds
 exports.getAllDailyFeeds = async (req, res) => {
   try {
     const { cow_id, date, session } = req.query;
     const userId = req.user?.id;
-    const userRole = req.user?.role?.toLowerCase(); // Ambil peran pengguna
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "Autentikasi gagal. Silakan login kembali." });
@@ -456,13 +453,6 @@ exports.getAllDailyFeeds = async (req, res) => {
     if (cow_id) filter.cow_id = cow_id;
     if (date) filter.date = date;
     if (session) filter.session = session;
-
-    // Hanya terapkan filter UserCowAssociation untuk farmer
-    if (userRole === "farmer") {
-      const userCows = await UserCowAssociation.findAll({ where: { user_id: userId }, attributes: ["cow_id"] });
-      const allowedCowIds = userCows.map((uc) => uc.cow_id);
-      filter.cow_id = allowedCowIds.length > 0 ? { [Op.in]: allowedCowIds } : { [Op.eq]: null };
-    }
 
     const feeds = await DailyFeedSchedule.findAll({
       where: filter,
@@ -487,11 +477,10 @@ exports.getAllDailyFeeds = async (req, res) => {
   }
 };
 
-// Get daily feed by ID
+// Updated: getDailyFeedById
 exports.getDailyFeedById = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
-  const userRole = req.user?.role?.toLowerCase();
 
   if (!userId) {
     return res.status(401).json({ success: false, message: "Autentikasi gagal. Silakan login kembali." });
@@ -516,16 +505,6 @@ exports.getDailyFeedById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Jadwal pakan tidak ditemukan." });
     }
 
-    // Hanya terapkan pengecekan UserCowAssociation untuk farmer
-    if (userRole === "farmer") {
-      const userCowAssociation = await UserCowAssociation.findOne({
-        where: { user_id: userId, cow_id: feed.cow_id },
-      });
-      if (!userCowAssociation) {
-        return res.status(403).json({ success: false, message: `Anda tidak memiliki izin untuk melihat jadwal pakan sapi dengan ID ${feed.cow_id}.` });
-      }
-    }
-
     return res.status(200).json({ success: true, data: formatFeedResponse(feed) });
   } catch (error) {
     console.error("Error fetching daily feed:", error);
@@ -533,7 +512,7 @@ exports.getDailyFeedById = async (req, res) => {
   }
 };
 
-// Delete daily feed
+// Unchanged: deleteDailyFeed
 exports.deleteDailyFeed = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
@@ -572,7 +551,7 @@ exports.deleteDailyFeed = async (req, res) => {
   }
 };
 
-// Search daily feeds
+// Updated: searchDailyFeeds
 exports.searchDailyFeeds = async (req, res) => {
   try {
     const { cow_id, start_date, end_date, session } = req.query;
@@ -590,11 +569,6 @@ exports.searchDailyFeeds = async (req, res) => {
       if (start_date) filter.date[Op.gte] = start_date;
       if (end_date) filter.date[Op.lte] = end_date;
     }
-
-    // Restrict to cows managed by the user
-    const userCows = await UserCowAssociation.findAll({ where: { user_id: userId }, attributes: ["cow_id"] });
-    const allowedCowIds = userCows.map((uc) => uc.cow_id);
-    filter.cow_id = allowedCowIds.length > 0 ? { [Op.in]: allowedCowIds } : { [Op.eq]: null };
 
     const feeds = await DailyFeedSchedule.findAll({
       where: filter,

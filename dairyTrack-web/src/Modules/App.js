@@ -293,6 +293,60 @@ function App() {
                 <HealthDashboard />
               </AdminLayout>
             </ProtectedRoute>
+            
+            {/* Feed Management */}
+            <ProtectedRoute path="/admin/list-feedType">
+              <AdminLayout>
+                <ListFeedTypes />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-feedType/:id">
+              <AdminLayout>
+                <ListFeedTypes />
+                <EditFeedTypes />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-nutrition">
+              <AdminLayout>
+                <ListNutrition />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-feed">
+              <AdminLayout>
+                <ListFeed />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/edit-feed/:id">
+              <AdminLayout>
+                <ListFeed />
+                <EditFeed />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-stock">
+              <AdminLayout>
+                <ListStock />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-schedule">
+              <AdminLayout>
+                <ListDailyFeedSchedule />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/list-feedItem">
+              <AdminLayout>
+                <ListDailyFeedItem />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/daily-feed-usage">
+              <AdminLayout>
+                <DailyFeedUsage />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/admin/daily-nutrition">
+              <AdminLayout>
+                <DailyNutrition />
+              </AdminLayout>
+            </ProtectedRoute>
 
             {/* Saless and Fincancial Section */}
             <ProtectedRoute path="/admin/product-type">

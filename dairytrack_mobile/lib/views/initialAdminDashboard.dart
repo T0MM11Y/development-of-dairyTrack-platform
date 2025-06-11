@@ -22,6 +22,16 @@ import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
 import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
+
+// Feed
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/model/feed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
@@ -206,6 +216,73 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           label: 'Finance',
           route: '/finance',
           widget: () => ListProductTypes(),
+        ),
+        NavigationItem(
+          icon: Icons.medical_services,
+          label: 'Pemeriksaan Kesehatan',
+          route: 'health-checks',
+          widget: () => HealthCheckListView(),
+        ),
+        NavigationItem(
+          icon: Icons.visibility,
+          label: 'Gejala',
+          route: 'symptoms',
+          widget: () => SymptomListView(),
+        ),
+        NavigationItem(
+          icon: Icons.coronavirus,
+          label: 'Riwayat Penyakit',
+          route: 'disease-history',
+          widget: () => DiseaseHistoryListView(),
+        ),
+        NavigationItem(
+          icon: Icons.pregnant_woman,
+          label: 'Reproduksi',
+          route: 'reproduction',
+          widget: () => ReproductionListView(),
+        ),
+        NavigationItem(
+          icon: Icons.category, // Jenis Pakan = kategori pakan
+          label: 'Jenis Pakan',
+          route: 'feed-Type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .eco, // Jenis Nutrisi = daun/”eco” → identik dgn nutrisi & keseimbangan
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
+        ),
+        NavigationItem(
+          icon: Icons.monitor_heart,
+          label: 'HealthDashboard',
+          route: 'health-dashboard',
+          widget: () => HealthDashboardView(),
         ),
       ];
 

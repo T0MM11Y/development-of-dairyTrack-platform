@@ -129,19 +129,41 @@ cowList = allCows.map((c) => c.toJson()).toList().cast<Map<String, dynamic>>();
 }
 
 
-  Future<void> _deleteHistory(int id) async {
-    final result = await _controller.deleteDiseaseHistory(id);
-    if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Riwayat berhasil dihapus')),
-      );
-      _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menghapus')),
-      );
+ Future<void> _deleteHistory(int id) async {
+  final result = await _controller.deleteDiseaseHistory(id);
+
+  if (result['success']) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Berhasil'),
+        content: Text('Riwayat berhasil dihapus.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    if (mounted) {
+      Navigator.of(context).pop(); // Tutup dialog
+      _loadData(); // Refresh data
+    }
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Gagal'),
+        content: Text('Gagal menghapus riwayat.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      Navigator.of(context).pop(); // Tutup dialog gagal
     }
   }
+}
+
  @override
 Widget build(BuildContext context) {
   final paginatedData = _filteredHistories.skip((_currentPage - 1) * _pageSize).take(_pageSize).toList();
