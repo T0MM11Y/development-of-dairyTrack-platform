@@ -82,41 +82,76 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
 
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
+  setState(() {
+    _submitting = true;
+    _error = null;
+  });
 
-    final payload = {
-      'cow_id': int.parse(_selectedCowId!),
-      'rectal_temperature': double.tryParse(_tempController.text),
-      'heart_rate': int.tryParse(_heartRateController.text),
-      'respiration_rate': int.tryParse(_respirationController.text),
-      'rumination': double.tryParse(_ruminationController.text),
-      'checked_by': _currentUser?['id'],
-    };
+  final payload = {
+    'cow_id': int.parse(_selectedCowId!),
+    'rectal_temperature': double.tryParse(_tempController.text),
+    'heart_rate': int.tryParse(_heartRateController.text),
+    'respiration_rate': int.tryParse(_respirationController.text),
+    'rumination': double.tryParse(_ruminationController.text),
+    'checked_by': _currentUser?['id'],
+  };
 
-    try {
-      final result = await _controller.createHealthCheck(payload);
-      if (result['success']) {
-        widget.onSaved?.call();
+  try {
+    final result = await _controller.createHealthCheck(payload);
+
+    if (result['success']) {
+      widget.onSaved?.call();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Berhasil'),
+            content: Text('Pemeriksaan berhasil disimpan.'),
+          ),
+        );
+
+        // Tunggu 1.5 detik, lalu tutup dialog & form
+        await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pemeriksaan berhasil disimpan'), backgroundColor: Colors.green),
-          );
-          Navigator.pop(context);
+          Navigator.of(context).pop(); // tutup dialog
+          Navigator.of(context).pop(); // tutup form
         }
-      } else {
-        setState(() => _error = result['message'] ?? 'Gagal menyimpan');
       }
-    } catch (e) {
-      setState(() => _error = 'Terjadi kesalahan.');
-    } finally {
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Gagal'),
+          content: Text(result['message'] ?? 'Gagal menyimpan data.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) Navigator.of(context).pop(); // tutup dialog saja
+    }
+  } catch (e) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Kesalahan'),
+        content: Text('Terjadi kesalahan saat menyimpan data.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // tutup dialog saja
+  } finally {
+    if (mounted) {
       setState(() => _submitting = false);
     }
   }
+}
 
  @override
 Widget build(BuildContext context) {

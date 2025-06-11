@@ -221,81 +221,151 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
     );
   }
 
-  Widget _buildSummaryCards() {
-    final items = [
-      ['Pemeriksaan', summary['pemeriksaan'], Colors.blue],
-      ['Gejala', summary['gejala'], Colors.indigo],
-      ['Penyakit', summary['penyakit'], Colors.red],
-      ['Reproduksi', summary['reproduksi'], Colors.orange],
-    ];
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: items.map((item) => _summaryCard(item[0] as String, item[1] as int, item[2] as Color)).toList(),
-    );
-  }
+ Widget _buildSummaryCards() {
+  final items = [
+    ['Pemeriksaan', summary['pemeriksaan'], Colors.blue],
+    ['Gejala', summary['gejala'], Colors.indigo],
+    ['Penyakit', summary['penyakit'], Colors.red],
+    ['Reproduksi', summary['reproduksi'], Colors.orange],
+  ];
 
-  Widget _summaryCard(String title, int? value, Color color) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        border: Border.all(color: color.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.analytics, color: color, size: 30),
-          const SizedBox(height: 8),
-          Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-          Text('$value', style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
+  return Wrap(
+    spacing: 12,
+    runSpacing: 12,
+    alignment: WrapAlignment.center, // ✅ Ini agar wrap-nya rata tengah
+    children: items.map((item) => _summaryCard(item[0] as String, item[1] as int, item[2] as Color)).toList(),
+  );
+}
 
-  Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
-    return SizedBox(
-      height: 200,
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, _) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= data.length) return const SizedBox.shrink();
-                  return Text(
-                    data[index]['name'],
-                    style: const TextStyle(fontSize: 10),
-                    textAlign: TextAlign.center,
-                  );
-                },
+
+ Widget _summaryCard(String title, int? value, Color color) {
+  return Container(
+    width: 160,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      border: Border.all(color: color.withOpacity(0.3)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center, // ✅ Vertikal center
+      crossAxisAlignment: CrossAxisAlignment.center, // ✅ Horizontal center
+      children: [
+        Icon(Icons.analytics, color: color, size: 30),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          '$value',
+          style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
+}
+
+
+Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
+  final int barCount = data.length;
+  final double screenWidth = MediaQuery.of(context).size.width;
+  final double barSpacing = 70;
+  final bool isScrollable = barCount > 4;
+  final double chartWidth = isScrollable ? barCount * barSpacing : screenWidth;
+
+  return SizedBox(
+    height: 300,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+      child: SizedBox(
+        width: chartWidth,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: BarChart(
+            BarChartData(
+              alignment: isScrollable ? BarChartAlignment.start : BarChartAlignment.spaceAround,
+              barGroups: List.generate(barCount, (i) {
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: (data[i]['value'] as num).toDouble(),
+                      width: 24,
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(4),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: (data[i]['value'] as num).toDouble() + 2,
+                        color: Colors.grey[200]!,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, _) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= data.length) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: SizedBox(
+                          width: 60,
+                          child: Text(
+                            data[index]['name'],
+                            style: const TextStyle(fontSize: 11),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: false,
+                    reservedSize: 32, // ✅ beri ruang atas agar tooltip tidak terpotong
+                  ),
+                ),
+              ),
+              gridData: FlGridData(show: true),
+              borderData: FlBorderData(show: false),
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  // tooltipBgColor: Colors.black87,
+                  tooltipMargin: 12, // ✅ beri jarak tooltip ke batang
+                  fitInsideVertically: true, // ✅ biar tidak ketimpa atas
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    return BarTooltipItem(
+                      '${data[group.x.toInt()]['name']}\n${rod.toY.toInt()}',
+                      const TextStyle(color: Colors.white),
+                    );
+                  },
+                ),
               ),
             ),
           ),
-          barGroups: List.generate(data.length, (i) {
-            return BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: (data[i]['value'] as num).toDouble(),
-                  width: 20,
-                  color: baseColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ],
-            );
-          }),
-          borderData: FlBorderData(show: false),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+
 
   Widget _sectionTitle(String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),

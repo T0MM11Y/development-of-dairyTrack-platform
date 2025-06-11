@@ -105,33 +105,65 @@ class _EditSymptomViewState extends State<EditSymptomView> {
     }
   }
 
-  Future<void> _submit() async {
-    setState(() => _submitting = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userString = prefs.getString('user');
-      final user = jsonDecode(userString!);
+ Future<void> _submit() async {
+  setState(() => _submitting = true);
 
-      _form['edited_by'] = user['id'];
-      final res = await _controller.updateSymptom(widget.symptomId, _form);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userString = prefs.getString('user');
+    final user = jsonDecode(userString!);
 
-      if (res['success'] == true) {
+    _form['edited_by'] = user['id'];
+    final res = await _controller.updateSymptom(widget.symptomId, _form);
+
+    if (res['success'] == true) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Berhasil'),
+            content: Text('Data berhasil diperbarui.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Berhasil diperbarui')),
-          );
-          widget.onSaved();
-          Navigator.pop(context);
+          Navigator.of(context).pop(); // Tutup dialog
+          Navigator.of(context).pop(); // Tutup form
+          widget.onSaved(); // Callback setelah form ditutup
         }
-      } else {
-        setState(() => _error = res['message'] ?? 'Gagal memperbarui data');
       }
-    } catch (e) {
-      setState(() => _error = 'Terjadi kesalahan');
-    } finally {
-      setState(() => _submitting = false);
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Gagal'),
+          content: Text(res['message'] ?? 'Gagal memperbarui data.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) Navigator.of(context).pop(); // Tutup dialog gagal
     }
+  } catch (e) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Kesalahan'),
+        content: Text('Terjadi kesalahan saat memperbarui data.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // Tutup dialog error
+  } finally {
+    if (mounted) setState(() => _submitting = false);
   }
+}
+
 
  @override
 Widget build(BuildContext context) {

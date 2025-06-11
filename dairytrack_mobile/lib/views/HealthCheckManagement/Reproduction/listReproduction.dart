@@ -299,12 +299,27 @@ Widget build(BuildContext context) {
                                                     ),
                                                   );
 
-                                                  if (confirm == true) {
-                                                    await _controller.deleteReproduction(item['id']);
-                                                    _fetchData();
-                                                  }
-                                                },
-                                              ),
+                                                   if (confirm == true) {
+      final res = await _controller.deleteReproduction(item['id']);
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text(res['success'] ? 'Berhasil' : 'Gagal'),
+          content: Text(res['success']
+              ? 'Data berhasil dihapus.'
+              : res['message'] ?? 'Gagal menghapus data.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      if (context.mounted) Navigator.of(context).pop(); // Tutup alert
+
+      if (res['success']) _fetchData();
+    }
+  },
+),
                                             ],
                                           ),
                                         ],

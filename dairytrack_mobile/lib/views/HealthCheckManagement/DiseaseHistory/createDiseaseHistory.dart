@@ -90,41 +90,63 @@ class _CreateDiseaseHistoryViewState extends State<CreateDiseaseHistoryView> {
 }
 
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _selectedHealthCheckId == null) return;
+ Future<void> _submit() async {
+  if (!_formKey.currentState!.validate() || _selectedHealthCheckId == null) return;
 
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
+  setState(() {
+    _submitting = true;
+    _error = null;
+  });
 
-    final form = {
-      'health_check': _selectedHealthCheckId,
-      'disease_name': _diseaseNameController.text,
-      'description': _descriptionController.text,
-      'created_by': _currentUser?['id'],
-    };
+  final form = {
+    'health_check': _selectedHealthCheckId,
+    'disease_name': _diseaseNameController.text,
+    'description': _descriptionController.text,
+    'created_by': _currentUser?['id'],
+  };
 
-    final result = await _controller.createDiseaseHistory(form);
+  final result = await _controller.createDiseaseHistory(form);
 
-    if (result['success']) {
+  if (result['success']) {
+    if (mounted) {
+      widget.onSaved?.call();
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Berhasil'),
+          content: Text(result['message'] ?? 'Data berhasil disimpan.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
       if (mounted) {
-        widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Berhasil disimpan'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context, true);
+        Navigator.of(context).pop(); // Tutup dialog
+        Navigator.of(context).pop(true); // Tutup form & kirim result
       }
-    } else {
-      setState(() {
-        _error = result['message'] ?? 'Gagal menyimpan data';
-      });
     }
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Gagal'),
+        content: Text(result['message'] ?? 'Gagal menyimpan data.'),
+      ),
+    );
 
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // Tutup dialog gagal
+  }
+
+  if (mounted) {
     setState(() {
       _submitting = false;
     });
   }
+}
+
 @override
 Widget build(BuildContext context) {
   final eligibleHealthChecks = _healthChecks.where((hc) {

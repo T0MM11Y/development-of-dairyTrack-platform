@@ -262,118 +262,161 @@ Widget build(BuildContext context) {
                                     ),
                                   const SizedBox(height: 12),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      _actionButton(
-                                        icon: Icons.visibility,
-                                        color: Colors.blueGrey,
-                                        tooltip: 'Lihat',
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => SymptomViewPage(
-                                                symptomId: item['id'],
-                                                onClose: () => Navigator.pop(context),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        icon: Icons.edit,
-                                        color: Colors.orange,
-                                        tooltip: 'Edit',
-                                        onPressed: () async {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Role ini tidak memiliki izin mengedit'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                            return;
-                                          }
+                                     ElevatedButton.icon(
+  icon: const Icon(Icons.visibility, size: 18),
+  label: const Text('Lihat'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blueGrey,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SymptomViewPage(
+          symptomId: item['id'],
+          onClose: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  },
+),
+const SizedBox(width: 8),
 
-                                          if (!_isEditable(hc)) {
-                                            showDialog(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text('Tidak Bisa Diedit'),
-                                                content: const Text('Pemeriksaan ini sudah ditangani.'),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator.pop(ctx),
-                                                    child: const Text('Mengerti'),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            return;
-                                          }
+                                      
+                                      ElevatedButton.icon(
+  icon: const Icon(Icons.edit, size: 18),
+  label: const Text('Edit'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          title: Text('Akses Ditolak'),
+          content: Text('Role ini tidak memiliki izin mengedit'),
+        ),
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      if (context.mounted) Navigator.of(context).pop();
+      return;
+    }
 
-                                          final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => EditSymptomView(
-                                                symptomId: item['id'],
-                                                onSaved: _loadData,
-                                              ),
-                                            ),
-                                          );
-                                          if (result == true) _loadData();
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        icon: Icons.delete,
-                                        color: Colors.redAccent,
-                                        tooltip: 'Hapus',
-                                        onPressed: () async {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Role ini tidak memiliki izin menghapus'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                            return;
-                                          }
+    if (!_isEditable(hc)) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Tidak Bisa Diedit'),
+          content: const Text('Pemeriksaan ini sudah ditangani.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Konfirmasi Hapus'),
-                                              content: const Text('Yakin ingin menghapus data ini?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () => Navigator.pop(context, true),
-                                                  child: const Text('Hapus'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditSymptomView(
+          symptomId: item['id'],
+          onSaved: _loadData,
+        ),
+      ),
+    );
 
-                                          if (confirm == true) {
-                                            final res = await _symptomController.deleteSymptom(item['id']);
-                                            if (res['success'] == true) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('✅ Data gejala berhasil dihapus'),
-                                                  backgroundColor: Colors.green,
-                                                  duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              _loadData();
-                                            }
-                                          }
-                                        },
-                                      ),
+    if (result == true) _loadData();
+  },
+),
+const SizedBox(width: 8),
+
+                                     ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.redAccent,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Akses Ditolak'),
+          content: Text('Role ini tidak memiliki izin menghapus'),
+        ),
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      if (context.mounted) Navigator.of(context).pop();
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: const Text('Yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final res = await _symptomController.deleteSymptom(item['id']);
+      if (res['success'] == true) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Berhasil'),
+            content: Text('Data gejala berhasil dihapus.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Tutup dialog sukses
+          _loadData(); // Refresh data
+        }
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal'),
+            content: Text(res['message'] ?? 'Gagal menghapus data.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        if (context.mounted) Navigator.of(context).pop(); // Tutup dialog gagal
+      }
+    }
+  },
+),
+const SizedBox(width: 8),
+
                                     ],
                                   )
                                 ],
