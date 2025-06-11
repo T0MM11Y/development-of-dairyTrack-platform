@@ -10,7 +10,7 @@ class Notification(models.Model):
     objects = models.Manager()
     user_id = models.IntegerField(null=True, blank=True)
     cow_id = models.IntegerField(null=True, blank=True)
-    feed_stock_id = models.IntegerField(null=True, blank=True)
+    # feed_stock_id = models.IntegerField(null=True, blank=True)
     message = models.TextField()
     type = models.CharField(max_length=30, default='FEED_STOCK')
     is_read = models.BooleanField(default=False)
