@@ -5,6 +5,13 @@ import 'package:dairytrack_mobile/services/notificationService.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/model/feed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -129,6 +136,43 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           label: 'Analisis Kualitas Susu',
           route: 'milkQuality',
           widget: () => MilkQualityControlsView(),
+        ),
+        NavigationItem(
+          icon: Icons.category, // Jenis Pakan = kategori pakan
+          label: 'Jenis Pakan',
+          route: 'feed-Type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .eco, // Jenis Nutrisi = daun/”eco” → identik dgn nutrisi & keseimbangan
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
         ),
       ];
 

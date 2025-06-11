@@ -22,6 +22,15 @@ import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
 
+// Feed 
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/model/feed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
+
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
 import 'usersManagement/listOfUsersView.dart';
@@ -173,6 +182,43 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         route: 'reproduction',
         widget: () => ReproductionListView(),
       ),
+      NavigationItem(
+          icon: Icons.category, // Jenis Pakan = kategori pakan
+          label: 'Jenis Pakan',
+          route: 'feed-Type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .eco, // Jenis Nutrisi = daun/”eco” → identik dgn nutrisi & keseimbangan
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          label: 'Feed Schedule',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
+        ),
       ];
 
   @override

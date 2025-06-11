@@ -150,6 +150,16 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             title: "Health Dashboard",
             link: "/admin/health-dashboard",
           },
+          {
+          id: "feed-trend",
+          title: "Feed Usage",
+          link: "/admin/daily-feed-usage",
+        },
+        {
+          id: "feed-trend",
+          title: "Daily Nutrition",
+          link: "/admin/daily-nutrition",
+        },
         ],
         showForRoles: ["admin", "supervisor", "farmer"],
       },
