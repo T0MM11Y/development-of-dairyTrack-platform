@@ -1,6 +1,9 @@
+import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockProvider.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/providers/productTypeProvider.dart';
 import 'package:dairytrack_mobile/services/notificationService.dart';
 import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -15,7 +18,15 @@ void main() async {
 
   // Inisialisasi notification service
   await NotificationService().initialize();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => StockProvider()),
+        ChangeNotifierProvider(create: (_) => ProductTypeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 Future<void> _configureLocalTimeZone() async {
