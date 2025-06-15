@@ -38,43 +38,50 @@ class _EditFeedFormState extends State<EditFeedForm> {
   double price = 0.0;
   List<Map<String, dynamic>> selectedNutrisi = [];
   List<TextEditingController> _amountControllers = [];
-  List<TextEditingController> _nutrisiControllers = [];
+  List<int?> _selectedNutrisiIds = [];
+  List<bool> _showNutrisiDropdowns = [];
   bool _isSubmitting = false;
+  bool _showTypeDropdown = false;
   final TextEditingController _priceController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    typeId = widget.feed.typeId;
-    name = widget.feed.name;
-    unit = widget.feed.unit;
-    minStock = widget.feed.minStock;
-    price = widget.feed.price;
-    _priceController.text = _formatPrice(price.toStringAsFixed(0));
-    selectedNutrisi = List.from(widget.feed.nutrisiList
-        .map((n) => {
-              'id': n['id'],
-              'name': n['name'],
-              'unit': n['unit'],
-              'amount': n['amount'],
-            })
-        .toList());
-    _amountControllers = selectedNutrisi
-        .map((n) => TextEditingController(text: n['amount'].toString()))
-        .toList();
-    _nutrisiControllers = selectedNutrisi
-        .map((n) => TextEditingController(text: n['name']))
-        .toList();
-    print('Initial Selected Nutrisi: $selectedNutrisi');
-    print('Initial Nutrisi List: ${widget.nutrisiList.map((n) => {'id': n.id, 'name': n.name}).toList()}');
+    // Initialize state asynchronously to prevent UI blocking
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        typeId = widget.feed.typeId;
+        name = widget.feed.name;
+        unit = widget.feed.unit;
+        minStock = widget.feed.minStock;
+        price = widget.feed.price;
+        _priceController.text = _formatPrice(price.toStringAsFixed(0));
+        selectedNutrisi = widget.feed.nutrisiList.isNotEmpty
+            ? List.from(widget.feed.nutrisiList
+                .map((n) => {
+                      'id': n['id'],
+                      'name': n['name'],
+                      'unit': n['unit'],
+                      'amount': n['amount'],
+                    })
+                .toList())
+            : [];
+        _amountControllers = selectedNutrisi
+            .map((n) => TextEditingController(
+                text: n['amount'].toString().replaceAll(RegExp(r'\.0$'), '')))
+            .toList();
+        _selectedNutrisiIds = selectedNutrisi.map((n) => n['id'] as int?).toList();
+        _showNutrisiDropdowns = List.filled(selectedNutrisi.length, false);
+      });
+      print('Initial Selected Nutrisi: $selectedNutrisi');
+      print('Initial Nutrisi List: ${widget.nutrisiList.map((n) => {'id': n.id, 'name': n.name}).toList()}');
+    });
   }
 
   @override
   void dispose() {
     for (var controller in _amountControllers) {
-      controller.dispose();
-    }
-    for (var controller in _nutrisiControllers) {
       controller.dispose();
     }
     _priceController.dispose();
@@ -92,7 +99,7 @@ class _EditFeedFormState extends State<EditFeedForm> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: LinearGradient(
@@ -107,13 +114,13 @@ class _EditFeedFormState extends State<EditFeedForm> {
               const Icon(
                 Icons.info,
                 color: Colors.teal,
-                size: 50,
+                size: 40,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.teal,
                 ),
@@ -122,9 +129,9 @@ class _EditFeedFormState extends State<EditFeedForm> {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.black87),
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -133,7 +140,7 @@ class _EditFeedFormState extends State<EditFeedForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade300,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: const Text(
@@ -146,7 +153,7 @@ class _EditFeedFormState extends State<EditFeedForm> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: const Text(
@@ -180,124 +187,32 @@ class _EditFeedFormState extends State<EditFeedForm> {
         'unit': '',
         'amount': 0.0,
       });
+      _selectedNutrisiIds.add(null);
       _amountControllers.add(TextEditingController(text: '0'));
-      _nutrisiControllers.add(TextEditingController(text: 'Pilih Nutrisi'));
+      _showNutrisiDropdowns.add(false);
     });
   }
 
   void _updateNutrientAmount(int index, double amount) {
     setState(() {
       selectedNutrisi[index]['amount'] = amount;
+      _amountControllers[index].text =
+          amount.toString().replaceAll(RegExp(r'\.0$'), '');
       print('Updated Nutrient Amount at index $index: $amount');
     });
   }
 
-  Future<void> _removeNutrient(int index) async {
-    final nutrisiName = selectedNutrisi[index]['name'];
-    final confirm = await _showSweetAlert(
-      title: "Hapus Nutrisi",
-      message: "Apakah Anda yakin ingin menghapus nutrisi $nutrisiName?",
-    );
-    if (confirm) {
-      setState(() {
+  void _removeNutrient(int index) {
+    setState(() {
+      if (index < selectedNutrisi.length) {
         selectedNutrisi.removeAt(index);
+        _selectedNutrisiIds.removeAt(index);
         _amountControllers[index].dispose();
         _amountControllers.removeAt(index);
-        _nutrisiControllers[index].dispose();
-        _nutrisiControllers.removeAt(index);
+        if (index < _showNutrisiDropdowns.length) {
+          _showNutrisiDropdowns.removeAt(index);
+        }
         print('Removed Nutrient at index $index, Selected Nutrisi: $selectedNutrisi');
-      });
-    }
-  }
-
-  void _showNutrisiDropdown(BuildContext context, int index) {
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final Offset offset = box.localToGlobal(Offset.zero);
-    double left = offset.dx + 16.0;
-    double top = offset.dy + box.size.height;
-    double width = box.size.width - 32.0;
-
-    final selectedNutrisiIds = selectedNutrisi
-        .asMap()
-        .entries
-        .where((entry) => entry.key != index)
-        .map((entry) => entry.value['id'] as int)
-        .toSet();
-    final availableNutrisi = widget.nutrisiList.where((n) => !selectedNutrisiIds.contains(n.id)).toList();
-
-    showMenu<Nutrisi>(
-      context: context,
-      position: RelativeRect.fromLTRB(left, top, left + 16, 0),
-      items: [
-        PopupMenuItem<Nutrisi>(
-          value: Nutrisi(
-            id: 0,
-            name: 'Pilih Nutrisi',
-            unit: '',
-            createdAt: '',
-            updatedAt: '',
-          ),
-          child: Container(
-            width: width,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                'Pilih Nutrisi',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: selectedNutrisi[index]['id'] == 0 ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        ),
-        ...availableNutrisi.asMap().entries.map((entry) {
-          final menuIndex = entry.key + 1;
-          final nutrisi = entry.value;
-          final bool useGrayBackground = menuIndex % 2 == 1;
-          return PopupMenuItem<Nutrisi>(
-            value: nutrisi,
-            child: Container(
-              width: width,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: useGrayBackground ? Colors.grey[100] : Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  nutrisi.name,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: selectedNutrisi[index]['id'] == nutrisi.id
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ],
-    ).then((selectedValue) {
-      if (selectedValue != null) {
-        setState(() {
-          selectedNutrisi[index] = {
-            'id': selectedValue.id,
-            'name': selectedValue.name,
-            'unit': selectedValue.unit,
-            'amount': double.tryParse(_amountControllers[index].text) ?? 0.0,
-          };
-          _nutrisiControllers[index].text =
-              selectedValue.id == 0 ? 'Pilih Nutrisi' : selectedValue.name;
-          print('Selected nutrisi for index $index: ${selectedValue.name} (ID: ${selectedValue.id})');
-        });
       }
     });
   }
@@ -312,217 +227,294 @@ class _EditFeedFormState extends State<EditFeedForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Edit Pakan: ${widget.feed.name}",
-                    style: const TextStyle(
-                      fontSize: 20,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Edit Pakan: ${widget.feed.name}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showTypeDropdown = !_showTypeDropdown;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.teal.shade50,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      typeId == null
+                                          ? 'Pilih Jenis Pakan'
+                                          : widget.feedTypes
+                                              .firstWhere((type) => type.id == typeId)
+                                              .name,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: typeId == null ? Colors.grey[600] : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    _showTypeDropdown
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: Colors.teal,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (_showTypeDropdown)
+                            Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: Container(
+                                constraints: const BoxConstraints(maxHeight: 150),
+                                width: double.infinity,
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  children: widget.feedTypes.map((type) {
+                                    return ListTile(
+                                      title: Text(
+                                        type.name,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          typeId = type.id;
+                                          _showTypeDropdown = false;
+                                        });
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: name,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Pakan',
+                      hintText: 'Masukkan nama pakan',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.text_fields, color: Colors.teal),
+                      filled: true,
+                      fillColor: Colors.teal.shade50,
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Masukkan nama pakan' : null,
+                    onChanged: (value) => name = value,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: unit,
+                    decoration: InputDecoration(
+                      labelText: 'Satuan',
+                      hintText: 'Masukkan satuan (misal: kg)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.scale, color: Colors.teal),
+                      filled: true,
+                      fillColor: Colors.teal.shade50,
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Masukkan satuan' : null,
+                    onChanged: (value) => unit = value,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: minStock.toString().replaceAll(RegExp(r'\.0$'), ''),
+                    decoration: InputDecoration(
+                      labelText: 'Stok Minimum',
+                      hintText: 'Masukkan stok minimum',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.storage, color: Colors.teal),
+                      filled: true,
+                      fillColor: Colors.teal.shade50,
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))
+                    ],
+                    validator: (value) =>
+                        value == null || double.tryParse(value) == null ? 'Masukkan angka valid' : null,
+                    onChanged: (value) => minStock = double.tryParse(value) ?? 0.0,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _priceController,
+                    decoration: InputDecoration(
+                      labelText: 'Harga',
+                      hintText: 'Masukkan harga',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.monetization_on, color: Colors.teal),
+                      prefixText: 'Rp ',
+                      filled: true,
+                      fillColor: Colors.teal.shade50,
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final text = _formatPrice(newValue.text);
+                        return newValue.copyWith(text: text);
+                      }),
+                    ],
+                    validator: (value) =>
+                        value == null || double.tryParse(value.replaceAll('.', '')) == null
+                            ? 'Masukkan angka valid'
+                            : null,
+                    onChanged: (value) => price = double.tryParse(value.replaceAll('.', '')) ?? 0.0,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Pilih Nutrisi',
+                    style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.teal,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
-                decoration: InputDecoration(
-                  labelText: 'Jenis Pakan',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.category, color: Colors.teal),
-                  filled: true,
-                  fillColor: Colors.teal.shade50,
-                ),
-                value: typeId,
-                items: widget.feedTypes.map((type) {
-                  return DropdownMenuItem<int>(
-                    value: type.id,
-                    child: Text(type.name),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => typeId = value),
-                validator: (value) => value == null ? 'Pilih jenis pakan' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: name,
-                decoration: InputDecoration(
-                  labelText: 'Nama Pakan',
-                  hintText: 'Masukkan nama pakan',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.text_fields, color: Colors.teal),
-                  filled: true,
-                  fillColor: Colors.teal.shade50,
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Masukkan nama pakan' : null,
-                onChanged: (value) => name = value,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: unit,
-                decoration: InputDecoration(
-                  labelText: 'Satuan',
-                  hintText: 'Masukkan satuan (misal: kg)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.scale, color: Colors.teal),
-                  filled: true,
-                  fillColor: Colors.teal.shade50,
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Masukkan satuan' : null,
-                onChanged: (value) => unit = value,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: minStock.toStringAsFixed(minStock % 1 == 0 ? 0 : 2),
-                decoration: InputDecoration(
-                  labelText: 'Stok Minimum',
-                  hintText: 'Masukkan stok minimum',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.storage, color: Colors.teal),
-                  filled: true,
-                  fillColor: Colors.teal.shade50,
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
-                validator: (value) =>
-                    value == null || double.tryParse(value) == null ? 'Masukkan angka valid' : null,
-                onChanged: (value) => minStock = double.tryParse(value) ?? 0.0,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: 'Harga',
-                  hintText: 'Masukkan harga',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.monetization_on, color: Colors.teal),
-                  prefixText: 'Rp ',
-                  filled: true,
-                  fillColor: Colors.teal.shade50,
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    final text = _formatPrice(newValue.text);
-                    return newValue.copyWith(text: text);
-                  }),
-                ],
-                validator: (value) =>
-                    value == null || double.tryParse(value.replaceAll('.', '')) == null
-                        ? 'Masukkan angka valid' : null,
-                onChanged: (value) => price = double.tryParse(value.replaceAll('.', '')) ?? 0.0,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Pilih Nutrisi',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildNutrientSelector(),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 8),
+                  _buildNutrientSelector(),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () async {
+                              if (_formKey.currentState!.validate()) {
+                                if (typeId == null) {
+                                  widget.onError('Pilih jenis pakan');
+                                  return;
+                                }
+                                if (selectedNutrisi.any((n) => n['id'] == 0)) {
+                                  widget.onError('Pilih nutrisi untuk semua baris');
+                                  return;
+                                }
+                                final confirm = await _showSweetAlert(
+                                  title: "Edit Pakan",
+                                  message: "Apakah Anda yakin ingin mengubah pakan $name?",
+                                );
+                                if (!confirm) return;
+                                setState(() => _isSubmitting = true);
+                                try {
+                                  final response = await widget.controller.updateFeed(
+                                    id: widget.feed.id,
+                                    typeId: typeId!,
+                                    name: name,
+                                    unit: unit,
+                                    minStock: minStock,
+                                    price: price,
+                                    userId: widget.userId,
+                                    nutrisiList: selectedNutrisi
+                                        .map((n) => {
+                                              'nutrisi_id': n['id'],
+                                              'amount': n['amount'],
+                                            })
+                                        .toList(),
+                                  );
+                                  if (!mounted) return;
+                                  if (response['success']) {
+                                    widget.onUpdate();
+                                    Navigator.of(context).pop();
+                                  } else {
+                                    widget.onError(response['message'] ?? 'Gagal mengedit pakan');
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  widget.onError('Error mengedit pakan: $e');
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isSubmitting = false);
+                                  }
+                                }
+                              }
+                            },
+                      child: _isSubmitting
+                          ? const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            )
+                          : const Text(
+                              "Simpan",
+                              style: TextStyle(color: Colors.white, fontSize: 14),
+                            ),
                     ),
                   ),
-                  onPressed: _isSubmitting
-                      ? null
-                      : () async {
-                          if (_formKey.currentState!.validate()) {
-                            if (selectedNutrisi.any((n) => n['id'] == 0)) {
-                              widget.onError('Pilih nutrisi untuk semua baris');
-                              return;
-                            }
-                            final confirm = await _showSweetAlert(
-                              title: "Edit Pakan",
-                              message: "Apakah Anda yakin ingin mengubah pakan $name?",
-                            );
-                            if (!confirm) return;
-                            setState(() => _isSubmitting = true);
-                            try {
-                              final response = await widget.controller.updateFeed(
-                                id: widget.feed.id,
-                                typeId: typeId!,
-                                name: name,
-                                unit: unit,
-                                minStock: minStock,
-                                price: price,
-                                userId: widget.userId,
-                                nutrisiList: selectedNutrisi
-                                    .map((n) => {
-                                          'nutrisi_id': n['id'],
-                                          'amount': n['amount'],
-                                        })
-                                    .toList(),
-                              );
-                              if (!mounted) return;
-                              if (response['success']) {
-                                widget.onUpdate();
-                                Navigator.of(context).pop();
-                              } else {
-                                widget.onError(response['message'] ?? 'Gagal mengedit pakan');
-                              }
-                            } catch (e) {
-                              if (!mounted) return;
-                              widget.onError('Error mengedit pakan: $e');
-                            } finally {
-                              if (mounted) {
-                                setState(() => _isSubmitting = false);
-                              }
-                            }
-                          }
-                        },
-                  child: _isSubmitting
-                      ? const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        )
-                      : const Text(
-                          "Simpan",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                ),
+                  const SizedBox(height: 12),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),
@@ -538,62 +530,141 @@ class _EditFeedFormState extends State<EditFeedForm> {
         ...selectedNutrisi.asMap().entries.map((entry) {
           final index = entry.key;
           final nutrisi = entry.value;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _nutrisiControllers[index],
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: 'Nutrisi',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (index < _showNutrisiDropdowns.length) {
+                                  _showNutrisiDropdowns[index] = !_showNutrisiDropdowns[index];
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.teal.shade50,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      nutrisi['id'] == 0
+                                          ? 'Pilih Nutrisi'
+                                          : nutrisi['name'],
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: nutrisi['id'] == 0 ? Colors.grey[600] : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    index < _showNutrisiDropdowns.length &&
+                                            _showNutrisiDropdowns[index]
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: Colors.teal,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.teal),
-                      filled: true,
-                      fillColor: Colors.teal.shade50,
                     ),
-                    onTap: () => _showNutrisiDropdown(context, index),
-                    validator: (value) =>
-                        nutrisi['id'] == 0 ? 'Pilih nutrisi' : null,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _amountControllers[index],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: ([
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                        ]),
+                        decoration: InputDecoration(
+                          labelText: 'Jumlah',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                          suffixText: nutrisi['unit'],
+                          filled: true,
+                          fillColor: Colors.teal.shade50,
+                        ),
+                        onTap: () {
+                          if (_amountControllers[index].text == '0') {
+                            _amountControllers[index].clear();
+                          }
+                        },
+                        onChanged: (value) =>
+                            _updateNutrientAmount(index, double.tryParse(value.isEmpty ? '0' : value) ?? 0.0),
+                        validator: (value) =>
+                            value == null || double.tryParse(value) == null ? 'Masukkan jumlah valid' : null,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _removeNutrient(index),
+                    ),
+                  ],
+                ),
+              ),
+              if (index < _showNutrisiDropdowns.length && _showNutrisiDropdowns[index])
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 150),
+                    width: double.infinity,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: widget.nutrisiList
+                          .asMap()
+                          .entries
+                          .where((entry) =>
+                              !_selectedNutrisiIds.contains(entry.value.id) ||
+                              _selectedNutrisiIds[index] == entry.value.id)
+                          .map((entry) {
+                            final nutrisiItem = entry.value;
+                            return ListTile(
+                              title: Text(
+                                nutrisiItem.name,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              onTap: () {
+                                setState(() {
+                                  selectedNutrisi[index] = {
+                                    'id': nutrisiItem.id,
+                                    'name': nutrisiItem.name,
+                                    'unit': nutrisiItem.unit,
+                                    'amount': double.tryParse(_amountControllers[index].text) ?? 0.0,
+                                  };
+                                  _selectedNutrisiIds[index] = nutrisiItem.id;
+                                  if (index < _showNutrisiDropdowns.length) {
+                                    _showNutrisiDropdowns[index] = false;
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: TextFormField(
-                    controller: _amountControllers[index],
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
-                    decoration: InputDecoration(
-                      labelText: 'Jumlah',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                      suffixText: nutrisi['unit'],
-                      filled: true,
-                      fillColor: Colors.teal.shade50,
-                    ),
-                    onTap: () {
-                      if (_amountControllers[index].text == '0') {
-                        _amountControllers[index].clear();
-                      }
-                    },
-                    onChanged: (value) => _updateNutrientAmount(index, double.tryParse(value.isEmpty ? '0' : value) ?? 0.0),
-                    validator: (value) =>
-                        value == null || double.tryParse(value) == null ? 'Masukkan jumlah valid' : null,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.remove_circle, color: Colors.red),
-                  onPressed: () => _removeNutrient(index),
-                ),
-              ],
-            ),
+            ],
           );
         }),
         TextButton.icon(

@@ -24,10 +24,12 @@ class DailyFeedItemManagementController {
   }) async {
     try {
       final queryParameters = <String, String>{};
-      if (dailyFeedId != null) queryParameters['daily_feed_id'] = dailyFeedId.toString();
+      if (dailyFeedId != null)
+        queryParameters['daily_feed_id'] = dailyFeedId.toString();
       if (feedId != null) queryParameters['feed_id'] = feedId.toString();
 
-      final url = Uri.parse('$baseUrl').replace(queryParameters: queryParameters);
+      final url =
+          Uri.parse('$baseUrl').replace(queryParameters: queryParameters);
       final headers = await _getHeaders();
       print('getAllFeedItems URL: $url'); // Debug
       print('getAllFeedItems Headers: $headers'); // Debug
@@ -58,7 +60,8 @@ class DailyFeedItemManagementController {
             if (decoded.containsKey('data')) {
               responseData = decoded['data'] as List<dynamic>? ?? [];
             } else if (decoded['success'] == false) {
-              print('getAllFeedItems Server Error: ${decoded['message']}'); // Debug
+              print(
+                  'getAllFeedItems Server Error: ${decoded['message']}'); // Debug
               return {
                 'success': false,
                 'message': decoded['message'] ?? 'Server returned an error',
@@ -84,21 +87,25 @@ class DailyFeedItemManagementController {
         }
       } else {
         try {
-          final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+          final errorData =
+              response.body.isNotEmpty ? jsonDecode(response.body) : {};
           print('getAllFeedItems Error Data: $errorData'); // Debug
           String message;
           switch (response.statusCode) {
             case 401:
-              message = errorData['message'] ?? 'Authentication failed: Please log in again';
+              message = errorData['message'] ??
+                  'Authentication failed: Please log in again';
               break;
             case 403:
-              message = errorData['message'] ?? 'Permission denied: You do not have access';
+              message = errorData['message'] ??
+                  'Permission denied: You do not have access';
               break;
             case 404:
               message = errorData['message'] ?? 'Feed items not found';
               break;
             default:
-              message = errorData['message'] ?? 'Failed to get feed items (Status: ${response.statusCode})';
+              message = errorData['message'] ??
+                  'Failed to get feed items (Status: ${response.statusCode})';
           }
           return {
             'success': false,
@@ -108,7 +115,8 @@ class DailyFeedItemManagementController {
           print('getAllFeedItems Error Parse: $e'); // Debug
           return {
             'success': false,
-            'message': 'Failed to get feed items: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Failed to get feed items: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -149,11 +157,13 @@ class DailyFeedItemManagementController {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         try {
-          final responseData = response.body.isEmpty ? {} : jsonDecode(response.body);
+          final responseData =
+              response.body.isEmpty ? {} : jsonDecode(response.body);
           print('bulkUpdateFeedItems Parsed Data: $responseData'); // Debug
           return {
             'success': true,
-            'message': responseData['message'] ?? 'Item pakan berhasil di update',
+            'message':
+                responseData['message'] ?? 'Item pakan berhasil di update',
             'results': responseData['results'] ?? [],
           };
         } catch (e) {
@@ -165,18 +175,21 @@ class DailyFeedItemManagementController {
         }
       } else {
         try {
-          final errorData = response.body.isEmpty ? {} : jsonDecode(response.body);
+          final errorData =
+              response.body.isEmpty ? {} : jsonDecode(response.body);
           print('bulkUpdateFeedItems Error Data: $errorData'); // Debug
           return {
             'success': false,
-            'message': errorData['message'] ?? 'Failed to bulk update feed items (Status: ${response.statusCode})',
+            'message': errorData['message'] ??
+                'Failed to bulk update feed items (Status: ${response.statusCode})',
             'results': errorData['results'] ?? [],
           };
         } catch (e) {
           print('bulkUpdateFeedItems Error Parse: $e'); // Debug
           return {
             'success': false,
-            'message': 'Failed to bulk update feed items: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Failed to bulk update feed items: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -217,7 +230,8 @@ class DailyFeedItemManagementController {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Item pakan berhasil ditambahkan',
+          'message':
+              responseData['message'] ?? 'Item pakan berhasil ditambahkan',
           'data': responseData['data'],
           'errors': responseData['errors'],
         };
@@ -233,7 +247,8 @@ class DailyFeedItemManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Failed to add feed item: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Failed to add feed item: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -268,7 +283,8 @@ class DailyFeedItemManagementController {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Item pakan berhasil diperbarui',
+          'message':
+              responseData['message'] ?? 'Item pakan berhasil diperbarui',
           'data': responseData['data'],
         };
       } else {
@@ -281,7 +297,8 @@ class DailyFeedItemManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -320,7 +337,8 @@ class DailyFeedItemManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -356,7 +374,8 @@ class DailyFeedItemManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }
@@ -367,38 +386,55 @@ class DailyFeedItemManagementController {
   }
 
   // Get Feed Items by Daily Feed ID
-  Future<Map<String, dynamic>> getFeedItemsByDailyFeedId(int dailyFeedId, int userId) async {
+  Future<Map<String, dynamic>> getFeedItemsByDailyFeedId(
+      int dailyFeedId, int userId) async {
     try {
-      final url = Uri.parse('$baseUrl/daily_feed/$dailyFeedId');
-      final headers = await _getHeaders();
+      // Pastikan baseUrl didefinisikan (misalnya, 'http://localhost:5003')
+      final url =
+          Uri.parse('$baseUrl/daily_feed/$dailyFeedId/'); // Add trailing slash
+      final headers =
+          await _getHeaders(); // Pastikan async ditangani dengan await
+      print('getFeedItemsByDailyFeedId URL: $url');
+      print('getFeedItemsByDailyFeedId Headers: $headers');
+
       final response = await http.get(url, headers: headers);
 
-      print('getFeedItemsByDailyFeedId Status: ${response.statusCode}'); // Debug
-      print('getFeedItemsByDailyFeedId Body: ${response.body}'); // Debug
+      print('getFeedItemsByDailyFeedId Status: ${response.statusCode}');
+      print('getFeedItemsByDailyFeedId Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        // Validasi bahwa responseData adalah list atau map
+        if (responseData is List || responseData is Map) {
+          return {
+            'success': true,
+            'data': responseData,
+          };
+        } else {
+          return {
+            'success': false,
+            'message': 'Invalid response format',
+          };
+        }
       } else {
         try {
           final errorData = jsonDecode(response.body);
           return {
             'success': false,
-            'message': errorData['message'] ?? 'Item pakan tidak ditemukan',
+            'message': errorData['message'] ??
+                'Item pakan tidak ditemukan (Status: ${response.statusCode})',
           };
         } catch (e) {
           return {
             'success': false,
-            'message': 'Item pakan tidak ditemukan: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Gagal memproses respons: Unable to parse error (Status: ${response.statusCode}) - ${response.body}',
           };
         }
       }
     } catch (e) {
-      print('getFeedItemsByDailyFeedId Error: $e'); // Debug
-      return {'success': false, 'message': 'An error occurred: $e'};
+      print('getFeedItemsByDailyFeedId Error: $e');
+      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
     }
   }
 
@@ -413,7 +449,8 @@ class DailyFeedItemManagementController {
       if (startDate != null) queryParameters['start_date'] = startDate;
       if (endDate != null) queryParameters['end_date'] = endDate;
 
-      final url = Uri.parse('$baseUrl/feed_usage').replace(queryParameters: queryParameters);
+      final url = Uri.parse('$baseUrl/feedUsage')
+          .replace(queryParameters: queryParameters);
       final headers = await _getHeaders();
       final response = await http.get(url, headers: headers);
 
@@ -424,7 +461,8 @@ class DailyFeedItemManagementController {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Berhasil mengambil data penggunaan pakan',
+          'message': responseData['message'] ??
+              'Berhasil mengambil data penggunaan pakan',
           'data': responseData['data'],
         };
       } else {
@@ -437,7 +475,8 @@ class DailyFeedItemManagementController {
         } catch (e) {
           return {
             'success': false,
-            'message': 'Failed to get feed usage: Unable to parse error (Status: ${response.statusCode})',
+            'message':
+                'Failed to get feed usage: Unable to parse error (Status: ${response.statusCode})',
           };
         }
       }

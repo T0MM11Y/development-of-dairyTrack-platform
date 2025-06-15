@@ -7,8 +7,8 @@ class DailyFeedItem {
   final int userId;
   final Map<String, dynamic> createdBy;
   final Map<String, dynamic> updatedBy;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final String createdAt;
+  final String updatedAt;
   final List<Map<String, dynamic>> nutrients;
 
   DailyFeedItem({
@@ -26,32 +26,37 @@ class DailyFeedItem {
   });
 
   factory DailyFeedItem.fromJson(Map<String, dynamic> json) {
-    print('Parsing DailyFeedItem: $json'); // Debug
     try {
       return DailyFeedItem(
-        id: json['id'] as int? ?? 0,
-        dailyFeedId: json['daily_feed_id'] as int? ?? 0,
-        feedId: json['feed_id'] as int? ?? 0,
+        id: json['id'] is String ? int.parse(json['id']) : (json['id'] as int),
+        dailyFeedId: json['daily_feed_id'] is String ? int.parse(json['daily_feed_id']) : (json['daily_feed_id'] as int),
+        feedId: json['feed_id'] is String ? int.parse(json['feed_id']) : (json['feed_id'] as int),
         feedName: json['feed_name'] as String? ?? 'Unknown Feed',
-        quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
-        userId: json['user_id'] as int? ?? 0,
+        quantity: json['quantity'] is String ? double.parse(json['quantity']) : (json['quantity'] as num).toDouble(),
+        userId: json['user_id'] is String ? int.parse(json['user_id']) : (json['user_id'] as int),
         createdBy: json['created_by'] as Map<String, dynamic>? ?? {'id': 0, 'name': 'Unknown'},
         updatedBy: json['updated_by'] as Map<String, dynamic>? ?? {'id': 0, 'name': 'Unknown'},
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
-        nutrients: (json['nutrients'] as List<dynamic>?)
-                ?.map((n) => {
-                      'nutrisi_id': n['nutrisi_id'] as int? ?? 0,
-                      'nutrisi_name': n['nutrisi_name'] as String? ?? 'Unknown',
-                      'unit': n['unit'] as String? ?? '',
-                      'amount': (n['amount'] as num?)?.toDouble() ?? 0.0,
-                    })
-                .toList() ??
-            [],
+        createdAt: json['created_at'] as String? ?? '',
+        updatedAt: json['updated_at'] as String? ?? '',
+        nutrients: (json['nutrients'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [],
       );
     } catch (e) {
-      print('DailyFeedItem Parse Error: $e for JSON: $json'); // Debug
+      print('Error parsing DailyFeedItem: $e, JSON: $json');
       rethrow;
     }
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'daily_feed_id': dailyFeedId,
+    'feed_id': feedId,
+    'feed_name': feedName,
+    'quantity': quantity,
+    'user_id': userId,
+    'created_by': createdBy,
+    'updated_by': updatedBy,
+    'created_at': createdAt,
+    'updated_at': updatedAt,
+    'nutrients': nutrients,
+  };
 }

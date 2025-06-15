@@ -299,13 +299,17 @@ class _FeedViewState extends State<FeedView> {
       _showSnackBar('Jenis pakan atau nutrisi belum dimuat.');
       return;
     }
+    if (feed == null || feed.id == null) {
+      _showSnackBar('Data pakan tidak valid.');
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: Colors.white,
       builder: (context) => EditFeedForm(
         feed: feed,
         feedTypes: _feedTypes,

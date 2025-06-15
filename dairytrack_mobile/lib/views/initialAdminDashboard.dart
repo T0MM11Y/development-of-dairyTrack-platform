@@ -227,57 +227,39 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           widget: () => HealthCheckListView(),
         ),
         NavigationItem(
-          icon: Icons.visibility,
-          label: 'Gejala',
-          route: 'symptoms',
-          widget: () => SymptomListView(),
-        ),
-        NavigationItem(
-          icon: Icons.coronavirus,
-          label: 'Riwayat Penyakit',
-          route: 'disease-history',
-          widget: () => DiseaseHistoryListView(),
-        ),
-        NavigationItem(
-          icon: Icons.pregnant_woman,
-          label: 'Reproduksi',
-          route: 'reproduction',
-          widget: () => ReproductionListView(),
-        ),
-        NavigationItem(
           icon: Icons.category, // Jenis Pakan = kategori pakan
           label: 'Jenis Pakan',
-          route: 'feed-Type',
+          route: 'feed-type',
           widget: () => FeedTypeView(),
         ),
         NavigationItem(
           icon: Icons
-              .eco, // Jenis Nutrisi = daun/”eco” → identik dgn nutrisi & keseimbangan
+              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
           label: 'Jenis Nutrisi',
           route: 'nutrition',
           widget: () => NutrisiView(),
         ),
         NavigationItem(
-          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          icon: Icons.kitchen,
           label: 'Pakan',
           route: 'feed',
           widget: () => FeedView(),
         ),
         NavigationItem(
-          icon: Icons.rice_bowl, // Pakan = mangkuk pakan (rice bowl)
+          icon: Icons.inventory,
           label: 'Stock Pakan',
           route: 'feed-stock',
           widget: () => FeedStockList(),
         ),
         NavigationItem(
-          icon: Icons.schedule, // Feed Schedule = jadwal/clock
+          icon: Icons.event,
           label: 'Feed Schedule',
           route: 'feed-schedule',
           widget: () => DailyFeedView(),
         ),
         NavigationItem(
-          icon: Icons.schedule, // Feed Schedule = jadwal/clock
-          label: 'Feed Schedule',
+          icon: Icons.checklist,
+          label: 'Feed Item Harian',
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../controller/APIURL4/dailyFeedItemController.dart';
 import '../../../controller/APIURL4/feedStockController.dart';
-import '../model/feed.dart';
 import '../model/dailyFeed.dart';
 import '../model/dailyFeedItem.dart';
+import '../model/feedStock.dart';
 import '../../../controller/APIURL1/cowManagementController.dart';
-import 'package:intl/intl.dart'; // Harus ada di sini
-
+import 'package:intl/intl.dart';
 
 class EditFeedItemPage extends StatefulWidget {
   final DailyFeed feed;
@@ -26,15 +25,19 @@ class EditFeedItemPage extends StatefulWidget {
 }
 
 class _EditFeedItemPageState extends State<EditFeedItemPage> {
-  final DailyFeedItemManagementController _feedItemController = DailyFeedItemManagementController();
-  final FeedStockManagementController _stockController = FeedStockManagementController();
+  final DailyFeedItemManagementController _feedItemController =
+      DailyFeedItemManagementController();
+  final FeedStockManagementController _stockController =
+      FeedStockManagementController();
   List<DailyFeedItem> _feedItems = [];
-  List<Map<String, dynamic>> _feeds = [];
+  List<FeedStockModel> _feeds = [];
   List<Map<String, dynamic>> _formList = [];
   String _errorMessage = '';
+  String? _stockMessage;
   bool _isLoading = false;
   bool _isEditing = false;
   String? _userRole;
+  bool _showFeedDropdown = false;
 
   @override
   void initState() {
@@ -53,34 +56,71 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     try {
-      final itemResponse = await _feedItemController.getFeedItemsByDailyFeedId(widget.feed.id, widget.userId);
+      print(
+          'Fetching feed items for dailyFeedId: ${widget.feed.id}, userId: ${widget.userId}');
+      final itemResponse =
+          await _feedItemController.getAllFeedItems(userId: widget.userId);
       final stockResponse = await _stockController.getAllFeedStocks();
       if (!mounted) return;
+
+      print('Item Response: $itemResponse');
+      print('Stock Response: $stockResponse');
 
       if (itemResponse['success'] && stockResponse['success']) {
         final feedItems = (itemResponse['data'] as List<dynamic>)
             .map((json) => DailyFeedItem.fromJson(json as Map<String, dynamic>))
+            .where((item) => item.dailyFeedId == widget.feed.id)
             .toList();
+
         final feedStocks = (stockResponse['data'] as List<dynamic>)
-            .map((json) => {
-                  'id': json['id'],
-                  'name': json['name'] ?? 'Feed #${json['id']}',
-                  'stock': double.tryParse(json['stock']?.toString() ?? '0') ?? 0,
-                  'unit': json['unit'] ?? 'kg',
-                })
+            .map((json) {
+              try {
+                print('Parsing feed stock JSON: $json');
+                final feedId = json['feed_id'] is num
+                    ? (json['feed_id'] as num).toInt()
+                    : int.tryParse(json['feed_id']?.toString() ?? '0') ?? 0;
+                final feedName = json['name'] ?? 'Unknown Feed';
+                final unit = json['unit'] ?? 'kg';
+                final stockData = json is Map<String, dynamic> ? json : {};
+                return FeedStockModel(
+                  id: stockData['id'] is num
+                      ? (stockData['id'] as num).toInt()
+                      : int.tryParse(stockData['id']?.toString() ?? '0') ?? 0,
+                  feedId: feedId,
+                  feedName: feedName,
+                  stock: stockData['stock'] is num
+                      ? (stockData['stock'] as num).toDouble()
+                      : double.tryParse(stockData['stock']?.toString() ?? '0') ??
+                          0.0,
+                  unit: unit,
+                  updatedAt: stockData['updated_at']?.toString() ?? '',
+                );
+              } catch (e, stackTrace) {
+                print(
+                    'Error parsing feed stock: $e, StackTrace: $stackTrace, JSON: $json');
+                return null;
+              }
+            })
+            .where((stock) => stock != null && stock.stock > 0)
+            .cast<FeedStockModel>()
             .toList();
+
+        print('Parsed feed items: $feedItems');
+        print('Parsed feed stocks: $feedStocks');
 
         setState(() {
           _feedItems = feedItems;
           _feeds = feedStocks;
           _formList = feedItems
-              .map((item) => {
+              .map((item) => <String, dynamic>{
                     'id': item.id,
                     'feed_id': item.feedId.toString(),
                     'quantity': item.quantity.toString(),
                     'daily_feed_id': item.dailyFeedId,
                   })
               .toList();
+          _stockMessage = null;
+          _errorMessage = '';
           _isLoading = false;
         });
       } else {
@@ -88,16 +128,27 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
           _errorMessage = itemResponse['message'] ??
               stockResponse['message'] ??
               'Gagal memuat data';
+          _stockMessage = stockResponse['message'];
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (mounted) {
         setState(() {
           _errorMessage = 'Gagal memuat data: $e';
+          _stockMessage = 'Terjadi kesalahan saat mengambil stok: $e';
           _isLoading = false;
         });
       }
+      print('Error in _fetchData: $e, StackTrace: $stackTrace');
+    }
+  }
+
+  String _formatStock(double stock) {
+    if (stock == stock.toInt()) {
+      return stock.toInt().toString();
+    } else {
+      return stock.toString().replaceAll(RegExp(r'\.?0+$'), '');
     }
   }
 
@@ -107,7 +158,7 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
       _errorMessage = '';
       if (!_isEditing) {
         _formList = _feedItems
-            .map((item) => {
+            .map((item) => <String, dynamic>{
                   'id': item.id,
                   'feed_id': item.feedId.toString(),
                   'quantity': item.quantity.toString(),
@@ -118,13 +169,15 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
     });
   }
 
-  void _addFeedItem() {
+  void _addFeedItem(Map<String, dynamic> item) {
     setState(() {
-      _formList.add({
-        'feed_id': '',
-        'quantity': '',
+      _formList.add(<String, dynamic>{
+        'feed_id': item['feed_id'] ?? '',
+        'quantity': item['quantity'] ?? '',
         'daily_feed_id': widget.feed.id,
       });
+      _errorMessage = '';
+      _showFeedDropdown = false;
     });
   }
 
@@ -132,14 +185,21 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
     final item = _formList[index];
     if (item['id'] != null) {
       final feed = _feeds.firstWhere(
-        (f) => f['id'].toString() == item['feed_id'],
-        orElse: () => {'name': 'Pakan'},
+        (f) => f.feedId.toString() == item['feed_id'],
+        orElse: () => FeedStockModel(
+          id: 0,
+          feedId: 0,
+          feedName: 'Pakan',
+          stock: 0,
+          unit: 'kg',
+          updatedAt: '',
+        ),
       );
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Hapus'),
-          content: Text('Hapus pakan "${feed['name']}"?'),
+          content: Text('Hapus pakan "${feed.feedName}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -157,7 +217,8 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
 
       setState(() => _isLoading = true);
       try {
-        final response = await _feedItemController.deleteFeedItem(item['id'] as int, widget.userId);
+        final response = await _feedItemController.deleteFeedItem(
+            item['id'] as int, widget.userId);
         if (!mounted) return;
 
         if (response['success']) {
@@ -168,7 +229,8 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
           });
         } else {
           setState(() {
-            _errorMessage = response['message'] ?? 'Gagal menghapus item pakan.';
+            _errorMessage =
+                response['message'] ?? 'Gagal menghapus item pakan.';
             _isLoading = false;
           });
         }
@@ -205,18 +267,28 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
       if (quantity == null || quantity <= 0) {
         errors[i] = 'Masukkan jumlah yang valid.';
       } else {
-        final stock = _feeds.firstWhere(
-                (f) => f['id'].toString() == item['feed_id'],
-                orElse: () => {'stock': 0})['stock'] as double;
-        if (quantity > stock) {
-          errors[i] = 'Jumlah melebihi stok: $stock kg.';
+        final feed = _feeds.firstWhere(
+          (f) => f.feedId.toString() == item['feed_id'],
+          orElse: () => FeedStockModel(
+            id: 0,
+            feedId: 0,
+            feedName: '',
+            stock: 0,
+            unit: 'kg',
+            updatedAt: '',
+          ),
+        );
+        if (feed.feedId == 0) {
+          errors[i] = 'Pakan tidak ditemukan.';
+        } else if (quantity > feed.stock) {
+          errors[i] = 'Jumlah melebihi stok: ${_formatStock(feed.stock)} ${feed.unit}.';
         }
       }
     }
 
     if (errors.isNotEmpty) {
       setState(() {
-        _errorMessage = 'Periksa input pakan.';
+        _errorMessage = 'Periksa input pakan: ${errors.values.join(", ")}';
       });
       return;
     }
@@ -224,7 +296,8 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
     setState(() => _isLoading = true);
     try {
       final newItems = _formList.where((item) => item['id'] == null).toList();
-      final updatedItems = _formList.where((item) => item['id'] != null).toList();
+      final updatedItems =
+          _formList.where((item) => item['id'] != null).toList();
 
       if (newItems.isNotEmpty) {
         final feedItems = newItems
@@ -272,8 +345,9 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
     if (_userRole != 'farmer' || widget.cows.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Edit Item Pakan'),
-          backgroundColor: Colors.teal.shade700,
+          title: const Text('Edit Item Pakan',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.teal[700],
         ),
         body: const Center(
           child: Text(
@@ -285,13 +359,16 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
       );
     }
 
+    final availableFeeds = _feeds
+        .where((stock) =>
+            !_formList.any((item) => item['feed_id'] == stock.feedId.toString()))
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Edit Item Pakan',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.teal.shade700,
+        title: const Text('Edit Item Pakan',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.teal[700],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -299,194 +376,519 @@ class _EditFeedItemPageState extends State<EditFeedItemPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.teal))
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (_errorMessage.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.red),
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Text(_errorMessage,
+                          style: const TextStyle(color: Colors.red)),
+                    ),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tanggal: ${widget.feed.date}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            'Sesi: ${widget.feed.session}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            'Sapi: ${widget.cows.firstWhere(
+                                  (cow) => cow.id == widget.feed.cowId,
+                                  orElse: () => Cow(
+                                    id: widget.feed.cowId,
+                                    name: 'Sapi #${widget.feed.cowId}',
+                                    birth: DateFormat(
+                                      "EEE, dd MMM yyyy HH:mm:ss 'GMT'",
+                                    ).format(DateTime.now()
+                                        .subtract(const Duration(days: 365))),
+                                    breed: 'Unknown',
+                                    lactationPhase: 'None',
+                                    weight: 0.0,
+                                    gender: 'Unknown',
+                                  ),
+                                ).name}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
                       ),
                     ),
-                  Text(
-                    'Tanggal: ${widget.feed.date}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  Text(
-                    'Sesi: ${widget.feed.session}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  Text(
-                    'Sapi: ${widget.cows.firstWhere(
-                      (cow) => cow.id == widget.feed.cowId,
-                      orElse: () => Cow(
-                        id: widget.feed.cowId,
-                        name: 'Sapi #${widget.feed.cowId}',
-                        birth: DateFormat(
-                          "EEE, dd MMM yyyy HH:mm:ss 'GMT'",
-                        ).format(DateTime.now().subtract(const Duration(days: 365))),
-                        breed: 'Unknown',
-                        lactationPhase: 'None',
-                        weight: 0.0,
-                        gender: 'Unknown',
-                      ),
-                    ).name}',
-                    style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   if (_isEditing) ...[
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _formList.length,
-                        itemBuilder: (context, index) {
-                          final item = _formList[index];
-                          final availableFeeds = _feeds
-                              .where((feed) => !_formList
-                                  .asMap()
-                                  .entries
-                                  .where((entry) => entry.key != index)
-                                  .map((entry) => entry.value)
-                                  .any((entry) => entry['feed_id'] == feed['id'].toString()))
-                              .toList();
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                children: [
-                                  DropdownButtonFormField<String>(
-                                    value: item['feed_id'].isNotEmpty
-                                        ? item['feed_id']
-                                        : null,
-                                    decoration: InputDecoration(
-                                      labelText: 'Jenis Pakan',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _showFeedDropdown = !_showFeedDropdown;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        border:
+                                            Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _formList.isNotEmpty &&
+                                                      _formList.last['feed_id']
+                                                          .isNotEmpty
+                                                  ? '${_feeds.firstWhere((stock) => stock.feedId.toString() == _formList.last['feed_id']).feedName} (Stok: ${_formatStock(_feeds.firstWhere((stock) => stock.feedId.toString() == _formList.last['feed_id']).stock)} ${_feeds.firstWhere((stock) => stock.feedId.toString() == _formList.last['feed_id']).unit})'
+                                                  : 'Pilih Pakan',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: _formList.isNotEmpty &&
+                                                        _formList
+                                                            .last['feed_id']
+                                                            .isNotEmpty
+                                                    ? Colors.black
+                                                    : Colors.grey[600],
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            _showFeedDropdown
+                                                ? Icons.keyboard_arrow_up
+                                                : Icons.keyboard_arrow_down,
+                                            color: Colors.teal,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    items: [
-                                      const DropdownMenuItem(
-                                        value: null,
-                                        child: Text('Pilih Pakan'),
-                                      ),
-                                      ...availableFeeds.map((feed) => DropdownMenuItem(
-                                            value: feed['id'].toString(),
-                                            child: Text(feed['name']),
-                                          )),
-                                    ],
-                                    onChanged: item['id'] != null
-                                        ? null
-                                        : (value) {
-                                            setState(() {
-                                              _formList[index]['feed_id'] = value ?? '';
-                                              _errorMessage = '';
-                                            });
-                                          },
                                   ),
-                                  const SizedBox(height: 8),
-                                  TextFormField(
-                                    initialValue: item['quantity'],
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    initialValue: _formList.isNotEmpty
+                                        ? _formList.last['quantity']
+                                        : '',
                                     decoration: InputDecoration(
-                                      labelText: 'Jumlah (${_feeds.firstWhere(
-                                            (f) => f['id'].toString() == item['feed_id'],
-                                            orElse: () => {'unit': 'kg'},
-                                          )['unit']})',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                      labelText: 'Jumlah',
+                                      border: const OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(8))),
+                                      labelStyle:
+                                          const TextStyle(fontSize: 16),
+                                      suffixText: _formList.isNotEmpty &&
+                                              _formList.last['feed_id']
+                                                  .isNotEmpty
+                                          ? _feeds
+                                              .firstWhere(
+                                                (f) => f.feedId.toString() ==
+                                                    _formList.last['feed_id'],
+                                                orElse: () => FeedStockModel(
+                                                  id: 0,
+                                                  feedId: 0,
+                                                  feedName: '',
+                                                  stock: 0,
+                                                  unit: 'kg',
+                                                  updatedAt: '',
+                                                ),
+                                              )
+                                              .unit
+                                          : 'kg',
+                                      suffixStyle:
+                                          const TextStyle(fontSize: 16),
                                     ),
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     onChanged: (value) {
                                       setState(() {
-                                        _formList[index]['quantity'] = value;
-                                        _errorMessage = '';
+                                        if (_formList.isNotEmpty) {
+                                          _formList.last['quantity'] = value;
+                                        }
                                       });
                                     },
                                   ),
-                                  if (item['feed_id'].isNotEmpty)
-                                    Text(
-                                      'Stok tersedia: ${_feeds.firstWhere(
-                                        (f) => f['id'].toString() == item['feed_id'],
-                                        orElse: () => {'stock': 0},
-                                      )['stock']} kg',
-                                      style: const TextStyle(color: Colors.teal),
-                                    ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () => _removeFeedItem(index),
+                                ),
+                                const SizedBox(width: 16),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                ],
+                                  child: IconButton(
+                                    icon: const Icon(Icons.add,
+                                        color: Colors.white),
+                                    onPressed: () {
+                                      if (_formList.isNotEmpty &&
+                                          _formList.last['feed_id'].isNotEmpty &&
+                                          _formList.last['quantity']
+                                              .isNotEmpty) {
+                                        _addFeedItem(_formList.last);
+                                      } else {
+                                        setState(() {
+                                          _errorMessage =
+                                              'Pilih pakan dan masukkan jumlah.';
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_showFeedDropdown)
+                              Card(
+                                elevation: 8,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Container(
+                                  constraints:
+                                      const BoxConstraints(maxHeight: 240),
+                                  margin: const EdgeInsets.only(top: 8),
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    children: availableFeeds.map((stock) {
+                                      return ListTile(
+                                        title: Text(
+                                          stock.feedName,
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        subtitle: Text(
+                                          'Stok: ${_formatStock(stock.stock)} ${stock.unit}',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600]),
+                                        ),
+                                        onTap: () {
+                                          setState(() {
+                                            if (_formList.isEmpty) {
+                                              _formList.add(<String, dynamic>{
+                                                'feed_id': stock.feedId.toString(),
+                                                'quantity': '',
+                                                'daily_feed_id': widget.feed.id,
+                                              });
+                                            } else {
+                                              _formList.last['feed_id'] =
+                                                  stock.feedId.toString();
+                                            }
+                                            _showFeedDropdown = false;
+                                            _errorMessage = '';
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_formList.isNotEmpty) ...[
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: Colors.teal[50],
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Pakan yang Dipilih',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.teal,
+                                ),
                               ),
                             ),
-                          );
-                        },
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 200),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                itemCount: _formList.length,
+                                itemBuilder: (context, index) {
+                                  final item = _formList[index];
+                                  final feed = _feeds.firstWhere(
+                                    (f) => f.feedId.toString() == item['feed_id'],
+                                    orElse: () => FeedStockModel(
+                                      id: 0,
+                                      feedId: 0,
+                                      feedName: 'Unknown Feed',
+                                      stock: 0,
+                                      unit: 'kg',
+                                      updatedAt: '',
+                                    ),
+                                  );
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8.0),
+                                    padding: const EdgeInsets.all(12.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border:
+                                          Border.all(color: Colors.grey[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                feed.feedName,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_formatStock(double.tryParse(item['quantity']) ?? 0)} ${feed.unit}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline,
+                                              color: Colors.red, size: 20),
+                                          onPressed: () => _removeFeedItem(index),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 32,
+                                            minHeight: 32,
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: _addFeedItem,
-                      child: const Text(
-                        '+ Tambah Pakan',
-                        style: TextStyle(color: Colors.teal),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.grass_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Belum ada pakan yang dipilih',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Pilih pakan dan klik tombol + untuk menambah',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ElevatedButton(
-                          onPressed: _toggleEditMode,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _toggleEditMode,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                              minimumSize: const Size(double.infinity, 48),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Batal',
+                                style: TextStyle(color: Colors.white)),
                           ),
-                          child: const Text('Batal'),
                         ),
-                        ElevatedButton(
-                          onPressed: _save,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _save,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              minimumSize: const Size(double.infinity, 48),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Simpan',
+                                style: TextStyle(color: Colors.white)),
                           ),
-                          child: const Text('Simpan', style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),
                   ] else ...[
-                    Expanded(
-                      child: _feedItems.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'Tidak ada item pakan.',
-                                style: TextStyle(color: Colors.grey),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.teal[50],
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
                               ),
-                            )
-                          : ListView.builder(
-                              itemCount: _feedItems.length,
-                              itemBuilder: (context, index) {
-                                final item = _feedItems[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
-                                  child: ListTile(
-                                    title: Text(item.feedName),
-                                    subtitle: Text(
-                                        'Jumlah: ${item.quantity} kg\nStok tersedia: ${_feeds.firstWhere(
-                                          (f) => f['id'] == item.feedId,
-                                          orElse: () => {'stock': 0},
-                                        )['stock']} kg'),
-                                  ),
-                                );
-                              },
                             ),
+                            child: const Text(
+                              'Pakan yang Dipilih',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.teal,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            child: _feedItems.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'Tidak ada item pakan.',
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0, vertical: 8.0),
+                                    itemCount: _feedItems.length,
+                                    itemBuilder: (context, index) {
+                                      final item = _feedItems[index];
+                                      final feed = _feeds.firstWhere(
+                                        (f) => f.feedId == item.feedId,
+                                        orElse: () => FeedStockModel(
+                                          id: 0,
+                                          feedId: 0,
+                                          feedName: 'Unknown Feed',
+                                          stock: 0,
+                                          unit: 'kg',
+                                          updatedAt: '',
+                                        ),
+                                      );
+                                      return Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8.0),
+                                        padding: const EdgeInsets.all(12.0),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                              color: Colors.grey[200]!),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    item.feedName,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    '${_formatStock(item.quantity)} ${feed.unit}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: _toggleEditMode,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
-                        minimumSize: const Size(double.infinity, 50),
+                        minimumSize: const Size(double.infinity, 48),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text(
                         'Edit',

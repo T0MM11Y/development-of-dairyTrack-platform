@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../controller/APIURL4/dailyScheduleController.dart';
 import '../../../controller/APIURL1/cowManagementController.dart';
+import 'package:dairytrack_mobile/controller/APIURL1/cattleDistributionController.dart';
 import '../../../controller/APIURL4/dailyFeedItemController.dart';
 import '../model/feed.dart';
 import '../model/dailyFeed.dart';
@@ -24,6 +25,8 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
       DailyFeedManagementController();
   final DailyFeedItemManagementController _feedItemController =
       DailyFeedItemManagementController();
+  final CattleDistributionController _cowDistributionController =
+      CattleDistributionController();
   final CowManagementController _cowController = CowManagementController();
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy', 'id');
   final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd');
@@ -75,6 +78,14 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
         _userId = prefs.getInt('userId') ?? 0;
       });
       await _fetchCows();
+      if (_cows.isEmpty && _userRole == 'farmer') {
+        setState(() {
+          _errorMessage = 'Tidak ada sapi yang tersedia untuk Anda.';
+          _isLoading = false;
+          _isLoadingCows = false;
+        });
+        return;
+      }
       await _fetchData();
     } catch (e) {
       if (mounted) {
@@ -91,22 +102,63 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
     if (!mounted) return;
     setState(() => _isLoadingCows = true);
     try {
-      final response = _userRole == 'farmer'
-          ? await _cowController.listCowsByUser(_userId)
-          : await _cowController.listCows();
-      if (!mounted) return;
-      setState(() {
-        _cows = response is Map<String, dynamic> && response['success']
-            ? List<Cow>.from(response['cows'])
-            : response is List<Cow>
-                ? response
-                : [];
-        _isLoadingCows = false;
-      });
+      List<Cow> cows = [];
+
+      if (_userRole == 'farmer') {
+        final response =
+            await _cowDistributionController.listCowsByUser(_userId);
+        if (!mounted) return;
+        if (response['success']) {
+          final responseData = response['data'];
+          List<dynamic> cowsList;
+          if (responseData is List) {
+            cowsList = responseData;
+          } else if (responseData is Map &&
+              responseData.containsKey('cows') &&
+              responseData['cows'] is List) {
+            cowsList = responseData['cows'];
+          } else {
+            setState(() {
+              _errorMessage =
+                  'Tidak ada sapi yang dialokasikan untuk Anda. Hubungi admin.';
+              _isLoadingCows = false;
+            });
+            return;
+          }
+          cows = cowsList
+              .map((json) => Cow.fromJson(json as Map<String, dynamic>))
+              .toList();
+          print('Fetched cows for farmer: $cows'); // Debug log
+          setState(() {
+            _cows = cows;
+            _isLoadingCows = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage =
+                response['message'] ?? 'Gagal mengambil data sapi untuk farmer';
+            _isLoadingCows = false;
+          });
+        }
+      } else if (_userRole == 'admin' || _userRole == 'supervisor') {
+        final response = await _cowController.listCows();
+        if (!mounted) return;
+        cows = response;
+        print('Fetched cows for admin/supervisor: $cows'); // Debug log
+        setState(() {
+          _cows = cows;
+          _isLoadingCows = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Peran tidak dikenal: $_userRole';
+          _isLoadingCows = false;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Gagal memuat data sapi: $e';
+        _errorMessage = 'Error mengambil data sapi: $e';
         _isLoadingCows = false;
       });
     }
@@ -120,16 +172,28 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
         date: _selectedDate,
         userId: _userId,
       );
+
       final feedItemResponse =
           await _feedItemController.getAllFeedItems(userId: _userId);
+
       if (!mounted) return;
+
       if (feedResponse['success'] && feedItemResponse['success']) {
-        final feeds = (feedResponse['data'] as List<dynamic>)
+        List<DailyFeed> feeds = (feedResponse['data'] as List)
             .map((json) => DailyFeed.fromJson(json as Map<String, dynamic>))
             .toList();
-        final feedItems = (feedItemResponse['data'] as List<dynamic>)
+
+        List<DailyFeedItem> feedItems = (feedItemResponse['data'] as List)
             .map((json) => DailyFeedItem.fromJson(json as Map<String, dynamic>))
             .toList();
+
+        print('Cows before filtering: $_cows'); // Debug log
+        if (_userRole == 'farmer') {
+          final cowIds = _cows.map((cow) => cow.id).toSet();
+          print('Cow IDs for filtering: $cowIds'); // Debug log
+          feeds = feeds.where((feed) => cowIds.contains(feed.cowId)).toList();
+        }
+
         setState(() {
           _feeds = feeds;
           _feedItems = feedItems;
@@ -156,19 +220,20 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
   }
 
   void _groupFeedItems() {
+    print('Grouping feed items with cows: $_cows'); // Debug log
     _groupedFeedItems = {};
+
     final cowNames = _cows.fold<Map<int, String>>({}, (map, cow) {
       map[cow.id] = cow.name;
       return map;
     });
-    final allowedCowIds = _cows.map((cow) => cow.id).toSet();
-    final filteredFeeds = _userRole == 'farmer'
-        ? _feeds.where((feed) => allowedCowIds.contains(feed.cowId)).toList()
-        : _feeds;
-    for (var feed in filteredFeeds) {
+
+    for (var feed in _feeds) {
       final key = '${feed.cowId}-${feed.date}';
-      final items = _feedItems.where((item) => item.dailyFeedId == feed.id).toList();
+      final items =
+          _feedItems.where((item) => item.dailyFeedId == feed.id).toList();
       final cowName = cowNames[feed.cowId] ?? 'Sapi #${feed.cowId}';
+
       if (!_groupedFeedItems.containsKey(key)) {
         _groupedFeedItems[key] = {
           'cow_id': feed.cowId,
@@ -196,6 +261,7 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
           },
         };
       }
+
       _groupedFeedItems[key]['sessions'][feed.session] = {
         'items': items,
         'daily_feed_id': feed.id,
@@ -203,20 +269,24 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
         'feed': feed,
       };
     }
-    _groupedFeedItems = Map.fromEntries(
-      _groupedFeedItems.entries.where((entry) {
-        final group = entry.value;
-        if (_searchQuery.isEmpty) return true;
-        final searchLower = _searchQuery.toLowerCase();
-        return group['date'].toLowerCase().contains(searchLower) ||
-            group['cow'].toLowerCase().contains(searchLower) ||
-            group['sessions'].values.any((session) =>
-                (session['items'] as List<DailyFeedItem>).any((item) =>
-                    item.feedName.toLowerCase().contains(searchLower) ||
-                    item.quantity.toString().contains(searchLower)) ||
-                (session['weather'] as String).toLowerCase().contains(searchLower));
-      }),
-    );
+
+    if (_searchQuery.isNotEmpty) {
+      final searchLower = _searchQuery.toLowerCase();
+      _groupedFeedItems = Map.fromEntries(
+        _groupedFeedItems.entries.where((entry) {
+          final group = entry.value;
+          return group['date'].toLowerCase().contains(searchLower) ||
+              group['cow'].toLowerCase().contains(searchLower) ||
+              group['sessions'].values.any((session) =>
+                  (session['items'] as List<DailyFeedItem>).any((item) =>
+                      item.feedName.toLowerCase().contains(searchLower) ||
+                      item.quantity.toString().contains(searchLower)) ||
+                  (session['weather'] as String)
+                      .toLowerCase()
+                      .contains(searchLower));
+        }),
+      );
+    }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -237,9 +307,16 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
   }
 
   void _navigateToAdd() {
-    if (_cows.isEmpty) {
-      _showSnackBar('Tidak ada sapi tersedia untuk menambah item pakan.',
+    if (_isLoadingCows) {
+      _showSnackBar('Sedang memuat data sapi. Silakan coba lagi sebentar.',
           isError: true);
+      return;
+    }
+    if (_cows.isEmpty) {
+      _showSnackBar(
+        'Tidak ada sapi tersedia. Pastikan sapi telah dialokasikan untuk Anda atau hubungi admin.',
+        isError: true,
+      );
       return;
     }
     Navigator.push(
@@ -303,12 +380,15 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        final items = _feedItems.where((item) => item.dailyFeedId == feed.id).toList();
+        final items =
+            _feedItems.where((item) => item.dailyFeedId == feed.id).toList();
         for (var item in items) {
-          final response = await _feedItemController.deleteFeedItem(item.id, _userId);
+          final response =
+              await _feedItemController.deleteFeedItem(item.id, _userId);
           if (!response['success']) throw Exception(response['message']);
         }
-        final response = await _feedController.deleteDailyFeed(feed.id, _userId);
+        final response =
+            await _feedController.deleteDailyFeed(feed.id, _userId);
         if (!mounted) return;
         if (response['success']) {
           _showSnackBar(response['message']);
@@ -353,7 +433,9 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
           ),
           children: sessions.map((session) {
             final sessionData = group['sessions'][session];
-            final items = sessionData['items'] as List<DailyFeedItem>;
+            final items = (sessionData['items'] as List<dynamic>)
+                .map((item) => item as DailyFeedItem)
+                .toList();
             final feed = sessionData['feed'] as DailyFeed?;
 
             return Padding(
@@ -373,19 +455,22 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                     const SizedBox(height: 4),
                     Text(
                       'Cuaca: ${sessionData['weather']}',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Item Pakan:',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                     ),
                     if (items.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
                           'Tidak ada item pakan',
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                          style: TextStyle(
+                              color: Colors.grey.shade500, fontSize: 14),
                         ),
                       )
                     else
@@ -394,7 +479,8 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                         final item = entry.value;
                         return ListTile(
                           dense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 8),
                           leading: CircleAvatar(
                             radius: 16,
                             backgroundColor: Colors.teal.shade100,
@@ -428,14 +514,17 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.amber),
-                            onPressed: feed != null ? () => _navigateToEdit(feed) : null,
+                            onPressed: feed != null
+                                ? () => _navigateToEdit(feed)
+                                : null,
                             tooltip: 'Edit Jadwal',
                           ),
                           if (items.isNotEmpty)
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed:
-                                  feed != null ? () => _deleteFeedSchedule(feed) : null,
+                              onPressed: feed != null
+                                  ? () => _deleteFeedSchedule(feed)
+                                  : null,
                               tooltip: 'Hapus Jadwal',
                             ),
                         ],
@@ -511,14 +600,16 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.15),
-                    prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
+                    prefixIcon:
+                        const Icon(Icons.calendar_today, color: Colors.white70),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                      borderSide:
+                          const BorderSide(color: Colors.white, width: 1.5),
                     ),
                   ),
                   controller: TextEditingController(
@@ -533,8 +624,10 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                         return Theme(
                           data: ThemeData.light().copyWith(
                             primaryColor: Colors.teal,
-                            colorScheme: const ColorScheme.light(primary: Colors.teal),
-                            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+                            colorScheme:
+                                const ColorScheme.light(primary: Colors.teal),
+                            buttonTheme: const ButtonThemeData(
+                                textTheme: ButtonTextTheme.primary),
                           ),
                           child: child!,
                         );
@@ -558,7 +651,8 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white70),
+                            icon:
+                                const Icon(Icons.clear, color: Colors.white70),
                             onPressed: () {
                               if (mounted) {
                                 setState(() {
@@ -578,7 +672,8 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                      borderSide:
+                          const BorderSide(color: Colors.white, width: 1.5),
                     ),
                   ),
                   onChanged: (value) {
@@ -682,10 +777,12 @@ class _DailyFeedItemsPageState extends State<DailyFeedItemsPage>
                               )
                             : ListView.builder(
                                 physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
                                 itemCount: _groupedFeedItems.length,
                                 itemBuilder: (context, index) {
-                                  final entry = _groupedFeedItems.entries.elementAt(index);
+                                  final entry = _groupedFeedItems.entries
+                                      .elementAt(index);
                                   return _buildFeedCard(entry.key, entry.value);
                                 },
                               ),
