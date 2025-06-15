@@ -164,32 +164,6 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           widget: () => GalleryView(),
         ),
         NavigationItem(
-        icon: Icons.medical_services,
-        label: 'Pemeriksaan Kesehatan',
-        route: 'health-checks',
-        widget: () => HealthCheckListView(),
-      ),
-      NavigationItem(
-        icon: Icons.visibility,
-        label: 'Gejala',
-        route: 'symptoms',
-        widget: () => SymptomListView(),
-      ),
-      NavigationItem(
-        icon: Icons.coronavirus,
-        label: 'Riwayat Penyakit',
-        route: 'disease-history',
-        widget: () => DiseaseHistoryListView(),
-      ),
-      NavigationItem(
-        icon: Icons.pregnant_woman,
-        label: 'Reproduksi',
-        route: 'reproduction',
-        widget: () => ReproductionListView(),
-      ),
-     NavigationItem(
-          icon: Icons.category,
-        NavigationItem(
           icon: Icons.medical_services,
           label: 'Pemeriksaan Kesehatan',
           route: 'health-checks',
@@ -248,24 +222,6 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           label: 'Pemeriksaan Kesehatan',
           route: 'health-checks',
           widget: () => HealthCheckListView(),
-        ),
-        NavigationItem(
-          icon: Icons.visibility,
-          label: 'Gejala',
-          route: 'symptoms',
-          widget: () => SymptomListView(),
-        ),
-        NavigationItem(
-          icon: Icons.coronavirus,
-          label: 'Riwayat Penyakit',
-          route: 'disease-history',
-          widget: () => DiseaseHistoryListView(),
-        ),
-        NavigationItem(
-          icon: Icons.pregnant_woman,
-          label: 'Reproduksi',
-          route: 'reproduction',
-          widget: () => ReproductionListView(),
         ),
         NavigationItem(
           icon: Icons.category, // Jenis Pakan = kategori pakan
