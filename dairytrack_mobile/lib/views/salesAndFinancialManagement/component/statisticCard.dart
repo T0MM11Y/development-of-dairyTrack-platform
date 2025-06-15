@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 // Reusable Component: StatisticsCard
 class StatisticsCard extends StatelessWidget {
   final int totalCount;
+  final String label;
 
-  const StatisticsCard({Key? key, required this.totalCount}) : super(key: key);
+  const StatisticsCard({
+    Key? key,
+    required this.totalCount,
+    required this.label,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +61,8 @@ class StatisticsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Sum of Product Type",
-                    style: TextStyle(
+                    label,
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                     ),

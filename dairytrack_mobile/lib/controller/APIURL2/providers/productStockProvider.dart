@@ -3,24 +3,33 @@ import 'package:dairytrack_mobile/controller/APIURL2/models/productStock.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart'; // Import AuthUtils
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/models/productType.dart';
 
 class StockProvider with ChangeNotifier {
   final ProductStockController _controller = ProductStockController();
   final _logger = Logger();
 
   List<Stock> _stocks = [];
-  String? _searchQuery;
+  String _searchQuery = '';
+  String? _selectedStatus;
   bool _isLoading = false;
   String _errorMessage = '';
   int? _deletingId;
 
-  List<Stock> get stocks => _searchQuery == null || _searchQuery!.isEmpty
+  List<Stock> get stocks => _searchQuery.isEmpty && _selectedStatus == null
       ? _stocks
-      : _stocks
-          .where((stock) => stock.productTypeDetail.productName
-              .toLowerCase()
-              .contains(_searchQuery!.toLowerCase()))
-          .toList();
+      : _stocks.where((stock) {
+          final matchesSearch = _searchQuery.isEmpty ||
+              stock.productTypeDetail.productName
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase());
+          final matchesStatus =
+              _selectedStatus == null || stock.status == _selectedStatus;
+          return matchesSearch && matchesStatus;
+        }).toList();
+
+  String get searchQuery => _searchQuery;
+  String? get selectedStatus => _selectedStatus;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   int? get deletingId => _deletingId;
@@ -43,8 +52,13 @@ class StockProvider with ChangeNotifier {
     }
   }
 
-  void setSearchQuery(String? query) {
+  void setSearchQuery(String query) {
     _searchQuery = query;
+    notifyListeners();
+  }
+
+  void setSelectedStatus(String? status) {
+    _selectedStatus = status;
     notifyListeners();
   }
 
@@ -76,7 +90,7 @@ class StockProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final userId = await AuthUtils.getUserId(); // Fetch user_id
+      final userId = await AuthUtils.getUserId();
       final success = await _controller.createStock(
         productType: stockData['productType'],
         initialQuantity: stockData['initialQuantity'],
@@ -84,7 +98,7 @@ class StockProvider with ChangeNotifier {
         expiryAt: stockData['expiryAt'],
         status: stockData['status'],
         totalMilkUsed: stockData['totalMilkUsed'],
-        createdBy: userId, // Use fetched user_id
+        createdBy: userId,
       );
       if (success) {
         await fetchStocks();
@@ -108,15 +122,41 @@ class StockProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final userId =
-          await AuthUtils.getUserId(); // Fetch user_id for updated_by
-      // Find existing stock to get created_by
-      final existingStock =
-          _stocks.firstWhere((stock) => stock.id == id, orElse: () {
-        throw Exception('Stock not found');
-      });
-      final createdBy =
-          existingStock.createdBy?.id ?? userId; // Fallback to userId if null
+      final userId = await AuthUtils.getUserId();
+      if (_stocks.isEmpty) {
+        await fetchStocks();
+      }
+      final existingStock = _stocks.firstWhere(
+        (stock) => stock.id == id,
+        orElse: () {
+          _logger.w('Stock with ID $id not found in local cache');
+          return Stock(
+            id: id,
+            productType: stockData['productType'],
+            productTypeDetail: stockData['productTypeDetail'] ??
+                ProdukType(id: 0, productName: 'Unknown', productDescription: stockData['productDescription'] ?? '', price: '0', unit: 'Unknown', createdAt: DateTime.now(), updatedAt: DateTime.now(), createdBy: User(id: 0, name: 'Unknown', username: AutofillHints.username, roleId: 2), updatedBy: User(id: 0, name: 'Unknown', username: AutofillHints.username, roleId: 2)),
+            initialQuantity: stockData['initialQuantity'],
+            quantity: stockData['quantity'] ?? stockData['initialQuantity'],
+            productionAt: DateTime.parse(stockData['productionAt']),
+            expiryAt: DateTime.parse(stockData['expiryAt']),
+            status: stockData['status'],
+            totalMilkUsed: stockData['totalMilkUsed'],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            createdBy: User(
+                id: userId,
+                name: 'Unknown',
+                username: AutofillHints.username,
+                roleId: 2), // Fallback
+            updatedBy: User(
+                id: userId,
+                name: 'Unknown',
+                username: AutofillHints.username,
+                roleId: 2),
+          );
+        },
+      );
+      final createdBy = existingStock.createdBy.id;
       final success = await _controller.updateStock(
         id: id,
         productType: stockData['productType'],
@@ -125,8 +165,8 @@ class StockProvider with ChangeNotifier {
         expiryAt: stockData['expiryAt'],
         status: stockData['status'],
         totalMilkUsed: stockData['totalMilkUsed'],
-        createdBy: createdBy, // Use original created_by
-        updatedBy: userId, // Use fetched user_id
+        createdBy: createdBy,
+        updatedBy: userId,
       );
       if (success) {
         await fetchStocks();

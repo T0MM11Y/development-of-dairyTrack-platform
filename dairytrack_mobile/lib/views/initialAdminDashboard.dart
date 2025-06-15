@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -203,19 +206,19 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           icon: Icons.history, // Represents historical data
           label: 'Product History',
           route: '/productHistory',
-          widget: () => ListProductTypes(), // Assumed widget for history
+          widget: () => ProductStockHistoryView(), // Assumed widget for history
         ),
         NavigationItem(
           icon: Icons.point_of_sale, // Represents sales transactions
           label: 'Sales',
-          route: '/sales',
-          widget: () => ListProductTypes(), // Assumed widget for sales
+          route: '/order',
+          widget: () => ListOrderView(), // Assumed widget for sales
         ),
         NavigationItem(
           icon: Icons.account_balance, // Represents financial data
           label: 'Finance',
           route: '/finance',
-          widget: () => ListProductTypes(),
+          widget: () => FinanceView(),
         ),
         NavigationItem(
           icon: Icons.medical_services,
