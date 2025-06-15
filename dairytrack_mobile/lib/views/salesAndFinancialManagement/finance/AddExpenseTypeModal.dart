@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/financeProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/finance.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart';
 
 class AddExpenseTypeModal extends StatefulWidget {
   const AddExpenseTypeModal({Key? key}) : super(key: key);
@@ -14,6 +15,25 @@ class _AddExpenseTypeModalState extends State<AddExpenseTypeModal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  int? _userId; // Initialize as null
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user ID asynchronously
+    _fetchUserId();
+  }
+
+  Future<void> _fetchUserId() async {
+    try {
+      _userId = await AuthUtils.getUserId();
+      setState(() {}); // Update UI if needed
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat user ID: $e')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -24,12 +44,18 @@ class _AddExpenseTypeModalState extends State<AddExpenseTypeModal> {
 
   void _submitForm(FinanceProvider provider) async {
     if (_formKey.currentState!.validate()) {
+      if (_userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User ID tidak tersedia')),
+        );
+        return;
+      }
       final expenseType = ExpenseType(
-        id: 0, // Will be set by backend
+        id: 0,
         name: _nameController.text,
         description: _descriptionController.text,
-        createdBy: null, // Adjust based on backend
-        updatedBy: null,
+        createdBy: {'id': _userId},
+        updatedBy: {'id': _userId},
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -62,7 +88,7 @@ class _AddExpenseTypeModalState extends State<AddExpenseTypeModal> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Nama',
+                  labelText: 'Nama Jenis Pengeluaran',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
@@ -98,7 +124,8 @@ class _AddExpenseTypeModalState extends State<AddExpenseTypeModal> {
         Consumer<FinanceProvider>(
           builder: (context, provider, child) {
             return ElevatedButton(
-              onPressed: provider.isLoading ? null : () => _submitForm(provider),
+              onPressed:
+                  provider.isLoading ? null : () => _submitForm(provider),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueGrey[800],
               ),

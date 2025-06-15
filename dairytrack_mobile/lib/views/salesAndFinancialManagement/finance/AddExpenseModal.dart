@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/financeProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/finance.dart';
 import 'package:intl/intl.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart';
 
 class AddExpenseModal extends StatefulWidget {
   const AddExpenseModal({Key? key}) : super(key: key);
@@ -17,15 +18,34 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _transactionDateController =
       TextEditingController();
-  final TextEditingController _expenseTypeController = TextEditingController();
+  int? _selectedExpenseTypeId;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  int? _userId; // Initialize as null
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionDateController.text = _dateFormat.format(DateTime.now());
+    // Fetch user ID asynchronously
+    _fetchUserId();
+  }
+
+  Future<void> _fetchUserId() async {
+    try {
+      _userId = await AuthUtils.getUserId();
+      setState(() {}); // Update UI if needed
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat user ID: $e')),
+      );
+    }
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
     _transactionDateController.dispose();
-    _expenseTypeController.dispose();
     super.dispose();
   }
 
@@ -45,14 +65,21 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
   void _submitForm(FinanceProvider provider) async {
     if (_formKey.currentState!.validate()) {
+      if (_userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User ID tidak tersedia')),
+        );
+        return;
+      }
       final expense = Expense(
-        id: 0, // Will be set by backend
-        expenseType: int.tryParse(_expenseTypeController.text) ?? 2,
-        amount: _amountController.text, // Keep as string
+        id: 0,
+        expenseType: _selectedExpenseTypeId,
+        expenseTypeDetail: null,
+        amount: _amountController.text,
         description: _descriptionController.text,
-        transactionDate: DateTime.parse(_transactionDateController.text),
-        createdBy: null, // Adjust based on backend requirements
-        updatedBy: null,
+        transactionDate: _dateFormat.parse(_transactionDateController.text),
+        createdBy: {'id': _userId},
+        updatedBy: {'id': _userId},
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -81,21 +108,28 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _expenseTypeController,
-                decoration: const InputDecoration(
-                  labelText: 'ID Jenis Pengeluaran',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'ID jenis pengeluaran harus diisi';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'ID harus berupa angka';
-                  }
-                  return null;
+              Consumer<FinanceProvider>(
+                builder: (context, provider, child) {
+                  return DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis Pengeluaran',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _selectedExpenseTypeId,
+                    items: provider.expenseTypes
+                        .map((type) => DropdownMenuItem(
+                              value: type.id,
+                              child: Text(type.name),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedExpenseTypeId = value;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Pilih jenis pengeluaran' : null,
+                  );
                 },
               ),
               const SizedBox(height: 12),
@@ -105,7 +139,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   labelText: 'Jumlah (Rp)',
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Jumlah harus diisi';
@@ -145,7 +180,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     return 'Tanggal transaksi harus diisi';
                   }
                   try {
-                    DateTime.parse(value);
+                    _dateFormat.parse(value);
                     return null;
                   } catch (e) {
                     return 'Format tanggal tidak valid';

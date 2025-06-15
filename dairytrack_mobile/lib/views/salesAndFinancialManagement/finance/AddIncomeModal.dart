@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/financeProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/finance.dart';
 import 'package:intl/intl.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart';
 
 class AddIncomeModal extends StatefulWidget {
   const AddIncomeModal({Key? key}) : super(key: key);
@@ -17,15 +18,34 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _transactionDateController =
       TextEditingController();
-  final TextEditingController _incomeTypeController = TextEditingController();
+  int? _selectedIncomeTypeId;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  int? _userId; // Initialize as null
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionDateController.text = _dateFormat.format(DateTime.now());
+    // Fetch user ID asynchronously
+    _fetchUserId();
+  }
+
+  Future<void> _fetchUserId() async {
+    try {
+      _userId = await AuthUtils.getUserId();
+      setState(() {}); // Update UI if needed
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat user ID: $e')),
+      );
+    }
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
     _transactionDateController.dispose();
-    _incomeTypeController.dispose();
     super.dispose();
   }
 
@@ -45,14 +65,21 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
 
   void _submitForm(FinanceProvider provider) async {
     if (_formKey.currentState!.validate()) {
+      if (_userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User ID tidak tersedia')),
+        );
+        return;
+      }
       final income = Income(
-        id: 0, // Will be set by backend
-        incomeType: int.tryParse(_incomeTypeController.text) ?? 1,
-        amount: _amountController.text, // Keep as string
+        id: 0,
+        incomeType: _selectedIncomeTypeId,
+        incomeTypeDetail: null,
+        amount: _amountController.text,
         description: _descriptionController.text,
-        transactionDate: DateTime.parse(_transactionDateController.text),
-        createdBy: null, // Adjust based on backend requirements
-        updatedBy: null,
+        transactionDate: _dateFormat.parse(_transactionDateController.text),
+        createdBy: {'id': _userId},
+        updatedBy: {'id': _userId},
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -81,21 +108,28 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _incomeTypeController,
-                decoration: const InputDecoration(
-                  labelText: 'ID Jenis Pendapatan',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'ID jenis pendapatan harus diisi';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'ID harus berupa angka';
-                  }
-                  return null;
+              Consumer<FinanceProvider>(
+                builder: (context, provider, child) {
+                  return DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis Pendapatan',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _selectedIncomeTypeId,
+                    items: provider.incomeTypes
+                        .map((type) => DropdownMenuItem(
+                              value: type.id,
+                              child: Text(type.name),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedIncomeTypeId = value;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Pilih jenis pendapatan' : null,
+                  );
                 },
               ),
               const SizedBox(height: 12),
@@ -105,7 +139,8 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                   labelText: 'Jumlah (Rp)',
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Jumlah harus diisi';
@@ -145,7 +180,7 @@ class _AddIncomeModalState extends State<AddIncomeModal> {
                     return 'Tanggal transaksi harus diisi';
                   }
                   try {
-                    DateTime.parse(value);
+                    _dateFormat.parse(value);
                     return null;
                   } catch (e) {
                     return 'Format tanggal tidak valid';

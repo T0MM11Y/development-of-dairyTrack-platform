@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+// financeModel.dart
+import 'package:intl/intl.dart';
 
 class FinanceTransaction {
   final int id;
@@ -22,19 +23,23 @@ class FinanceTransaction {
   factory FinanceTransaction.fromJson(Map<String, dynamic> json) {
     return FinanceTransaction(
       id: json['id'] as int? ?? 0,
-      transactionDate: DateTime.parse(json['transaction_date']?.toString() ?? ''),
-      transactionType: json['transaction_type']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
-      amount: json['amount']?.toString() ?? '0.00',
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? ''),
+      transactionDate: DateTime.parse(json['transaction_date'] as String? ??
+          DateTime.now().toIso8601String()),
+      transactionType: json['transaction_type'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      amount: json['amount'] as String? ?? '0.00',
+      createdAt: DateTime.parse(
+          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 
   Map<String, dynamic> toJson() {
+    final dateFormat = DateFormat('yyyy-MM-dd');
     return {
       'id': id,
-      'transaction_date': transactionDate.toIso8601String(),
+      'transaction_date': dateFormat.format(transactionDate),
       'transaction_type': transactionType,
       'description': description,
       'amount': amount,
@@ -74,26 +79,31 @@ class Income {
       id: json['id'] as int? ?? 0,
       incomeType: json['income_type'] as int?,
       incomeTypeDetail: json['income_type_detail'] != null
-          ? IncomeType.fromJson(json['income_type_detail'])
+          ? IncomeType.fromJson(
+              json['income_type_detail'] as Map<String, dynamic>)
           : null,
-      amount: json['amount']?.toString() ?? '0.00',
-      description: json['description']?.toString() ?? '',
-      transactionDate: DateTime.parse(json['transaction_date']?.toString() ?? ''),
+      amount: json['amount'] as String? ?? '0.00',
+      description: json['description'] as String? ?? '',
+      transactionDate: DateTime.parse(json['transaction_date'] as String? ??
+          DateTime.now().toIso8601String()),
       createdBy: json['created_by'] as Map<String, dynamic>?,
       updatedBy: json['updated_by'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? ''),
+      createdAt: DateTime.parse(
+          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 
   Map<String, dynamic> toJson() {
+    final dateFormat = DateFormat('yyyy-MM-dd');
     return {
       'income_type': incomeType,
       'amount': amount,
       'description': description,
-      'transaction_date': transactionDate.toIso8601String(),
-      'created_by': createdBy,
-      'updated_by': updatedBy,
+      'transaction_date': dateFormat.format(transactionDate),
+      'created_by': createdBy != null ? createdBy!['id'] : null,
+      'updated_by': updatedBy != null ? updatedBy!['id'] : null,
     };
   }
 }
@@ -128,26 +138,31 @@ class Expense {
       id: json['id'] as int? ?? 0,
       expenseType: json['expense_type'] as int?,
       expenseTypeDetail: json['expense_type_detail'] != null
-          ? ExpenseType.fromJson(json['expense_type_detail'])
+          ? ExpenseType.fromJson(
+              json['expense_type_detail'] as Map<String, dynamic>)
           : null,
-      amount: json['amount']?.toString() ?? '0.00',
-      description: json['description']?.toString() ?? '',
-      transactionDate: DateTime.parse(json['transaction_date']?.toString() ?? ''),
+      amount: json['amount'] as String? ?? '0.00',
+      description: json['description'] as String? ?? '',
+      transactionDate: DateTime.parse(json['transaction_date'] as String? ??
+          DateTime.now().toIso8601String()),
       createdBy: json['created_by'] as Map<String, dynamic>?,
       updatedBy: json['updated_by'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? ''),
+      createdAt: DateTime.parse(
+          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 
   Map<String, dynamic> toJson() {
+    final dateFormat = DateFormat('yyyy-MM-dd');
     return {
       'expense_type': expenseType,
       'amount': amount,
       'description': description,
-      'transaction_date': transactionDate.toIso8601String(),
-      'created_by': createdBy,
-      'updated_by': updatedBy,
+      'transaction_date': dateFormat.format(transactionDate),
+      'created_by': createdBy != null ? createdBy!['id'] : null,
+      'updated_by': updatedBy != null ? updatedBy!['id'] : null,
     };
   }
 }
@@ -174,12 +189,14 @@ class IncomeType {
   factory IncomeType.fromJson(Map<String, dynamic> json) {
     return IncomeType(
       id: json['id'] as int? ?? 0,
-      name: json['name']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
       createdBy: json['created_by'] as Map<String, dynamic>?,
       updatedBy: json['updated_by'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? ''),
+      createdAt: DateTime.parse(
+          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -187,7 +204,7 @@ class IncomeType {
     return {
       'name': name,
       'description': description,
-      'created_by': createdBy,
+      'created_by': createdBy != null ? createdBy!['id'] : null,
     };
   }
 }
@@ -214,12 +231,14 @@ class ExpenseType {
   factory ExpenseType.fromJson(Map<String, dynamic> json) {
     return ExpenseType(
       id: json['id'] as int? ?? 0,
-      name: json['name']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
       createdBy: json['created_by'] as Map<String, dynamic>?,
       updatedBy: json['updated_by'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? ''),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? ''),
+      createdAt: DateTime.parse(
+          json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -227,7 +246,7 @@ class ExpenseType {
     return {
       'name': name,
       'description': description,
-      'created_by': createdBy,
+      'created_by': createdBy != null ? createdBy!['id'] : null,
     };
   }
 }
