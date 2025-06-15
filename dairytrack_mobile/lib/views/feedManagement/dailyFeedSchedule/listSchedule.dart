@@ -17,9 +17,11 @@ class DailyFeedView extends StatefulWidget {
 }
 
 class _DailyFeedViewState extends State<DailyFeedView> {
-  final DailyFeedManagementController _feedController = DailyFeedManagementController();
+  final DailyFeedManagementController _feedController =
+      DailyFeedManagementController();
   final CowManagementController _cowController = CowManagementController();
-  final CattleDistributionController _cowDistributionController = CattleDistributionController();
+  final CattleDistributionController _cowDistributionController =
+      CattleDistributionController();
   List<DailyFeed> _feeds = [];
   List<DailyFeed> _filteredFeeds = [];
   List<Map<String, dynamic>> _groupedFeeds = [];
@@ -69,30 +71,37 @@ class _DailyFeedViewState extends State<DailyFeedView> {
       List<Cow> cows = [];
 
       if (_userRole == 'farmer') {
-        final response = await _cowDistributionController.listCowsByUser(_userId);
+        final response =
+            await _cowDistributionController.listCowsByUser(_userId);
         if (!mounted) return;
         if (response['success']) {
           final responseData = response['data'];
           List<dynamic> cowsList;
           if (responseData is List) {
             cowsList = responseData;
-          } else if (responseData is Map && responseData.containsKey('cows') && responseData['cows'] is List) {
+          } else if (responseData is Map &&
+              responseData.containsKey('cows') &&
+              responseData['cows'] is List) {
             cowsList = responseData['cows'];
           } else {
             setState(() {
-              _errorMessage = 'Unexpected response format from listCowsByUser: ${responseData.runtimeType}';
+              _errorMessage =
+                  'Unexpected response format from listCowsByUser: ${responseData.runtimeType}';
               _isLoadingCows = false;
             });
             return;
           }
-          cows = cowsList.map((json) => Cow.fromJson(json as Map<String, dynamic>)).toList();
+          cows = cowsList
+              .map((json) => Cow.fromJson(json as Map<String, dynamic>))
+              .toList();
           setState(() {
             _cows = cows;
             _isLoadingCows = false;
           });
         } else {
           setState(() {
-            _errorMessage = response['message'] ?? 'Failed to fetch cows for farmer';
+            _errorMessage =
+                response['message'] ?? 'Failed to fetch cows for farmer';
             _isLoadingCows = false;
           });
         }
@@ -149,7 +158,9 @@ class _DailyFeedViewState extends State<DailyFeedView> {
 
       if (!mounted) return;
       if (response['success']) {
-        List<DailyFeed> feeds = (response['data'] as List).map((json) => DailyFeed.fromJson(json as Map<String, dynamic>)).toList();
+        List<DailyFeed> feeds = (response['data'] as List)
+            .map((json) => DailyFeed.fromJson(json as Map<String, dynamic>))
+            .toList();
 
         if (_userRole == 'farmer') {
           final cowIds = _cows.map((cow) => cow.id).toSet();
@@ -180,7 +191,10 @@ class _DailyFeedViewState extends State<DailyFeedView> {
   }
 
   void _applyFiltersAndGroup() {
-    _filteredFeeds = _feeds.where((feed) => feed.cowName.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    _filteredFeeds = _feeds
+        .where((feed) =>
+            feed.cowName.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
 
     final grouped = _filteredFeeds.fold<Map<String, Map<String, dynamic>>>(
       {},
@@ -222,19 +236,28 @@ class _DailyFeedViewState extends State<DailyFeedView> {
     );
 
     List<Cow> cowsToCheck = _cows;
-    final missing = cowsToCheck.map((cow) {
-      final key = '${cow.id}_$_selectedDate';
-      final existingSessions = (groupedFeeds[key]?['sessions'] as List<DailyFeed>?)?.map((feed) => feed.session).toList() ?? [];
-      final missingSessions = _sessions.where((session) => !existingSessions.contains(session)).toList();
-      if (missingSessions.isNotEmpty) {
-        return {
-          'id': cow.id,
-          'name': cow.name,
-          'missingSessions': missingSessions,
-        };
-      }
-      return null;
-    }).whereType<Map<String, dynamic>>().toList();
+    final missing = cowsToCheck
+        .map((cow) {
+          final key = '${cow.id}_$_selectedDate';
+          final existingSessions =
+              (groupedFeeds[key]?['sessions'] as List<DailyFeed>?)
+                      ?.map((feed) => feed.session)
+                      .toList() ??
+                  [];
+          final missingSessions = _sessions
+              .where((session) => !existingSessions.contains(session))
+              .toList();
+          if (missingSessions.isNotEmpty) {
+            return {
+              'id': cow.id,
+              'name': cow.name,
+              'missingSessions': missingSessions,
+            };
+          }
+          return null;
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
 
     setState(() {
       _cowsWithMissingSessions = missing;
@@ -260,8 +283,10 @@ class _DailyFeedViewState extends State<DailyFeedView> {
     );
   }
 
-  Future<void> _autoCreateDailyFeed(int cowId, String cowName, String session) async {
-    final formattedDate = DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(_selectedDate));
+  Future<void> _autoCreateDailyFeed(
+      int cowId, String cowName, String session) async {
+    final formattedDate =
+        DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(_selectedDate));
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -311,51 +336,81 @@ class _DailyFeedViewState extends State<DailyFeedView> {
       _showSnackBar('Tidak ada sapi tersedia untuk jadwal pakan.');
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddDailyFeedForm(
-          cows: _cows,
-          defaultDate: _selectedDate,
-          controller: _feedController,
-          userId: _userId,
-          userRole: _userRole,
-          onAdd: () {
-            _feedsCache.remove(_selectedDate);
-            _fetchDailyFeeds();
-            Navigator.pop(context);
-            _showSnackBar('Jadwal pakan berhasil ditambahkan.');
-          },
-          onError: _showSnackBar,
-        ),
+    try {
+      // Validate _selectedDate format
+      DateTime.parse(_selectedDate);
+    } catch (e) {
+      print('Invalid selectedDate: $_selectedDate, error: $e');
+      _showSnackBar('Tanggal yang dipilih tidak valid.');
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => AddDailyFeedForm(
+        cows: _cows,
+        defaultDate: _selectedDate,
+        controller: _feedController,
+        userId: _userId,
+        userRole: _userRole,
+        onAdd: () {
+          _feedsCache.remove(_selectedDate);
+          _fetchDailyFeeds();
+          _showSnackBar('Jadwal pakan berhasil ditambahkan.');
+        },
+        onError: _showSnackBar,
       ),
     );
   }
 
   void _editDailyFeed(DailyFeed feed) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditDailyFeedForm(
-          feed: feed,
-          cows: _cows,
-          controller: _feedController,
-          userId: _userId,
-          userRole: _userRole,
-          onUpdate: () {
-            _feedsCache.remove(_selectedDate);
-            _fetchDailyFeeds();
-            Navigator.pop(context);
-            _showSnackBar('Jadwal pakan berhasil diperbarui.');
-          },
-          onError: _showSnackBar,
-        ),
+    if (_cows.isEmpty) {
+      _showSnackBar('Tidak ada sapi tersedia untuk jadwal pakan.');
+      return;
+    }
+    if (feed == null || feed.id == null) {
+      _showSnackBar('Data jadwal pakan tidak valid.');
+      return;
+    }
+    try {
+      // Validate feed.date format
+      DateTime.parse(feed.date);
+    } catch (e) {
+      print('Invalid feed.date: ${feed.date}, error: $e');
+      _showSnackBar('Tanggal jadwal pakan tidak valid.');
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => EditDailyFeedForm(
+        feed: feed,
+        cows: _cows,
+        controller: _feedController,
+        userId: _userId,
+        userRole: _userRole,
+        onUpdate: () {
+          _feedsCache.remove(_selectedDate);
+          _fetchDailyFeeds();
+          _showSnackBar('Jadwal pakan berhasil diperbarui.');
+        },
+        onError: _showSnackBar,
       ),
     );
   }
 
-  Future<void> _deleteDailyFeed(int id, String cowName, String date, String session) async {
-    final formattedDate = DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(date));
+  Future<void> _deleteDailyFeed(
+      int id, String cowName, String date, String session) async {
+    final formattedDate =
+        DateFormat('dd MMMM yyyy', 'id').format(DateTime.parse(date));
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -426,7 +481,9 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                 _showMissingSessions = !_showMissingSessions;
               });
             },
-            tooltip: _showMissingSessions ? 'Sembunyikan Jadwal Hilang' : 'Tampilkan Jadwal Hilang',
+            tooltip: _showMissingSessions
+                ? 'Sembunyikan Jadwal Hilang'
+                : 'Tampilkan Jadwal Hilang',
           ),
         ],
       ),
@@ -460,11 +517,14 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                       ),
                       filled: true,
                       fillColor: Colors.white24,
-                      prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                      prefixIcon: const Icon(Icons.calendar_today,
+                          color: Colors.white70),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0, horizontal: 12),
                     ),
                     controller: TextEditingController(
-                      text: DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(_selectedDate)),
+                      text: DateFormat('dd MMM yyyy', 'id')
+                          .format(DateTime.parse(_selectedDate)),
                     ),
                     onTap: () async {
                       final DateTime? picked = await showDatePicker(
@@ -476,8 +536,10 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                           return Theme(
                             data: ThemeData.light().copyWith(
                               primaryColor: Colors.teal,
-                              colorScheme: const ColorScheme.light(primary: Colors.teal),
-                              buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+                              colorScheme:
+                                  const ColorScheme.light(primary: Colors.teal),
+                              buttonTheme: const ButtonThemeData(
+                                  textTheme: ButtonTextTheme.primary),
                             ),
                             child: child!,
                           );
@@ -485,7 +547,8 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                       );
                       if (picked != null && mounted) {
                         setState(() {
-                          _selectedDate = DateFormat('yyyy-MM-dd').format(picked);
+                          _selectedDate =
+                              DateFormat('yyyy-MM-dd').format(picked);
                         });
                         await _fetchDailyFeeds();
                       }
@@ -498,10 +561,12 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                     decoration: InputDecoration(
                       hintText: 'Cari berdasarkan nama sapi...',
                       hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                      prefixIcon:
+                          const Icon(Icons.search, color: Colors.white70),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.white70),
+                              icon: const Icon(Icons.clear,
+                                  color: Colors.white70),
                               onPressed: () {
                                 if (mounted) {
                                   setState(() {
@@ -519,7 +584,8 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0, horizontal: 20),
                     ),
                     onChanged: (value) {
                       if (mounted) {
@@ -537,17 +603,23 @@ class _DailyFeedViewState extends State<DailyFeedView> {
           // Feed List
           Expanded(
             child: _isLoading || _isLoadingCows
-                ? const Center(child: CircularProgressIndicator(color: Colors.teal))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.teal))
                 : _errorMessage.isNotEmpty
-                    ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)))
+                    ? Center(
+                        child: Text(_errorMessage,
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 16)))
                     : ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         children: [
                           // Sapi dengan Jadwal Tidak Lengkap
-                          if (_showMissingSessions && _cowsWithMissingSessions.isNotEmpty)
+                          if (_showMissingSessions &&
+                              _cowsWithMissingSessions.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -579,29 +651,38 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                                   const SizedBox(height: 8),
                                   ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: _cowsWithMissingSessions.length,
                                     itemBuilder: (context, index) {
-                                      final cow = _cowsWithMissingSessions[index];
+                                      final cow =
+                                          _cowsWithMissingSessions[index];
                                       return Card(
                                         elevation: 2,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
                                         color: Colors.white,
-                                        margin: const EdgeInsets.only(bottom: 8),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
                                         child: Padding(
                                           padding: const EdgeInsets.all(12),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   Expanded(
                                                     child: Text(
                                                       cow['name'],
                                                       style: const TextStyle(
                                                         fontSize: 16,
-                                                        fontWeight: FontWeight.w600,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                         color: Colors.black87,
                                                       ),
                                                     ),
@@ -610,7 +691,8 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                                                     '(${cow['missingSessions'].length} sesi)',
                                                     style: TextStyle(
                                                       fontSize: 14,
-                                                      color: Colors.grey.shade600,
+                                                      color:
+                                                          Colors.grey.shade600,
                                                     ),
                                                   ),
                                                 ],
@@ -628,19 +710,39 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                                                 Wrap(
                                                   spacing: 8,
                                                   runSpacing: 8,
-                                                  children: (cow['missingSessions'] as List<String>).map<Widget>((session) {
+                                                  children:
+                                                      (cow['missingSessions']
+                                                              as List<String>)
+                                                          .map<Widget>(
+                                                              (session) {
                                                     return ElevatedButton(
                                                       onPressed: () {
-                                                        _autoCreateDailyFeed(cow['id'], cow['name'], session);
+                                                        _autoCreateDailyFeed(
+                                                            cow['id'],
+                                                            cow['name'],
+                                                            session);
                                                       },
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Colors.teal.shade600,
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor: Colors
+                                                            .teal.shade600,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8)),
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 8),
                                                       ),
                                                       child: Text(
                                                         'Buat Sesi $session',
-                                                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                                                        style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12),
                                                       ),
                                                     );
                                                   }).toList(),
@@ -662,14 +764,17 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                                 padding: EdgeInsets.all(16.0),
                                 child: Text(
                                   'Tidak ada jadwal pakan untuk tanggal ini.',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey),
                                 ),
                               ),
                             )
                           else
                             ..._groupedFeeds.expand<Widget>((group) {
-                              return (group['sessions'] as List<DailyFeed>).map<Widget>((feed) {
-                                return _buildFeedCard(feed, group['cowName'], group['date']);
+                              return (group['sessions'] as List<DailyFeed>)
+                                  .map<Widget>((feed) {
+                                return _buildFeedCard(
+                                    feed, group['cowName'], group['date']);
                               });
                             }),
                         ],
@@ -721,7 +826,8 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                               ),
                               Text(
                                 'Tanggal: ${DateFormat('dd MMM yyyy', 'id').format(DateTime.parse(date))}',
-                                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey.shade600),
                               ),
                             ],
                           ),
@@ -731,9 +837,12 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                     const Divider(height: 20, thickness: 1, color: Colors.teal),
                     Row(
                       children: [
-                        const Icon(Icons.schedule, color: Colors.teal, size: 16),
+                        const Icon(Icons.schedule,
+                            color: Colors.teal, size: 16),
                         const SizedBox(width: 8),
-                        Text('Sesi: ${feed.session}', style: TextStyle(fontSize: 14, color: Colors.grey.shade800)),
+                        Text('Sesi: ${feed.session}',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey.shade800)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -741,7 +850,9 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                       children: [
                         const Icon(Icons.cloud, color: Colors.teal, size: 16),
                         const SizedBox(width: 8),
-                        Text('Cuaca: ${feed.weather}', style: TextStyle(fontSize: 14, color: Colors.grey.shade800)),
+                        Text('Cuaca: ${feed.weather}',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey.shade800)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -749,7 +860,9 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                       children: [
                         const Icon(Icons.person, color: Colors.teal, size: 16),
                         const SizedBox(width: 8),
-                        Text('Oleh: ${feed.userName}', style: TextStyle(fontSize: 14, color: Colors.grey.shade800)),
+                        Text('Oleh: ${feed.userName}',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey.shade800)),
                       ],
                     ),
                   ],
@@ -768,7 +881,8 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                     const SizedBox(height: 8),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteDailyFeed(feed.id, cowName, date, feed.session),
+                      onPressed: () => _deleteDailyFeed(
+                          feed.id, cowName, date, feed.session),
                       tooltip: 'Hapus Jadwal',
                     ),
                   ],

@@ -21,6 +21,14 @@ import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
 
+// Feed
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
+
 class InitialSupervisorDashboard extends StatefulWidget {
   @override
   _InitialSupervisorDashboardState createState() =>
@@ -124,6 +132,43 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         route: 'reproduction',
         widget: () => ReproductionListView(),
       ),
+      NavigationItem(
+          icon: Icons.category,
+          label: 'Jenis Pakan',
+          route: 'feed-type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.kitchen,
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.inventory,
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.event,
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.checklist,
+          label: 'Feed Item Harian',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
+        ),
       ];
 
   @override

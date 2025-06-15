@@ -12,7 +12,6 @@ class DailyFeed {
   final Map<String, dynamic> updatedBy;
   final String createdAt;
   final String updatedAt;
-  final List<Map<String, dynamic>> items;
 
   DailyFeed({
     required this.id,
@@ -28,7 +27,6 @@ class DailyFeed {
     required this.updatedBy,
     required this.createdAt,
     required this.updatedAt,
-    required this.items,
   });
 
   factory DailyFeed.fromJson(Map<String, dynamic> json) {
@@ -57,9 +55,6 @@ class DailyFeed {
         updatedBy: json['updated_by'] ?? {'id': 0, 'name': 'Unknown'},
         createdAt: json['created_at'] ?? '',
         updatedAt: json['updated_at'] ?? '',
-        items:
-            (json['items'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-                [],
       );
     } catch (e) {
       print('Error parsing DailyFeed: $e, JSON: $json');

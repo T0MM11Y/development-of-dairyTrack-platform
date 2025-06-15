@@ -28,6 +28,7 @@ class _FeedStockAddState extends State<FeedStockAdd> {
   int? _feedId;
   double _stock = 0.0;
   bool _isSubmitting = false;
+  bool _showFeedDropdown = false;
   final int _userId = 13; // TODO: Replace with dynamic user ID from SharedPreferences
 
   @override
@@ -244,31 +245,76 @@ class _FeedStockAddState extends State<FeedStockAdd> {
                           '${widget.stock!.feedName} (${widget.stock!.unit})',
                         )
                       else
-                        DropdownButtonFormField<int>(
-                          decoration: InputDecoration(
-                            labelText: 'Pakan',
-                            labelStyle: const TextStyle(color: Colors.black87),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.teal.shade100),
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _showFeedDropdown = !_showFeedDropdown;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _feedId == null
+                                                ? 'Pilih Pakan'
+                                                : widget.feedList.firstWhere((feed) => feed.id == _feedId).name + ' (${widget.feedList.firstWhere((feed) => feed.id == _feedId).unit})',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: _feedId == null ? Colors.grey[600] : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          _showFeedDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                          color: Colors.teal,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (_showFeedDropdown)
+                                  Card(
+                                    elevation: 8,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    child: Container(
+                                      constraints: const BoxConstraints(maxHeight: 200),
+                                      margin: const EdgeInsets.only(top: 8),
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        children: widget.feedList.map((feed) {
+                                          return ListTile(
+                                            title: Text(
+                                              '${feed.name} (${feed.unit})',
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                _feedId = feed.id;
+                                                _showFeedDropdown = false;
+                                              });
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.teal.shade400, width: 2),
-                            ),
-                            prefixIcon: Icon(Icons.local_dining, color: Colors.teal.shade600),
-                            filled: true,
-                            fillColor: Colors.teal.shade50,
                           ),
-                          value: _feedId,
-                          items: widget.feedList.map((feed) {
-                            return DropdownMenuItem<int>(
-                              value: feed.id,
-                              child: Text('${feed.name} (${feed.unit})'),
-                            );
-                          }).toList(),
-                          onChanged: (value) => setState(() => _feedId = value),
-                          validator: (value) => value == null ? 'Harap pilih pakan' : null,
                         ),
                       const SizedBox(height: 16),
                       _buildTextFormField(
