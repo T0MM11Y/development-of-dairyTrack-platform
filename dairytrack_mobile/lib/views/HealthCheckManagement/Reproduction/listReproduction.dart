@@ -287,7 +287,7 @@ Widget build(BuildContext context) {
                                                   if (result == true) _fetchData();
                                                 },
                                               ),
-                                             ElevatedButton.icon(
+                                           ElevatedButton.icon(
   icon: const Icon(Icons.delete, size: 18),
   label: const Text('Hapus'),
   style: ElevatedButton.styleFrom(
@@ -295,64 +295,23 @@ Widget build(BuildContext context) {
     foregroundColor: Colors.white,
     padding: const EdgeInsets.symmetric(horizontal: 12),
   ),
-  onPressed: () async {
-    if (_isAdmin || _isSupervisor) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-
-                                                  final confirm = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (ctx) => AlertDialog(
-                                                      title: const Text('Konfirmasi Hapus'),
-                                                      content: const Text('Yakin ingin menghapus data ini?'),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () => Navigator.pop(ctx, false),
-                                                          child: const Text('Batal'),
-                                                        ),
-                                                        ElevatedButton(
-                                                          onPressed: () => Navigator.pop(ctx, true),
-                                                          child: const Text('Hapus'),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-
-                                                   if (confirm == true) {
-      final res = await _controller.deleteReproduction(item['id']);
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: Text(res['success'] ? 'Berhasil' : 'Gagal'),
-          content: Text(res['success']
-              ? 'Data berhasil dihapus.'
-              : res['message'] ?? 'Gagal menghapus data.'),
-        ),
-      );
-
-      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
-      if (context.mounted) Navigator.of(context).pop(); // Tutup alert
-
-      if (res['success']) _fetchData();
-    }
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Data Tidak Bisa Dihapus'),
+        content: const Text('Data reproduksi tidak dapat dihapus karena merupakan arsip medis.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   },
 ),
+
                                             ],
                                           ),
                                         ],

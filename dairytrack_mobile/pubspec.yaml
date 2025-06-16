@@ -30,6 +30,9 @@ dependencies:
   shared_preferences: ^2.0.15
   timezone: ^0.10.1
   url_launcher: ^6.3.1
+  excel: ^2.1.0
+  pdf: ^3.10.4
+  printing: ^5.12.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.3
