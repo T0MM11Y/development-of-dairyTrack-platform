@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +25,16 @@ import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
 import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
+
+// Feed
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/model/feed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
@@ -29,6 +43,9 @@ import 'highlights/blogView.dart';
 import 'highlights/galleryView.dart';
 import 'loginView.dart';
 import '../widgets/notifications.dart';
+
+// Sales & Financial
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/listProductType.dart';
 
 class InitialAdminDashboard extends StatefulWidget {
   @override
@@ -149,30 +166,109 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'gallery',
           widget: () => GalleryView(),
         ),
-            NavigationItem(
-        icon: Icons.medical_services,
-        label: 'Pemeriksaan Kesehatan',
-        route: 'health-checks',
-        widget: () => HealthCheckListView(),
-      ),
-      NavigationItem(
-        icon: Icons.visibility,
-        label: 'Gejala',
-        route: 'symptoms',
-        widget: () => SymptomListView(),
-      ),
-      NavigationItem(
-        icon: Icons.coronavirus,
-        label: 'Riwayat Penyakit',
-        route: 'disease-history',
-        widget: () => DiseaseHistoryListView(),
-      ),
-      NavigationItem(
-        icon: Icons.pregnant_woman,
-        label: 'Reproduksi',
-        route: 'reproduction',
-        widget: () => ReproductionListView(),
-      ),
+        NavigationItem(
+          icon: Icons.medical_services,
+          label: 'Pemeriksaan Kesehatan',
+          route: 'health-checks',
+          widget: () => HealthCheckListView(),
+        ),
+        NavigationItem(
+          icon: Icons.visibility,
+          label: 'Gejala',
+          route: 'symptoms',
+          widget: () => SymptomListView(),
+        ),
+        NavigationItem(
+          icon: Icons.coronavirus,
+          label: 'Riwayat Penyakit',
+          route: 'disease-history',
+          widget: () => DiseaseHistoryListView(),
+        ),
+        NavigationItem(
+          icon: Icons.pregnant_woman,
+          label: 'Reproduksi',
+          route: 'reproduction',
+          widget: () => ReproductionListView(),
+        ),
+        NavigationItem(
+          icon: Icons.category, // Represents product types or categories
+          label: 'Product Type',
+          route: '/productType', // Standardized route with leading slash
+          widget: () => ListProductTypes(), // Keep as provided
+        ),
+        NavigationItem(
+          icon: Icons.inventory_2, // Represents stock or inventory
+          label: 'Product Stock',
+          route: '/productStock',
+          widget: () => ListProductStock(), // Assumed widget for stock
+        ),
+        NavigationItem(
+          icon: Icons.history, // Represents historical data
+          label: 'Product History',
+          route: '/productHistory',
+          widget: () => ProductStockHistoryView(), // Assumed widget for history
+        ),
+        NavigationItem(
+          icon: Icons.point_of_sale, // Represents sales transactions
+          label: 'Sales',
+          route: '/order',
+          widget: () => ListOrderView(), // Assumed widget for sales
+        ),
+        NavigationItem(
+          icon: Icons.account_balance, // Represents financial data
+          label: 'Finance',
+          route: '/finance',
+          widget: () => FinanceView(),
+        ),
+        NavigationItem(
+          icon: Icons.medical_services,
+          label: 'Pemeriksaan Kesehatan',
+          route: 'health-checks',
+          widget: () => HealthCheckListView(),
+        ),
+        NavigationItem(
+          icon: Icons.category, // Jenis Pakan = kategori pakan
+          label: 'Jenis Pakan',
+          route: 'feed-type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.kitchen,
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.inventory,
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.event,
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.checklist,
+          label: 'Feed Item Harian',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
+        ),
+        NavigationItem(
+          icon: Icons.monitor_heart,
+          label: 'HealthDashboard',
+          route: 'health-dashboard',
+          widget: () => HealthDashboardView(),
+        ),
       ];
 
   @override

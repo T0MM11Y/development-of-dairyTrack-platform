@@ -150,45 +150,70 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _submitting = true);
-    final response = await _symptomController.createSymptom(_form);
+  setState(() => _submitting = true);
 
-    if (response['success']) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
-        widget.onSaved();
-        Navigator.pop(context);
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Gagal menyimpan data'), backgroundColor: Colors.red),
+  final response = await _symptomController.createSymptom(_form);
+
+  if (response['success']) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Berhasil'),
+          content: Text('Data berhasil disimpan.'),
+        ),
       );
-    }
 
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+      if (mounted) {
+        Navigator.of(context).pop(); // tutup dialog
+        Navigator.of(context).pop(); // tutup form
+        widget.onSaved(); // panggil callback setelah form ditutup
+      }
+    }
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Gagal'),
+        content: Text(response['message'] ?? 'Gagal menyimpan data.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // tutup dialog gagal
+  }
+
+  if (mounted) {
     setState(() => _submitting = false);
   }
+}
+
 
  @override
 Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
     resizeToAvoidBottomInset: true,
-    appBar: AppBar(
-      title: const Text('Tambah Gejala'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  title: const Text(
+    'Tambah Gejala',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : SafeArea(
@@ -284,8 +309,8 @@ Widget build(BuildContext context) {
                                 onPressed: _submitting ? null : _submit,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: Colors.teal[600],
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.teal[400],
+                        foregroundColor: Colors.white,   
                                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),

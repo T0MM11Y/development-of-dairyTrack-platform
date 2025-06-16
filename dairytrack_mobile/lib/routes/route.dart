@@ -29,6 +29,13 @@ import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
 
+//Feed
+import '../views/feedManagement/feedType/listFeedType.dart';
+import '../views/feedManagement/nutrition/listNutrition.dart';
+import '../views/feedManagement/feed/listFeed.dart';
+import '../views/feedManagement/feedStock/listFeedStock.dart';
+import '../views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+
 class AppRoutes {
   // Route names
   static const String login = '/login';
@@ -57,12 +64,18 @@ class AppRoutes {
   static const String guestGallery = '/guest/gallery';
 
   // Health Check Management Routes
-static const String healthDashboard = '/health-dashboard';
-static const String healthCheckList = '/health-checks';
-static const String symptomList = '/symptoms';
-static const String diseaseHistoryList = '/disease-history';
-static const String reproductionList = '/reproduction';
+  static const String healthDashboard = '/health-dashboard';
+  static const String healthCheckList = '/health-checks';
+  static const String symptomList = '/symptoms';
+  static const String diseaseHistoryList = '/disease-history';
+  static const String reproductionList = '/reproduction';
 
+  // Feed Management
+  static const String feedTypeList= '/feed-type';
+  static const String nutritionList= '/nutrition';
+  static const String feedList= '/feed';
+  static const String feedStockList= '/feed-stock';
+  static const String dailyFeedSchedule= '/feed-schedule';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -145,35 +158,62 @@ static const String reproductionList = '/reproduction';
           settings: settings,
         );
 // Health Check Management
-case healthDashboard:
-  return MaterialPageRoute(
-    builder: (_) => HealthDashboardView(),
-    settings: settings,
-  );
+      case healthDashboard:
+        return MaterialPageRoute(
+          builder: (_) => HealthDashboardView(),
+          settings: settings,
+        );
 
-case healthCheckList:
-  return MaterialPageRoute(
-    builder: (_) => HealthCheckListView(),
-    settings: settings,
-  );
+      case healthCheckList:
+        return MaterialPageRoute(
+          builder: (_) => HealthCheckListView(),
+          settings: settings,
+        );
 
-case symptomList:
-  return MaterialPageRoute(
-    builder: (_) => SymptomListView(),
-    settings: settings,
-  );
+      case symptomList:
+        return MaterialPageRoute(
+          builder: (_) => SymptomListView(),
+          settings: settings,
+        );
 
-case diseaseHistoryList:
-  return MaterialPageRoute(
-    builder: (_) => DiseaseHistoryListView(),
-    settings: settings,
-  );
+      case diseaseHistoryList:
+        return MaterialPageRoute(
+          builder: (_) => DiseaseHistoryListView(),
+          settings: settings,
+        );
 
-case reproductionList:
-  return MaterialPageRoute(
-    builder: (_) => ReproductionListView(),
-    settings: settings,
-  );
+      case reproductionList:
+        return MaterialPageRoute(
+          builder: (_) => ReproductionListView(),
+          settings: settings,
+        );
+
+        // Feed Management
+        case feedTypeList:
+        return MaterialPageRoute(
+          builder: (_) => FeedTypeView(),
+          settings: settings,
+        );
+        case nutritionList:
+        return MaterialPageRoute(
+          builder: (_) => NutrisiView(),
+          settings: settings,
+        );
+        case feedList:
+        return MaterialPageRoute(
+          builder: (_) => FeedView(),
+          settings: settings,
+        );
+        case feedStockList:
+        return MaterialPageRoute(
+          builder: (_) => FeedStockList(),
+          settings: settings,
+        );
+        case dailyFeedSchedule:
+        return MaterialPageRoute(
+          builder: (_) => DailyFeedView(),
+          settings: settings,
+        );
 
       // Default route (fallback)
       default:

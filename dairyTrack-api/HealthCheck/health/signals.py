@@ -22,7 +22,7 @@ def get_primary_manager(cow):
 # 🔥 HealthCheck: Evaluasi dan Buat Notifikasi jika abnormal
 @receiver(post_save, sender=HealthCheck)
 def check_and_update_health_status(sender, instance, created, **kwargs):
-    if hasattr(instance, 'disease_history'):
+    if instance.disease_histories.exists():
         if instance.status != 'handled':
             HealthCheck.objects.filter(id=instance.id).update(status='handled')
         return
@@ -67,7 +67,7 @@ def check_and_update_health_status(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message="Pemeriksaan kesehatan mendeteksi: " + " ".join(messages),
+message=f"Pemeriksaan kesehatan sapi {instance.cow.name} mendeteksi: " + " ".join(messages),
                 type="health_check",
                 created_at=now()
             )
@@ -124,7 +124,7 @@ def check_reproduction_alert(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-                message=f"Reproduksi: {alert_msg}",
+message=f"Reproduksi sapi {instance.cow.name}: {alert_msg}",
                 type="reproduction",
                 created_at=now()
             )

@@ -1,4 +1,3 @@
-// controllers/dailyFeedItemController.js
 const DailyFeedSchedule = require("../models/dailyFeedSchedule");
 const DailyFeedItems = require("../models/dailyFeedItemsModel");
 const Feed = require("../models/feedModel");
@@ -35,6 +34,7 @@ const formatFeedItemResponse = (item) => ({
     : [],
 });
 
+// Unchanged: addFeedItem
 exports.addFeedItem = async (req, res) => {
   const { daily_feed_id, feed_items } = req.body;
   const userId = req.user?.id;
@@ -148,7 +148,6 @@ exports.addFeedItem = async (req, res) => {
       });
     }
 
-    // Remove redundant stock checks, as they are handled in the model hooks
     const createdItems = await DailyFeedItems.bulkCreate(feedItems, {
       transaction,
       validate: true,
@@ -216,6 +215,7 @@ exports.addFeedItem = async (req, res) => {
   }
 };
 
+// Unchanged: updateFeedItem
 exports.updateFeedItem = async (req, res) => {
   const { id } = req.params;
   const { quantity } = req.body;
@@ -327,6 +327,7 @@ exports.updateFeedItem = async (req, res) => {
   }
 };
 
+// Unchanged: deleteFeedItem
 exports.deleteFeedItem = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
@@ -392,6 +393,7 @@ exports.deleteFeedItem = async (req, res) => {
   }
 };
 
+// Unchanged: bulkUpdateFeedItems
 exports.bulkUpdateFeedItems = async (req, res) => {
   const { items } = req.body;
   const userId = req.user?.id;
@@ -514,11 +516,11 @@ exports.bulkUpdateFeedItems = async (req, res) => {
   }
 };
 
+// Updated: getAllFeedItems
 exports.getAllFeedItems = async (req, res) => {
   try {
     const { daily_feed_id, feed_id } = req.query;
     const userId = req.user?.id;
-    const userRole = req.user?.role?.toLowerCase(); // Ambil peran pengguna
 
     if (!userId) {
       return res.status(401).json({
@@ -572,18 +574,6 @@ exports.getAllFeedItems = async (req, res) => {
       },
     ];
 
-    // Tambahkan filter cow_id hanya untuk farmer
-    if (userRole === "farmer") {
-      const userCows = await UserCowAssociation.findAll({
-        where: { user_id: userId },
-        attributes: ["cow_id"],
-      });
-      const allowedCowIds = userCows.map((uc) => uc.cow_id);
-      include[0].where = {
-        cow_id: { [Op.in]: allowedCowIds.length > 0 ? allowedCowIds : [null] },
-      };
-    }
-
     const items = await DailyFeedItems.findAll({
       where: filter,
       include,
@@ -601,10 +591,10 @@ exports.getAllFeedItems = async (req, res) => {
   }
 };
 
+// Updated: getFeedItemById
 exports.getFeedItemById = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
-  const userRole = req.user?.role?.toLowerCase();
 
   try {
     if (!userId) {
@@ -664,19 +654,6 @@ exports.getFeedItemById = async (req, res) => {
       });
     }
 
-    // Hanya terapkan pengecekan UserCowAssociation untuk farmer
-    if (userRole === "farmer") {
-      const userCowAssociation = await UserCowAssociation.findOne({
-        where: { user_id: userId, cow_id: item.DailyFeedSchedule.cow_id },
-      });
-      if (!userCowAssociation) {
-        return res.status(403).json({
-          success: false,
-          message: `Anda tidak memiliki izin untuk melihat pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
-        });
-      }
-    }
-
     return res.status(200).json(formatFeedItemResponse(item));
   } catch (error) {
     console.error("Error fetching feed item:", error);
@@ -688,11 +665,11 @@ exports.getFeedItemById = async (req, res) => {
   }
 };
 
+// Updated: getFeedItemsByDailyFeedId
 exports.getFeedItemsByDailyFeedId = async (req, res) => {
   try {
     const { daily_feed_id } = req.params;
     const userId = req.user?.id;
-    const userRole = req.user?.role?.toLowerCase();
 
     if (!userId) {
       return res.status(401).json({
@@ -742,18 +719,6 @@ exports.getFeedItemsByDailyFeedId = async (req, res) => {
       },
     ];
 
-    // Tambahkan filter cow_id hanya untuk farmer
-    if (userRole === "farmer") {
-      const userCows = await UserCowAssociation.findAll({
-        where: { user_id: userId },
-        attributes: ["cow_id"],
-      });
-      const allowedCowIds = userCows.map((uc) => uc.cow_id);
-      include[0].where = {
-        cow_id: { [Op.in]: allowedCowIds.length > 0 ? allowedCowIds : [null] },
-      };
-    }
-
     const items = await DailyFeedItems.findAll({
       where: { daily_feed_id },
       include,
@@ -771,6 +736,7 @@ exports.getFeedItemsByDailyFeedId = async (req, res) => {
   }
 };
 
+// Updated: getFeedUsageByDate
 exports.getFeedUsageByDate = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
@@ -802,12 +768,6 @@ exports.getFeedUsageByDate = async (req, res) => {
       });
     }
 
-    const userCows = await UserCowAssociation.findAll({
-      where: { user_id: userId },
-      attributes: ["cow_id"],
-    });
-    const allowedCowIds = userCows.map((uc) => uc.cow_id);
-
     const whereClause = {};
     if (start_date || end_date) {
       whereClause["$DailyFeedSchedule.date$"] = {};
@@ -815,7 +775,6 @@ exports.getFeedUsageByDate = async (req, res) => {
         whereClause["$DailyFeedSchedule.date$"][Op.gte] = start_date;
       if (end_date) whereClause["$DailyFeedSchedule.date$"][Op.lte] = end_date;
     }
-    whereClause["$DailyFeedSchedule.cow_id$"] = { [Op.in]: allowedCowIds };
 
     const feedUsage = await DailyFeedItems.findAll({
       attributes: [
@@ -834,11 +793,8 @@ exports.getFeedUsageByDate = async (req, res) => {
           as: "DailyFeedSchedule",
           attributes: [],
           where: whereClause["$DailyFeedSchedule.date$"]
-            ? {
-                date: whereClause["$DailyFeedSchedule.date$"],
-                cow_id: whereClause["$DailyFeedSchedule.cow_id$"],
-              }
-            : { cow_id: whereClause["$DailyFeedSchedule.cow_id$"] },
+            ? { date: whereClause["$DailyFeedSchedule.date$"] }
+            : {},
         },
       ],
       group: ["DailyFeedSchedule.date", "feed_id", "Feed.id", "Feed.name"],

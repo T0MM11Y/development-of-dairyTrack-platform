@@ -67,57 +67,92 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
+  setState(() {
+    _submitting = true;
+    _error = null;
+  });
 
-    try {
-      final payload = {
-        'disease_name': _diseaseNameController.text,
-        'description': _descriptionController.text,
-        'edited_by': _userId,
-      };
+  try {
+    final payload = {
+      'disease_name': _diseaseNameController.text,
+      'description': _descriptionController.text,
+      'edited_by': _userId,
+    };
 
-      final response = await _controller.updateDiseaseHistory(widget.historyId, payload);
+    final response = await _controller.updateDiseaseHistory(widget.historyId, payload);
 
-      if (response['success']) {
+    if (response['success']) {
+      if (mounted) {
+        widget.onUpdated?.call();
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Berhasil'),
+            content: Text('Data berhasil diperbarui.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
         if (mounted) {
-          widget.onUpdated?.call();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Data berhasil diperbarui'), backgroundColor: Colors.green),
-          );
-          Navigator.pop(context, true);
+          Navigator.of(context).pop(); // Tutup dialog
+          Navigator.of(context).pop(true); // Tutup form dan kembali ke list
         }
-      } else {
-        setState(() => _error = response['message'] ?? 'Gagal memperbarui data');
       }
-    } catch (e) {
-      setState(() => _error = 'Terjadi kesalahan saat memperbarui.');
-    } finally {
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Gagal'),
+          content: Text(response['message'] ?? 'Gagal memperbarui data.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) Navigator.of(context).pop(); // Tutup dialog gagal
+    }
+  } catch (e) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        title: Text('Kesalahan'),
+        content: Text('Terjadi kesalahan saat memperbarui.'),
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // Tutup dialog error
+  } finally {
+    if (mounted) {
       setState(() => _submitting = false);
     }
   }
+}
+
 
   @override
 Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      title: const Text('Edit Riwayat Penyakit'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+  title: const Text(
+    'Edit Riwayat Penyakit',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Padding(
@@ -188,8 +223,8 @@ Widget build(BuildContext context) {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               textStyle: const TextStyle(fontSize: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              backgroundColor: Colors.green[700],
-                            ),
+ backgroundColor: Colors.teal[400],
+                        foregroundColor: Colors.white,                                ),
                           ),
                         ),
                       ],

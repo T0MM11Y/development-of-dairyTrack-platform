@@ -9,8 +9,14 @@ import 'package:dairytrack_mobile/views/HealthCheckManagement/Symptom/createSymp
 import 'package:dairytrack_mobile/views/HealthCheckManagement/Symptom/editSymptom.dart';
 import 'package:dairytrack_mobile/views/HealthCheckManagement/Symptom/viewSymptom.dart';
 import 'package:dairytrack_mobile/controller/APIURL1/cowManagementController.dart';
-
-
+import 'package:excel/excel.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io'; 
+import 'package:open_file/open_file.dart';
+import 'package:pdf/pdf.dart'; 
 class SymptomListView extends StatefulWidget {
   const SymptomListView({super.key});
 
@@ -36,6 +42,7 @@ class _SymptomListViewState extends State<SymptomListView> {
 
   bool get _isAdmin => _currentUser?['role_id'] == 1;
   bool get _isSupervisor => _currentUser?['role_id'] == 2;
+  bool get _isFarmer => _currentUser?['role_id'] == 3;
 
   String _search = '';
   bool _loading = true;
@@ -113,57 +120,279 @@ class _SymptomListViewState extends State<SymptomListView> {
     return filtered.skip(start).take(_pageSize).toList();
   }
 
-  bool _isEditable(Map<String, dynamic> hc) {
-    return !_isAdmin && !_isSupervisor && hc['status'] != 'handled';
+ bool _isEditable(Map<String, dynamic> hc) {
+  return !_isAdmin && !_isSupervisor && hc['status'] != 'handled' && hc['status'] != 'healthy';
+}
+
+ Future<void> exportSymptomToExcel(BuildContext context) async {
+  final excel = Excel.createExcel();
+  final sheet = excel['Laporan_Gejala_Sapi'];
+  final headers = [
+    'Nama Sapi', 'Suhu Rektal', 'Denyut Jantung', 'Laju Pernapasan', 'Ruminasi',
+    'Kondisi Mata', 'Kondisi Mulut', 'Kondisi Hidung', 'Kondisi Anus', 'Kondisi Kaki',
+    'Kondisi Kulit', 'Perilaku', 'Berat Badan', 'Kondisi Kelamin'
+  ];
+
+  sheet.appendRow(headers);
+
+  // 💠 Tambahkan style ke header
+  for (int i = 0; i < headers.length; i++) {
+    final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+    cell.cellStyle = CellStyle(
+      bold: true,
+      fontFamily: getFontFamily(FontFamily.Calibri),
+      fontSize: 10,
+      horizontalAlign: HorizontalAlign.Center,
+      verticalAlign: VerticalAlign.Center,
+      backgroundColorHex: "#DDDDDD",
+    );
   }
+
+  // Data isi
+  for (var s in _symptoms) {
+    final hc = _healthChecks.firstWhere((h) => h['id'] == s['health_check'], orElse: () => {});
+    final cowId = hc['cow'] is Map ? hc['cow']['id'] : hc['cow'];
+    final cow = _cows.firstWhere((c) => c['id'] == cowId, orElse: () => {});
+    final cowName = cow['name'] ?? '-';
+
+    sheet.appendRow([
+      cowName,
+      hc['rectal_temperature'] ?? '-',
+      hc['heart_rate'] ?? '-',
+      hc['respiration_rate'] ?? '-',
+      hc['rumination'] ?? '-',
+      s['eye_condition'] ?? '-',
+      s['mouth_condition'] ?? '-',
+      s['nose_condition'] ?? '-',
+      s['anus_condition'] ?? '-',
+      s['leg_condition'] ?? '-',
+      s['skin_condition'] ?? '-',
+      s['behavior'] ?? '-',
+      s['weight_condition'] ?? '-',
+      s['reproductive_condition'] ?? '-',
+    ]);
+  }
+
+  // 🧠 Hitung lebar maksimal untuk setiap kolom
+  final maxLengths = List<int>.filled(headers.length, 0);
+  for (int i = 0; i < headers.length; i++) {
+    maxLengths[i] = headers[i].length;
+  }
+  for (var row in sheet.rows.skip(1)) {
+    for (int i = 0; i < headers.length; i++) {
+      final value = row[i]?.value?.toString() ?? '';
+      if (value.length > maxLengths[i]) {
+        maxLengths[i] = value.length;
+      }
+    }
+  }
+
+  // ✅ Terapkan lebar kolom dinamis berdasarkan panjang isi
+  for (int i = 0; i < maxLengths.length; i++) {
+    sheet.setColWidth(i, (maxLengths[i] + 5).toDouble()); // Tambah padding
+  }
+
+  // 🚀 Simpan dan buka file
+  try {
+    final dir = await getDownloadsDirectory();
+    final file = File('${dir!.path}/Laporan_Gejala_Sapi.xlsx')
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(excel.encode()!);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Laporan_Gejala_Sapi.xlsx siap diunduh"),
+        action: SnackBarAction(
+          label: 'Buka',
+          onPressed: () {
+            OpenFile.open(file.path);
+          },
+        ),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Gagal menyimpan file: $e")),
+    );
+  }
+}
+
+Future<void> exportSymptomToPdf(BuildContext context) async {
+ final pdf = pw.Document(); // Tidak perlu parameter apapun
+
+  final headers = [
+    'Nama Sapi', 'Suhu Rektal', 'Denyut Jantung', 'Laju Pernapasan', 'Ruminasi',
+    'Kondisi Mata', 'Kondisi Mulut', 'Kondisi Hidung', 'Kondisi Anus', 'Kondisi Kaki',
+    'Kondisi Kulit', 'Perilaku', 'Berat Badan', 'Kondisi Kelamin'
+  ];
+
+  final dataRows = _symptoms.map((s) {
+    final hc = _healthChecks.firstWhere((h) => h['id'] == s['health_check'], orElse: () => {});
+    final cowId = hc['cow'] is Map ? hc['cow']['id'] : hc['cow'];
+    final cow = _cows.firstWhere((c) => c['id'] == cowId, orElse: () => {});
+    final cowName = cow['name'] ?? '-';
+    return [
+      cowName,
+      hc['rectal_temperature']?.toString() ?? '-',
+      hc['heart_rate']?.toString() ?? '-',
+      hc['respiration_rate']?.toString() ?? '-',
+      hc['rumination']?.toString() ?? '-',
+      s['eye_condition'] ?? '-',
+      s['mouth_condition'] ?? '-',
+      s['nose_condition'] ?? '-',
+      s['anus_condition'] ?? '-',
+      s['leg_condition'] ?? '-',
+      s['skin_condition'] ?? '-',
+      s['behavior'] ?? '-',
+      s['weight_condition'] ?? '-',
+      s['reproductive_condition'] ?? '-',
+    ];
+  }).toList();
+
+ pdf.addPage(
+  pw.MultiPage(
+    pageFormat: PdfPageFormat.a4.landscape,
+    build: (_) => [
+      pw.Text(
+        'Laporan Data Gejala Sapi',
+        style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+      ),
+      pw.SizedBox(height: 12),
+     pw.Table.fromTextArray(
+  headers: headers,
+  data: dataRows,
+  headerStyle: pw.TextStyle(
+    fontWeight: pw.FontWeight.bold,
+    fontSize: 9,
+  ),
+  cellStyle: pw.TextStyle(fontSize: 8),
+  headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+  cellAlignment: pw.Alignment.centerLeft,
+  columnWidths: {
+    0: pw.FixedColumnWidth(70),  // Nama Sapi
+    1: pw.FixedColumnWidth(55),  // Suhu Rektal
+    2: pw.FixedColumnWidth(55),  // Denyut Jantung
+    3: pw.FixedColumnWidth(55),  // Laju Pernapasan
+    4: pw.FixedColumnWidth(55),  // Ruminasi
+    5: pw.FixedColumnWidth(75),  // Kondisi Mata
+    6: pw.FixedColumnWidth(75),  // Kondisi Mulut
+    7: pw.FixedColumnWidth(75),  // Kondisi Hidung
+    8: pw.FixedColumnWidth(75),  // Kondisi Anus
+    9: pw.FixedColumnWidth(75),  // Kondisi Kaki
+    10: pw.FixedColumnWidth(75), // Kondisi Kulit
+    11: pw.FixedColumnWidth(65), // Perilaku
+    12: pw.FixedColumnWidth(70), // Berat Badan
+    13: pw.FixedColumnWidth(75), // Kondisi Kelamin
+  },
+  cellAlignments: {
+    0: pw.Alignment.center,
+    1: pw.Alignment.center,
+    2: pw.Alignment.center,
+    3: pw.Alignment.center,
+    4: pw.Alignment.center,
+  },
+),
+    ],
+  ),
+);
+
+
+  try {
+    final dir = await getDownloadsDirectory();
+    final file = File('${dir!.path}/Laporan_Gejala_Sapi.pdf')
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(await pdf.save());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Laporan_Gejala_Sapi.pdf siap diunduh"),
+        action: SnackBarAction(
+          label: 'Buka',
+          onPressed: () {
+            OpenFile.open(file.path);
+          },
+        ),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menyimpan file PDF: $e")));
+  }
+}
+
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
-      centerTitle: true,
-      elevation: 0,
-      title: const Text(
-        'Gejala Pemeriksaan',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],
+  title: const Text(
+    'Gejala Pemeriksaan',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
-    floatingActionButton: (_isAdmin || _isSupervisor)
-        ? null
-        : FloatingActionButton(
-            tooltip: 'Tambah Gejala',
-            backgroundColor: Colors.teal[600],
-            child: const Icon(Icons.add),
-            onPressed: () async {
-              final availableHealthChecks = _healthChecks.where((hc) {
-                final alreadyHasSymptom = _symptoms.any((s) => s['health_check'] == hc['id']);
-                final isAccessible = _cows.any((cow) => cow['id'] == (hc['cow'] is Map ? hc['cow']['id'] : hc['cow']));
-                return hc['needs_attention'] == true &&
-                    hc['status'] != 'handled' &&
-                    !alreadyHasSymptom &&
-                    isAccessible;
-              }).toList();
+  ),
+),
 
-              if (availableHealthChecks.isEmpty) {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Tidak Bisa Menambah Gejala'),
-                    content: const Text('Tidak ada pemeriksaan yang tersedia untuk ditambahkan gejala.'),
-                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))],
-                  ),
-                );
-                return;
-              }
+    
+    floatingActionButton: FloatingActionButton(
+  tooltip: 'Tambah Gejala',
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  child: const Icon(Icons.add),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah gejala.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final availableHealthChecks = _healthChecks.where((hc) {
+      final alreadyHasSymptom = _symptoms.any((s) => s['health_check'] == hc['id']);
+      final isAccessible = _cows.any((cow) => cow['id'] == (hc['cow'] is Map ? hc['cow']['id'] : hc['cow']));
+      return hc['needs_attention'] == true &&
+          hc['status'] != 'handled' &&
+          !alreadyHasSymptom &&
+          isAccessible;
+    }).toList();
+
+    if (availableHealthChecks.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Tidak Bisa Menambah Gejala'),
+          content: const Text('Tidak ada pemeriksaan yang tersedia untuk ditambahkan gejala.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
               final result = await Navigator.push(
                 context,
@@ -192,6 +421,29 @@ Widget build(BuildContext context) {
                   }),
                 ),
               ),
+           // Tambahkan ke bagian atas ListView atau AppBar actions tombol berikut:
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      ElevatedButton.icon(
+        onPressed: () => exportSymptomToExcel(context),
+        icon: const Icon(Icons.table_chart),
+        label: const Text("Export Excel"),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+      ),
+      const SizedBox(width: 8),
+      ElevatedButton.icon(
+        onPressed: () => exportSymptomToPdf(context),
+        icon: const Icon(Icons.picture_as_pdf),
+        label: const Text("Export PDF"),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+      ),
+    ],
+  ),
+),
+
               Expanded(
                 child: _filteredSymptoms.isEmpty
                     ? const Center(child: Text('Tidak ada data gejala'))
@@ -239,7 +491,6 @@ Widget build(BuildContext context) {
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: statusColor.withOpacity(0.15),
-                                          border: Border.all(color: statusColor),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Text(
@@ -262,118 +513,185 @@ Widget build(BuildContext context) {
                                     ),
                                   const SizedBox(height: 12),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      _actionButton(
-                                        icon: Icons.visibility,
-                                        color: Colors.blueGrey,
-                                        tooltip: 'Lihat',
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => SymptomViewPage(
-                                                symptomId: item['id'],
-                                                onClose: () => Navigator.pop(context),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        icon: Icons.edit,
-                                        color: Colors.orange,
-                                        tooltip: 'Edit',
-                                        onPressed: () async {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Role ini tidak memiliki izin mengedit'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                            return;
-                                          }
+                                     ElevatedButton.icon(
+  icon: const Icon(Icons.visibility, size: 18),
+  label: const Text('Lihat'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blueGrey,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SymptomViewPage(
+          symptomId: item['id'],
+          onClose: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  },
+),
+const SizedBox(width: 8),
 
-                                          if (!_isEditable(hc)) {
-                                            showDialog(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text('Tidak Bisa Diedit'),
-                                                content: const Text('Pemeriksaan ini sudah ditangani.'),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator.pop(ctx),
-                                                    child: const Text('Mengerti'),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            return;
-                                          }
+                                      
+                                      ElevatedButton.icon(
+  icon: const Icon(Icons.edit, size: 18),
+  label: const Text('Edit'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+ onPressed: () async {
+  if (_isAdmin || _isSupervisor) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Akses Ditolak'),
+        content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
 
-                                          final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => EditSymptomView(
-                                                symptomId: item['id'],
-                                                onSaved: _loadData,
-                                              ),
-                                            ),
-                                          );
-                                          if (result == true) _loadData();
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _actionButton(
-                                        icon: Icons.delete,
-                                        color: Colors.redAccent,
-                                        tooltip: 'Hapus',
-                                        onPressed: () async {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Role ini tidak memiliki izin menghapus'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                            return;
-                                          }
+  if (hc['status'] == 'handled') {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tidak Bisa Diedit'),
+        content: const Text('Pemeriksaan ini sudah ditangani dan tidak dapat diedit.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
 
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Konfirmasi Hapus'),
-                                              content: const Text('Yakin ingin menghapus data ini?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () => Navigator.pop(context, true),
-                                                  child: const Text('Hapus'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
+  if (hc['status'] == 'healthy') {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tidak Bisa Diedit'),
+        content: const Text('Sapi ini sudah dinyatakan sehat dan datanya tidak dapat diedit.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
 
-                                          if (confirm == true) {
-                                            final res = await _symptomController.deleteSymptom(item['id']);
-                                            if (res['success'] == true) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('✅ Data gejala berhasil dihapus'),
-                                                  backgroundColor: Colors.green,
-                                                  duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              _loadData();
-                                            }
-                                          }
-                                        },
-                                      ),
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => EditSymptomView(
+        symptomId: item['id'],
+        onSaved: _loadData,
+      ),
+    ),
+  );
+
+  if (result == true) _loadData();
+},
+
+),
+const SizedBox(width: 8),
+
+                                     ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.redAccent,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+       showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: const Text('Yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final res = await _symptomController.deleteSymptom(item['id']);
+      if (res['success'] == true) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Berhasil'),
+            content: Text('Data gejala berhasil dihapus.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Tutup dialog sukses
+          _loadData(); // Refresh data
+        }
+      } else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal'),
+            content: Text(res['message'] ?? 'Gagal menghapus data.'),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        if (context.mounted) Navigator.of(context).pop(); // Tutup dialog gagal
+      }
+    }
+  },
+),
+const SizedBox(width: 8),
+
                                     ],
                                   )
                                 ],

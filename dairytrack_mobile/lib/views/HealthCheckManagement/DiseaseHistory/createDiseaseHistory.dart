@@ -90,41 +90,63 @@ class _CreateDiseaseHistoryViewState extends State<CreateDiseaseHistoryView> {
 }
 
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _selectedHealthCheckId == null) return;
+ Future<void> _submit() async {
+  if (!_formKey.currentState!.validate() || _selectedHealthCheckId == null) return;
 
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
+  setState(() {
+    _submitting = true;
+    _error = null;
+  });
 
-    final form = {
-      'health_check': _selectedHealthCheckId,
-      'disease_name': _diseaseNameController.text,
-      'description': _descriptionController.text,
-      'created_by': _currentUser?['id'],
-    };
+  final form = {
+    'health_check': _selectedHealthCheckId,
+    'disease_name': _diseaseNameController.text,
+    'description': _descriptionController.text,
+    'created_by': _currentUser?['id'],
+  };
 
-    final result = await _controller.createDiseaseHistory(form);
+  final result = await _controller.createDiseaseHistory(form);
 
-    if (result['success']) {
+  if (result['success']) {
+    if (mounted) {
+      widget.onSaved?.call();
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Berhasil'),
+          content: Text(result['message'] ?? 'Data berhasil disimpan.'),
+        ),
+      );
+
+      await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
       if (mounted) {
-        widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Berhasil disimpan'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context, true);
+        Navigator.of(context).pop(); // Tutup dialog
+        Navigator.of(context).pop(true); // Tutup form & kirim result
       }
-    } else {
-      setState(() {
-        _error = result['message'] ?? 'Gagal menyimpan data';
-      });
     }
+  } else {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Gagal'),
+        content: Text(result['message'] ?? 'Gagal menyimpan data.'),
+      ),
+    );
 
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop(); // Tutup dialog gagal
+  }
+
+  if (mounted) {
     setState(() {
       _submitting = false;
     });
   }
+}
+
 @override
 Widget build(BuildContext context) {
   final eligibleHealthChecks = _healthChecks.where((hc) {
@@ -145,20 +167,21 @@ Widget build(BuildContext context) {
   }).toList();
 
   return Scaffold(
-    appBar: AppBar(
-      title: const Text('Tambah Riwayat Penyakit'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  title: const Text(
+    'Tambah Riwayat Penyakit',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Padding(
@@ -284,8 +307,8 @@ Widget build(BuildContext context) {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: const TextStyle(fontSize: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: Colors.green[700],
-                      ),
+ backgroundColor: Colors.teal[400],
+                        foregroundColor: Colors.white,                        ),
                     ),
                   ),
                 ],

@@ -5,6 +5,16 @@ import 'package:dairytrack_mobile/services/notificationService.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
+
+//Feed View
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedItem.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
+import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
+// import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
+
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +34,7 @@ import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
 import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
 
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
@@ -136,30 +147,73 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           route: 'milkQuality',
           widget: () => MilkQualityControlsView(),
         ),
-             NavigationItem(
-        icon: Icons.medical_services,
-        label: 'Pemeriksaan Kesehatan',
-        route: 'health-checks',
-        widget: () => HealthCheckListView(),
-      ),
-      NavigationItem(
-        icon: Icons.visibility,
-        label: 'Gejala',
-        route: 'symptoms',
-        widget: () => SymptomListView(),
-      ),
-      NavigationItem(
-        icon: Icons.coronavirus,
-        label: 'Riwayat Penyakit',
-        route: 'disease-history',
-        widget: () => DiseaseHistoryListView(),
-      ),
-      NavigationItem(
-        icon: Icons.pregnant_woman,
-        label: 'Reproduksi',
-        route: 'reproduction',
-        widget: () => ReproductionListView(),
-      ),
+        NavigationItem(
+          icon: Icons.category,
+          label: 'Jenis Pakan',
+          route: 'feed-type',
+          widget: () => FeedTypeView(),
+        ),
+        NavigationItem(
+          icon: Icons
+              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
+          label: 'Jenis Nutrisi',
+          route: 'nutrition',
+          widget: () => NutrisiView(),
+        ),
+        NavigationItem(
+          icon: Icons.kitchen,
+          label: 'Pakan',
+          route: 'feed',
+          widget: () => FeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.inventory,
+          label: 'Stock Pakan',
+          route: 'feed-stock',
+          widget: () => FeedStockList(),
+        ),
+        NavigationItem(
+          icon: Icons.event,
+          label: 'Feed Schedule',
+          route: 'feed-schedule',
+          widget: () => DailyFeedView(),
+        ),
+        NavigationItem(
+          icon: Icons.checklist,
+          label: 'Feed Item Harian',
+          route: 'feed-item',
+          widget: () => DailyFeedItemsPage(),
+        ),
+        NavigationItem(
+          icon: Icons.medical_services,
+          label: 'Pemeriksaan Kesehatan',
+          route: 'health-checks',
+          widget: () => HealthCheckListView(),
+        ),
+        NavigationItem(
+          icon: Icons.visibility,
+          label: 'Gejala',
+          route: 'symptoms',
+          widget: () => SymptomListView(),
+        ),
+        NavigationItem(
+          icon: Icons.coronavirus,
+          label: 'Riwayat Penyakit',
+          route: 'disease-history',
+          widget: () => DiseaseHistoryListView(),
+        ),
+        NavigationItem(
+          icon: Icons.pregnant_woman,
+          label: 'Reproduksi',
+          route: 'reproduction',
+          widget: () => ReproductionListView(),
+        ),
+        NavigationItem(
+          icon: Icons.monitor_heart,
+          label: 'HealthDashboard',
+          route: 'health-dashboard',
+          widget: () => HealthDashboardView(),
+        ),
       ];
 
   @override

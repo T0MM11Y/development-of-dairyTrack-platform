@@ -262,15 +262,15 @@ String _formatDateTime(String? timestamp) {
   if (timestamp == null) return 'Tidak diketahui';
 
   try {
-    final parsedDate = DateTime.parse(timestamp); // otomatis parsing dengan offset
-    // Cek apakah timestamp sudah punya zona waktu → jangan add lagi
-    return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(parsedDate);
+    // Parsing manual dengan timezone awareness
+    final date = DateFormat("yyyy-MM-ddTHH:mm:ssZ").parseUTC(timestamp).toLocal();
+
+    return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
   } catch (e) {
     print('DEBUG - Error parsing date: $e');
     return 'Tidak diketahui';
   }
 }
-
 
 
   // Show error snackbar
