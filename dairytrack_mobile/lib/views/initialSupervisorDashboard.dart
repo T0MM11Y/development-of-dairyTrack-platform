@@ -15,6 +15,12 @@ import '../controller/APIURL1/notificationController.dart';
 import '../widgets/notifications.dart';
 import 'loginView.dart';
 
+// Import controllers for real data
+import '../controller/APIURL1/cowManagementController.dart';
+import '../controller/APIURL1/usersManagementController.dart';
+import '../controller/APIURL1/blogManagementController.dart';
+import '../controller/APIURL1/galleryManagementController.dart';
+
 //Healthcheck
 import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
 import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
@@ -38,6 +44,16 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
   // Navigation state
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Controllers for real data
+  final CowManagementController _cowManagementController =
+      CowManagementController();
+  final UsersManagementController _userManagementController =
+      UsersManagementController();
+  final BlogManagementController _blogManagementController =
+      BlogManagementController();
+  final GalleryManagementController _galleryManagementController =
+      GalleryManagementController();
 
   // Notification controller and variables
   final NotificationController _notificationController =
@@ -100,30 +116,30 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           route: 'gallery',
           widget: () => Container(), // Replace with actual page
         ),
-              NavigationItem(
-        icon: Icons.medical_services,
-        label: 'Pemeriksaan Kesehatan',
-        route: 'health-checks',
-        widget: () => HealthCheckListView(),
-      ),
-      NavigationItem(
-        icon: Icons.visibility,
-        label: 'Gejala',
-        route: 'symptoms',
-        widget: () => SymptomListView(),
-      ),
-      NavigationItem(
-        icon: Icons.coronavirus,
-        label: 'Riwayat Penyakit',
-        route: 'disease-history',
-        widget: () => DiseaseHistoryListView(),
-      ),
-      NavigationItem(
-        icon: Icons.pregnant_woman,
-        label: 'Reproduksi',
-        route: 'reproduction',
-        widget: () => ReproductionListView(),
-      ),
+        NavigationItem(
+          icon: Icons.medical_services,
+          label: 'Pemeriksaan Kesehatan',
+          route: 'health-checks',
+          widget: () => HealthCheckListView(),
+        ),
+        NavigationItem(
+          icon: Icons.visibility,
+          label: 'Gejala',
+          route: 'symptoms',
+          widget: () => SymptomListView(),
+        ),
+        NavigationItem(
+          icon: Icons.coronavirus,
+          label: 'Riwayat Penyakit',
+          route: 'disease-history',
+          widget: () => DiseaseHistoryListView(),
+        ),
+        NavigationItem(
+          icon: Icons.pregnant_woman,
+          label: 'Reproduksi',
+          route: 'reproduction',
+          widget: () => ReproductionListView(),
+        ),
       ];
 
   @override
@@ -266,29 +282,114 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
   }
 
   Future<void> _loadDashboardData() async {
-    // Simulate loading data - replace with actual API calls
-    await Future.delayed(Duration(seconds: 2));
+    try {
+      setState(() {
+        isLoading = true;
+      });
 
-    setState(() {
-      // Mock data - replace with actual API data
-      totalCows = 45;
-      totalFarmers = 12;
-      totalAdmins = 2;
-      totalSupervisors = 3;
-      totalBlogs = 15;
-      totalGalleries = 8;
-      todayMilkProduction = 127.5;
+      // Fetch real cow data
+      List<Cow> cows = [];
+      try {
+        cows = await _cowManagementController.listCows();
+        totalCows = cows.length;
+      } catch (e) {
+        print('Error fetching cows: $e');
+        totalCows = 0;
+      }
 
-      // Lactation distribution mock data
-      lactationData = [
-        LactationData('Early', 15, Colors.green),
-        LactationData('Mid', 20, Colors.orange),
-        LactationData('Late', 8, Colors.red),
-        LactationData('Dry', 2, Colors.grey),
+      // Fetch user data (farmers, admins, supervisors)
+      // Fetch user data (farmers, admins, supervisors)
+      try {
+        final users = await _userManagementController.getAllUsers();
+        if (users['success'] == true) {
+          // The actual data is in users['data'], not users['users']
+          final userData = users['data'];
+          // Now check if the API returns users in a 'users' field or directly
+          final usersList =
+              userData['users'] as List? ?? userData as List? ?? [];
+
+          totalFarmers = usersList.where((u) => u['role'] == 'Farmer').length;
+          totalSupervisors =
+              usersList.where((u) => u['role'] == 'Supervisor').length;
+          totalAdmins = usersList.where((u) => u['role'] == 'Admin').length;
+        }
+      } catch (e) {
+        print('Error fetching users: $e');
+        totalFarmers = 0;
+        totalSupervisors = 0;
+        totalAdmins = 0;
+      }
+
+      // Fetch blog data
+      try {
+        final blogs = await _blogManagementController.listBlogs();
+        // Update to handle the actual return type (List<Blog>) correctly
+        totalBlogs = blogs.length;
+      } catch (e) {
+        print('Error fetching blogs: $e');
+        totalBlogs = 0;
+      }
+
+      // Fetch gallery data
+      try {
+        final galleries = await _galleryManagementController.listGalleries();
+        // Update to handle the proper return structure based on the controller implementation
+        totalGalleries = galleries.length;
+      } catch (e) {
+        print('Error fetching galleries: $e');
+        totalGalleries = 0;
+      }
+
+      // Calculate lactation distribution from real cow data
+      Map<String, int> lactationPhases = {
+        'Early': 0,
+        'Mid': 0,
+        'Late': 0,
+        'Dry': 0
+      };
+
+      for (var cow in cows) {
+        final phase = cow.lactationPhase;
+        if (lactationPhases.containsKey(phase)) {
+          lactationPhases[phase] = (lactationPhases[phase] ?? 0) + 1;
+        }
+      }
+
+      // Update lactation data for the chart
+      List<LactationData> newLactationData = [
+        LactationData('Early', lactationPhases['Early'] ?? 0, Colors.green),
+        LactationData('Mid', lactationPhases['Mid'] ?? 0, Colors.orange),
+        LactationData('Late', lactationPhases['Late'] ?? 0, Colors.red),
+        LactationData('Dry', lactationPhases['Dry'] ?? 0, Colors.grey),
       ];
 
-      isLoading = false;
-    });
+      // Update state with all the fetched data
+      setState(() {
+        lactationData = newLactationData;
+        todayMilkProduction =
+            0.0; // This needs a separate API call if available
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading dashboard data: $e');
+      setState(() {
+        // Set defaults if there's an error
+        totalCows = 0;
+        totalFarmers = 0;
+        totalAdmins = 0;
+        totalSupervisors = 0;
+        totalBlogs = 0;
+        totalGalleries = 0;
+        todayMilkProduction = 0.0;
+        lactationData = [
+          LactationData('Early', 0, Colors.green),
+          LactationData('Mid', 0, Colors.orange),
+          LactationData('Late', 0, Colors.red),
+          LactationData('Dry', 0, Colors.grey),
+        ];
+        isLoading = false;
+      });
+    }
   }
 
   void _navigateToView(NavigationItem item) {
@@ -935,8 +1036,6 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                       _buildMapCard(),
                       SizedBox(height: 20),
                       _buildLactationChart(),
-                      SizedBox(height: 20),
-                      _buildQuickActions(),
                     ],
                   ),
                 ),
@@ -1424,6 +1523,55 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
   }
 
   Widget _buildLactationChart() {
+    // Show empty state if no data
+    if (lactationData.isEmpty ||
+        lactationData.every((data) => data.count == 0)) {
+      return FadeInUp(
+        duration: Duration(milliseconds: 800),
+        delay: Duration(milliseconds: 1000),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.pie_chart,
+                size: 50,
+                color: Colors.blue[200],
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Tidak Ada Data Laktasi',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Data fase laktasi belum tersedia',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return FadeInUp(
       duration: Duration(milliseconds: 800),
       delay: Duration(milliseconds: 1000),
@@ -1520,136 +1668,6 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return FadeInUp(
-      duration: Duration(milliseconds: 800),
-      delay: Duration(milliseconds: 1200),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Aksi Cepat',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[700],
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.assignment,
-                      label: 'Laporan',
-                      color: Colors.green,
-                      onTap: () {
-                        // Navigate to reports
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.people,
-                      label: 'Kelola Farmer',
-                      color: Colors.orange,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ListOfUsersView(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.pets,
-                      label: 'Data Sapi',
-                      color: Colors.blue,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ListOfCowsView(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.analytics,
-                      label: 'Analisis',
-                      color: Colors.purple,
-                      onTap: () {},
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );

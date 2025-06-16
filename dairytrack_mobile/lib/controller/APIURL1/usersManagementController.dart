@@ -78,6 +78,19 @@ class UsersManagementController {
     }
   }
 
+  Future<Map<String, dynamic>> getAllUsers() async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/list'), headers: _headers);
+      return _handleResponse(
+        response,
+        defaultErrorMsg: 'Failed to fetch users',
+      );
+    } catch (e) {
+      return {'success': false, 'message': 'An error occurred: $e'};
+    }
+  }
+
   Future<Map<String, dynamic>> addUser(Map<String, dynamic> userData) async {
     try {
       final url = Uri.parse('$baseUrl/add');

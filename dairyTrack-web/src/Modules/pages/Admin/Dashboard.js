@@ -1343,6 +1343,12 @@ const Dashboard = () => {
                     }))
                   )
               ).map((cow, index) => {
+                // Use a unique key: for admin/supervisor, combine cow.id and farmerId; for farmer, just cow.id
+                const uniqueKey =
+                  currentUser.role_id === 3
+                    ? cow.id
+                    : `${cow.id}-${cow.farmerId || "nofarmer"}`;
+
                 const production =
                   currentUser.role_id === 3
                     ? cowMilkProduction[cow.id] || {

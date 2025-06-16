@@ -56,7 +56,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             id: "add-cow",
             title: "Register New Livestock",
             link: "/admin/add-cow",
-            showForRoles: ["admin", "supervisor"],
+            showForRoles: ["admin"],
           },
         ],
         showForRoles: ["admin", "supervisor", "farmer"],
