@@ -145,10 +145,17 @@ const DashboardKesehatanPage = () => {
           <label className="form-label fw-semibold">Tanggal Berakhir</label>
           <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
-        <div className="col-md-2 d-flex align-items-end gap-2">
-          <button className="btn btn-info w-100 fw-semibold" onClick={handleFilter}>🔍 Filter</button>
-          <button className="btn btn-secondary w-100 fw-semibold" onClick={handleReset}>🔄 Reset</button>
-        </div>
+      <div className="col-12 col-md-2">
+  <div className="d-flex flex-column flex-md-row gap-2">
+    <button className="btn btn-info w-100 fw-semibold" onClick={handleFilter}>
+      <i className="bi bi-funnel-fill me-2"></i> Filter
+    </button>
+    <button className="btn btn-secondary w-100 fw-semibold" onClick={handleReset}>
+      <i className="bi bi-arrow-clockwise me-2"></i> Reset
+    </button>
+  </div>
+</div>
+
       </div>
           <div className="row mb-4">
   {[

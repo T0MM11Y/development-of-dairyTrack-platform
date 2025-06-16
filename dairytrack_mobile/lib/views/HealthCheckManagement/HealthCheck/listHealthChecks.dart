@@ -333,19 +333,26 @@ Widget build(BuildContext context) {
   ),
 ),
                                         const SizedBox(width: 8),
-                                        ElevatedButton.icon(
-                                          icon: const Icon(Icons.delete, size: 18),
-                                          label: const Text('Hapus'),
-                                          onPressed: () async {
-                                            if (_isAdmin || _isSupervisor) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Role ini tidak memiliki izin untuk menghapus data'),
-                                                  duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              return;
-                                            }
+                                      ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menghapus data'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
                                             final confirmed = await showDialog<bool>(
                                               context: context,
@@ -401,39 +408,52 @@ Widget build(BuildContext context) {
                   ),
               ],
             ),
-      floatingActionButton: (_isAdmin || _isSupervisor)
-          ? null
-          : FloatingActionButton(
-              tooltip: 'Tambah Pemeriksaan',
-              backgroundColor: Colors.blueGrey[800],
-              onPressed: () {
-                if (_availableCows.isEmpty) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Tidak Bisa Menambah Pemeriksaan'),
-                      content: const Text(
-                        'Tidak ada sapi yang tersedia untuk diperiksa. Semua sapi sudah memiliki pemeriksaan aktif.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CreateHealthCheckView(onSaved: _loadData),
-                    ),
-                  );
-                }
-              },
-              child: const Icon(Icons.add),
+     floatingActionButton: FloatingActionButton(
+  tooltip: 'Tambah Pemeriksaan',
+  backgroundColor: Colors.blueGrey[800],
+  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah data pemeriksaan.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
             ),
+          ],
+        ),
+      );
+    } else if (_availableCows.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Tidak Bisa Menambah Pemeriksaan'),
+          content: const Text(
+            'Tidak ada sapi yang tersedia untuk diperiksa. Semua sapi sudah memiliki pemeriksaan aktif.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateHealthCheckView(onSaved: _loadData),
+        ),
+      );
+    }
+  },
+  child: const Icon(Icons.add),
+),
+
     ),
   );
 }

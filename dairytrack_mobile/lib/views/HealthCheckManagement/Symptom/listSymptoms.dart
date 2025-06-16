@@ -137,33 +137,53 @@ Widget build(BuildContext context) {
         ),
       ),
     ),
-    floatingActionButton: (_isAdmin || _isSupervisor)
-        ? null
-        : FloatingActionButton(
-            tooltip: 'Tambah Gejala',
-            backgroundColor: Colors.teal[600],
-            child: const Icon(Icons.add),
-            onPressed: () async {
-              final availableHealthChecks = _healthChecks.where((hc) {
-                final alreadyHasSymptom = _symptoms.any((s) => s['health_check'] == hc['id']);
-                final isAccessible = _cows.any((cow) => cow['id'] == (hc['cow'] is Map ? hc['cow']['id'] : hc['cow']));
-                return hc['needs_attention'] == true &&
-                    hc['status'] != 'handled' &&
-                    !alreadyHasSymptom &&
-                    isAccessible;
-              }).toList();
+    floatingActionButton: FloatingActionButton(
+  tooltip: 'Tambah Gejala',
+  backgroundColor: Colors.teal[600],
+  child: const Icon(Icons.add),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah gejala.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
-              if (availableHealthChecks.isEmpty) {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Tidak Bisa Menambah Gejala'),
-                    content: const Text('Tidak ada pemeriksaan yang tersedia untuk ditambahkan gejala.'),
-                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup'))],
-                  ),
-                );
-                return;
-              }
+    final availableHealthChecks = _healthChecks.where((hc) {
+      final alreadyHasSymptom = _symptoms.any((s) => s['health_check'] == hc['id']);
+      final isAccessible = _cows.any((cow) => cow['id'] == (hc['cow'] is Map ? hc['cow']['id'] : hc['cow']));
+      return hc['needs_attention'] == true &&
+          hc['status'] != 'handled' &&
+          !alreadyHasSymptom &&
+          isAccessible;
+    }).toList();
+
+    if (availableHealthChecks.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Tidak Bisa Menambah Gejala'),
+          content: const Text('Tidak ada pemeriksaan yang tersedia untuk ditambahkan gejala.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
               final result = await Navigator.push(
                 context,
@@ -296,16 +316,19 @@ const SizedBox(width: 8),
   ),
   onPressed: () async {
     if (_isAdmin || _isSupervisor) {
-      showDialog(
+       showDialog(
         context: context,
-        barrierDismissible: false,
-        builder: (ctx) => const AlertDialog(
-          title: Text('Akses Ditolak'),
-          content: Text('Role ini tidak memiliki izin mengedit'),
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
         ),
       );
-      await Future.delayed(const Duration(seconds: 2));
-      if (context.mounted) Navigator.of(context).pop();
       return;
     }
 
@@ -351,16 +374,19 @@ const SizedBox(width: 8),
   ),
   onPressed: () async {
     if (_isAdmin || _isSupervisor) {
-      showDialog(
+       showDialog(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          title: Text('Akses Ditolak'),
-          content: Text('Role ini tidak memiliki izin menghapus'),
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
         ),
       );
-      await Future.delayed(const Duration(seconds: 2));
-      if (context.mounted) Navigator.of(context).pop();
       return;
     }
 

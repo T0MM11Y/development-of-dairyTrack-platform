@@ -135,28 +135,46 @@ Widget build(BuildContext context) {
         ),
       ),
     ),
-    floatingActionButton: _currentUser?['role_id'] == 2
-        ? null
-        : FloatingActionButton(
-            tooltip: 'Tambah Data Reproduksi',
-            backgroundColor: Colors.green[700],
-            onPressed: () {
-              if (_femaleCows.isEmpty) {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Tidak Ada Sapi Betina'),
-                    content: const Text(
-                        'Tidak dapat menambahkan data reproduksi karena tidak ada sapi betina yang tersedia.'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Tutup')),
-                    ],
-                  ),
-                );
-                return;
-              }
+   floatingActionButton: FloatingActionButton(
+  tooltip: 'Tambah Data Reproduksi',
+  backgroundColor: Colors.green[700],
+  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah data reproduksi.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (_femaleCows.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Tidak Ada Sapi Betina'),
+          content: const Text(
+            'Tidak dapat menambahkan data reproduksi karena tidak ada sapi betina yang tersedia.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
 
               Navigator.push(
                 context,
@@ -231,24 +249,31 @@ Widget build(BuildContext context) {
                                           Wrap(
                                             spacing: 6,
                                             children: [
-                                              ElevatedButton.icon(
-                                                icon: const Icon(Icons.edit, size: 18),
-                                                label: const Text('Edit'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.orange,
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                                ),
-                                                onPressed: () async {
-                                                  if (_currentUser?['role_id'] != 3) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Role ini tidak memiliki izin untuk mengedit data'),
-                                                        duration: Duration(seconds: 2),
-                                                      ),
-                                                    );
-                                                    return;
-                                                  }
+                                             ElevatedButton.icon(
+  icon: const Icon(Icons.edit, size: 18),
+  label: const Text('Edit'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
                                                   final result = await Navigator.push(
                                                     context,
@@ -262,24 +287,32 @@ Widget build(BuildContext context) {
                                                   if (result == true) _fetchData();
                                                 },
                                               ),
-                                              ElevatedButton.icon(
-                                                icon: const Icon(Icons.delete, size: 18),
-                                                label: const Text('Hapus'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.redAccent,
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                                ),
-                                                onPressed: () async {
-                                                  if (_currentUser?['role_id'] != 3) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Role ini tidak memiliki izin untuk menghapus data'),
-                                                        duration: Duration(seconds: 2),
-                                                      ),
-                                                    );
-                                                    return;
-                                                  }
+                                             ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.redAccent,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  ),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
 
                                                   final confirm = await showDialog<bool>(
                                                     context: context,
