@@ -345,8 +345,11 @@ Widget build(BuildContext context) {
     
     floatingActionButton: FloatingActionButton(
   tooltip: 'Tambah Gejala',
-  backgroundColor: Colors.teal[600],
-  child: const Icon(Icons.add),
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  child: const Icon(Icons.add),
   onPressed: () async {
     if (_isAdmin || _isSupervisor) {
       showDialog(

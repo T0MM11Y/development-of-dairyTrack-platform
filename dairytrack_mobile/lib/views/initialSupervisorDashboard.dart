@@ -20,6 +20,7 @@ import '../views/HealthCheckManagement/HealthCheck/listHealthChecks.dart';
 import '../views/HealthCheckManagement/Symptom/listSymptoms.dart';
 import '../views/HealthCheckManagement/DiseaseHistory/listDiseaseHistory.dart';
 import '../views/HealthCheckManagement/Reproduction/listReproduction.dart';
+import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
 
 // Feed
 import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
@@ -132,6 +133,12 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         route: 'reproduction',
         widget: () => ReproductionListView(),
       ),
+       NavigationItem(
+          icon: Icons.monitor_heart,
+          label: 'HealthDashboard',
+          route: 'health-dashboard',
+          widget: () => HealthDashboardView(),
+        ),
       NavigationItem(
           icon: Icons.category,
           label: 'Jenis Pakan',

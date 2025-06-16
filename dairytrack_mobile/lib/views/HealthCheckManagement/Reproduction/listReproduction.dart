@@ -143,8 +143,11 @@ Widget build(BuildContext context) {
 
    floatingActionButton: FloatingActionButton(
   tooltip: 'Tambah Data Reproduksi',
-  backgroundColor: Colors.green[700],
-  onPressed: () {
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  onPressed: () {
     if (_isAdmin || _isSupervisor) {
       showDialog(
         context: context,

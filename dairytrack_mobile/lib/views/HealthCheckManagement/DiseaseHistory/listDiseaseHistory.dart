@@ -415,8 +415,11 @@ Widget build(BuildContext context) {
             ],
           ),
    floatingActionButton: FloatingActionButton(
-  backgroundColor: Colors.green[700],
-  tooltip: 'Tambah Riwayat Penyakit',
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  tooltip: 'Tambah Riwayat Penyakit',
   child: const Icon(Icons.add),
   onPressed: () {
     if (_isAdmin || _isSupervisor) {

@@ -408,8 +408,11 @@ Widget build(BuildContext context) {
             ),
      floatingActionButton: FloatingActionButton(
   tooltip: 'Tambah Pemeriksaan',
-  backgroundColor: Colors.blueGrey[800],
-  onPressed: () {
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  onPressed: () {
     if (_isAdmin || _isSupervisor) {
       showDialog(
         context: context,
