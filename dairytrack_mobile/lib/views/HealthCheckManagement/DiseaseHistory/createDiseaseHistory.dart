@@ -167,20 +167,21 @@ Widget build(BuildContext context) {
   }).toList();
 
   return Scaffold(
-    appBar: AppBar(
-      title: const Text('Tambah Riwayat Penyakit'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  title: const Text(
+    'Tambah Riwayat Penyakit',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Padding(
@@ -306,8 +307,8 @@ Widget build(BuildContext context) {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: const TextStyle(fontSize: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        backgroundColor: Colors.green[700],
-                      ),
+ backgroundColor: Colors.teal[400],
+                        foregroundColor: Colors.white,                        ),
                     ),
                   ),
                 ],

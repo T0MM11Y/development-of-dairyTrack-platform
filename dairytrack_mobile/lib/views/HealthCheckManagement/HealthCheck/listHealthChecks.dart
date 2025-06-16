@@ -26,9 +26,9 @@ class _HealthCheckListViewState extends State<HealthCheckListView> {
   int _currentPage = 1;
   final int _pageSize = 5;
   String _search = '';
-
   bool get _isAdmin => _currentUser?['role_id'] == 1;
   bool get _isSupervisor => _currentUser?['role_id'] == 2;
+  bool get _isFarmer => _currentUser?['role_id'] == 3;
 
   @override
   void initState() {
@@ -161,28 +161,26 @@ Widget build(BuildContext context) {
     ),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Pemeriksaan Kesehatan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  elevation: 8,
+  centerTitle: true,
+  backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],
+  title: const Text(
+    'Pemeriksaan Kesehatan',
+    style: TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+    ),
+  ),
+),
+
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(

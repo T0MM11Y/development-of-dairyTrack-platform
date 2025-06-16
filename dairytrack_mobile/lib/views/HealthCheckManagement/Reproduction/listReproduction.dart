@@ -24,6 +24,7 @@ class _ReproductionListViewState extends State<ReproductionListView> {
   List<dynamic> _femaleCows = [];
 bool get _isAdmin => _currentUser?['role_id'] == 1;
 bool get _isSupervisor => _currentUser?['role_id'] == 2;
+bool get _isFarmer => _currentUser?['role_id'] == 3;
 
   int _currentPage = 1;
   final int _pageSize = 5;
@@ -121,20 +122,25 @@ bool get _isSupervisor => _currentUser?['role_id'] == 2;
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    appBar: AppBar(
-      title: const Text('Data Reproduksi'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  title: const Text(
+    'Data Reproduksi',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+      fontSize: 20,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],
+),
+
    floatingActionButton: FloatingActionButton(
   tooltip: 'Tambah Data Reproduksi',
   backgroundColor: Colors.green[700],

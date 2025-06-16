@@ -143,7 +143,11 @@ class Symptom(models.Model):
         db_table = "symptom"
         
 class DiseaseHistory(models.Model):
-    health_check = models.ForeignKey("HealthCheck", on_delete=models.CASCADE, related_name="disease_history")
+    health_check = models.ForeignKey(
+    "HealthCheck",
+    on_delete=models.CASCADE,
+    related_name="disease_histories"
+)
     created_by = models.ForeignKey(
         "User",
         on_delete=models.SET_NULL,

@@ -42,6 +42,7 @@ class _SymptomListViewState extends State<SymptomListView> {
 
   bool get _isAdmin => _currentUser?['role_id'] == 1;
   bool get _isSupervisor => _currentUser?['role_id'] == 2;
+  bool get _isFarmer => _currentUser?['role_id'] == 3;
 
   String _search = '';
   bool _loading = true;
@@ -119,9 +120,10 @@ class _SymptomListViewState extends State<SymptomListView> {
     return filtered.skip(start).take(_pageSize).toList();
   }
 
-  bool _isEditable(Map<String, dynamic> hc) {
-    return !_isAdmin && !_isSupervisor && hc['status'] != 'handled';
-  }
+ bool _isEditable(Map<String, dynamic> hc) {
+  return !_isAdmin && !_isSupervisor && hc['status'] != 'handled' && hc['status'] != 'healthy';
+}
+
  Future<void> exportSymptomToExcel(BuildContext context) async {
   final excel = Excel.createExcel();
   final sheet = excel['Laporan_Gejala_Sapi'];
@@ -322,22 +324,24 @@ Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
-      centerTitle: true,
-      elevation: 0,
-      title: const Text(
-        'Gejala Pemeriksaan',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],
+  title: const Text(
+    'Gejala Pemeriksaan',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+),
+
     
     floatingActionButton: FloatingActionButton(
   tooltip: 'Tambah Gejala',
@@ -538,53 +542,71 @@ const SizedBox(width: 8),
     foregroundColor: Colors.white,
     padding: const EdgeInsets.symmetric(horizontal: 12),
   ),
-  onPressed: () async {
-    if (_isAdmin || _isSupervisor) {
-       showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    if (!_isEditable(hc)) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Tidak Bisa Diedit'),
-          content: const Text('Pemeriksaan ini sudah ditangani.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Mengerti'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditSymptomView(
-          symptomId: item['id'],
-          onSaved: _loadData,
-        ),
+ onPressed: () async {
+  if (_isAdmin || _isSupervisor) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Akses Ditolak'),
+        content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
       ),
     );
+    return;
+  }
 
-    if (result == true) _loadData();
-  },
+  if (hc['status'] == 'handled') {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tidak Bisa Diedit'),
+        content: const Text('Pemeriksaan ini sudah ditangani dan tidak dapat diedit.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+
+  if (hc['status'] == 'healthy') {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tidak Bisa Diedit'),
+        content: const Text('Sapi ini sudah dinyatakan sehat dan datanya tidak dapat diedit.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => EditSymptomView(
+        symptomId: item['id'],
+        onSaved: _loadData,
+      ),
+    ),
+  );
+
+  if (result == true) _loadData();
+},
+
 ),
 const SizedBox(width: 8),
 

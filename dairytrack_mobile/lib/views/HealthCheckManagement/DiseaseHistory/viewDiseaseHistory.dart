@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ViewDiseaseHistoryView extends StatelessWidget {
+class ViewDiseaseHistoryView extends StatefulWidget {
   final Map<String, dynamic> history;
   final Map<String, dynamic> check;
   final Map<String, dynamic> symptom;
@@ -16,91 +18,123 @@ class ViewDiseaseHistoryView extends StatelessWidget {
   });
 
   @override
+  State<ViewDiseaseHistoryView> createState() => _ViewDiseaseHistoryViewState();
+}
+
+class _ViewDiseaseHistoryViewState extends State<ViewDiseaseHistoryView> {
+  Map<String, dynamic>? _currentUser;
+
+  bool get _isSupervisor => _currentUser?['role_id'] == 2;
+  bool get _isFarmer => _currentUser?['role_id'] == 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userString = prefs.getString('user');
+    if (userString != null) {
+      setState(() {
+        _currentUser = jsonDecode(userString);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Riwayat Penyakit'),
-        centerTitle: true,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+        title: const Text(
+          'Detail Riwayat Penyakit',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.white,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
           ),
         ),
+        centerTitle: true,
+        elevation: 8,
+        backgroundColor: _isFarmer
+            ? Colors.teal[400]
+            : _isSupervisor
+                ? Colors.blue[700]
+                : Colors.blueGrey[800],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionCard(
-              title: '🐄 Informasi Sapi',
-              children: [
-                _infoTile(
-                  'Nama Sapi',
-                  cow != null
-                      ? '${cow!['name']} (${cow!['breed']})'
-                      : 'Sapi tidak ditemukan',
-                ),
-              ],
-            ),
-            _sectionCard(
-              title: '📋 Detail Pemeriksaan',
-              children: check.isEmpty
-                  ? [const Text('Data pemeriksaan tidak tersedia.')]
-                  : [
-                      _infoTile('🌡️ Suhu Rektal', '${check['rectal_temperature']} °C'),
-                      _infoTile('❤️ Denyut Jantung', '${check['heart_rate']} bpm'),
-                      _infoTile('🫁 Pernapasan', '${check['respiration_rate']} bpm'),
-                      _infoTile('🐄 Ruminasi', '${check['rumination']} menit'),
+      body: _currentUser == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionCard(
+                    title: '🐄 Informasi Sapi',
+                    children: [
                       _infoTile(
-                        '🕒 Tanggal Periksa',
-                        DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
-                                .format(DateTime.parse(check['checkup_date']).toLocal()) +
-                            ' WIB',
+                        'Nama Sapi',
+                        widget.cow != null
+                            ? '${widget.cow!['name']} (${widget.cow!['breed']})'
+                            : 'Sapi tidak ditemukan',
                       ),
                     ],
-            ),
-            _sectionCard(
-              title: '🦠 Gejala',
-              children: symptom.entries
-                  .where((entry) =>
-                      !['id', 'health_check', 'created_at', 'created_by', 'edited_by']
-                          .contains(entry.key) &&
-                      entry.value != null &&
-                      entry.value.toString().toLowerCase() != 'normal')
-                  .map((entry) => _infoTile(
-                        _capitalize(entry.key.replaceAll('_', ' ')),
-                        entry.value.toString(),
-                      ))
-                  .toList()
-                ..addIf(
-                  symptom.entries.every(
-                      (e) => e.value.toString().toLowerCase() == 'normal'),
-                  const Text(
-                    'Tidak ada gejala dicatat.',
-                    style: TextStyle(fontStyle: FontStyle.italic),
                   ),
-                ),
+                  _sectionCard(
+                    title: '📋 Detail Pemeriksaan',
+                    children: widget.check.isEmpty
+                        ? [const Text('Data pemeriksaan tidak tersedia.')]
+                        : [
+                            _infoTile('🌡️ Suhu Rektal', '${widget.check['rectal_temperature']} °C'),
+                            _infoTile('❤️ Denyut Jantung', '${widget.check['heart_rate']} bpm'),
+                            _infoTile('🫁 Pernapasan', '${widget.check['respiration_rate']} bpm'),
+                            _infoTile('🐄 Ruminasi', '${widget.check['rumination']} menit'),
+                            _infoTile(
+                              '🕒 Tanggal Periksa',
+                              DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
+                                      .format(DateTime.parse(widget.check['checkup_date']).toLocal()) +
+                                  ' WIB',
+                            ),
+                          ],
+                  ),
+                  _sectionCard(
+                    title: '🦠 Gejala',
+                    children: widget.symptom.entries
+                        .where((entry) =>
+                            !['id', 'health_check', 'created_at', 'created_by', 'edited_by']
+                                .contains(entry.key) &&
+                            entry.value != null &&
+                            entry.value.toString().toLowerCase() != 'normal')
+                        .map((entry) => _infoTile(
+                              _capitalize(entry.key.replaceAll('_', ' ')),
+                              entry.value.toString(),
+                            ))
+                        .toList()
+                      ..addIf(
+                        widget.symptom.entries.every(
+                            (e) => e.value.toString().toLowerCase() == 'normal'),
+                        const Text(
+                          'Tidak ada gejala dicatat.',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                  ),
+                  _sectionCard(
+                    title: '📝 Deskripsi',
+                    children: [
+                      Text(
+                        widget.history['description']?.toString().trim().isNotEmpty == true
+                            ? widget.history['description']
+                            : 'Tidak ada deskripsi.',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            _sectionCard(
-              title: '📝 Deskripsi',
-              children: [
-                Text(
-                  history['description']?.toString().trim().isNotEmpty == true
-                      ? history['description']
-                      : 'Tidak ada deskripsi.',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 

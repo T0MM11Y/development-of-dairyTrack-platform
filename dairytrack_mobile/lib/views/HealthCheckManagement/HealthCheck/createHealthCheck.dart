@@ -157,23 +157,21 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
 Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
-    appBar: AppBar(
-      centerTitle: true,
-      elevation: 0,
-      title: const Text(
-        'Tambah Pemeriksaan',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+  title: const Text(
+    'Tambah Pemeriksaan',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Padding(
