@@ -262,69 +262,114 @@ def delete_user(user_id):
             from sqlalchemy import text, inspect
             inspector = inspect(db.engine)
             
-            # List all tables that might have references to users
-            tables_to_check = [
-                "user_cow_association", "milk_record", "report", "user_role", 
-                "milking_sessions", "notifications", "expense", "expense_type", 
-                "income", "income_type", "daily_milk_summary", "feed_stock", 
-                "daily_feed_schedule", "feed", "feed_type", "nutritions"  # Added nutritions
+            # Get all tables in the database
+            all_tables = inspector.get_table_names()
+            
+            # List tables that need special handling
+            special_handling_tables = [
+                "feed_stock", "product_stock", "daily_feed_schedule", "feed", 
+                "feed_type", "nutritions", "feed_stock_history", "product_type",
+                "order_item", "daily_feed_items"
             ]
             
-            # Check in Selling Django app tables
-            selling_tables = [
-                "expense_type", "expense", "income_type", "income",
-                "product_type", "product_stock", "stock_history", "sales_transaction"
-            ]
-            
-             # Handle nullifiable columns first - this prevents product_type constraint issues
-            nullable_tables = ["expense_type", "income_type", "product_type"]
-            for table_name in nullable_tables:
+            # Handle potentially nullable columns first (especially those containing "_by")
+            logger.info("Step 1: Handling potentially nullable columns")
+            for table_name in all_tables:
                 try:
-                    if table_name in inspector.get_table_names():
-                        fk_columns = []
-                        for fk in inspector.get_foreign_keys(table_name):
-                            if fk.get('referred_table') == 'users':
-                                fk_columns.extend(fk.get('constrained_columns', []))
-                        
-                        for column in fk_columns:
-                            if "_by" in column:
-                                logger.info(f"Processing {table_name}.{column} references (nullable) to user {user_id}")
-                                # First check if the column allows NULL
-                                try:
-                                    query = text(f"UPDATE {table_name} SET {column} = NULL WHERE {column} = :user_id")
-                                    result = db.session.execute(query, {"user_id": user_id})
-                                    deletion_summary[f"{table_name}.{column}_nullified"] = result.rowcount
-                                    logger.info(f"Nullified {result.rowcount} records in {table_name}.{column}")
-                                    # Commit each nullification separately to ensure it happens
-                                    db.session.commit()
-                                except Exception as e:
-                                    logger.warning(f"Could not nullify {table_name}.{column}: {str(e)}")
-                                    db.session.rollback()
-                except Exception as e:
-                    logger.warning(f"Error processing nullable columns for {table_name}: {str(e)}")
-            
-            # Process nutritions table specifically to handle foreign key constraints
-            try:
-                if "nutritions" in inspector.get_table_names():
-                    logger.info(f"Processing nutritions.user_id references to user {user_id}")
+                    # Find all foreign keys that reference the users table
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys(table_name):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
                     
-                    # Attempt to nullify the user_id column if possible
-                    try:
-                        query = text(f"UPDATE nutritions SET user_id = NULL WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["nutritions.user_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in nutritions.user_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify nutritions.user_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM nutritions WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["nutritions.user_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from nutritions where user_id = {user_id}")
-                        db.session.commit()
+                    # First try to handle columns that contain "_by" (like "created_by", "updated_by")
+                    # These are usually nullable
+                    for column in fk_columns:
+                        if "_by" in column:
+                            logger.info(f"Processing {table_name}.{column} references to user {user_id}")
+                            try:
+                                query = text(f"UPDATE {table_name} SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"{table_name}.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in {table_name}.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify {table_name}.{column}: {str(e)}")
+                                db.session.rollback()
+                except Exception as e:
+                    logger.warning(f"Error processing columns for {table_name}: {str(e)}")
+            
+            # Handle special tables that need specific processing order
+            logger.info("Step 2: Handling special tables")
+            
+            # Process feed_stock_history
+            try:
+                if "feed_stock_history" in all_tables:
+                    logger.info(f"Processing feed_stock_history references to user {user_id}")
+                    
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("feed_stock_history"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        # Try to nullify first
+                        try:
+                            query = text(f"UPDATE feed_stock_history SET {column} = NULL WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"feed_stock_history.{column}_nullified"] = result.rowcount
+                            logger.info(f"Nullified {result.rowcount} records in feed_stock_history.{column}")
+                            db.session.commit()
+                        except Exception as e:
+                            logger.warning(f"Could not nullify feed_stock_history.{column}: {str(e)}")
+                            db.session.rollback()
+                            
+                            # If nullification fails, delete
+                            query = text(f"DELETE FROM feed_stock_history WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"feed_stock_history.{column}_deleted"] = result.rowcount
+                            logger.info(f"Deleted {result.rowcount} records from feed_stock_history where {column} = {user_id}")
+                            db.session.commit()
+            except Exception as e:
+                logger.error(f"Error handling feed_stock_history records: {str(e)}")
+                db.session.rollback()
+                return jsonify({
+                    "status": "error",
+                    "message": "Failed to handle feed_stock_history records",
+                    "details": str(e)
+                }), 500
+            
+            # Process nutritions table
+            try:
+                if "nutritions" in all_tables:
+                    logger.info(f"Processing nutritions references to user {user_id}")
+                    
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("nutritions"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled
+                            # Try to nullify first
+                            try:
+                                query = text(f"UPDATE nutritions SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"nutritions.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in nutritions.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify nutritions.{column}: {str(e)}")
+                                db.session.rollback()
+                                
+                                # If nullification fails, delete
+                                query = text(f"DELETE FROM nutritions WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"nutritions.{column}_deleted"] = result.rowcount
+                                logger.info(f"Deleted {result.rowcount} records from nutritions where {column} = {user_id}")
+                                db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling nutritions records: {str(e)}")
                 db.session.rollback()
@@ -334,28 +379,36 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-            # Process feed_type table specifically to handle foreign key constraints 
+            # Process feed_type table 
             try:
-                if "feed_type" in inspector.get_table_names():
-                    logger.info(f"Processing feed_type.user_id references to user {user_id}")
+                if "feed_type" in all_tables:
+                    logger.info(f"Processing feed_type references to user {user_id}")
                     
-                    # Attempt to nullify the user_id column if possible
-                    try:
-                        query = text(f"UPDATE feed_type SET user_id = NULL WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["feed_type.user_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in feed_type.user_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify feed_type.user_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM feed_type WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["feed_type.user_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from feed_type where user_id = {user_id}")
-                        db.session.commit()
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("feed_type"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled
+                            # Try to nullify first
+                            try:
+                                query = text(f"UPDATE feed_type SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"feed_type.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in feed_type.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify feed_type.{column}: {str(e)}")
+                                db.session.rollback()
+                                
+                                # If nullification fails, delete
+                                query = text(f"DELETE FROM feed_type WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"feed_type.{column}_deleted"] = result.rowcount
+                                logger.info(f"Deleted {result.rowcount} records from feed_type where {column} = {user_id}")
+                                db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling feed_type records: {str(e)}")
                 db.session.rollback()
@@ -365,28 +418,36 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-            # Process feed table specifically to handle foreign key constraints
+            # Process feed table
             try:
-                if "feed" in inspector.get_table_names():
-                    logger.info(f"Processing feed.user_id references to user {user_id}")
+                if "feed" in all_tables:
+                    logger.info(f"Processing feed references to user {user_id}")
                     
-                    # Attempt to nullify the user_id column if possible
-                    try:
-                        query = text(f"UPDATE feed SET user_id = NULL WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["feed.user_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in feed.user_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify feed.user_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM feed WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["feed.user_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from feed where user_id = {user_id}")
-                        db.session.commit()
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("feed"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled
+                            # Try to nullify first
+                            try:
+                                query = text(f"UPDATE feed SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"feed.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in feed.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify feed.{column}: {str(e)}")
+                                db.session.rollback()
+                                
+                                # If nullification fails, delete
+                                query = text(f"DELETE FROM feed WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"feed.{column}_deleted"] = result.rowcount
+                                logger.info(f"Deleted {result.rowcount} records from feed where {column} = {user_id}")
+                                db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling feed records: {str(e)}")
                 db.session.rollback()
@@ -396,28 +457,36 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-            # Process daily_feed_schedule table specifically to avoid constraint issues
+            # Process daily_feed_schedule table
             try:
-                if "daily_feed_schedule" in inspector.get_table_names():
-                    logger.info(f"Processing daily_feed_schedule.user_id references to user {user_id}")
+                if "daily_feed_schedule" in all_tables:
+                    logger.info(f"Processing daily_feed_schedule references to user {user_id}")
                     
-                    # Attempt to nullify the user_id column if possible
-                    try:
-                        query = text(f"UPDATE daily_feed_schedule SET user_id = NULL WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["daily_feed_schedule.user_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in daily_feed_schedule.user_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify daily_feed_schedule.user_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM daily_feed_schedule WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["daily_feed_schedule.user_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from daily_feed_schedule where user_id = {user_id}")
-                        db.session.commit()
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("daily_feed_schedule"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled
+                            # Try to nullify first
+                            try:
+                                query = text(f"UPDATE daily_feed_schedule SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"daily_feed_schedule.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in daily_feed_schedule.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify daily_feed_schedule.{column}: {str(e)}")
+                                db.session.rollback()
+                                
+                                # If nullification fails, delete
+                                query = text(f"DELETE FROM daily_feed_schedule WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"daily_feed_schedule.{column}_deleted"] = result.rowcount
+                                logger.info(f"Deleted {result.rowcount} records from daily_feed_schedule where {column} = {user_id}")
+                                db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling daily_feed_schedule records: {str(e)}")
                 db.session.rollback()
@@ -427,12 +496,12 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
                 
-            # Process product_stock table specifically to handle created_by_id
+            # Process product_stock table and related notifications
             try:
-                if "product_stock" in inspector.get_table_names():
+                if "product_stock" in all_tables:
                     logger.info(f"Processing product_stock references to user {user_id}")
                     
-                    # First get all product_stock IDs linked to this user
+                    # First get all product_stock IDs linked to this user's created_by_id
                     query = text("SELECT id FROM product_stock WHERE created_by_id = :user_id")
                     result = db.session.execute(query, {"user_id": user_id})
                     product_stock_ids = [row[0] for row in result.fetchall()]
@@ -441,7 +510,7 @@ def delete_user(user_id):
                         logger.info(f"Found {len(product_stock_ids)} product_stock records linked to user {user_id}")
                         
                         # Handle notifications that reference these product_stock records
-                        if "notifications" in inspector.get_table_names():
+                        if "notifications" in all_tables:
                             # Using IN clause with proper parameter binding for multiple values
                             placeholders = ', '.join([f':id{i}' for i in range(len(product_stock_ids))])
                             params = {f'id{i}': id_val for i, id_val in enumerate(product_stock_ids)}
@@ -452,23 +521,30 @@ def delete_user(user_id):
                             logger.info(f"Deleted {result.rowcount} notifications referring to user's product stocks")
                             db.session.commit()
                     
-                    # Now try to nullify the created_by_id (if possible)
-                    try:
-                        query = text(f"UPDATE product_stock SET created_by_id = NULL WHERE created_by_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["product_stock.created_by_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in product_stock.created_by_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify product_stock.created_by_id, will try deleting: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, try deleting the records
-                        query = text(f"DELETE FROM product_stock WHERE created_by_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["product_stock.created_by_id"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from product_stock where created_by_id = {user_id}")
-                        db.session.commit()
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("product_stock"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    for column in fk_columns:
+                        # Try to nullify first (even if already handled above, to be thorough)
+                        try:
+                            query = text(f"UPDATE product_stock SET {column} = NULL WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"product_stock.{column}_nullified"] = result.rowcount
+                            logger.info(f"Nullified {result.rowcount} records in product_stock.{column}")
+                            db.session.commit()
+                        except Exception as e:
+                            logger.warning(f"Could not nullify product_stock.{column}: {str(e)}")
+                            db.session.rollback()
+                            
+                            # If nullification fails, delete
+                            query = text(f"DELETE FROM product_stock WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"product_stock.{column}_deleted"] = result.rowcount
+                            logger.info(f"Deleted {result.rowcount} records from product_stock where {column} = {user_id}")
+                            db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling product_stock records: {str(e)}")
                 db.session.rollback()
@@ -478,9 +554,9 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-                        
+            # Process order_item records that reference product_type created by the user
             try:
-                if "order_item" in inspector.get_table_names():
+                if "order_item" in all_tables and "product_type" in all_tables:
                     logger.info(f"Processing order_item references to product_type for user {user_id}")
                     
                     # Delete rows in order_item that reference product_type rows created by the user
@@ -503,58 +579,36 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-            # Proceed with deleting or nullifying product_type records
+            # Process daily_feed_items
             try:
-                if "product_type" in inspector.get_table_names():
-                    logger.info(f"Processing product_type references to user {user_id}")
+                if "daily_feed_items" in all_tables:
+                    logger.info(f"Processing daily_feed_items references to user {user_id}")
                     
-                    # Attempt to nullify the created_by_id column
-                    try:
-                        query = text(f"UPDATE product_type SET created_by_id = NULL WHERE created_by_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["product_type.created_by_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in product_type.created_by_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify product_type.created_by_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM product_type WHERE created_by_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["product_type.created_by_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from product_type where created_by_id = {user_id}")
-                        db.session.commit()
-            except Exception as e:
-                logger.error(f"Error handling product_type records: {str(e)}")
-                db.session.rollback()
-                return jsonify({
-                    "status": "error", 
-                    "message": "Failed to handle product_type records",
-                    "details": str(e)
-                }), 500
-            
-            try:
-                if "daily_feed_items" in inspector.get_table_names():
-                    logger.info(f"Processing daily_feed_items.user_id references to user {user_id}")
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("daily_feed_items"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
                     
-                    # Attempt to nullify the user_id column if possible
-                    try:
-                        query = text(f"UPDATE daily_feed_items SET user_id = NULL WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["daily_feed_items.user_id_nullified"] = result.rowcount
-                        logger.info(f"Nullified {result.rowcount} records in daily_feed_items.user_id")
-                        db.session.commit()
-                    except Exception as e:
-                        logger.warning(f"Could not nullify daily_feed_items.user_id: {str(e)}")
-                        db.session.rollback()
-                        
-                        # If nullification fails, delete the rows
-                        query = text(f"DELETE FROM daily_feed_items WHERE user_id = :user_id")
-                        result = db.session.execute(query, {"user_id": user_id})
-                        deletion_summary["daily_feed_items.user_id_deleted"] = result.rowcount
-                        logger.info(f"Deleted {result.rowcount} records from daily_feed_items where user_id = {user_id}")
-                        db.session.commit()
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled
+                            # Try to nullify first
+                            try:
+                                query = text(f"UPDATE daily_feed_items SET {column} = NULL WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"daily_feed_items.{column}_nullified"] = result.rowcount
+                                logger.info(f"Nullified {result.rowcount} records in daily_feed_items.{column}")
+                                db.session.commit()
+                            except Exception as e:
+                                logger.warning(f"Could not nullify daily_feed_items.{column}: {str(e)}")
+                                db.session.rollback()
+                                
+                                # If nullification fails, delete
+                                query = text(f"DELETE FROM daily_feed_items WHERE {column} = :user_id")
+                                result = db.session.execute(query, {"user_id": user_id})
+                                deletion_summary[f"daily_feed_items.{column}_deleted"] = result.rowcount
+                                logger.info(f"Deleted {result.rowcount} records from daily_feed_items where {column} = {user_id}")
+                                db.session.commit()
             except Exception as e:
                 logger.error(f"Error handling daily_feed_items records: {str(e)}")
                 db.session.rollback()
@@ -564,54 +618,74 @@ def delete_user(user_id):
                     "details": str(e)
                 }), 500
             
-            # Process feed_stock table specifically
+            # Process feed_stock table specifically to handle both updated_by and user_id
             try:
-                if "feed_stock" in inspector.get_table_names():
-                    query = text(f"DELETE FROM feed_stock WHERE user_id = :user_id")
-                    result = db.session.execute(query, {"user_id": user_id})
-                    deletion_summary["feed_stock.user_id"] = result.rowcount
-                    logger.info(f"Deleted {result.rowcount} records from feed_stock where user_id = {user_id}")
-                    db.session.commit()
+                if "feed_stock" in all_tables:
+                    logger.info(f"Processing feed_stock references to user {user_id}")
+                    
+                    # Check for any not-yet-nullified columns
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys("feed_stock"):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    # Process all columns that reference users.id
+                    for column in fk_columns:
+                        # Try to nullify first (even if already handled above, to be thorough)
+                        try:
+                            query = text(f"UPDATE feed_stock SET {column} = NULL WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"feed_stock.{column}_nullified"] = result.rowcount
+                            logger.info(f"Nullified {result.rowcount} records in feed_stock.{column}")
+                            db.session.commit()
+                        except Exception as e:
+                            logger.warning(f"Could not nullify feed_stock.{column}: {str(e)}")
+                            db.session.rollback()
+                            
+                            # If nullification fails, delete those records
+                            query = text(f"DELETE FROM feed_stock WHERE {column} = :user_id")
+                            result = db.session.execute(query, {"user_id": user_id})
+                            deletion_summary[f"feed_stock.{column}_deleted"] = result.rowcount
+                            logger.info(f"Deleted {result.rowcount} records from feed_stock where {column} = {user_id}")
+                            db.session.commit()
             except Exception as e:
-                logger.error(f"Error deleting feed_stock records: {str(e)}")
+                logger.error(f"Error handling feed_stock records: {str(e)}")
                 db.session.rollback()
                 return jsonify({
                     "status": "error", 
-                    "message": "Failed to delete feed stock records",
+                    "message": "Failed to handle feed stock records",
                     "details": str(e)
                 }), 500
             
-            # Process all other tables with potential FK constraints
-            for table_name in tables_to_check + selling_tables:
-                # Skip already handled tables
-                if table_name in nullable_tables or table_name in ["feed_stock", "product_stock", "daily_feed_schedule", "feed", "feed_type"]:
+            # Process all remaining tables
+            logger.info("Step 3: Processing all remaining tables with foreign key constraints")
+            for table_name in all_tables:
+                # Skip special-handled tables
+                if table_name in special_handling_tables:
                     continue
                 
                 try:
-                    # Check if table exists
-                    if table_name in inspector.get_table_names():
-                        # Find all columns that might reference users.id
-                        fk_columns = []
-                        for fk in inspector.get_foreign_keys(table_name):
-                            if fk.get('referred_table') == 'users':
-                                fk_columns.extend(fk.get('constrained_columns', []))
-                        
-                        # For each column, delete records
-                        for column in fk_columns:
+                    # Find all columns that might reference users.id
+                    fk_columns = []
+                    for fk in inspector.get_foreign_keys(table_name):
+                        if fk.get('referred_table') == 'users':
+                            fk_columns.extend(fk.get('constrained_columns', []))
+                    
+                    # For each column, delete remaining records (those that couldn't be nullified)
+                    for column in fk_columns:
+                        if "_by" not in column:  # Skip columns already handled in Step 1
                             logger.info(f"Processing {table_name}.{column} references to user {user_id}")
                             query = text(f"DELETE FROM {table_name} WHERE {column} = :user_id")
                             result = db.session.execute(query, {"user_id": user_id})
-                            deletion_summary[f"{table_name}.{column}"] = result.rowcount
+                            deletion_summary[f"{table_name}.{column}_deleted"] = result.rowcount
                             logger.info(f"Deleted {result.rowcount} records from {table_name} where {column} = {user_id}")
+                            db.session.commit()
                 
                 except Exception as table_e:
                     logger.info(f"Skipped {table_name}: {str(table_e)}")
             
-            # Commit these deletions/updates before deleting the user
-            db.session.commit()
-            
             # Finally delete the user
-            logger.info(f"Deleting user {user_id}")
+            logger.info(f"Step 4: Deleting user {user_id}")
             db.session.delete(user)
             db.session.commit()
             
@@ -646,7 +720,6 @@ def delete_user(user_id):
             "exception_type": type(e).__name__,
             "details": str(e)
         }), 500
-
 @user_bp.route('/edit/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     try:
