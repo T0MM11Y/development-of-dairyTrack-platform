@@ -337,54 +337,31 @@ Widget build(BuildContext context) {
     );
   },
 ),
-                                      ElevatedButton.icon(
-                                        icon: const Icon(Icons.delete, size: 18),
-                                        label: const Text('Hapus'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                         onPressed: () async {
-    if (_isAdmin || _isSupervisor) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-                                          final confirm = await showDialog(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Konfirmasi Hapus'),
-                                              content: const Text('Yakin ingin menghapus data ini?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(ctx, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () => Navigator.pop(ctx, true),
-                                                  child: const Text('Hapus'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true) {
-                                            _deleteHistory(item['id']);
-                                          }
-                                        },
-                                      ),
+                                          ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.redAccent,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Data Tidak Bisa Dihapus'),
+        content: const Text('Data riwayat tidak dapat dihapus karena merupakan arsip medis.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  },
+),
                                     ],
                                   ),
                                 ],
