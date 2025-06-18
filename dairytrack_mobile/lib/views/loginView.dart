@@ -1,6 +1,8 @@
-import 'package:dairytrack_mobile/views/initialAdminDashboard.dart';
+import 'package:dairytrack_mobile/views/initialAdminDashboard.dart'
+    as admin_dashboard;
 import 'package:dairytrack_mobile/views/initialFarmerDashboard.dart';
-import 'package:dairytrack_mobile/views/initialSupervisorDashboard.dart';
+import 'package:dairytrack_mobile/views/initialSupervisorDashboard.dart'
+    as supervisor_dashboard;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/APIURL1/loginController.dart';
@@ -84,13 +86,13 @@ enum UserRole {
   Widget get dashboard {
     switch (this) {
       case UserRole.admin:
-        return InitialAdminDashboard();
+        return admin_dashboard.InitialAdminDashboard();
       case UserRole.farmer:
         return InitialFarmerDashboard();
       case UserRole.supervisor:
-        return InitialSupervisorDashboard();
+        return supervisor_dashboard.InitialSupervisorDashboard();
       case UserRole.unknown:
-        return InitialAdminDashboard();
+        return admin_dashboard.InitialAdminDashboard();
     }
   }
 

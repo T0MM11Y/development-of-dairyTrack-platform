@@ -259,7 +259,7 @@ class _CattleDistributionState extends State<CattleDistribution>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${result['message']}'),
+            content: Text('Error: The cow is already assigned to a farmer'),
             backgroundColor: Colors.red,
           ),
         );
@@ -347,64 +347,196 @@ class _CattleDistributionState extends State<CattleDistribution>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Cattle Distribution',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
+        title: const Text('Cattle Distribution',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.white)),
+        backgroundColor:
+            _isSupervisor ? Colors.deepOrange[400] : Colors.blueGrey[700],
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadData,
             tooltip: 'Refresh',
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Dashboard stats cards
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _buildDashboardStats(),
-          ),
+          Column(
+            children: [
+              // Dashboard stats cards
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _buildDashboardStats(),
+              ),
 
-          // Tab bar
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(
-                  icon: Icon(Icons.table_chart, color: Colors.blueGrey),
-                  text: 'Distribution'),
-              Tab(
-                  icon: Icon(Icons.analytics, color: Colors.blueGrey),
-                  text: 'Analytics'),
+              // Tab bar
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(
+                      icon: Icon(Icons.table_chart, color: Colors.blueGrey),
+                      text: 'Distribution'),
+                  Tab(
+                      icon: Icon(Icons.analytics, color: Colors.blueGrey),
+                      text: 'Analytics'),
+                ],
+                indicatorColor: Colors.blueGrey,
+                labelColor: Colors.blueGrey,
+                unselectedLabelColor: Colors.grey[400],
+              ),
+
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [_buildDistributionTab(), _buildAnalyticsTab()],
+                ),
+              ),
             ],
-            indicatorColor: Colors.blueGrey,
-            labelColor: Colors.blueGrey,
-            unselectedLabelColor: Colors.grey[400],
           ),
 
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildDistributionTab(), _buildAnalyticsTab()],
+          // Unassigned Cows Modal as overlay
+          if (_isUnassignedModalVisible)
+            GestureDetector(
+              onTap: () => setState(() => _isUnassignedModalVisible = false),
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: GestureDetector(
+                    onTap:
+                        () {}, // Prevent closing when tapping the modal content
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.85,
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      margin: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: _buildUnassignedCowsModalContent(),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
         ],
       ),
       floatingActionButton: _isSupervisor
           ? null
           : FloatingActionButton(
               onPressed: () => setState(() => _isAssignModalVisible = true),
-              backgroundColor:
-                  Colors.blueGrey[800], // Warna latar belakang tombol
+              backgroundColor: Colors.blueGrey[800],
               child: const Icon(Icons.link, color: Colors.white),
               tooltip: 'Assign Cow to Farmer',
             ),
       // Assign Cow Modal
       bottomSheet: _isAssignModalVisible ? _buildAssignCowModal() : null,
-      // Unassigned Cows Modal
-      endDrawer: _isUnassignedModalVisible ? _buildUnassignedCowsModal() : null,
+    );
+  }
+
+  Widget _buildUnassignedCowsModalContent() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Unassigned Cattle',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () =>
+                    setState(() => _isUnassignedModalVisible = false),
+              ),
+            ],
+          ),
+          const Text(
+            'View cattle that are currently unassigned to any farmer.',
+            style: TextStyle(fontSize: 14, color: Colors.white70),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _unassignedCows.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No unassigned cattle available.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _unassignedCows.length,
+                    itemBuilder: (context, index) {
+                      final cow = _unassignedCows[index];
+                      return Card(
+                        color: Colors.grey[800],
+                        margin: const EdgeInsets.only(bottom: 8.0),
+                        child: ListTile(
+                          leading: Icon(
+                            cow['gender'].toString().toLowerCase() == 'female'
+                                ? Icons.female
+                                : Icons.male,
+                            color: cow['gender'].toString().toLowerCase() ==
+                                    'female'
+                                ? Colors.pink
+                                : Colors.blue,
+                          ),
+                          title: Text(
+                            cow['name'],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            '${cow['breed']} • Age: ${cow['age'] ?? 'Unknown'}',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          trailing: Text(
+                            'ID: ${cow['id']}',
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: ElevatedButton(
+              onPressed: () =>
+                  setState(() => _isUnassignedModalVisible = false),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey[700],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -963,90 +1095,6 @@ class _CattleDistributionState extends State<CattleDistribution>
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnassignedCowsModal() {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.grey[900], // Latar belakang gelap
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Unassigned Cattle',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white), // Teks putih
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () =>
-                    setState(() => _isUnassignedModalVisible = false),
-              ),
-            ],
-          ),
-          const Text(
-            'View cattle that are currently unassigned to any farmer.',
-            style: TextStyle(fontSize: 14, color: Colors.white70), // Teks putih
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _unassignedCows.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No unassigned cattle available.',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _unassignedCows.length,
-                    itemBuilder: (context, index) {
-                      final cow = _unassignedCows[index];
-                      return ListTile(
-                        leading: Icon(
-                          cow['gender'].toString().toLowerCase() == 'female'
-                              ? Icons.female
-                              : Icons.male,
-                          color:
-                              cow['gender'].toString().toLowerCase() == 'female'
-                                  ? Colors.pink
-                                  : Colors.blue,
-                        ),
-                        title: Text(
-                          cow['name'],
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        subtitle: Text(
-                          cow['breed'],
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () =>
-                  setState(() => _isUnassignedModalVisible = false),
-              child: const Text(
-                'Close',
-                style: TextStyle(color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
-            ),
           ),
         ],
       ),

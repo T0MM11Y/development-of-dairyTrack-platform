@@ -420,7 +420,11 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
             ),
           ),
           elevation: 8,
-          backgroundColor: isFarmer ? Colors.teal[400] : Colors.blueGrey[800],
+          backgroundColor: isFarmer
+              ? Colors.teal[400]
+              : isSupervisor
+                  ? Colors.deepOrange[400]
+                  : Colors.blueGrey[800],
           actions: [
             IconButton(
               icon: Icon(Icons.filter_list, color: Colors.white),

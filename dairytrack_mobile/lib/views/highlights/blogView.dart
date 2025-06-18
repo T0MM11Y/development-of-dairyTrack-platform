@@ -6,6 +6,8 @@ import 'package:dairytrack_mobile/views/highlights/blogDetailView.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart'
+    show SharedPreferences;
 
 class BlogView extends StatefulWidget {
   const BlogView({Key? key}) : super(key: key);
@@ -48,10 +50,12 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   static const Color darkText = Color(0xFFE0E0E0);
   static const Color darkTextSecondary = Color(0xFFB0B0B0);
 
-  @override
+  String _userRole = '';
   @override
   void initState() {
     super.initState();
+    _getUserRole();
+
     _fetchBlogs();
     _fetchCategories();
 
@@ -67,6 +71,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+  }
+
+  Future<void> _getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userRole = prefs.getString('userRole') ?? '';
+    });
   }
 
   @override
@@ -736,7 +747,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
             fontSize: 22,
           ),
         ),
-        backgroundColor: darkSecondary,
+        backgroundColor:
+            _userRole == 'Supervisor' ? Colors.deepOrange[400] : darkSecondary,
         elevation: 8,
         shadowColor: Colors.black26,
         // Hapus actions untuk memindahkan ke floating buttons
@@ -833,13 +845,15 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   }
 
   Widget _buildFloatingActionButtons() {
+    // HILANGKAN SEMUA FAB JIKA SUPERVISOR
+    if (_userRole == 'Supervisor') return const SizedBox.shrink();
+
     return Positioned(
       bottom: 20,
       right: 16,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Expanded FABs - hanya muncul jika expanded
           if (_isFabExpanded) ...[
             // Tetapkan Kategori
             ScaleTransition(
@@ -884,7 +898,6 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
             // Daftar Kategori
             ScaleTransition(
               scale: _expandAnimation,
@@ -928,7 +941,6 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
             // Tambah Kategori
             ScaleTransition(
               scale: _expandAnimation,
@@ -972,7 +984,6 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
             // Tambah Blog
             ScaleTransition(
               scale: _expandAnimation,
@@ -1017,7 +1028,6 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
               ),
             ),
           ],
-
           // Main FAB
           FloatingActionButton(
             heroTag: "main_fab",
@@ -1094,6 +1104,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => BlogDetailView(
+          userRole: _userRole,
           blog: blog,
           onBlogUpdated: () {
             // Refresh data when blog is updated
@@ -1107,7 +1118,9 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   Widget _buildBlogCard(Blog blog) {
     return GestureDetector(
       onTap: () => _navigateToBlogDetail(blog),
-      onLongPress: () => _showEditBlogDialog(blog),
+      // HILANGKAN EDIT DARI LONG PRESS JIKA SUPERVISOR
+      onLongPress:
+          _userRole == 'Supervisor' ? null : () => _showEditBlogDialog(blog),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Card(
@@ -1247,33 +1260,36 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                            InkWell(
-                              onTap: () => _removeCategoryFromBlog(
-                                blog.id,
-                                category.id,
-                                category.name,
-                                blog.title,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.all(4.0),
-                                margin: const EdgeInsets.only(right: 4.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
+                            // HILANGKAN TOMBOL X JIKA SUPERVISOR
+                            if (_userRole != 'Supervisor')
+                              InkWell(
+                                onTap: () => _removeCategoryFromBlog(
+                                  blog.id,
+                                  category.id,
+                                  category.name,
+                                  blog.title,
                                 ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 14,
-                                  color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4.0),
+                                  margin: const EdgeInsets.only(right: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       );
                     }).toList(),
                   )
+                // ...existing code...
                 else
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1341,37 +1357,40 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     ),
                     Row(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: darkWarning.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.edit,
-                              color: darkWarning,
-                              size: 20,
+                        // HILANGKAN TOMBOL EDIT DAN DELETE JIKA SUPERVISOR
+                        if (_userRole != 'Supervisor') ...[
+                          Container(
+                            decoration: BoxDecoration(
+                              color: darkWarning.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            onPressed: () => _showEditBlogDialog(blog),
-                            tooltip: 'Edit Blog',
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: darkError.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: darkError,
-                              size: 20,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: darkWarning,
+                                size: 20,
+                              ),
+                              onPressed: () => _showEditBlogDialog(blog),
+                              tooltip: 'Edit Blog',
                             ),
-                            onPressed: () => _deleteBlog(blog.id),
-                            tooltip: 'Hapus Blog',
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: darkError.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: darkError,
+                                size: 20,
+                              ),
+                              onPressed: () => _deleteBlog(blog.id),
+                              tooltip: 'Hapus Blog',
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -1385,6 +1404,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   }
 
   void _showAddBlogDialog() {
+    if (_userRole == 'Supervisor') return;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -1562,6 +1583,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   }
 
   void _showAddCategoryDialog() {
+    if (_userRole == 'Supervisor') return;
+
     showDialog(
       context: context,
       builder: (context) {

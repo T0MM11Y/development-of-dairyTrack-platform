@@ -727,7 +727,11 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             letterSpacing: 0.5,
           ),
         ),
-        backgroundColor: primaryColor,
+        backgroundColor: _currentUser!['role'] == "Farmer"
+            ? Colors.teal[400]
+            : _currentUser!['role'] == "Supervisor"
+                ? Colors.deepOrange[400]
+                : Colors.blueGrey[800],
         elevation: 0,
         actions: [
           if (_selectedCow != null && !(_cowPerformance?['isMale'] ?? false))
