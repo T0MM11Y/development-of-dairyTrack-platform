@@ -12,6 +12,7 @@ import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedIte
 import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 // import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 
