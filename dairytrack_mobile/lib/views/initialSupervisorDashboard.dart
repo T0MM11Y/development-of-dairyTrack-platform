@@ -984,7 +984,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400

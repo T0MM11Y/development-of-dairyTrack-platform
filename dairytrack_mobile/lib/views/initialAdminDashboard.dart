@@ -732,7 +732,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Notifikasi Terbaru',
+                    'Latest Notifications',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -767,7 +767,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                     ).then((_) => _loadNotifications());
                   },
                   child: Text(
-                    'Lihat Semua',
+                    'See All',
                     style: TextStyle(
                       color: Colors.blueGrey[700],
                       fontSize: 12,
@@ -1018,7 +1018,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400
@@ -1049,7 +1049,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Admin Dashboard - Kelola semua aspek peternakan dengan kontrol penuh',
+                    'Admin Dashboard - Manage all aspects of the farm with full control',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
@@ -1133,7 +1133,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Statistik Sistem',
+                          'System Statistics',
                           style: TextStyle(
                             fontSize: 16, // Konsisten dengan judul lain
                             fontWeight: FontWeight.w700,
@@ -1142,7 +1142,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Overview data peternakan',
+                          'Overview of livestock data',
                           style: TextStyle(
                             fontSize: 12, // Konsisten dengan subtitle lain
                             color: Colors.grey[600],
@@ -1177,7 +1177,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                   children: [
                     _buildStatCard(
                       icon: Icons.pets,
-                      title: 'Total Sapi',
+                      title: 'Total Cow',
                       value: '${dashboardStats['totalCows']}',
                       color: Colors.brown[600]!,
                       bgColor: Colors.brown[50]!,
@@ -1375,7 +1375,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Distribusi Fase Laktasi',
+                    'Distribution of Lactation Phases',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1387,7 +1387,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Komposisi fase laktasi sapi di peternakan',
+              'Composition of lactation phase of cows on farms',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1460,7 +1460,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                         ),
                       ),
                       Text(
-                        'Total Sapi',
+                        'Total Cow',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -1560,7 +1560,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               SizedBox(width: 8),
               Text(
-                'Statistik Detail',
+                'Detailed Statistics',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1673,7 +1673,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Grafik Aktivitas Harian',
+                    'Daily Activity Chart',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1685,7 +1685,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Visualisasi data peternakan hari ini',
+              'Todays livestock data visualization',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1884,7 +1884,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               ),
               SizedBox(width: 6),
               Text(
-                'Informasi Data',
+                'Data Information',
                 style: TextStyle(
                   fontSize: 11, // Font lebih kecil
                   fontWeight: FontWeight.w600,
@@ -1898,14 +1898,14 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             children: [
               _buildCompactLegendItem(
                 color: Colors.blue[600]!,
-                label: 'Produksi Susu',
+                label: 'Milk Production',
                 value:
                     '${dashboardStats['totalMilkToday'].toStringAsFixed(1)}L',
               ),
               SizedBox(width: 12),
               _buildCompactLegendItem(
                 color: Colors.teal[600]!,
-                label: 'Artikel Blog',
+                label: 'Blog Articles',
                 value: '${dashboardStats['totalBlogs']}',
               ),
             ],
@@ -1921,7 +1921,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Klik grafik untuk detail',
+                  'Click the graphic for details',
                   style: TextStyle(
                     fontSize: 9, // Font lebih kecil
                     color: Colors.grey[500],
@@ -2793,17 +2793,17 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           builder: (context) => AlertDialog(
                             backgroundColor: const Color(0xFF23272F),
                             title: Text(
-                              'Konfirmasi Keluar',
+                              'Confirm Exit',
                               style: TextStyle(color: Colors.white),
                             ),
                             content: Text(
-                              'Apakah Anda yakin ingin keluar dari aplikasi?',
+                              'Are you sure you want to exit the application??',
                               style: TextStyle(color: Colors.white70),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: Text('Batal',
+                                child: Text('Cancelled',
                                     style:
                                         TextStyle(color: Colors.blueGrey[300])),
                               ),
@@ -2816,7 +2816,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: Text('Keluar',
+                                child: Text('Go out',
                                     style: TextStyle(color: Colors.white)),
                               ),
                             ],
@@ -2865,17 +2865,17 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                     builder: (context) => AlertDialog(
                       backgroundColor: const Color(0xFF23272F),
                       title: Text(
-                        'Konfirmasi Keluar',
+                        'Confirm Exit',
                         style: TextStyle(color: Colors.white),
                       ),
                       content: Text(
-                        'Apakah Anda yakin ingin keluar dari aplikasi?',
+                        'Are you sure you want to exit the application??',
                         style: TextStyle(color: Colors.white70),
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: Text('Batal',
+                          child: Text('Cancelled',
                               style: TextStyle(color: Colors.blueGrey[300])),
                         ),
                         ElevatedButton(
@@ -2887,7 +2887,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text('Keluar',
+                          child: Text('Go out',
                               style: TextStyle(color: Colors.white)),
                         ),
                       ],
@@ -2900,7 +2900,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 backgroundColor: Colors.red[400],
                 elevation: 4,
                 child: Icon(Icons.logout, color: Colors.white, size: 24),
-                tooltip: 'Keluar',
+                tooltip: 'Go out',
               )
             : null, // Hanya tampilkan pada layar kecil (mobile)
       ),

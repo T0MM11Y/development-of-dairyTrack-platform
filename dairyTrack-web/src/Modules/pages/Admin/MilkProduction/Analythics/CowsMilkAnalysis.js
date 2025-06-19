@@ -329,21 +329,21 @@ const CowsMilkAnalysis = () => {
   const getLactationDescription = (phase) => {
     switch (phase) {
       case "Bull":
-        return "Sapi Pejantan - untuk pembiakan";
+        return "Bull - for breeding";
       case "Calf":
-        return "Pedet - masih menyusu";
+        return "Calf - still breastfeeding";
       case "Heifer":
-        return "Dara - belum pernah beranak";
+        return "Dara - never given birth";
       case "Dry":
-        return "Kering - tidak sedang laktasi";
+        return "Dry - not lactating";
       case "Early":
-        return "Awal Laktasi - produksi tinggi";
+        return "Early Lactation - high production";
       case "Mid":
-        return "Mid Laktasi - produksi stabil";
+        return "Mid Lactation - stable production";
       case "Late":
-        return "Akhir Laktasi - produksi menurun";
+        return "End of Lactation - production decreases";
       default:
-        return "Status tidak diketahui";
+        return "Status unknown";
     }
   };
 
@@ -454,7 +454,7 @@ const CowsMilkAnalysis = () => {
         highestProduction: "0.0",
         lowestProduction: "0.0",
         dailyData: [],
-        lastMilking: "Sapi pejantan tidak diperah",
+        lastMilking: "Bulls are not milked",
         breedingInfo: {
           status: "Aktif untuk pembiakan",
           age: formatAge(selectedCow.birth),
@@ -464,7 +464,7 @@ const CowsMilkAnalysis = () => {
                   calculateAge(selectedCow.birth).months >=
                 18
                 ? "Dewasa - siap kawin"
-                : "Muda - belum siap kawin"
+                : "Young - not ready to marry"
               : "N/A",
         },
       };
@@ -583,11 +583,11 @@ const CowsMilkAnalysis = () => {
       >
         <h2 style={styles.heading}>
           <i className="fas fa-chart-bar me-2"></i>
-          Analisis Produksi Susu Sapi
+          Analysis of Cow's Milk Production
         </h2>
         <p style={styles.subheading}>
-          Analisis performa produksi susu per sapi dengan grafik dan statistik
-          detail
+          Milk production performance analysis per cow with graphs and
+          statistics detail
         </p>
       </motion.div>
       {selectedCow && (
@@ -608,7 +608,7 @@ const CowsMilkAnalysis = () => {
                     }}
                   >
                     <i className="fas fa-paw me-2 text-info"></i>
-                    Analisis untuk: {selectedCow.name}
+                    Analysis for: {selectedCow.name}
                   </h5>
                 </Col>
                 <Col md={4}>
@@ -1233,11 +1233,11 @@ const CowsMilkAnalysis = () => {
             <h5 style={styles.heading}>
               <i className="fas fa-cow me-2"></i>
               {currentUser.role_id === 3
-                ? "Sapi yang Anda Kelola"
-                : "Semua Sapi di Peternakan"}
+                ? "The Cows You Manage"
+                : "All Cows on the Farm"}
             </h5>
             <p style={styles.subheading} className="mb-0">
-              Klik pada kartu sapi untuk melihat analisis detail
+              Click on the cow card to see detailed analysis.
             </p>
           </Card.Header>
           <Card.Body>
@@ -1249,8 +1249,8 @@ const CowsMilkAnalysis = () => {
                 ></i>
                 <p className="text-muted mt-3">
                   {currentUser.role_id === 3
-                    ? "Belum ada sapi yang ditugaskan kepada Anda"
-                    : "Belum ada data sapi"}
+                    ? "There are no cows assigned to you yet"
+                    : "There is no data on cattle yet"}
                 </p>
               </div>
             ) : (
@@ -1348,7 +1348,7 @@ const CowsMilkAnalysis = () => {
                               <div className="mt-2 pt-2 border-top">
                                 <small className="text-primary fw-bold">
                                   <i className="fas fa-check-circle me-1"></i>
-                                  Dipilih untuk analisis
+                                  Selected for analysis
                                 </small>
                               </div>
                             )}
@@ -1372,8 +1372,8 @@ const CowsMilkAnalysis = () => {
         >
           <Alert variant="info" className="text-center">
             <i className="fas fa-info-circle me-2"></i>
-            <strong>Pilih sapi</strong> dari kartu di atas untuk melihat
-            analisis detail produksi susu atau informasi pembiakan
+            <strong>Choose a cow</strong> from the card above to see detailed
+            milk production analysis or breeding information
           </Alert>
         </motion.div>
       )}

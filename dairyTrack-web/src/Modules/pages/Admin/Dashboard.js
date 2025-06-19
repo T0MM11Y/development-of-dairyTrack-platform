@@ -655,7 +655,7 @@ const Dashboard = () => {
                       }}
                       style={{ display: "inline-block", fontSize: "32px" }}
                     ></motion.i>
-                    Selamat Datang, {currentUser.name || currentUser.username}!
+                    Welcome, {currentUser.name || currentUser.username}!
                   </h2>
                 </motion.div>
 
@@ -684,8 +684,8 @@ const Dashboard = () => {
                         {userRole.name}
                       </Badge>
                     </motion.span>
-                    Dashboard Dairy Track - Kelola peternakan Anda dengan mudah
-                    dan efisien
+                    Dairy Track Dashboard - Manage your farm easily and
+                    efficiently
                   </p>
                 </motion.div>
 
@@ -1044,7 +1044,7 @@ const Dashboard = () => {
                     Distribusi Fase Laktasi
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Komposisi fase laktasi sapi di peternakan
+                    Composition of lactation phase of cows on farms{" "}
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1186,11 +1186,11 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-area me-2"></i>
-                    Analisis Produksi Susu (7 Hari Terakhir)
+                    Milk Production Analysis (Last 7 Days){" "}
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Grafik area menampilkan tren total produksi susu harian dari
-                    sapi yang Anda kelola
+                    The area graph displays the trend of total daily milk
+                    production from the cows you manage.
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1262,10 +1262,11 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
-                    Distribusi Fase Laktasi
+                    Lactation Phase Distribution
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Komposisi fase laktasi sapi yang Anda kelola
+                    The composition of the lactation phase of the cows you
+                    manage{" "}
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1328,8 +1329,8 @@ const Dashboard = () => {
             <h5 style={styles.heading} className="mb-3">
               <i className="fas fa-list me-2"></i>
               {currentUser.role_id === 3
-                ? "Sapi yang Anda Kelola & Produksi Susu"
-                : "Semua Sapi di Peternakan & Produksi Susu"}
+                ? "The Cows You Manage & Milk Production"
+                : "All Cows in Farm & Milk Production"}
             </h5>
 
             <div className="row g-3">
@@ -1685,10 +1686,10 @@ const Dashboard = () => {
                                     }}
                                   >
                                     {production.avgPerSession >= 15
-                                      ? "🌟 Produksi Tinggi"
+                                      ? "🌟 High Production"
                                       : production.avgPerSession >= 10
-                                      ? "⚡ Produksi Sedang"
-                                      : "📈 Perlu Perhatian"}
+                                      ? "⚡ Medium Production"
+                                      : "📈 Need Attention"}
                                   </motion.span>
                                 </div>
                               </div>

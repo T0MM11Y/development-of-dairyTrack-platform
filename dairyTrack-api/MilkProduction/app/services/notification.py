@@ -52,13 +52,13 @@ class NotificationConfig:
     SUPERVISOR_ROLE_NAMES: Tuple[str, ...] = ('supervisor', 'Supervisor', 'mandor', 'Mandor')
     
     # Production thresholds
-    LOW_PRODUCTION_THRESHOLD: float = 15.0
+    LOW_PRODUCTION_THRESHOLD: float = 10.0
     HIGH_PRODUCTION_THRESHOLD: float = 25.0
     # Production change thresholds (percentage)
-    PRODUCTION_INCREASE_THRESHOLD: float = 20.0  # 20% increase
-    PRODUCTION_DECREASE_THRESHOLD: float = 20.0  # 20% decrease
+    PRODUCTION_INCREASE_THRESHOLD: float = 15.0  # 15% increase
+    PRODUCTION_DECREASE_THRESHOLD: float = 15.0  # 15% decrease
     # Minimum volume to consider for production change notifications
-    MIN_VOLUME_FOR_CHANGE_NOTIFICATION: float = 5.0
+    MIN_VOLUME_FOR_CHANGE_NOTIFICATION: float = 5.0  # 5L minimum volume for change notifications
 
 
 class NotificationTypes:

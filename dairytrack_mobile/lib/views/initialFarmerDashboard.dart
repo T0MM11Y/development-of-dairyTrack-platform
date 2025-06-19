@@ -823,7 +823,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Notifikasi Terbaru',
+                    'Latest Notifications',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1168,7 +1168,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400
@@ -1212,7 +1212,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Farmer Dashboard - Kelola peternakan Anda dengan mudah dan efisien',
+                    'Farmer Dashboard - Manage your farm easily and efficiently',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
@@ -1336,7 +1336,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Analisis Produksi Susu (7 Hari Terakhir)',
+                    'Milk Production Analysis (Last 7 Days)',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1348,7 +1348,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Grafik menampilkan tren total produksi susu harian dari sapi yang Anda kelola',
+              'The graph shows the trend of total daily milk production from the cows you manage.',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1366,7 +1366,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                               size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data produksi susu',
+                            'There is no milk production data yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -1461,7 +1461,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Detail Produksi'),
+        title: Text('Production Details'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1512,7 +1512,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Distribusi Fase Laktasi',
+                    'Distribution of Lactation Phases',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1524,7 +1524,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Komposisi fase laktasi sapi yang Anda kelola',
+              'The composition of the lactation phase of the cows you manage',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1541,7 +1541,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                           Icon(Icons.pets, size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data sapi',
+                            'There is no data on cattle yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -1632,7 +1632,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Sapi yang Anda Kelola & Produksi Susu',
+                      'The Cows You Manage & Milk Production',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -1876,7 +1876,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Tidak memproduksi susu',
+                        'Does not produce milk',
                         style: TextStyle(
                           fontSize: 8,
                           color: Colors.grey[600],
@@ -2036,7 +2036,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                     ),
                     SizedBox(height: 16),
                     Text(
-                      'Memuat data peternakan...',
+                      'Loading farm data...',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -2070,11 +2070,11 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
               builder: (context) => AlertDialog(
                 backgroundColor: const Color(0xFF23272F),
                 title: Text(
-                  'Konfirmasi Keluar',
+                  'Confirm Exit',
                   style: TextStyle(color: Colors.white),
                 ),
                 content: Text(
-                  'Apakah Anda yakin ingin keluar dari aplikasi?',
+                  'Are you sure you want to exit the application??',
                   style: TextStyle(color: Colors.white70),
                 ),
                 actions: [
@@ -2093,7 +2093,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       ),
                     ),
                     child:
-                        Text('Keluar', style: TextStyle(color: Colors.white)),
+                        Text('Go out', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -2105,7 +2105,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           backgroundColor: Colors.red[400],
           elevation: 4,
           child: Icon(Icons.logout, color: Colors.white, size: 24),
-          tooltip: 'Keluar',
+          tooltip: 'Go out',
         ),
       ),
     );

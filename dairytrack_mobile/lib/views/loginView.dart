@@ -850,8 +850,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                       )
                     : Text(
                         _securityManager.isLocked
-                            ? "TERKUNCI (${_securityManager.lockDuration}s)"
-                            : "MASUK",
+                            ? "LOCKED (${_securityManager.lockDuration}s)"
+                            : "ENTER",
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -893,7 +893,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "PERINGATAN!",
+                  "WARNING!",
                   style: TextStyle(
                     color: RetroAppColors.error,
                     fontSize: 10,
@@ -902,7 +902,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  "Percobaan gagal: ${_securityManager.failedAttempts}/${LoginSecurityManager.maxFailedAttempts}",
+                  "The experiment failed: ${_securityManager.failedAttempts}/${LoginSecurityManager.maxFailedAttempts}",
                   style: const TextStyle(
                     color: RetroAppColors.error,
                     fontSize: 12,
@@ -945,7 +945,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               border: Border.all(color: RetroAppColors.accentDark, width: 1),
             ),
             child: const Text(
-              "SELAMAT DATANG",
+              "Welcome Back!",
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
@@ -956,7 +956,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           const Text(
-            "Masuk ke akun Anda untuk melanjutkan",
+            "Log in to your account to continue",
             style: TextStyle(
               fontSize: 12,
               color: RetroAppColors.textSecondary,
@@ -1083,7 +1083,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 8),
               const Text(
-                "Sistem Manajemen Peternakan Sapi",
+                "Cattle Farm Management System",
                 style: TextStyle(
                   fontSize: 12,
                   color: RetroAppColors.textSecondary,
@@ -1158,7 +1158,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                     color: RetroAppColors.textOnPrimary),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "KEMBALI KE MODE TAMU",
+                                  "BACK TO GUEST MODE",
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: RetroAppColors.textOnPrimary,

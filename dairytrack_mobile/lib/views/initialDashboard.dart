@@ -230,7 +230,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                               color: AppColors.accent, size: 14),
                           SizedBox(width: 6),
                           Text(
-                            "Pusat Riset Peternakan Sapi",
+                            "Cattle Breeding Research Center",
                             style: TextStyle(
                               color: AppColors.accent,
                               fontSize: 11,
@@ -244,7 +244,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                     SizedBox(height: 10),
                     // Main Title
                     Text(
-                      "Inovasi Peternakan\nSapi Modern",
+                      "Modern Cattle\nFarming Innovation",
                       style: TextStyle(
                         color: AppColors.textOnPrimary,
                         fontSize: 32,
@@ -266,7 +266,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                     SizedBox(height: 20),
                     // Description
                     Text(
-                      "Teknologi dan manajemen peternakan berbasis data\nuntuk masa depan industri peternakan Indonesia",
+                      "Data-based livestock technology and management for the future of Indonesia's livestock industry",
                       style: TextStyle(
                         color: AppColors.textOnPrimary.withOpacity(0.9),
                         fontSize: 15,
@@ -302,7 +302,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Jelajahi Sekarang",
+                              "Explore Now",
                               style: TextStyle(
                                 color: AppColors.textOnDark,
                                 fontSize: 13,
@@ -352,7 +352,7 @@ class _InitialDashboardState extends State<InitialDashboard>
               ),
               SizedBox(height: 16),
               Text(
-                "Pusat Riset & Inovasi\nPerternakan Sapi Terdepan",
+                "Leading Cattle Breeding\nResearch & Innovation Center",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -372,7 +372,7 @@ class _InitialDashboardState extends State<InitialDashboard>
               ),
               SizedBox(height: 20),
               Text(
-                "TSTH² mengembangkan teknologi dan manajemen peternakan sapi berbasis data, nutrisi, dan kesehatan hewan untuk mendukung peternak lokal mencapai produktivitas optimal.",
+                "TSTH² develops data-based cattle farming technology and management, nutrition and animal health to support local farmers to achieve optimal productivity.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.textSecondary,
@@ -395,25 +395,25 @@ class _InitialDashboardState extends State<InitialDashboard>
               _buildFeatureCard(
                 icon: Icons.local_drink_outlined,
                 title: "Sapi Perah",
-                description: "Produksi susu berkualitas premium",
+                description: "Premium quality milk production",
                 color: AppColors.primary,
               ),
               _buildFeatureCard(
                 icon: Icons.biotech_outlined,
                 title: "Girolando",
-                description: "Breed unggul hasil persilangan",
+                description: "Superior crossbred breed",
                 color: AppColors.secondary,
               ),
               _buildFeatureCard(
                 icon: Icons.health_and_safety_outlined,
                 title: "Kesehatan",
-                description: "Standar kesehatan & nutrisi terbaik",
+                description: "The best health & nutrition standards",
                 color: AppColors.accent,
               ),
               _buildFeatureCard(
                 icon: Icons.eco_outlined,
                 title: "Berkelanjutan",
-                description: "Peternakan ramah lingkungan",
+                description: "Eco-friendly farming",
                 color: AppColors.success,
               ),
             ],
@@ -430,7 +430,7 @@ class _InitialDashboardState extends State<InitialDashboard>
             child: Column(
               children: [
                 Text(
-                  "Pencapaian Kami",
+                  "Our Achievements",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -563,7 +563,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Blog Terbaru",
+                    "Latest Blogs",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -572,7 +572,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   ),
                   SizedBox(height: 4),
                   Text(
-                    "Artikel dan berita terkini",
+                    "Latest articles and news",
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -589,7 +589,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                 icon: Icon(Icons.arrow_forward,
                     size: 16, color: AppColors.secondary),
                 label: Text(
-                  "Lihat Semua",
+                  "See All",
                   style: TextStyle(
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w600,
@@ -600,13 +600,13 @@ class _InitialDashboardState extends State<InitialDashboard>
           ),
           SizedBox(height: 20),
           _isLoadingBlogs
-              ? _buildLoadingState("Memuat blog...")
+              ? _buildLoadingState("Loading blog...")
               : _blogError.isNotEmpty
                   ? _buildErrorState(
-                      "Gagal memuat blog", _blogError, _loadBlogsPreview)
+                      "Failed to load blog", _blogError, _loadBlogsPreview)
                   : _blogs.isEmpty
-                      ? _buildEmptyState(
-                          Icons.article_outlined, "Belum ada blog tersedia")
+                      ? _buildEmptyState(Icons.article_outlined,
+                          "There are no blogs available yet")
                       : ListView.builder(
                           shrinkWrap: true,
                           physics: NeverScrollableScrollPhysics(),
@@ -673,7 +673,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                           color: AppColors.textSecondary, size: 32),
                       SizedBox(height: 8),
                       Text(
-                        "Gambar tidak dapat dimuat",
+                        "Image cannot be loaded",
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 12),
                       ),
@@ -859,7 +859,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                           color: AppColors.textSecondary, size: 32),
                       SizedBox(height: 8),
                       Text(
-                        "Gambar tidak dapat dimuat",
+                        "Image cannot be loaded",
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 10),
                         textAlign: TextAlign.center,
@@ -1140,7 +1140,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   size: 20,
                 ),
               ),
-              label: 'Beranda',
+              label: 'Home page',
             ),
             BottomNavigationBarItem(
               icon: Container(
@@ -1156,7 +1156,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   size: 20,
                 ),
               ),
-              label: 'Tentang',
+              label: 'About',
             ),
             BottomNavigationBarItem(
               icon: Container(
@@ -1172,7 +1172,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   size: 20,
                 ),
               ),
-              label: 'Blog',
+              label: 'Blogs',
             ),
             BottomNavigationBarItem(
               icon: Container(
@@ -1190,7 +1190,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   size: 20,
                 ),
               ),
-              label: 'Galeri',
+              label: 'Gallery',
             ),
           ],
         ),
