@@ -521,6 +521,7 @@ exports.getAllFeedItems = async (req, res) => {
   try {
     const { daily_feed_id, feed_id } = req.query;
     const userId = req.user?.id;
+    const userRole = req.user?.role?.toLowerCase();
 
     if (!userId) {
       return res.status(401).json({
@@ -574,6 +575,18 @@ exports.getAllFeedItems = async (req, res) => {
       },
     ];
 
+    // Restrict to cows managed by the farmer
+    if (userRole === "farmer") {
+      const userCows = await UserCowAssociation.findAll({
+        where: { user_id: userId },
+        attributes: ["cow_id"],
+      });
+      const allowedCowIds = userCows.map((uc) => uc.cow_id);
+      filter["$DailyFeedSchedule.cow_id$"] = allowedCowIds.length > 0
+        ? { [Op.in]: allowedCowIds }
+        : { [Op.eq]: null };
+    }
+
     const items = await DailyFeedItems.findAll({
       where: filter,
       include,
@@ -595,6 +608,7 @@ exports.getAllFeedItems = async (req, res) => {
 exports.getFeedItemById = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
+  const userRole = req.user?.role?.toLowerCase();
 
   try {
     if (!userId) {
@@ -654,6 +668,19 @@ exports.getFeedItemById = async (req, res) => {
       });
     }
 
+    // Restrict to cows managed by the farmer
+    if (userRole === "farmer") {
+      const userCowAssociation = await UserCowAssociation.findOne({
+        where: { user_id: userId, cow_id: item.DailyFeedSchedule.cow_id },
+      });
+      if (!userCowAssociation) {
+        return res.status(403).json({
+          success: false,
+          message: `Anda tidak memiliki izin untuk melihat item pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
+        });
+      }
+    }
+
     return res.status(200).json(formatFeedItemResponse(item));
   } catch (error) {
     console.error("Error fetching feed item:", error);
@@ -670,12 +697,37 @@ exports.getFeedItemsByDailyFeedId = async (req, res) => {
   try {
     const { daily_feed_id } = req.params;
     const userId = req.user?.id;
+    const userRole = req.user?.role?.toLowerCase();
 
     if (!userId) {
       return res.status(401).json({
         success: false,
         message: "Autentikasi gagal. Silakan login kembali.",
       });
+    }
+
+    // Verify that the daily_feed_id exists and get the associated cow_id
+    const dailyFeed = await DailyFeedSchedule.findByPk(daily_feed_id, {
+      attributes: ["id", "cow_id"],
+    });
+    if (!dailyFeed) {
+      return res.status(404).json({
+        success: false,
+        message: "Sesi pakan harian tidak ditemukan",
+      });
+    }
+
+    // Restrict to cows managed by the farmer
+    if (userRole === "farmer") {
+      const userCowAssociation = await UserCowAssociation.findOne({
+        where: { user_id: userId, cow_id: dailyFeed.cow_id },
+      });
+      if (!userCowAssociation) {
+        return res.status(403).json({
+          success: false,
+          message: `Anda tidak memiliki izin untuk melihat item pakan sapi dengan ID ${dailyFeed.cow_id}`,
+        });
+      }
     }
 
     const include = [

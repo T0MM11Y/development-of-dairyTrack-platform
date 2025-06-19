@@ -215,7 +215,6 @@ const FeedTypeListPage = () => {
                   <tr>
                     <th>#</th>
                     <th>Nama Jenis Pakan</th>
-                    <th>Pemilik</th>
                     <th>Dibuat Oleh</th>
                     <th>Diperbarui Oleh</th>
                     <th>Tanggal Dibuat</th>
@@ -235,7 +234,6 @@ const FeedTypeListPage = () => {
                       <tr key={item.id}>
                         <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                         <td>{item.name}</td>
-                        <td>{item.user_name || "Tidak diketahui"}</td>
                         <td>
                           {item.created_by
                             ? item.created_by.name

@@ -3,6 +3,7 @@ import { Card, Form, Button, Spinner, Row, Col, Table } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
 import ReactApexChart from "react-apexcharts";
+
 import { getAllDailyFeeds } from "../../../../controllers/feedScheduleController";
 
 const NutritionSummaryPage = () => {
@@ -16,6 +17,7 @@ const NutritionSummaryPage = () => {
   });
   const [filterType, setFilterType] = useState("today");
 
+  // Fetch data
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -25,7 +27,6 @@ const NutritionSummaryPage = () => {
         end_date: dateRange.endDate,
       };
       const response = await getAllDailyFeeds(params);
-
       if (response.success && Array.isArray(response.data)) {
         setDailyFeeds(response.data);
       } else {
@@ -52,7 +53,7 @@ const NutritionSummaryPage = () => {
     };
   }, [dateRange.startDate, dateRange.endDate]);
 
-  // Extract unique cows for dropdown
+  // Unique cows
   const uniqueCows = useMemo(() => {
     const cows = [
       ...new Set(
@@ -75,9 +76,7 @@ const NutritionSummaryPage = () => {
         start = new Date(today.setDate(today.getDate() - today.getDay()))
           .toISOString()
           .split("T")[0];
-        end = new Date(today.setDate(today.getDate() + (6 - today.getDay())))
-          .toISOString()
-          .split("T")[0];
+        end = new Date(today.setDate(today.getDate() + 6)).toISOString().split("T")[0];
         break;
       case "month":
         start = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -99,7 +98,6 @@ const NutritionSummaryPage = () => {
         start = end = today.toISOString().split("T")[0];
     }
 
-    console.log("getDateRange:", { start, end }); // Debugging
     return { start, end };
   };
 
@@ -123,9 +121,9 @@ const NutritionSummaryPage = () => {
       }
     }
 
+    // Reset tanggal berdasarkan filterType yang dipilih
     const today = new Date();
     let newDateRange = { ...dateRange };
-
     if (filterType !== "custom") {
       switch (filterType) {
         case "today":
@@ -135,13 +133,13 @@ const NutritionSummaryPage = () => {
           };
           break;
         case "week":
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
           newDateRange = {
-            startDate: new Date(today.setDate(today.getDate() - today.getDay()))
-              .toISOString()
-              .split("T")[0],
-            endDate: new Date(today.setDate(today.getDate() + (6 - today.getDay())))
-              .toISOString()
-              .split("T")[0],
+            startDate: weekStart.toISOString().split("T")[0],
+            endDate: weekEnd.toISOString().split("T")[0],
           };
           break;
         case "month":
@@ -166,7 +164,6 @@ const NutritionSummaryPage = () => {
       setDateRange(newDateRange);
     }
 
-    console.log("Applying filters:", { dateRange: newDateRange, filterType }); // Debugging
     fetchData();
   };
 
@@ -175,13 +172,16 @@ const NutritionSummaryPage = () => {
     if (!selectedCow) return { periods: [], nutrients: [] };
 
     const { start, end } = getDateRange();
+
     const filteredFeeds = dailyFeeds.filter((feed) => {
       const feedDate = new Date(feed.date);
       const startDate = new Date(start);
       const endDate = new Date(end);
+
       feedDate.setHours(0, 0, 0, 0);
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(0, 0, 0, 0);
+
       return feed.cow_id === parseInt(selectedCow) && feedDate >= startDate && feedDate <= endDate;
     });
 
@@ -221,12 +221,10 @@ const NutritionSummaryPage = () => {
       // Weekly grouping
       let current = new Date(start);
       const endDate = new Date(end);
-
       while (current <= endDate) {
         const weekStart = new Date(current);
         const weekEnd = new Date(current);
         weekEnd.setDate(weekEnd.getDate() + 6);
-
         const weekData = filteredFeeds.filter((feed) => {
           const feedDate = new Date(feed.date);
           return feedDate >= weekStart && feedDate <= (weekEnd <= endDate ? weekEnd : endDate);
@@ -247,44 +245,44 @@ const NutritionSummaryPage = () => {
         });
 
         periods.push({
-          label: `${weekStart.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} - ${weekEnd.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`,
+          label: `${weekStart.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+          })} - ${weekEnd.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`,
           nutrients: weeklyNutrients,
         });
-
         current.setDate(current.getDate() + 7);
       }
     } else if (filterType === "year") {
-      // Monthly grouping
       const year = new Date(start).getFullYear();
-      const months = Array.from({ length: 12 }, (_, i) => {
-        const monthStart = new Date(year, i, 1);
-        const monthEnd = new Date(year, i + 1, 0);
+      for (let month = 0; month < 12; month++) {
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+
         const monthData = filteredFeeds.filter((feed) => {
           const feedDate = new Date(feed.date);
           return feedDate >= monthStart && feedDate <= monthEnd;
         });
 
         const monthlyNutrients = {};
+        nutrientMap.forEach((value, key) => {
+          monthlyNutrients[key] = 0;
+        });
+
         monthData.forEach((feed) => {
           feed.items.forEach((item) => {
             item.nutrients.forEach((nutrient) => {
               const key = `${nutrient.nutrisi_name}-${nutrient.unit}`;
-              if (!nutrientMap.has(key)) {
-                nutrientMap.set(key, { name: nutrient.nutrisi_name, unit: nutrient.unit });
-              }
-              if (!monthlyNutrients[key]) monthlyNutrients[key] = 0;
               monthlyNutrients[key] += parseFloat(nutrient.amount || 0);
             });
           });
         });
 
-        return {
+        periods.push({
           label: monthStart.toLocaleString("id-ID", { month: "short", year: "numeric" }),
           nutrients: monthlyNutrients,
-        };
-      });
-
-      periods = months;
+        });
+      }
     }
 
     // Convert nutrientMap to array of nutrients
@@ -306,14 +304,20 @@ const NutritionSummaryPage = () => {
       name: `${nutrient.name} (${nutrient.unit})`,
       data: periods.map((period) => {
         const value = period.nutrients[nutrient.key] || 0;
-        return value.toFixed(2);
+        return parseFloat(value.toFixed(2));
       }),
     }));
 
     const categories = periods.map((period) => period.label);
-
     return { series, categories };
   }, [nutritionSummary]);
+
+  // Helper function to format numbers for display
+  const formatNumber = (num) => {
+    if (num === 0) return "-";
+    if (num % 1 === 0) return num.toString();
+    return parseFloat(num.toFixed(2)).toString();
+  };
 
   const chartOptions = useMemo(() => ({
     chart: {
@@ -354,7 +358,8 @@ const NutritionSummaryPage = () => {
         enabled: true,
         mode: "xy",
       },
-      width: "100%", // Ensure chart stays within container
+      width: "100%",
+      scrollableX: true,
     },
     plotOptions: {
       bar: {
@@ -366,7 +371,7 @@ const NutritionSummaryPage = () => {
     colors: ["#007bff", "#28a745", "#17a2b8", "#ffc107", "#dc3545", "#6c757d", "#ff69b4", "#20c997"],
     dataLabels: {
       enabled: true,
-      formatter: (val) => `${val}`,
+      formatter: (val) => formatNumber(val),
       style: {
         fontSize: "12px",
         fontWeight: "bold",
@@ -388,6 +393,13 @@ const NutritionSummaryPage = () => {
           colors: "#333",
         },
       },
+      tickAmount: Math.min(4, chartData.categories.length),
+      min: 0,
+      max: Math.min(3, chartData.categories.length - 1),
+      scrollbar: {
+        enabled: true,
+        height: 8,
+      },
     },
     yaxis: {
       title: {
@@ -399,7 +411,7 @@ const NutritionSummaryPage = () => {
         },
       },
       labels: {
-        formatter: (val) => `${val}`,
+        formatter: (val) => formatNumber(val),
       },
     },
     fill: {
@@ -418,7 +430,7 @@ const NutritionSummaryPage = () => {
       y: {
         formatter: (val, { seriesIndex }) => {
           const nutrient = nutritionSummary.nutrients[seriesIndex];
-          return `${val} ${nutrient.unit}`;
+          return `${formatNumber(val)} ${nutrient.unit}`;
         },
       },
     },
@@ -434,6 +446,7 @@ const NutritionSummaryPage = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Ringkasan Nutrisi Sapi</h2>
@@ -468,6 +481,7 @@ const NutritionSummaryPage = () => {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <div className="card-body">
+          {/* Form Controls */}
           <Row>
             <Col md={4} className="mb-3">
               <label className="form-label fw-bold">Pilih Sapi</label>
@@ -491,10 +505,7 @@ const NutritionSummaryPage = () => {
               <select
                 className="form-select"
                 value={filterType}
-                onChange={(e) => {
-                  console.log("Selected Filter Type:", e.target.value); // Debugging
-                  setFilterType(e.target.value);
-                }}
+                onChange={(e) => setFilterType(e.target.value)}
                 disabled={loading}
                 style={{ borderRadius: "8px", borderColor: "#e0e0e0" }}
               >
@@ -505,36 +516,6 @@ const NutritionSummaryPage = () => {
                 <option value="custom">Kustom</option>
               </select>
             </Col>
-            {filterType === "custom" && (
-              <>
-                <Col md={4} className="mb-3">
-                  <label className="form-label fw-bold">Tanggal Mulai</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={dateRange.startDate}
-                    onChange={(e) =>
-                      setDateRange({ ...dateRange, startDate: e.target.value })
-                    }
-                    disabled={loading}
-                    style={{ borderRadius: "8px", borderColor: "#e0e0e0" }}
-                  />
-                </Col>
-                <Col md={4} className="mb-3">
-                  <label className="form-label fw-bold">Tanggal Akhir</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={dateRange.endDate}
-                    onChange={(e) =>
-                      setDateRange({ ...dateRange, endDate: e.target.value })
-                    }
-                    disabled={loading}
-                    style={{ borderRadius: "8px", borderColor: "#e0e0e0" }}
-                  />
-                </Col>
-              </>
-            )}
             <Col md={2} className="mb-3 d-flex align-items-end">
               <button
                 className="btn btn-primary w-100"
@@ -553,10 +534,42 @@ const NutritionSummaryPage = () => {
               </button>
             </Col>
           </Row>
+
+          {/* Custom Date Range */}
+          {filterType === "custom" && (
+            <Row className="mt-3">
+              <Col md={6} className="mb-3">
+                <label className="form-label fw-bold">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dateRange.startDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, startDate: e.target.value })
+                  }
+                  disabled={loading}
+                  style={{ borderRadius: "8px", borderColor: "#e0e0e0" }}
+                />
+              </Col>
+              <Col md={6} className="mb-3">
+                <label className="form-label fw-bold">Tanggal Akhir</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dateRange.endDate}
+                  onChange={(e) =>
+                    setDateRange({ ...dateRange, endDate: e.target.value })
+                  }
+                  disabled={loading}
+                  style={{ borderRadius: "8px", borderColor: "#e0e0e0" }}
+                />
+              </Col>
+            </Row>
+          )}
         </div>
       </motion.div>
 
-      {/* Nutrition Summary Section */}
+      {/* Content Area */}
       {error && (
         <motion.div
           className="alert alert-danger mb-4"
@@ -568,6 +581,7 @@ const NutritionSummaryPage = () => {
         </motion.div>
       )}
 
+      {/* Loading / No Data / Chart */}
       {loading ? (
         <motion.div
           className="text-center py-5"
@@ -624,9 +638,12 @@ const NutritionSummaryPage = () => {
             >
               <div className="card-body">
                 <h5 className="card-title mb-4 text-gray-800 fw-bold">
-                  Ringkasan Nutrisi untuk {uniqueCows.find((cow) => cow.id === parseInt(selectedCow))?.name}
+                  Ringkasan Nutrisi untuk{" "}
+                  {uniqueCows.find((cow) => cow.id === parseInt(selectedCow))?.name}
                 </h5>
-                <div id="nutrition-chart">
+
+                {/* Chart */}
+                <div id="nutrition-chart" style={{ overflowX: "auto" }}>
                   <ReactApexChart
                     options={chartOptions}
                     series={chartData.series}
@@ -634,6 +651,8 @@ const NutritionSummaryPage = () => {
                     height={400}
                   />
                 </div>
+
+                {/* Detail Table */}
                 <div className="mt-4">
                   <h6 className="mb-3 text-gray-800 fw-bold">Detail Data Nutrisi</h6>
                   <div style={{ overflowX: "auto" }}>
@@ -652,7 +671,7 @@ const NutritionSummaryPage = () => {
                             <td>{`${nutrient.name} (${nutrient.unit})`}</td>
                             {nutritionSummary.periods.map((period, pIndex) => (
                               <td key={pIndex}>
-                                {(period.nutrients[nutrient.key] || 0).toFixed(2)}
+                                {formatNumber(period.nutrients[nutrient.key] || 0)}
                               </td>
                             ))}
                           </tr>

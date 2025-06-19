@@ -197,7 +197,6 @@ const FeedListPage = () => {
                     <th>Satuan</th>
                     <th>Stok Minimum</th>
                     <th>Harga</th>
-                    <th>Pemilik</th>
                     <th>Dibuat Oleh</th>
                     <th>Diperbarui Oleh</th>
                     <th>Tanggal Dibuat</th>
@@ -222,7 +221,6 @@ const FeedListPage = () => {
                         <td>{item.unit}</td>
                         <td>{item.min_stock}</td>
                         <td>Rp {item.price.toLocaleString("id-ID")}</td>
-                        <td>{item.user_name || "Tidak diketahui"}</td>
                         <td>
                           {item.created_by
                             ? item.created_by.name
