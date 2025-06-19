@@ -152,13 +152,13 @@ CORS_ALLOW_HEADERS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'DairyTrack_represent',  # Nama database MySQL
-        'USER': 'DairyTrack_represent',  # Username MySQL
-        'PASSWORD': '212bf667b8832e0a530401195b131a542e31a4f0',  # Password MySQL
-        'HOST': 'rlsoy.h.filess.io',  # Host MySQL
-        'PORT': '3307',  # Port MySQL
+        'NAME': 'tthsanbe_t5th',
+        'USER': 'tthsanbe_TA',
+        'PASSWORD': 'Cy2U0x1JJRFY',
+        'HOST': '178.248.73.218',
+        'PORT': '3306',
         'OPTIONS': {
-            'charset': 'utf8mb4',  # Mendukung emoji dan karakter khusus
+            'charset': 'utf8mb4',
         },
     }
 }
