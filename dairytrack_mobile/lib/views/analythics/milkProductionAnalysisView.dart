@@ -685,10 +685,10 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error, size: 64, color: dangerColor),
+              CircularProgressIndicator(color: primaryColor),
               SizedBox(height: 16),
               Text(
-                'Please log in to access the analysis',
+                'Please Wait ...',
                 style: TextStyle(fontSize: 18),
                 textAlign: TextAlign.center,
               ),
@@ -720,11 +720,17 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'Analisis Produksi Susu Sapi',
           style: TextStyle(
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
+            fontSize: 19,
+            color: Colors.white,
           ),
         ),
         backgroundColor: _currentUser!['role'] == "Farmer"

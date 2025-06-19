@@ -22,6 +22,18 @@ from app.services.notificationScheduler import notification_scheduler
 import os
 import logging
 
+# Tambahan untuk scheduler preventif
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.services.notification import check_milk_production_and_notify, check_milk_expiry_and_notify
+
+background_scheduler = BackgroundScheduler()
+
+def start_background_jobs():
+    # Jalankan fungsi notifikasi setiap 1 jam
+    background_scheduler.add_job(check_milk_production_and_notify, 'interval', minutes=5)
+    background_scheduler.add_job(check_milk_expiry_and_notify, 'interval', minutes=5)
+    background_scheduler.start()
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -44,16 +56,16 @@ def create_app():
     # Initialize Socket.IO
     socketio = init_socketio(app)
 
-    # Start notification scheduler after app context is available
+    # Start notification scheduler and background jobs after app context is available
     @app.before_first_request
     def start_notification_scheduler():
         try:
             notification_scheduler.start()
-            logging.info("Notification scheduler started successfully")
+            start_background_jobs()  # Scheduler preventif
+            logging.info("Notification scheduler and background jobs started successfully")
         except Exception as e:
-            logging.error(f"Failed to start notification scheduler: {str(e)}")
+            logging.error(f"Failed to start notification scheduler or background jobs: {str(e)}")
 
-    
     start_notification_scheduler()
 
     # Register blueprints

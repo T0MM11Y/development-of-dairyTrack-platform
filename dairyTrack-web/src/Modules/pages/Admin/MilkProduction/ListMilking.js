@@ -42,6 +42,7 @@ const ListMilking = () => {
   const [loadingFarmers, setLoadingFarmers] = useState(false);
   const [userManagedCows, setUserManagedCows] = useState([]);
   const [farmers, setFarmers] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
@@ -675,9 +676,10 @@ const ListMilking = () => {
     setShowAddModal(true);
   }, [currentUser]);
 
-  // Add new milking session
+  // Handle adding session dengan loading state
   const handleAddSession = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     // Enhanced debug logging
     console.log("=== ADD SESSION DEBUG ===");
@@ -693,6 +695,7 @@ const ListMilking = () => {
 
     // If admin and no milker selected, show error
     if (currentUser?.role_id === 1 && !finalMilkerId) {
+      setIsSubmitting(false);
       Swal.fire({
         icon: "warning",
         title: "Missing Milker",
@@ -708,6 +711,7 @@ const ListMilking = () => {
 
     // Final validation - milker_id must not be empty
     if (!finalMilkerId) {
+      setIsSubmitting(false);
       Swal.fire({
         icon: "error",
         title: "Invalid Milker ID",
@@ -786,6 +790,8 @@ const ListMilking = () => {
         title: "Error",
         text: "An unexpected error occurred",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -804,9 +810,11 @@ const ListMilking = () => {
     setShowEditModal(true);
   }, []);
 
-  // Handle editing a session
+  // Handle editing session dengan loading state
   const handleEditSession = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
       const response = await editMilkingSession(
         selectedSession.id,
@@ -843,6 +851,8 @@ const ListMilking = () => {
         title: "Error",
         text: "An unexpected error occurred",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1722,13 +1732,23 @@ const ListMilking = () => {
       {/* Add Milking Session Modal */}
       <Modal
         show={showAddModal}
-        onHide={() => setShowAddModal(false)}
+        onHide={() => !isSubmitting && setShowAddModal(false)}
         size="lg"
+        backdrop={isSubmitting ? "static" : true}
+        keyboard={!isSubmitting}
       >
-        <Modal.Header closeButton className="bg-light">
+        <Modal.Header closeButton={!isSubmitting} className="bg-light">
           <Modal.Title>
             <i className="fas fa-plus-circle me-2 text-primary"></i>
             Tambah Sesi Pemerahan Baru
+            {isSubmitting && (
+              <Spinner
+                animation="border"
+                size="sm"
+                className="ms-2"
+                variant="primary"
+              />
+            )}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -1742,6 +1762,7 @@ const ListMilking = () => {
                     onChange={(e) => handleCowSelectionInAdd(e.target.value)}
                     required
                     className="shadow-sm"
+                    disabled={isSubmitting}
                   >
                     <option value="">-- Pilih Sapi --</option>
                     {(currentUser?.role_id === 1 ? cowList : userManagedCows)
@@ -1770,7 +1791,9 @@ const ListMilking = () => {
                         })
                       }
                       required
-                      disabled={!newSession.cow_id || loadingFarmers}
+                      disabled={
+                        !newSession.cow_id || loadingFarmers || isSubmitting
+                      }
                       className={!newSession.cow_id ? "bg-light" : ""}
                     >
                       <option value="">
@@ -1851,6 +1874,7 @@ const ListMilking = () => {
                       }
                       required
                       className="shadow-sm"
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -1860,96 +1884,27 @@ const ListMilking = () => {
                       Volume Cepat:
                     </Form.Label>
                     <div className="d-flex gap-1 flex-wrap">
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "3.0",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        3.0L
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "5.0",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        5.0L
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "7.5",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        7.5L
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "10.0",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        10.0L
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "15.0",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        15.0L
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          setNewSession({
-                            ...newSession,
-                            volume: "20.0",
-                          });
-                        }}
-                        style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                      >
-                        <i className="fas fa-plus me-1"></i>
-                        20.0L
-                      </Button>
+                      {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map(
+                        (volume) => (
+                          <Button
+                            key={volume}
+                            variant="outline-success"
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                              setNewSession({
+                                ...newSession,
+                                volume: volume,
+                              });
+                            }}
+                            style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                            disabled={isSubmitting}
+                          >
+                            <i className="fas fa-plus me-1"></i>
+                            {volume}L
+                          </Button>
+                        )
+                      )}
                     </div>
                   </div>
 
@@ -1999,6 +1954,7 @@ const ListMilking = () => {
                       }}
                       required
                       className="shadow-sm"
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -2022,62 +1978,52 @@ const ListMilking = () => {
                         required
                         className="shadow-sm"
                         style={{ flex: 1 }}
+                        disabled={isSubmitting}
                       />
                     </div>
 
                     {/* Quick Time Buttons */}
                     <div className="d-flex gap-1 flex-wrap mb-2">
-                      <Button
-                        variant="outline-warning"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          const currentDate =
-                            newSession.milking_time.split("T")[0];
-                          setNewSession({
-                            ...newSession,
-                            milking_time: `${currentDate}T06:00`,
-                          });
-                        }}
-                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                      >
-                        <i className="fas fa-sun me-1"></i>
-                        Pagi (06:00)
-                      </Button>
-                      <Button
-                        variant="outline-info"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          const currentDate =
-                            newSession.milking_time.split("T")[0];
-                          setNewSession({
-                            ...newSession,
-                            milking_time: `${currentDate}T14:00`,
-                          });
-                        }}
-                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                      >
-                        <i className="fas fa-cloud-sun me-1"></i>
-                        Siang (14:00)
-                      </Button>
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        type="button"
-                        onClick={() => {
-                          const currentDate =
-                            newSession.milking_time.split("T")[0];
-                          setNewSession({
-                            ...newSession,
-                            milking_time: `${currentDate}T18:00`,
-                          });
-                        }}
-                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                      >
-                        <i className="fas fa-moon me-1"></i>
-                        Sore (18:00)
-                      </Button>
+                      {[
+                        {
+                          time: "06:00",
+                          label: "Pagi (06:00)",
+                          variant: "outline-warning",
+                          icon: "fas fa-sun",
+                        },
+                        {
+                          time: "14:00",
+                          label: "Siang (14:00)",
+                          variant: "outline-info",
+                          icon: "fas fa-cloud-sun",
+                        },
+                        {
+                          time: "18:00",
+                          label: "Sore (18:00)",
+                          variant: "outline-secondary",
+                          icon: "fas fa-moon",
+                        },
+                      ].map((timeBtn) => (
+                        <Button
+                          key={timeBtn.time}
+                          variant={timeBtn.variant}
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            const currentDate =
+                              newSession.milking_time.split("T")[0];
+                            setNewSession({
+                              ...newSession,
+                              milking_time: `${currentDate}T${timeBtn.time}`,
+                            });
+                          }}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                          disabled={isSubmitting}
+                        >
+                          <i className={`${timeBtn.icon} me-1`}></i>
+                          {timeBtn.label}
+                        </Button>
+                      ))}
                     </div>
 
                     {/* Current Selection Display */}
@@ -2117,191 +2063,80 @@ const ListMilking = () => {
                   Catatan Cepat:
                 </Form.Label>
                 <div className="d-flex gap-1 flex-wrap">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Sapi dalam kondisi sehat dan produktif";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-heart-pulse me-1"></i>
-                    Kondisi Sehat
-                  </Button>
-
-                  <Button
-                    variant="outline-success"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Produksi susu normal sesuai target";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-check-circle me-1"></i>
-                    Produksi Normal
-                  </Button>
-
-                  <Button
-                    variant="outline-info"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText =
-                        "Pemerahan berjalan lancar tanpa hambatan";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-clock me-1"></i>
-                    Pemerahan Lancar
-                  </Button>
-
-                  <Button
-                    variant="outline-warning"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Perlu perhatian khusus pada sapi ini";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-exclamation-triangle me-1"></i>
-                    Perlu Perhatian
-                  </Button>
-
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Kualitas susu baik dan segar";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-thumbs-up me-1"></i>
-                    Kualitas Baik
-                  </Button>
-
-                  <Button
-                    variant="outline-dark"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Sapi tampak stress atau gelisah";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-tired me-1"></i>
-                    Sapi Stress
-                  </Button>
-
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText = "Volume produksi menurun dari biasanya";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-arrow-down me-1"></i>
-                    Produksi Menurun
-                  </Button>
-
-                  <Button
-                    variant="outline-success"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      const noteText =
-                        "Peralatan pemerahan berfungsi dengan baik";
-                      setNewSession({
-                        ...newSession,
-                        notes: newSession.notes
-                          ? `${newSession.notes}\n${noteText}`
-                          : noteText,
-                      });
-                    }}
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "4px 8px",
-                      borderRadius: "15px",
-                    }}
-                  >
-                    <i className="fas fa-tools me-1"></i>
-                    Peralatan OK
-                  </Button>
+                  {[
+                    {
+                      text: "Sapi dalam kondisi sehat dan produktif",
+                      label: "Kondisi Sehat",
+                      variant: "outline-primary",
+                      icon: "fas fa-heart-pulse",
+                    },
+                    {
+                      text: "Produksi susu normal sesuai target",
+                      label: "Produksi Normal",
+                      variant: "outline-success",
+                      icon: "fas fa-check-circle",
+                    },
+                    {
+                      text: "Pemerahan berjalan lancar tanpa hambatan",
+                      label: "Pemerahan Lancar",
+                      variant: "outline-info",
+                      icon: "fas fa-clock",
+                    },
+                    {
+                      text: "Perlu perhatian khusus pada sapi ini",
+                      label: "Perlu Perhatian",
+                      variant: "outline-warning",
+                      icon: "fas fa-exclamation-triangle",
+                    },
+                    {
+                      text: "Kualitas susu baik dan segar",
+                      label: "Kualitas Baik",
+                      variant: "outline-secondary",
+                      icon: "fas fa-thumbs-up",
+                    },
+                    {
+                      text: "Sapi tampak stress atau gelisah",
+                      label: "Sapi Stress",
+                      variant: "outline-dark",
+                      icon: "fas fa-tired",
+                    },
+                    {
+                      text: "Volume produksi menurun dari biasanya",
+                      label: "Produksi Menurun",
+                      variant: "outline-danger",
+                      icon: "fas fa-arrow-down",
+                    },
+                    {
+                      text: "Peralatan pemerahan berfungsi dengan baik",
+                      label: "Peralatan OK",
+                      variant: "outline-success",
+                      icon: "fas fa-tools",
+                    },
+                  ].map((note, index) => (
+                    <Button
+                      key={index}
+                      variant={note.variant}
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        setNewSession({
+                          ...newSession,
+                          notes: newSession.notes
+                            ? `${newSession.notes}\n${note.text}`
+                            : note.text,
+                        });
+                      }}
+                      style={{
+                        fontSize: "0.7rem",
+                        padding: "4px 8px",
+                        borderRadius: "15px",
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      <i className={`${note.icon} me-1`}></i>
+                      {note.label}
+                    </Button>
+                  ))}
                 </div>
 
                 {/* Clear Notes Button */}
@@ -2318,6 +2153,7 @@ const ListMilking = () => {
                         });
                       }}
                       style={{ fontSize: "0.7rem", padding: "4px 8px" }}
+                      disabled={isSubmitting}
                     >
                       <i className="fas fa-trash me-1"></i>
                       Hapus Semua Catatan
@@ -2335,6 +2171,7 @@ const ListMilking = () => {
                   setNewSession({ ...newSession, notes: e.target.value })
                 }
                 className="shadow-sm"
+                disabled={isSubmitting}
               />
 
               {newSession.notes && (
@@ -2350,26 +2187,52 @@ const ListMilking = () => {
                 variant="secondary"
                 className="me-2"
                 onClick={() => setShowAddModal(false)}
+                disabled={isSubmitting}
               >
                 Batal
               </Button>
-              <Button variant="primary" type="submit">
-                Tambah Sesi Pemerahan
+              <Button variant="primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Menambahkan...
+                  </>
+                ) : (
+                  "Tambah Sesi Pemerahan"
+                )}
               </Button>
             </div>
           </Form>
         </Modal.Body>
       </Modal>
+
       {/* Edit Milking Session Modal */}
       <Modal
         show={showEditModal}
-        onHide={() => setShowEditModal(false)}
+        onHide={() => !isSubmitting && setShowEditModal(false)}
         size="lg"
+        backdrop={isSubmitting ? "static" : true}
+        keyboard={!isSubmitting}
       >
-        <Modal.Header closeButton className="bg-light">
+        <Modal.Header closeButton={!isSubmitting} className="bg-light">
           <Modal.Title>
             <i className="fas fa-edit me-2 text-primary"></i>
             Edit Sesi Pemerahan
+            {isSubmitting && (
+              <Spinner
+                animation="border"
+                size="sm"
+                className="ms-2"
+                variant="primary"
+              />
+            )}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -2384,6 +2247,7 @@ const ListMilking = () => {
                       onChange={(e) => handleCowSelectionInEdit(e.target.value)}
                       required
                       className="shadow-sm"
+                      disabled={isSubmitting}
                     >
                       <option value="">-- Pilih Sapi --</option>
                       {(currentUser?.role_id === 1 ? cowList : userManagedCows)
@@ -2410,7 +2274,11 @@ const ListMilking = () => {
                           })
                         }
                         required
-                        disabled={!selectedSession.cow_id || loadingFarmers}
+                        disabled={
+                          !selectedSession.cow_id ||
+                          loadingFarmers ||
+                          isSubmitting
+                        }
                         className={
                           !selectedSession.cow_id
                             ? "bg-light shadow-sm"
@@ -2456,6 +2324,7 @@ const ListMilking = () => {
                 </Col>
               </Row>
 
+              {/* Similar pattern for volume and time sections with disabled={isSubmitting} */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -2464,7 +2333,6 @@ const ListMilking = () => {
                       Volume (Liter)
                     </Form.Label>
 
-                    {/* Volume Input */}
                     <div className="mb-2">
                       <Form.Control
                         type="number"
@@ -2481,109 +2349,39 @@ const ListMilking = () => {
                         }
                         required
                         className="shadow-sm"
+                        disabled={isSubmitting}
                       />
                     </div>
 
-                    {/* Quick Volume Buttons */}
                     <div className="mb-2">
                       <Form.Label className="form-label-sm text-muted">
                         Volume Cepat:
                       </Form.Label>
                       <div className="d-flex gap-1 flex-wrap">
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "3.0",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          3.0L
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "5.0",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          5.0L
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "7.5",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          7.5L
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "10.0",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          10.0L
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "15.0",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          15.0L
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            setSelectedSession({
-                              ...selectedSession,
-                              volume: "20.0",
-                            });
-                          }}
-                          style={{ fontSize: "0.7rem", padding: "3px 6px" }}
-                        >
-                          <i className="fas fa-plus me-1"></i>
-                          20.0L
-                        </Button>
+                        {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map(
+                          (volume) => (
+                            <Button
+                              key={volume}
+                              variant="outline-success"
+                              size="sm"
+                              type="button"
+                              onClick={() => {
+                                setSelectedSession({
+                                  ...selectedSession,
+                                  volume: volume,
+                                });
+                              }}
+                              style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                              disabled={isSubmitting}
+                            >
+                              <i className="fas fa-plus me-1"></i>
+                              {volume}L
+                            </Button>
+                          )
+                        )}
                       </div>
                     </div>
 
-                    {/* Volume Info Display */}
                     {selectedSession.volume && (
                       <div className="mt-2 p-2 bg-light rounded">
                         <small className="text-muted">
@@ -2612,7 +2410,6 @@ const ListMilking = () => {
                       Waktu Pemerahan
                     </Form.Label>
 
-                    {/* Date Input */}
                     <div className="mb-2">
                       <Form.Label className="form-label-sm text-muted">
                         Tanggal:
@@ -2631,10 +2428,10 @@ const ListMilking = () => {
                         }}
                         required
                         className="shadow-sm"
+                        disabled={isSubmitting}
                       />
                     </div>
 
-                    {/* Time Input with Quick Buttons */}
                     <div>
                       <Form.Label className="form-label-sm text-muted">
                         Waktu:
@@ -2657,65 +2454,53 @@ const ListMilking = () => {
                           required
                           className="shadow-sm"
                           style={{ flex: 1 }}
+                          disabled={isSubmitting}
                         />
                       </div>
 
-                      {/* Quick Time Buttons */}
                       <div className="d-flex gap-1 flex-wrap mb-2">
-                        <Button
-                          variant="outline-warning"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            const currentDate =
-                              selectedSession.milking_time.split("T")[0];
-                            setSelectedSession({
-                              ...selectedSession,
-                              milking_time: `${currentDate}T06:00`,
-                            });
-                          }}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                        >
-                          <i className="fas fa-sun me-1"></i>
-                          Pagi (06:00)
-                        </Button>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            const currentDate =
-                              selectedSession.milking_time.split("T")[0];
-                            setSelectedSession({
-                              ...selectedSession,
-                              milking_time: `${currentDate}T14:00`,
-                            });
-                          }}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                        >
-                          <i className="fas fa-cloud-sun me-1"></i>
-                          Siang (14:00)
-                        </Button>
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            const currentDate =
-                              selectedSession.milking_time.split("T")[0];
-                            setSelectedSession({
-                              ...selectedSession,
-                              milking_time: `${currentDate}T18:00`,
-                            });
-                          }}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                        >
-                          <i className="fas fa-moon me-1"></i>
-                          Sore (18:00)
-                        </Button>
+                        {[
+                          {
+                            time: "06:00",
+                            label: "Pagi (06:00)",
+                            variant: "outline-warning",
+                            icon: "fas fa-sun",
+                          },
+                          {
+                            time: "14:00",
+                            label: "Siang (14:00)",
+                            variant: "outline-info",
+                            icon: "fas fa-cloud-sun",
+                          },
+                          {
+                            time: "18:00",
+                            label: "Sore (18:00)",
+                            variant: "outline-secondary",
+                            icon: "fas fa-moon",
+                          },
+                        ].map((timeBtn) => (
+                          <Button
+                            key={timeBtn.time}
+                            variant={timeBtn.variant}
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                              const currentDate =
+                                selectedSession.milking_time.split("T")[0];
+                              setSelectedSession({
+                                ...selectedSession,
+                                milking_time: `${currentDate}T${timeBtn.time}`,
+                              });
+                            }}
+                            style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                            disabled={isSubmitting}
+                          >
+                            <i className={`${timeBtn.icon} me-1`}></i>
+                            {timeBtn.label}
+                          </Button>
+                        ))}
                       </div>
 
-                      {/* Current Selection Display */}
                       <div className="mt-2 p-2 bg-light rounded">
                         <small className="text-muted">
                           <i className="fas fa-clock me-1"></i>
@@ -2746,202 +2531,87 @@ const ListMilking = () => {
                   Catatan
                 </Form.Label>
 
-                {/* Quick Notes Pills */}
                 <div className="mb-3">
                   <Form.Label className="form-label-sm text-muted mb-2">
                     Catatan Cepat:
                   </Form.Label>
                   <div className="d-flex gap-1 flex-wrap">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText =
-                          "Sapi dalam kondisi sehat dan produktif";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-heart-pulse me-1"></i>
-                      Kondisi Sehat
-                    </Button>
-
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText = "Produksi susu normal sesuai target";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-check-circle me-1"></i>
-                      Produksi Normal
-                    </Button>
-
-                    <Button
-                      variant="outline-info"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText =
-                          "Pemerahan berjalan lancar tanpa hambatan";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-clock me-1"></i>
-                      Pemerahan Lancar
-                    </Button>
-
-                    <Button
-                      variant="outline-warning"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText = "Perlu perhatian khusus pada sapi ini";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-exclamation-triangle me-1"></i>
-                      Perlu Perhatian
-                    </Button>
-
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText = "Kualitas susu baik dan segar";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-thumbs-up me-1"></i>
-                      Kualitas Baik
-                    </Button>
-
-                    <Button
-                      variant="outline-dark"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText = "Sapi tampak stress atau gelisah";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-tired me-1"></i>
-                      Sapi Stress
-                    </Button>
-
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText =
-                          "Volume produksi menurun dari biasanya";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-arrow-down me-1"></i>
-                      Produksi Menurun
-                    </Button>
-
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        const noteText =
-                          "Peralatan pemerahan berfungsi dengan baik";
-                        setSelectedSession({
-                          ...selectedSession,
-                          notes: selectedSession.notes
-                            ? `${selectedSession.notes}\n${noteText}`
-                            : noteText,
-                        });
-                      }}
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "4px 8px",
-                        borderRadius: "15px",
-                      }}
-                    >
-                      <i className="fas fa-tools me-1"></i>
-                      Peralatan OK
-                    </Button>
+                    {[
+                      {
+                        text: "Sapi dalam kondisi sehat dan produktif",
+                        label: "Kondisi Sehat",
+                        variant: "outline-primary",
+                        icon: "fas fa-heart-pulse",
+                      },
+                      {
+                        text: "Produksi susu normal sesuai target",
+                        label: "Produksi Normal",
+                        variant: "outline-success",
+                        icon: "fas fa-check-circle",
+                      },
+                      {
+                        text: "Pemerahan berjalan lancar tanpa hambatan",
+                        label: "Pemerahan Lancar",
+                        variant: "outline-info",
+                        icon: "fas fa-clock",
+                      },
+                      {
+                        text: "Perlu perhatian khusus pada sapi ini",
+                        label: "Perlu Perhatian",
+                        variant: "outline-warning",
+                        icon: "fas fa-exclamation-triangle",
+                      },
+                      {
+                        text: "Kualitas susu baik dan segar",
+                        label: "Kualitas Baik",
+                        variant: "outline-secondary",
+                        icon: "fas fa-thumbs-up",
+                      },
+                      {
+                        text: "Sapi tampak stress atau gelisah",
+                        label: "Sapi Stress",
+                        variant: "outline-dark",
+                        icon: "fas fa-tired",
+                      },
+                      {
+                        text: "Volume produksi menurun dari biasanya",
+                        label: "Produksi Menurun",
+                        variant: "outline-danger",
+                        icon: "fas fa-arrow-down",
+                      },
+                      {
+                        text: "Peralatan pemerahan berfungsi dengan baik",
+                        label: "Peralatan OK",
+                        variant: "outline-success",
+                        icon: "fas fa-tools",
+                      },
+                    ].map((note, index) => (
+                      <Button
+                        key={index}
+                        variant={note.variant}
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          setSelectedSession({
+                            ...selectedSession,
+                            notes: selectedSession.notes
+                              ? `${selectedSession.notes}\n${note.text}`
+                              : note.text,
+                          });
+                        }}
+                        style={{
+                          fontSize: "0.7rem",
+                          padding: "4px 8px",
+                          borderRadius: "15px",
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <i className={`${note.icon} me-1`}></i>
+                        {note.label}
+                      </Button>
+                    ))}
                   </div>
 
-                  {/* Clear Notes Button */}
                   {selectedSession.notes && (
                     <div className="mt-2">
                       <Button
@@ -2955,6 +2625,7 @@ const ListMilking = () => {
                           });
                         }}
                         style={{ fontSize: "0.7rem", padding: "4px 8px" }}
+                        disabled={isSubmitting}
                       >
                         <i className="fas fa-trash me-1"></i>
                         Hapus Semua Catatan
@@ -2975,6 +2646,7 @@ const ListMilking = () => {
                     })
                   }
                   className="shadow-sm"
+                  disabled={isSubmitting}
                 />
 
                 {selectedSession.notes && (
@@ -2990,11 +2662,26 @@ const ListMilking = () => {
                   variant="secondary"
                   className="me-2"
                   onClick={() => setShowEditModal(false)}
+                  disabled={isSubmitting}
                 >
                   Batal
                 </Button>
-                <Button variant="primary" type="submit">
-                  Simpan Perubahan
+                <Button variant="primary" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    "Simpan Perubahan"
+                  )}
                 </Button>
               </div>
             </Form>

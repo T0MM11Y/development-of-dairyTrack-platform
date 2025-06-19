@@ -34,9 +34,12 @@ class _MilkingViewState extends State<MilkingView> {
   List<dynamic> userManagedCows = [];
   List<dynamic> milkers = [];
   List<dynamic> availableFarmersForCow = [];
+  bool isActionLoading = false;
 
   bool loading = true;
   bool loadingFarmers = false;
+  bool isModalActionLoading = false;
+
   String? error;
 
   // Search and filter variables
@@ -686,9 +689,14 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-  // Add new session
+// Ubah _handleAddSession
   Future<void> _handleAddSession() async {
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      isActionLoading = true;
+      isModalActionLoading = true; // Disable seluruh modal
+    });
 
     final userId = currentUser?['id']?.toString() ??
         currentUser?['user_id']?.toString() ??
@@ -697,6 +705,10 @@ class _MilkingViewState extends State<MilkingView> {
 
     // Validation for milker_id
     if (currentUser?['role_id'] == 1 && finalMilkerId.isEmpty) {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
       _showErrorDialog('Silakan pilih pemerah');
       return;
     }
@@ -706,6 +718,10 @@ class _MilkingViewState extends State<MilkingView> {
     }
 
     if (finalMilkerId.isEmpty) {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
       _showErrorDialog('ID pemerah tidak valid');
       return;
     }
@@ -736,12 +752,22 @@ class _MilkingViewState extends State<MilkingView> {
       }
     } catch (e) {
       _showErrorDialog('Terjadi kesalahan: $e');
+    } finally {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
     }
   }
 
-  // Edit session
+  // Ubah _handleEditSession
   Future<void> _handleEditSession() async {
     if (!_editFormKey.currentState!.validate()) return;
+
+    setState(() {
+      isActionLoading = true;
+      isModalActionLoading = true; // Disable seluruh modal
+    });
 
     final sessionData = {
       'cow_id': int.parse(selectedSession!['cow_id']),
@@ -767,10 +793,14 @@ class _MilkingViewState extends State<MilkingView> {
       }
     } catch (e) {
       _showErrorDialog('Terjadi kesalahan: $e');
+    } finally {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
     }
   }
 
-  // ...existing code...
   // Delete session
   Future<void> _handleDeleteSession(int sessionId) async {
     final confirmed = await showDialog<bool>(
@@ -800,7 +830,8 @@ class _MilkingViewState extends State<MilkingView> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed:
+                isActionLoading ? null : () => Navigator.pop(context, false),
             child: Text(
               'Batal',
               style: TextStyle(
@@ -810,7 +841,8 @@ class _MilkingViewState extends State<MilkingView> {
             ),
           ),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed:
+                isActionLoading ? null : () => Navigator.pop(context, true),
             icon: Icon(Icons.delete, size: 16, color: Colors.white),
             label: Text(
               'Hapus',
@@ -831,6 +863,9 @@ class _MilkingViewState extends State<MilkingView> {
     );
 
     if (confirmed == true) {
+      setState(() {
+        isActionLoading = true;
+      });
       try {
         final response =
             await milkingSessionController.deleteMilkingSession(sessionId);
@@ -843,10 +878,13 @@ class _MilkingViewState extends State<MilkingView> {
         }
       } catch (e) {
         _showErrorDialog('Terjadi kesalahan: $e');
+      } finally {
+        setState(() {
+          isActionLoading = false;
+        });
       }
     }
   }
-  // ...existing
 
   // Export to PDF
   Future<void> _exportToPDF() async {
@@ -1661,7 +1699,9 @@ class _MilkingViewState extends State<MilkingView> {
                           "Detail",
                           style: TextStyle(fontSize: 13, color: Colors.white),
                         ),
-                        onPressed: () => _showSessionDetails(session),
+                        onPressed: isActionLoading
+                            ? null
+                            : () => _showSessionDetails(session),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueGrey[600],
                           padding: EdgeInsets.symmetric(
@@ -1684,7 +1724,9 @@ class _MilkingViewState extends State<MilkingView> {
                             "Edit",
                             style: TextStyle(fontSize: 13, color: Colors.white),
                           ),
-                          onPressed: () => _openEditModal(session),
+                          onPressed: isActionLoading
+                              ? null
+                              : () => _openEditModal(session),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF3D90D7),
                             padding: EdgeInsets.symmetric(
@@ -1706,7 +1748,9 @@ class _MilkingViewState extends State<MilkingView> {
                             "Delete",
                             style: TextStyle(fontSize: 13, color: Colors.white),
                           ),
-                          onPressed: () => _handleDeleteSession(session['id']),
+                          onPressed: isActionLoading
+                              ? null
+                              : () => _handleDeleteSession(session['id']),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red[600],
                             padding: EdgeInsets.symmetric(
@@ -1725,23 +1769,6 @@ class _MilkingViewState extends State<MilkingView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-// Helper method for session info rows (similar to cow info rows)
-  Widget _buildSessionInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          SizedBox(width: 8),
-          Text('$label:', style: TextStyle(fontWeight: FontWeight.w500)),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.grey[800])),
-          ),
-        ],
       ),
     );
   }
@@ -2976,8 +3003,6 @@ class _MilkingViewState extends State<MilkingView> {
               ),
             ),
           ),
-
-          // Modal footer
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -2988,8 +3013,15 @@ class _MilkingViewState extends State<MilkingView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Batal'),
+                    onPressed:
+                        isActionLoading ? null : () => Navigator.pop(context),
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text('Batal'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -2998,8 +3030,24 @@ class _MilkingViewState extends State<MilkingView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _handleAddSession,
-                    child: Text('Simpan'),
+                    onPressed: isActionLoading
+                        ? null
+                        : () {
+                            if (!isActionLoading) {
+                              _handleAddSession();
+                            }
+                          },
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text('Simpan'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
                       foregroundColor: Colors.white,
@@ -3711,7 +3759,6 @@ class _MilkingViewState extends State<MilkingView> {
             ),
           ),
 
-          // Modal footer
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -3722,8 +3769,15 @@ class _MilkingViewState extends State<MilkingView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Batal'),
+                    onPressed:
+                        isActionLoading ? null : () => Navigator.pop(context),
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text('Batal'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -3732,8 +3786,24 @@ class _MilkingViewState extends State<MilkingView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _handleEditSession,
-                    child: Text('Perbarui'),
+                    onPressed: isActionLoading
+                        ? null
+                        : () {
+                            if (!isActionLoading) {
+                              _handleEditSession();
+                            }
+                          },
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text('Perbarui'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange[700],
                       foregroundColor: Colors.white,
