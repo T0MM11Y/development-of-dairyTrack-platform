@@ -26,9 +26,9 @@ class _HealthCheckListViewState extends State<HealthCheckListView> {
   int _currentPage = 1;
   final int _pageSize = 5;
   String _search = '';
-
   bool get _isAdmin => _currentUser?['role_id'] == 1;
   bool get _isSupervisor => _currentUser?['role_id'] == 2;
+  bool get _isFarmer => _currentUser?['role_id'] == 3;
 
   @override
   void initState() {
@@ -161,28 +161,26 @@ Widget build(BuildContext context) {
     ),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Pemeriksaan Kesehatan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
+   appBar: AppBar(
+  elevation: 8,
+  centerTitle: true,
+  backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],
+  title: const Text(
+    'Pemeriksaan Kesehatan',
+    style: TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+    ),
+  ),
+),
+
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -333,19 +331,26 @@ Widget build(BuildContext context) {
   ),
 ),
                                         const SizedBox(width: 8),
-                                        ElevatedButton.icon(
-                                          icon: const Icon(Icons.delete, size: 18),
-                                          label: const Text('Hapus'),
-                                          onPressed: () async {
-                                            if (_isAdmin || _isSupervisor) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Role ini tidak memiliki izin untuk menghapus data'),
-                                                  duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              return;
-                                            }
+                                      ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  onPressed: () async {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menghapus data'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
                                             final confirmed = await showDialog<bool>(
                                               context: context,
@@ -401,39 +406,55 @@ Widget build(BuildContext context) {
                   ),
               ],
             ),
-      floatingActionButton: (_isAdmin || _isSupervisor)
-          ? null
-          : FloatingActionButton(
-              tooltip: 'Tambah Pemeriksaan',
-              backgroundColor: Colors.blueGrey[800],
-              onPressed: () {
-                if (_availableCows.isEmpty) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Tidak Bisa Menambah Pemeriksaan'),
-                      content: const Text(
-                        'Tidak ada sapi yang tersedia untuk diperiksa. Semua sapi sudah memiliki pemeriksaan aktif.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CreateHealthCheckView(onSaved: _loadData),
-                    ),
-                  );
-                }
-              },
-              child: const Icon(Icons.add),
+     floatingActionButton: FloatingActionButton(
+  tooltip: 'Tambah Pemeriksaan',
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah data pemeriksaan.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
             ),
+          ],
+        ),
+      );
+    } else if (_availableCows.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Tidak Bisa Menambah Pemeriksaan'),
+          content: const Text(
+            'Tidak ada sapi yang tersedia untuk diperiksa. Semua sapi sudah memiliki pemeriksaan aktif.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateHealthCheckView(onSaved: _loadData),
+        ),
+      );
+    }
+  },
+  child: const Icon(Icons.add),
+),
+
     ),
   );
 }

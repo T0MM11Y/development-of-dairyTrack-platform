@@ -1,8 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
+import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -140,6 +145,18 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           widget: () => MilkingView(),
         ),
         NavigationItem(
+          icon: Icons.bar_chart,
+          label: 'Analisis Milking',
+          route: 'analytics',
+          widget: () => MilkProductionAnalysisView(),
+        ),
+        NavigationItem(
+          icon: Icons.analytics,
+          label: 'Analisis Kualitas Susu',
+          route: 'milkQuality',
+          widget: () => MilkQualityControlsView(),
+        ),
+        NavigationItem(
           icon: Icons.people,
           label: 'Pengguna',
           route: 'users',
@@ -203,19 +220,19 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           icon: Icons.history, // Represents historical data
           label: 'Product History',
           route: '/productHistory',
-          widget: () => ListProductTypes(), // Assumed widget for history
+          widget: () => ProductStockHistoryView(), // Assumed widget for history
         ),
         NavigationItem(
           icon: Icons.point_of_sale, // Represents sales transactions
           label: 'Sales',
-          route: '/sales',
-          widget: () => ListProductTypes(), // Assumed widget for sales
+          route: '/order',
+          widget: () => ListOrderView(), // Assumed widget for sales
         ),
         NavigationItem(
           icon: Icons.account_balance, // Represents financial data
           label: 'Finance',
           route: '/finance',
-          widget: () => ListProductTypes(),
+          widget: () => FinanceView(),
         ),
         NavigationItem(
           icon: Icons.medical_services,
@@ -2299,67 +2316,289 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               ),
             ),
           ),
+          // Menu dengan ExpansionTile
           Expanded(
-            child: ListView.builder(
+            child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(vertical: 8),
-              itemCount: navigationItems.length,
-              itemBuilder: (context, index) {
-                final item = navigationItems[index];
-                final isSelected = _selectedIndex == index;
-
-                return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: isSelected
-                        ? Colors.blueGrey[800]!.withOpacity(0.1)
-                        : null,
-                  ),
-                  child: ListTile(
-                    leading: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.blueGrey[800]!.withOpacity(0.2)
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        item.icon,
-                        color: isSelected
-                            ? Colors.blueGrey[800]
-                            : Colors.grey[600],
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      item.label,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.blueGrey[800]
-                            : Colors.grey[800],
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                        fontSize: 14,
-                      ),
-                    ),
-                    shape: RoundedRectangleBorder(
+              child: Column(
+                children: [
+                  // Dashboard - menu utama tanpa grouping
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
+                      color: _selectedIndex == 0
+                          ? Colors.blueGrey[800]!.withOpacity(0.1)
+                          : null,
                     ),
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = index;
-                      });
-                      Navigator.pop(context);
-                      _navigateToView(item);
-                    },
+                    child: ListTile(
+                      leading: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _selectedIndex == 0
+                              ? Colors.blueGrey[800]!.withOpacity(0.2)
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.dashboard,
+                          color: _selectedIndex == 0
+                              ? Colors.blueGrey[800]
+                              : Colors.grey[600],
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: _selectedIndex == 0
+                              ? Colors.blueGrey[800]
+                              : Colors.grey[800],
+                          fontWeight: _selectedIndex == 0
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          fontSize: 14,
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedIndex = 0;
+                        });
+                        Navigator.pop(context);
+                        _navigateToView(navigationItems[0]);
+                      },
+                    ),
                   ),
-                );
-              },
+
+                  // Manajemen Sapi
+                  _buildExpansionTile(
+                    title: 'Manajemen Sapi',
+                    icon: Icons.pets,
+                    color: Colors.brown,
+                    items: [
+                      {'index': 1, 'item': navigationItems[1]}, // Sapi
+                      {
+                        'index': 6,
+                        'item': navigationItems[6]
+                      }, // Distribusi Sapi
+                    ],
+                  ),
+
+                  // Pemerahan & Analisis
+                  _buildExpansionTile(
+                    title: 'Pemerahan & Analisis',
+                    icon: Icons.local_drink,
+                    color: Colors.blue,
+                    items: [
+                      {'index': 2, 'item': navigationItems[2]}, // Pemerahan
+                      {
+                        'index': 3,
+                        'item': navigationItems[3]
+                      }, // Analisis Milking
+                      {
+                        'index': 4,
+                        'item': navigationItems[4]
+                      }, // Analisis Kualitas Susu
+                    ],
+                  ),
+
+                  // Manajemen Pengguna
+                  _buildExpansionTile(
+                    title: 'Manajemen Pengguna',
+                    icon: Icons.people,
+                    color: Colors.indigo,
+                    items: [
+                      {'index': 5, 'item': navigationItems[5]}, // Pengguna
+                    ],
+                  ),
+
+                  // Konten & Media
+                  _buildExpansionTile(
+                    title: 'Konten & Media',
+                    icon: Icons.library_books,
+                    color: Colors.purple,
+                    items: [
+                      {'index': 7, 'item': navigationItems[7]}, // Blog
+                      {'index': 8, 'item': navigationItems[8]}, // Galeri
+                    ],
+                  ),
+
+                  // Kesehatan Sapi
+                  _buildExpansionTile(
+                    title: 'Kesehatan Sapi',
+                    icon: Icons.medical_services,
+                    color: Colors.red,
+                    items: [
+                      {
+                        'index': 9,
+                        'item': navigationItems[9]
+                      }, // Pemeriksaan Kesehatan
+                      {'index': 10, 'item': navigationItems[10]}, // Gejala
+                      {
+                        'index': 11,
+                        'item': navigationItems[11]
+                      }, // Riwayat Penyakit
+                      {'index': 12, 'item': navigationItems[12]}, // Reproduksi
+                      {
+                        'index': 24,
+                        'item': navigationItems[24]
+                      }, // Health Dashboard
+                    ],
+                  ),
+
+                  // Manajemen Pakan
+                  _buildExpansionTile(
+                    title: 'Manajemen Pakan',
+                    icon: Icons.grass,
+                    color: Colors.green,
+                    items: [
+                      {'index': 19, 'item': navigationItems[19]}, // Jenis Pakan
+                      {
+                        'index': 20,
+                        'item': navigationItems[20]
+                      }, // Jenis Nutrisi
+                      {'index': 21, 'item': navigationItems[21]}, // Pakan
+                      {'index': 22, 'item': navigationItems[22]}, // Stock Pakan
+                      {
+                        'index': 23,
+                        'item': navigationItems[23]
+                      }, // Feed Schedule
+                      {
+                        'index': 25,
+                        'item': navigationItems[25]
+                      }, // Feed Item Harian
+                    ],
+                  ),
+
+                  // Manajemen Produk & Penjualan
+                  _buildExpansionTile(
+                    title: 'Produk & Penjualan',
+                    icon: Icons.storefront,
+                    color: Colors.orange,
+                    items: [
+                      {
+                        'index': 13,
+                        'item': navigationItems[13]
+                      }, // Product Type
+                      {
+                        'index': 14,
+                        'item': navigationItems[14]
+                      }, // Product Stock
+                      {
+                        'index': 15,
+                        'item': navigationItems[15]
+                      }, // Product History
+                      {'index': 16, 'item': navigationItems[16]}, // Sales
+                      {'index': 17, 'item': navigationItems[17]}, // Finance
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+
+  Widget _buildExpansionTile({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Map<String, dynamic>> items,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: ExpansionTile(
+        leading: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        iconColor: color,
+        collapsedIconColor: color,
+        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: EdgeInsets.only(left: 16, right: 8, bottom: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        children: items.map((itemData) {
+          final index = itemData['index'] as int;
+          final item = itemData['item'] as NavigationItem;
+          final isSelected = _selectedIndex == index;
+
+          return Container(
+            margin: EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: isSelected ? Colors.blueGrey[800]!.withOpacity(0.1) : null,
+            ),
+            child: ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              leading: Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.blueGrey[800]!.withOpacity(0.2)
+                      : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  item.icon,
+                  color: isSelected ? Colors.blueGrey[800] : Colors.grey[600],
+                  size: 18,
+                ),
+              ),
+              title: Text(
+                item.label,
+                style: TextStyle(
+                  color: isSelected ? Colors.blueGrey[800] : Colors.grey[800],
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = index;
+                });
+                Navigator.pop(context);
+                _navigateToView(item);
+              },
+            ),
+          );
+        }).toList(),
       ),
     );
   }

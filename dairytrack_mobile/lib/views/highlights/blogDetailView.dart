@@ -7,11 +7,13 @@ import 'package:image_picker/image_picker.dart';
 class BlogDetailView extends StatefulWidget {
   final Blog blog;
   final VoidCallback? onBlogUpdated;
+  final String? userRole; // Tambahkan parameter userRole opsional
 
   const BlogDetailView({
     Key? key,
     required this.blog,
     this.onBlogUpdated,
+    this.userRole, // Tambahkan ke konstruktor
   }) : super(key: key);
 
   @override
@@ -20,6 +22,8 @@ class BlogDetailView extends StatefulWidget {
 
 class _BlogDetailViewState extends State<BlogDetailView> {
   final BlogManagementController _blogController = BlogManagementController();
+  bool get _isSupervisor =>
+      widget.userRole == 'Supervisor'; // Helper untuk pengecekan role
 
   // Dark theme colors
   static const Color darkPrimary = Color(0xFF1A1A1A);
@@ -502,8 +506,6 @@ class _BlogDetailViewState extends State<BlogDetailView> {
     return result;
   }
 
-  // ...existing code...
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -523,15 +525,19 @@ class _BlogDetailViewState extends State<BlogDetailView> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        backgroundColor: darkSecondary,
+        backgroundColor: _isSupervisor
+            ? Colors.deepOrange[400]
+            : Color(0xFF2D2D2D), // Warna berbeda untuk supervisor
         elevation: 8,
         shadowColor: Colors.black26,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: darkWarning),
-            onPressed: _showEditBlogDialog,
-            tooltip: 'Edit Blog',
-          ),
+          // Sembunyikan tombol edit jika supervisor
+          if (!_isSupervisor)
+            IconButton(
+              icon: const Icon(Icons.edit, color: darkWarning),
+              onPressed: _showEditBlogDialog,
+              tooltip: 'Edit Blog',
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -928,14 +934,17 @@ class _BlogDetailViewState extends State<BlogDetailView> {
         ),
       ),
       // Floating Action Button untuk Edit
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showEditBlogDialog,
-        backgroundColor: darkWarning,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.edit),
-        label: const Text('Edit Blog'),
-        elevation: 8,
-      ),
+      // Sembunyikan FAB jika supervisor
+      floatingActionButton: !_isSupervisor
+          ? FloatingActionButton.extended(
+              onPressed: _showEditBlogDialog,
+              backgroundColor: darkWarning,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.edit),
+              label: const Text('Edit Blog'),
+              elevation: 8,
+            )
+          : null,
     );
   }
 }

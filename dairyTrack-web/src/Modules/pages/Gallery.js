@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Container,
   Row,
@@ -15,6 +15,659 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { listGalleries } from "../../Modules/controllers/galleryController.js";
+import loadingGif from "../../assets/loading.gif";
+import aboutImg from "../../assets/about.png";
+
+// Constants
+const GALLERIES_PER_PAGE = 12;
+const PARTICLES_COUNT = 25;
+
+// Theme configuration
+const theme = {
+  primary: "#E9A319",
+  secondary: "#3D8D7A",
+  accent: "#3D90D7",
+  light: "#F8F9FA",
+  dark: "#212529",
+  gradients: {
+    primary: "linear-gradient(135deg, #E9A319 0%, #F4B942 100%)",
+    secondary: "linear-gradient(135deg, #3D8D7A 0%, #4AA391 100%)",
+    hero: "linear-gradient(135deg, rgba(61, 141, 122, 0.93), rgba(61, 141, 122, 0.7))",
+    overlay:
+      "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)",
+  },
+  shadows: {
+    card: "0 10px 40px rgba(0, 0, 0, 0.1)",
+    hover: "0 20px 60px rgba(0, 0, 0, 0.15)",
+    glow: "0 0 30px rgba(233, 163, 25, 0.3)",
+  },
+};
+
+// Animation variants
+const animations = {
+  fadeInUp: {
+    hidden: { opacity: 0, y: 60 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  },
+  staggerContainer: {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+    },
+  },
+  scaleIn: {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  },
+  slideInLeft: {
+    hidden: { opacity: 0, x: -50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  },
+  slideInRight: {
+    hidden: { opacity: 0, x: 50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  },
+};
+
+// Memoized components
+const LoadingScreen = React.memo(() => (
+  <div className="loading-screen">
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.5 }}
+      className="loading-content"
+    >
+      <img src={loadingGif} alt="Loading..." className="loading-gif" />
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="loading-text"
+      />
+    </motion.div>
+  </div>
+));
+
+const ErrorMessage = React.memo(({ error, onRetry }) => (
+  <Container className="py-5 text-center" style={{ minHeight: "70vh" }}>
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="error-container"
+    >
+      <div className="error-icon">
+        <i className="fas fa-exclamation-triangle" />
+      </div>
+      <h3>Oops! Something went wrong</h3>
+      <p>{error}</p>
+      <Button variant="warning" onClick={onRetry}>
+        Try Again
+      </Button>
+    </motion.div>
+  </Container>
+));
+
+const HeroSection = React.memo(({ galleries, availableYears }) => (
+  <section className="hero-section">
+    <div className="hero-background">
+      <div className="particles-container">
+        {Array.from({ length: PARTICLES_COUNT }, (_, i) => (
+          <motion.div
+            key={i}
+            className={`particle particle-${i % 4}`}
+            animate={{
+              y: [0, -120, 0],
+              x: [0, Math.random() * 40 - 20, 0],
+              opacity: [0.3, 0.8, 0.3],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
+
+      <Container className="hero-content">
+        <Row className="align-items-center min-vh-50">
+          <Col lg={8}>
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={animations.fadeInUp}
+              className="hero-text"
+            >
+              <div className="hero-badge">
+                <i className="fas fa-camera-retro me-2" />
+                Visual Journey
+              </div>
+              <h1 className="hero-title">
+                Galeri
+                <span className="gradient-text"> Foto</span>
+              </h1>
+              <div className="title-divider" />
+              <p className="hero-description">
+                Jelajahi koleksi foto-foto terbaik kami yang menampilkan
+                aktivitas, fasilitas, hewan ternak, dan produk DairyTrack.
+                Temukan cerita visual di balik setiap momen di peternakan kami.
+              </p>
+
+              <div className="hero-stats">
+                {[
+                  { number: galleries.length, label: "Photos" },
+                  { number: availableYears.length, label: "Years" },
+                  { number: "24/7", label: "Memories" },
+                ].map((stat, index) => (
+                  <motion.div
+                    key={index}
+                    className="stat-item"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="stat-number">{stat.number}</div>
+                    <div className="stat-label">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </Col>
+
+          <Col lg={4} className="d-none d-lg-block">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={animations.slideInRight}
+              className="hero-visual"
+            >
+              <div className="hero-icon-container">
+                <motion.div
+                  className="hero-icon-circle"
+                  animate={{
+                    boxShadow: [
+                      "0 0 20px rgba(233, 163, 25, 0.3)",
+                      "0 0 40px rgba(233, 163, 25, 0.6)",
+                      "0 0 20px rgba(233, 163, 25, 0.3)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="icon-glow" />
+                  <i className="fas fa-camera-retro" />
+                </motion.div>
+
+                <motion.div
+                  className="floating-element element-1"
+                  animate={{
+                    y: [0, -15, 0],
+                    rotate: [0, 5, 0],
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  <i className="fas fa-images" />
+                </motion.div>
+                <motion.div
+                  className="floating-element element-2"
+                  animate={{
+                    y: [0, 15, 0],
+                    rotate: [0, -5, 0],
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                >
+                  <i className="fas fa-aperture" />
+                </motion.div>
+              </div>
+            </motion.div>
+          </Col>
+        </Row>
+      </Container>
+    </div>
+  </section>
+));
+
+const FiltersSection = React.memo(
+  ({
+    searchTerm,
+    setSearchTerm,
+    selectedYear,
+    setSelectedYear,
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
+    availableYears,
+    filteredCount,
+    setCurrentPage,
+    clearFilters,
+  }) => (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={animations.fadeInUp}
+      className="filters-container"
+    >
+      <div className="filters-header">
+        <h3 className="filters-title">
+          <i className="fas fa-sliders-h me-2" />
+          Explore Our Gallery
+        </h3>
+        <div className="view-controls">
+          <div className="view-mode-toggle">
+            {["grid", "masonry"].map((mode) => (
+              <Button
+                key={mode}
+                variant={viewMode === mode ? "primary" : "outline-primary"}
+                size="sm"
+                onClick={() => setViewMode(mode)}
+                className={mode === "masonry" ? "ms-2" : "me-2"}
+              >
+                <i
+                  className={`fas fa-${mode === "grid" ? "th" : "th-large"}`}
+                />
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Row className="filters-row">
+        <Col lg={4} md={6} className="mb-3">
+          <div className="search-container">
+            <InputGroup className="search-input-group">
+              <InputGroup.Text>
+                <i className="fas fa-search" />
+              </InputGroup.Text>
+              <Form.Control
+                placeholder="Search photos..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              {searchTerm && (
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <i className="fas fa-times" />
+                </Button>
+              )}
+            </InputGroup>
+          </div>
+        </Col>
+
+        <Col lg={3} md={6} className="mb-3">
+          <Form.Select
+            value={selectedYear}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="filter-select"
+          >
+            <option value="all">All Years</option>
+            {availableYears.map((year) => (
+              <option key={year} value={year.toString()}>
+                {year}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+
+        <Col lg={3} md={6} className="mb-3">
+          <Form.Select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="filter-select"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="alphabetical">Alphabetical</option>
+          </Form.Select>
+        </Col>
+
+        <Col lg={2} md={6} className="mb-3">
+          <div className="results-info">
+            <Badge bg="primary" className="results-badge">
+              {filteredCount} Photos
+            </Badge>
+          </div>
+        </Col>
+      </Row>
+
+      {(searchTerm || selectedYear !== "all") && (
+        <div className="active-filters">
+          <span className="filters-label">Active filters:</span>
+          {searchTerm && (
+            <Badge
+              bg="warning"
+              className="filter-badge"
+              onClick={() => setSearchTerm("")}
+            >
+              Search: "{searchTerm}" <i className="fas fa-times ms-1" />
+            </Badge>
+          )}
+          {selectedYear !== "all" && (
+            <Badge
+              bg="info"
+              className="filter-badge"
+              onClick={() => setSelectedYear("all")}
+            >
+              Year: {selectedYear} <i className="fas fa-times ms-1" />
+            </Badge>
+          )}
+          <Button
+            variant="link"
+            size="sm"
+            onClick={clearFilters}
+            className="clear-filters-btn"
+          >
+            Clear All
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  )
+);
+
+const GalleryCard = React.memo(
+  ({
+    gallery,
+    index,
+    currentPage,
+    viewMode,
+    imageLoading,
+    onImageLoad,
+    onOpenImage,
+  }) => (
+    <Col
+      lg={viewMode === "masonry" ? 4 : 3}
+      md={viewMode === "masonry" ? 6 : 4}
+      sm={6}
+      xs={12}
+    >
+      <motion.div
+        variants={animations.scaleIn}
+        whileHover={{ y: -10 }}
+        transition={{ duration: 0.3 }}
+        className="gallery-card"
+        onClick={() => onOpenImage(gallery)}
+      >
+        <div className="image-container">
+          {imageLoading[gallery.id] && (
+            <div className="image-skeleton">
+              <div className="skeleton-shimmer" />
+            </div>
+          )}
+          <img
+            src={gallery.image_url}
+            alt={gallery.title}
+            className="gallery-image"
+            onLoad={() => onImageLoad(gallery.id)}
+            style={{
+              display: imageLoading[gallery.id] ? "none" : "block",
+            }}
+          />
+
+          <div className="image-overlay">
+            <div className="overlay-content">
+              <motion.div
+                className="overlay-actions"
+                initial={{ scale: 0.8, opacity: 0 }}
+                whileHover={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button variant="light" size="sm" className="action-btn">
+                  <i className="fas fa-search-plus" />
+                </Button>
+                <Button variant="light" size="sm" className="action-btn ms-2">
+                  <i className="fas fa-heart" />
+                </Button>
+              </motion.div>
+
+              <div className="overlay-info">
+                <h6 className="image-title">{gallery.title}</h6>
+                <small className="image-date">
+                  <i className="fas fa-calendar-alt me-1" />
+                  {format(new Date(gallery.created_at), "MMM dd, yyyy")}
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div className="image-number">
+            #{(currentPage - 1) * GALLERIES_PER_PAGE + index + 1}
+          </div>
+        </div>
+      </motion.div>
+    </Col>
+  )
+);
+
+const NoResults = React.memo(({ onReset }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="no-results"
+  >
+    <div className="no-results-content">
+      <i className="fas fa-images fa-3x" />
+      <h4>No photos found</h4>
+      <p>Try adjusting your search terms or filters</p>
+      <Button variant="primary" onClick={onReset}>
+        <i className="fas fa-refresh me-2" />
+        Reset Filters
+      </Button>
+    </div>
+  </motion.div>
+));
+
+const CustomPagination = React.memo(
+  ({ currentPage, totalPages, onPageChange, totalItems, itemsPerPage }) => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.3 }}
+      className="pagination-container"
+    >
+      <div className="pagination-info">
+        Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+        {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+        photos
+      </div>
+      <Pagination className="custom-pagination">
+        <Pagination.First
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(1)}
+        />
+        <Pagination.Prev
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        />
+
+        {Array.from({ length: totalPages }).map((_, index) => {
+          const pageNum = index + 1;
+          if (
+            pageNum === 1 ||
+            pageNum === totalPages ||
+            Math.abs(pageNum - currentPage) <= 1
+          ) {
+            return (
+              <Pagination.Item
+                key={pageNum}
+                active={pageNum === currentPage}
+                onClick={() => onPageChange(pageNum)}
+              >
+                {pageNum}
+              </Pagination.Item>
+            );
+          } else if (
+            (pageNum === 2 && currentPage > 3) ||
+            (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+          ) {
+            return <Pagination.Ellipsis key={`ellipsis-${pageNum}`} />;
+          }
+          return null;
+        })}
+
+        <Pagination.Next
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        />
+        <Pagination.Last
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(totalPages)}
+        />
+      </Pagination>
+    </motion.div>
+  )
+);
+
+const ImageModal = React.memo(
+  ({
+    show,
+    selectedImage,
+    onClose,
+    onNext,
+    onPrev,
+    galleries,
+    showImageDetails,
+    toggleImageDetails,
+  }) => (
+    <AnimatePresence>
+      {show && selectedImage && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="modal-backdrop"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            transition={{ duration: 0.3 }}
+            className="modal-container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-card">
+              <div className="modal-header">
+                <div className="modal-header-content">
+                  <h3 className="modal-title">{selectedImage.title}</h3>
+                  <div className="modal-meta">
+                    <span className="modal-date">
+                      <i className="fas fa-calendar-alt me-1" />
+                      {format(
+                        new Date(selectedImage.created_at),
+                        "MMMM dd, yyyy"
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="modal-action-btn"
+                    onClick={toggleImageDetails}
+                    aria-label="Show Info"
+                  >
+                    <i className="fas fa-info-circle" />
+                  </motion.button>
+                </div>
+              </div>
+              <div className="modal-body">
+                <div className="modal-image-container">
+                  <img
+                    src={selectedImage.image_url}
+                    alt={selectedImage.title}
+                    className="modal-image"
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {showImageDetails && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="image-details"
+                    >
+                      <div className="details-content">
+                        <div className="detail-item">
+                          <strong>Title:</strong> {selectedImage.title}
+                        </div>
+                        <div className="detail-item">
+                          <strong>Date Added:</strong>{" "}
+                          {format(
+                            new Date(selectedImage.created_at),
+                            "MMMM dd, yyyy 'at' HH:mm"
+                          )}
+                        </div>
+                        <div className="detail-item">
+                          <strong>ID:</strong> #{selectedImage.id}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="modal-footer">
+                <div className="modal-navigation">
+                  <Button
+                    variant="outline-secondary"
+                    onClick={onPrev}
+                    disabled={
+                      galleries.findIndex((g) => g.id === selectedImage.id) ===
+                      0
+                    }
+                  >
+                    <i className="fas fa-chevron-left me-2" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline-secondary"
+                    onClick={onNext}
+                    disabled={
+                      galleries.findIndex((g) => g.id === selectedImage.id) ===
+                      galleries.length - 1
+                    }
+                  >
+                    Next
+                    <i className="fas fa-chevron-right ms-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+);
 
 const Gallery = () => {
   const [galleries, setGalleries] = useState([]);
@@ -25,81 +678,12 @@ const Gallery = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [viewMode, setViewMode] = useState("grid"); // grid or masonry
+  const [viewMode, setViewMode] = useState("grid");
   const [selectedYear, setSelectedYear] = useState("all");
   const [imageLoading, setImageLoading] = useState({});
   const [showImageDetails, setShowImageDetails] = useState(false);
 
-  const galleriesPerPage = 12;
-
-  // Enhanced theme
-  const theme = {
-    primary: "#E9A319",
-    secondary: "#3D8D7A",
-    accent: "#3D90D7",
-    light: "#F8F9FA",
-    dark: "#212529",
-    gradients: {
-      primary: "linear-gradient(135deg, #E9A319 0%, #F4B942 100%)",
-      secondary: "linear-gradient(135deg, #3D8D7A 0%, #4AA391 100%)",
-      hero: "linear-gradient(135deg, rgba(61, 141, 122, 0.93), rgba(61, 141, 122, 0.7))",
-      overlay:
-        "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)",
-    },
-    shadows: {
-      card: "0 10px 40px rgba(0, 0, 0, 0.1)",
-      hover: "0 20px 60px rgba(0, 0, 0, 0.15)",
-      glow: "0 0 30px rgba(233, 163, 25, 0.3)",
-    },
-  };
-
-  // Enhanced animation variants
-  const animations = {
-    fadeInUp: {
-      hidden: { opacity: 0, y: 60 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] },
-      },
-    },
-    staggerContainer: {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.1,
-          delayChildren: 0.1,
-        },
-      },
-    },
-    scaleIn: {
-      hidden: { opacity: 0, scale: 0.8 },
-      visible: {
-        opacity: 1,
-        scale: 1,
-        transition: { duration: 0.6, ease: "easeOut" },
-      },
-    },
-    slideInLeft: {
-      hidden: { opacity: 0, x: -50 },
-      visible: {
-        opacity: 1,
-        x: 0,
-        transition: { duration: 0.6, ease: "easeOut" },
-      },
-    },
-    slideInRight: {
-      hidden: { opacity: 0, x: 50 },
-      visible: {
-        opacity: 1,
-        x: 0,
-        transition: { duration: 0.6, ease: "easeOut" },
-      },
-    },
-  };
-
-  // Get unique years from galleries
+  // Memoized computations
   const availableYears = useMemo(() => {
     const years = galleries.map((gallery) =>
       new Date(gallery.created_at).getFullYear()
@@ -107,44 +691,6 @@ const Gallery = () => {
     return [...new Set(years)].sort((a, b) => b - a);
   }, [galleries]);
 
-  // Fetch galleries
-  useEffect(() => {
-    const fetchGalleries = async () => {
-      try {
-        setLoading(true);
-        const { success, galleries, message } = await listGalleries();
-
-        if (success) {
-          setGalleries(galleries);
-          // Initialize loading state for each image
-          const loadingState = {};
-          galleries.forEach((gallery) => {
-            loadingState[gallery.id] = true;
-          });
-          setImageLoading(loadingState);
-        } else {
-          throw new Error(message || "Failed to fetch gallery images");
-        }
-      } catch (err) {
-        setError(err.message || "An unexpected error occurred");
-        console.error("Error fetching galleries:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGalleries();
-  }, []);
-
-  // Handle image load
-  const handleImageLoad = (galleryId) => {
-    setImageLoading((prev) => ({
-      ...prev,
-      [galleryId]: false,
-    }));
-  };
-
-  // Filter and sort galleries
   const filteredAndSortedGalleries = useMemo(() => {
     let filtered = galleries.filter((gallery) => {
       const matchesSearch = gallery.title
@@ -168,374 +714,118 @@ const Gallery = () => {
     });
   }, [galleries, searchTerm, sortBy, selectedYear]);
 
-  // Pagination
   const currentGalleries = useMemo(() => {
-    const startIndex = (currentPage - 1) * galleriesPerPage;
+    const startIndex = (currentPage - 1) * GALLERIES_PER_PAGE;
     return filteredAndSortedGalleries.slice(
       startIndex,
-      startIndex + galleriesPerPage
+      startIndex + GALLERIES_PER_PAGE
     );
   }, [filteredAndSortedGalleries, currentPage]);
 
   const totalPages = Math.ceil(
-    filteredAndSortedGalleries.length / galleriesPerPage
+    filteredAndSortedGalleries.length / GALLERIES_PER_PAGE
   );
 
-  const handlePageChange = (pageNumber) => {
+  // Memoized callbacks
+  const handlePageChange = useCallback((pageNumber) => {
     setCurrentPage(pageNumber);
     document
       .getElementById("gallery-section")
       ?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const handleOpenImage = (gallery) => {
+  const handleOpenImage = useCallback((gallery) => {
     setSelectedImage(gallery);
     setShowModal(true);
-  };
+  }, []);
+
+  const handleImageLoad = useCallback((galleryId) => {
+    setImageLoading((prev) => ({
+      ...prev,
+      [galleryId]: false,
+    }));
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSelectedYear("all");
+    setCurrentPage(1);
+  }, []);
+
+  const handleModalNavigation = useCallback(
+    (direction) => {
+      const currentIndex = galleries.findIndex(
+        (g) => g.id === selectedImage.id
+      );
+      const nextIndex =
+        direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      const nextImage = galleries[nextIndex];
+      if (nextImage) setSelectedImage(nextImage);
+    },
+    [galleries, selectedImage]
+  );
+
+  const handleRetry = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  // Fetch galleries
+  useEffect(() => {
+    const fetchGalleries = async () => {
+      try {
+        setLoading(true);
+        const { success, galleries, message } = await listGalleries();
+
+        if (success) {
+          setGalleries(galleries);
+          const loadingState = {};
+          galleries.forEach((gallery) => {
+            loadingState[gallery.id] = true;
+          });
+          setImageLoading(loadingState);
+        } else {
+          throw new Error(message || "Failed to fetch gallery images");
+        }
+      } catch (err) {
+        setError(err.message || "An unexpected error occurred");
+        console.error("Error fetching galleries:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGalleries();
+  }, []);
 
   if (loading) {
-    return (
-      <div
-        className="loading-screen"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#ffffff", // Ensures white background
-          zIndex: 9999, // Ensures it's on top
-          display: "flex", // Added from CSS class for content centering
-          alignItems: "center", // Added from CSS class for content centering
-          justifyContent: "center", // Added from CSS class for content centering
-        }}
-      >
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="loading-content"
-        >
-          <img
-            src={require("../../assets/loading.gif")}
-            style={{
-              display: "block", // Diperlukan agar margin: auto berfungsi untuk penengahan
-              maxWidth: "30vw", // Lebar responsif, hingga 80% dari lebar viewport
-              maxHeight: "30vh", // Tinggi responsif, hingga 70% dari tinggi viewport (menyisakan ruang untuk teks)
-              width: "auto", // Pertahankan rasio aspek
-              height: "auto", // Pertahankan rasio aspek
-              margin: "0 auto 1rem", // Tengahkan secara horizontal, tambahkan margin bawah 1rem
-            }}
-          />
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="loading-text"
-          ></motion.p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (error) {
-    return (
-      <Container className="py-5 text-center" style={{ minHeight: "70vh" }}>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="error-container"
-        >
-          <div className="error-icon">
-            <i className="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>Oops! Something went wrong</h3>
-          <p>{error}</p>
-          <Button variant="warning" onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
-        </motion.div>
-      </Container>
-    );
+    return <ErrorMessage error={error} onRetry={handleRetry} />;
   }
 
   return (
     <div className="modern-gallery">
-      {/* Enhanced Hero Section */}
-      <section className="hero-section">
-        <div className="hero-background">
-          {/* Animated particles */}
-          <div className="particles-container">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <motion.div
-                key={i}
-                className={`particle particle-${i % 4}`}
-                animate={{
-                  y: [0, -120, 0],
-                  x: [0, Math.random() * 40 - 20, 0],
-                  opacity: [0.3, 0.8, 0.3],
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 4 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-              />
-            ))}
-          </div>
+      <HeroSection galleries={galleries} availableYears={availableYears} />
 
-          <Container className="hero-content">
-            <Row className="align-items-center min-vh-50">
-              <Col lg={8}>
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={animations.fadeInUp}
-                  className="hero-text"
-                >
-                  <div className="hero-badge">
-                    <i className="fas fa-camera-retro me-2"></i>
-                    Visual Journey
-                  </div>
-                  <h1 className="hero-title">
-                    Galeri
-                    <span className="gradient-text"> Foto</span>
-                  </h1>
-                  <div className="title-divider"></div>
-                  <p className="hero-description">
-                    Jelajahi koleksi foto-foto terbaik kami yang menampilkan
-                    aktivitas, fasilitas, hewan ternak, dan produk DairyTrack.
-                    Temukan cerita visual di balik setiap momen di peternakan
-                    kami.
-                  </p>
-
-                  <div className="hero-stats">
-                    <motion.div
-                      className="stat-item"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="stat-number">{galleries.length}</div>
-                      <div className="stat-label">Photos</div>
-                    </motion.div>
-                    <motion.div
-                      className="stat-item"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="stat-number">{availableYears.length}</div>
-                      <div className="stat-label">Years</div>
-                    </motion.div>
-                    <motion.div
-                      className="stat-item"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="stat-number">24/7</div>
-                      <div className="stat-label">Memories</div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </Col>
-
-              <Col lg={4} className="d-none d-lg-block">
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={animations.slideInRight}
-                  className="hero-visual"
-                >
-                  <div className="hero-icon-container">
-                    <motion.div
-                      className="hero-icon-circle"
-                      animate={{
-                        boxShadow: [
-                          "0 0 20px rgba(233, 163, 25, 0.3)",
-                          "0 0 40px rgba(233, 163, 25, 0.6)",
-                          "0 0 20px rgba(233, 163, 25, 0.3)",
-                        ],
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <div className="icon-glow"></div>
-                      <i className="fas fa-camera-retro"></i>
-                    </motion.div>
-
-                    {/* Floating camera elements */}
-                    <motion.div
-                      className="floating-element element-1"
-                      animate={{
-                        y: [0, -15, 0],
-                        rotate: [0, 5, 0],
-                      }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                    >
-                      <i className="fas fa-images"></i>
-                    </motion.div>
-                    <motion.div
-                      className="floating-element element-2"
-                      animate={{
-                        y: [0, 15, 0],
-                        rotate: [0, -5, 0],
-                      }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                    >
-                      <i className="fas fa-aperture"></i>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </Col>
-            </Row>
-          </Container>
-        </div>
-      </section>
-
-      {/* Enhanced Gallery Content */}
       <Container fluid className="gallery-content-section" id="gallery-section">
         <Container>
-          {/* Enhanced Filters */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={animations.fadeInUp}
-            className="filters-container"
-          >
-            <div className="filters-header">
-              <h3 className="filters-title">
-                <i className="fas fa-sliders-h me-2"></i>
-                Explore Our Gallery
-              </h3>
-              <div className="view-controls">
-                <div className="view-mode-toggle">
-                  <Button
-                    variant={
-                      viewMode === "grid" ? "primary" : "outline-primary"
-                    }
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className="me-2"
-                  >
-                    <i className="fas fa-th"></i>
-                  </Button>
-                  <Button
-                    variant={
-                      viewMode === "masonry" ? "primary" : "outline-primary"
-                    }
-                    size="sm"
-                    onClick={() => setViewMode("masonry")}
-                  >
-                    <i className="fas fa-th-large"></i>
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <FiltersSection
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            availableYears={availableYears}
+            filteredCount={filteredAndSortedGalleries.length}
+            setCurrentPage={setCurrentPage}
+            clearFilters={clearFilters}
+          />
 
-            <Row className="filters-row">
-              <Col lg={4} md={6} className="mb-3">
-                <div className="search-container">
-                  <InputGroup className="search-input-group">
-                    <InputGroup.Text>
-                      <i className="fas fa-search"></i>
-                    </InputGroup.Text>
-                    <Form.Control
-                      placeholder="Search photos..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                    />
-                    {searchTerm && (
-                      <Button
-                        variant="outline-secondary"
-                        onClick={() => setSearchTerm("")}
-                      >
-                        <i className="fas fa-times"></i>
-                      </Button>
-                    )}
-                  </InputGroup>
-                </div>
-              </Col>
-
-              <Col lg={3} md={6} className="mb-3">
-                <Form.Select
-                  value={selectedYear}
-                  onChange={(e) => {
-                    setSelectedYear(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="filter-select"
-                >
-                  <option value="all">All Years</option>
-                  {availableYears.map((year) => (
-                    <option key={year} value={year.toString()}>
-                      {year}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Col>
-
-              <Col lg={3} md={6} className="mb-3">
-                <Form.Select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="filter-select"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="alphabetical">Alphabetical</option>
-                </Form.Select>
-              </Col>
-
-              <Col lg={2} md={6} className="mb-3">
-                <div className="results-info">
-                  <Badge bg="primary" className="results-badge">
-                    {filteredAndSortedGalleries.length} Photos
-                  </Badge>
-                </div>
-              </Col>
-            </Row>
-
-            {/* Active filters */}
-            {(searchTerm || selectedYear !== "all") && (
-              <div className="active-filters">
-                <span className="filters-label">Active filters:</span>
-                {searchTerm && (
-                  <Badge
-                    bg="warning"
-                    className="filter-badge"
-                    onClick={() => setSearchTerm("")}
-                  >
-                    Search: "{searchTerm}" <i className="fas fa-times ms-1"></i>
-                  </Badge>
-                )}
-                {selectedYear !== "all" && (
-                  <Badge
-                    bg="info"
-                    className="filter-badge"
-                    onClick={() => setSelectedYear("all")}
-                  >
-                    Year: {selectedYear} <i className="fas fa-times ms-1"></i>
-                  </Badge>
-                )}
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedYear("all");
-                    setCurrentPage(1);
-                  }}
-                  className="clear-filters-btn"
-                >
-                  Clear All
-                </Button>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Gallery Grid */}
           <AnimatePresence mode="wait">
             {currentGalleries.length > 0 ? (
               <motion.div
@@ -548,318 +838,46 @@ const Gallery = () => {
               >
                 <Row className="g-4">
                   {currentGalleries.map((gallery, index) => (
-                    <Col
+                    <GalleryCard
                       key={gallery.id}
-                      lg={viewMode === "masonry" ? 4 : 3}
-                      md={viewMode === "masonry" ? 6 : 4}
-                      sm={6}
-                      xs={12}
-                    >
-                      <motion.div
-                        variants={animations.scaleIn}
-                        whileHover={{ y: -10 }}
-                        transition={{ duration: 0.3 }}
-                        className="gallery-card"
-                        onClick={() => handleOpenImage(gallery)}
-                      >
-                        <div className="image-container">
-                          {imageLoading[gallery.id] && (
-                            <div className="image-skeleton">
-                              <div className="skeleton-shimmer"></div>
-                            </div>
-                          )}
-                          <img
-                            src={gallery.image_url}
-                            alt={gallery.title}
-                            className="gallery-image"
-                            onLoad={() => handleImageLoad(gallery.id)}
-                            style={{
-                              display: imageLoading[gallery.id]
-                                ? "none"
-                                : "block",
-                            }}
-                          />
-
-                          <div className="image-overlay">
-                            <div className="overlay-content">
-                              <motion.div
-                                className="overlay-actions"
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                whileHover={{ scale: 1, opacity: 1 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <Button
-                                  variant="light"
-                                  size="sm"
-                                  className="action-btn"
-                                >
-                                  <i className="fas fa-search-plus"></i>
-                                </Button>
-                                <Button
-                                  variant="light"
-                                  size="sm"
-                                  className="action-btn ms-2"
-                                >
-                                  <i className="fas fa-heart"></i>
-                                </Button>
-                              </motion.div>
-
-                              <div className="overlay-info">
-                                <h6 className="image-title">{gallery.title}</h6>
-                                <small className="image-date">
-                                  <i className="fas fa-calendar-alt me-1"></i>
-                                  {format(
-                                    new Date(gallery.created_at),
-                                    "MMM dd, yyyy"
-                                  )}
-                                </small>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Image number badge */}
-                          <div className="image-number">
-                            #{(currentPage - 1) * galleriesPerPage + index + 1}
-                          </div>
-                        </div>
-                      </motion.div>
-                    </Col>
+                      gallery={gallery}
+                      index={index}
+                      currentPage={currentPage}
+                      viewMode={viewMode}
+                      imageLoading={imageLoading}
+                      onImageLoad={handleImageLoad}
+                      onOpenImage={handleOpenImage}
+                    />
                   ))}
                 </Row>
               </motion.div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="no-results"
-              >
-                <div className="no-results-content">
-                  <i className="fas fa-images fa-3x"></i>
-                  <h4>No photos found</h4>
-                  <p>Try adjusting your search terms or filters</p>
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedYear("all");
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <i className="fas fa-refresh me-2"></i>
-                    Reset Filters
-                  </Button>
-                </div>
-              </motion.div>
+              <NoResults onReset={clearFilters} />
             )}
           </AnimatePresence>
 
-          {/* Enhanced Pagination */}
           {filteredAndSortedGalleries.length > 0 && totalPages > 1 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="pagination-container"
-            >
-              <div className="pagination-info">
-                Showing {(currentPage - 1) * galleriesPerPage + 1} to{" "}
-                {Math.min(
-                  currentPage * galleriesPerPage,
-                  filteredAndSortedGalleries.length
-                )}{" "}
-                of {filteredAndSortedGalleries.length} photos
-              </div>
-              <Pagination className="custom-pagination">
-                <Pagination.First
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(1)}
-                />
-                <Pagination.Prev
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                />
-
-                {Array.from({ length: totalPages }).map((_, index) => {
-                  const pageNum = index + 1;
-                  if (
-                    pageNum === 1 ||
-                    pageNum === totalPages ||
-                    Math.abs(pageNum - currentPage) <= 1
-                  ) {
-                    return (
-                      <Pagination.Item
-                        key={pageNum}
-                        active={pageNum === currentPage}
-                        onClick={() => handlePageChange(pageNum)}
-                      >
-                        {pageNum}
-                      </Pagination.Item>
-                    );
-                  } else if (
-                    (pageNum === 2 && currentPage > 3) ||
-                    (pageNum === totalPages - 1 && currentPage < totalPages - 2)
-                  ) {
-                    return <Pagination.Ellipsis key={`ellipsis-${pageNum}`} />;
-                  }
-                  return null;
-                })}
-
-                <Pagination.Next
-                  disabled={currentPage === totalPages}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                />
-                <Pagination.Last
-                  disabled={currentPage === totalPages}
-                  onClick={() => handlePageChange(totalPages)}
-                />
-              </Pagination>
-            </motion.div>
+            <CustomPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              totalItems={filteredAndSortedGalleries.length}
+              itemsPerPage={GALLERIES_PER_PAGE}
+            />
           )}
         </Container>
       </Container>
 
-      {/* Enhanced Image Modal */}
-      <AnimatePresence>
-        {showModal && selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="modal-backdrop"
-            onClick={() => setShowModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 50 }}
-              transition={{ duration: 0.3 }}
-              className="modal-container"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-card">
-                <div className="modal-header">
-                  <div className="modal-header-content">
-                    <h3 className="modal-title">{selectedImage.title}</h3>
-                    <div className="modal-meta">
-                      <span className="modal-date">
-                        <i className="fas fa-calendar-alt me-1"></i>
-                        {format(
-                          new Date(selectedImage.created_at),
-                          "MMMM dd, yyyy"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="modal-actions">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="modal-action-btn"
-                      onClick={() => setShowImageDetails(!showImageDetails)}
-                    >
-                      <i className="fas fa-info-circle"></i>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="modal-action-btn"
-                    >
-                      <i className="fas fa-download"></i>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1, rotate: 90 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="modal-close"
-                      onClick={() => setShowModal(false)}
-                    >
-                      <i className="fas fa-times"></i>
-                    </motion.button>
-                  </div>
-                </div>
-
-                <div className="modal-body">
-                  <div className="modal-image-container">
-                    <img
-                      src={selectedImage.image_url}
-                      alt={selectedImage.title}
-                      className="modal-image"
-                    />
-                  </div>
-
-                  <AnimatePresence>
-                    {showImageDetails && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="image-details"
-                      >
-                        <div className="details-content">
-                          <div className="detail-item">
-                            <strong>Title:</strong> {selectedImage.title}
-                          </div>
-                          <div className="detail-item">
-                            <strong>Date Added:</strong>{" "}
-                            {format(
-                              new Date(selectedImage.created_at),
-                              "MMMM dd, yyyy 'at' HH:mm"
-                            )}
-                          </div>
-                          <div className="detail-item">
-                            <strong>ID:</strong> #{selectedImage.id}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div className="modal-footer">
-                  <div className="modal-navigation">
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => {
-                        const currentIndex = galleries.findIndex(
-                          (g) => g.id === selectedImage.id
-                        );
-                        const prevImage = galleries[currentIndex - 1];
-                        if (prevImage) setSelectedImage(prevImage);
-                      }}
-                      disabled={
-                        galleries.findIndex(
-                          (g) => g.id === selectedImage.id
-                        ) === 0
-                      }
-                    >
-                      <i className="fas fa-chevron-left me-2"></i>
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => {
-                        const currentIndex = galleries.findIndex(
-                          (g) => g.id === selectedImage.id
-                        );
-                        const nextImage = galleries[currentIndex + 1];
-                        if (nextImage) setSelectedImage(nextImage);
-                      }}
-                      disabled={
-                        galleries.findIndex(
-                          (g) => g.id === selectedImage.id
-                        ) ===
-                        galleries.length - 1
-                      }
-                    >
-                      Next
-                      <i className="fas fa-chevron-right ms-2"></i>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ImageModal
+        show={showModal}
+        selectedImage={selectedImage}
+        onClose={() => setShowModal(false)}
+        onNext={() => handleModalNavigation("next")}
+        onPrev={() => handleModalNavigation("prev")}
+        galleries={galleries}
+        showImageDetails={showImageDetails}
+        toggleImageDetails={() => setShowImageDetails(!showImageDetails)}
+      />
 
       <style jsx>{`
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
@@ -869,7 +887,6 @@ const Gallery = () => {
           overflow-x: hidden;
         }
 
-        /* Loading Screen */
         .loading-screen {
           position: fixed;
           top: 0;
@@ -888,56 +905,15 @@ const Gallery = () => {
           color: white;
         }
 
-        .spinner-container {
-          position: relative;
-          width: 80px;
-          height: 80px;
-          margin: 0 auto 2rem;
+        .loading-gif {
+          display: block;
+          max-width: 30vw;
+          max-height: 30vh;
+          width: auto;
+          height: auto;
+          margin: 0 auto 1rem;
         }
 
-        .spinner-ring {
-          position: absolute;
-          border: 3px solid transparent;
-          border-top: 3px solid white;
-          border-radius: 50%;
-          animation: spin 1.2s linear infinite;
-        }
-
-        .spinner-ring:nth-child(1) {
-          width: 80px;
-          height: 80px;
-        }
-        .spinner-ring:nth-child(2) {
-          width: 60px;
-          height: 60px;
-          top: 10px;
-          left: 10px;
-          animation-delay: -0.4s;
-        }
-        .spinner-ring:nth-child(3) {
-          width: 40px;
-          height: 40px;
-          top: 20px;
-          left: 20px;
-          animation-delay: -0.8s;
-        }
-
-        @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-
-        .loading-text {
-          font-size: 1.2rem;
-          font-weight: 500;
-          opacity: 0.9;
-        }
-
-        /* Hero Section */
         .hero-section {
           position: relative;
           overflow: hidden;
@@ -945,7 +921,7 @@ const Gallery = () => {
 
         .hero-background {
           background: ${theme.gradients.hero},
-            url(${require("../../assets/about.png")}) no-repeat center center;
+            url(${aboutImg}) no-repeat center center;
           background-size: cover;
           min-height: 50vh;
           position: relative;
@@ -1155,7 +1131,6 @@ const Gallery = () => {
           left: 10%;
         }
 
-        /* Gallery Content Section */
         .gallery-content-section {
           padding: 80px 0;
           background: ${theme.light};
@@ -1282,7 +1257,6 @@ const Gallery = () => {
           text-decoration: underline;
         }
 
-        /* Gallery Grid */
         .gallery-grid {
           min-height: 400px;
         }
@@ -1417,7 +1391,6 @@ const Gallery = () => {
           backdrop-filter: blur(10px);
         }
 
-        /* No Results */
         .no-results {
           display: flex;
           justify-content: center;
@@ -1440,7 +1413,6 @@ const Gallery = () => {
           margin-bottom: 1rem;
         }
 
-        /* Pagination */
         .pagination-container {
           display: flex;
           justify-content: space-between;
@@ -1474,7 +1446,6 @@ const Gallery = () => {
           border-color: ${theme.primary};
         }
 
-        /* Modal Styles */
         .modal-backdrop {
           position: fixed;
           top: 0;
@@ -1535,8 +1506,7 @@ const Gallery = () => {
           margin-left: 1rem;
         }
 
-        .modal-action-btn,
-        .modal-close {
+        .modal-action-btn {
           background: rgba(255, 255, 255, 0.2);
           border: none;
           color: white;
@@ -1552,8 +1522,7 @@ const Gallery = () => {
           transition: all 0.3s ease;
         }
 
-        .modal-action-btn:hover,
-        .modal-close:hover {
+        .modal-action-btn:hover {
           background: rgba(255, 255, 255, 0.3);
         }
 
@@ -1602,7 +1571,6 @@ const Gallery = () => {
           justify-content: space-between;
         }
 
-        /* Error Container */
         .error-container {
           text-align: center;
           padding: 3rem;
@@ -1629,7 +1597,6 @@ const Gallery = () => {
           margin-bottom: 2rem;
         }
 
-        /* Responsive Design */
         @media (max-width: 992px) {
           .hero-stats {
             flex-wrap: wrap;
@@ -1776,7 +1743,6 @@ const Gallery = () => {
           }
         }
 
-        /* Custom Scrollbar */
         .modal-container::-webkit-scrollbar {
           width: 6px;
         }
@@ -1795,7 +1761,6 @@ const Gallery = () => {
           background: #d49617;
         }
 
-        /* Reduced Motion Support */
         @media (prefers-reduced-motion: reduce) {
           *,
           *::before,
@@ -1818,7 +1783,6 @@ const Gallery = () => {
           }
         }
 
-        /* Print Styles */
         @media print {
           .modern-gallery {
             color: black;

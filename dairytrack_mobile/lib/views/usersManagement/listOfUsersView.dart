@@ -27,6 +27,15 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
   int _usersPerPage = 10;
   String _userRole = '';
 
+  // Add dynamic color getters based on user role
+  Color get _primaryColor => _userRole == 'Supervisor'
+      ? Colors.deepOrange[400]!
+      : Colors.blueGrey[800]!;
+  Color get _primaryLightColor =>
+      _userRole == 'Supervisor' ? Colors.orange[300]! : Colors.blueGrey[300]!;
+  Color get _primaryDarkColor =>
+      _userRole == 'Supervisor' ? Colors.orange[800]! : Colors.blueGrey[900]!;
+
   final Map<int, String> _roleDescriptions = {
     1: 'Admins have full access to the system and can manage all aspects.',
     2: 'Supervisors can oversee daily operations on this system.',
@@ -143,9 +152,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               "Delete",
-              style: TextStyle(color: Colors.amber),
+              style: TextStyle(color: _primaryColor),
             ),
           ),
         ],
@@ -197,9 +206,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(inputText),
-                child: const Text(
+                child: Text(
                   "Verify",
-                  style: TextStyle(color: Colors.amber),
+                  style: TextStyle(color: _primaryColor),
                 ),
               ),
             ],
@@ -251,9 +260,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 "OK",
-                style: TextStyle(color: Colors.amber),
+                style: TextStyle(color: _primaryColor),
               ),
             ),
           ],
@@ -283,9 +292,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               "Reset",
-              style: TextStyle(color: Colors.amber),
+              style: TextStyle(color: _primaryColor),
             ),
           ),
         ],
@@ -390,7 +399,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
           children: [
             Row(
               children: [
-                Icon(Icons.pie_chart, color: Colors.blueGrey[800]),
+                Icon(Icons.pie_chart, color: _primaryColor),
                 SizedBox(width: 8),
                 Text(
                   'User Statistics',
@@ -449,7 +458,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blueGrey[800]),
+                Icon(Icons.info_outline, color: _primaryColor),
                 SizedBox(width: 8),
                 Text(
                   'Role Information',
@@ -636,7 +645,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                         onPressed: () =>
                             _resetUserPassword(user.id, user.roleId),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber[400],
+                          backgroundColor: _primaryColor,
                           padding: EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 6,
@@ -744,7 +753,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.blueGrey[800],
+        backgroundColor: _primaryColor,
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list, color: Colors.white),
@@ -776,7 +785,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                             children: [
                               Icon(
                                 Icons.filter_alt,
-                                color: Colors.amber,
+                                color: _primaryColor,
                               ),
                               SizedBox(width: 8),
                               Text(
@@ -862,9 +871,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                     });
                                   },
                                   child: Text('Clear Filters',
-                                      style: TextStyle(color: Colors.amber)),
+                                      style: TextStyle(color: _primaryColor)),
                                   style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Colors.amber),
+                                    side: BorderSide(color: _primaryColor),
                                     padding: EdgeInsets.symmetric(
                                       vertical: 15,
                                     ),
@@ -885,7 +894,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                     style: TextStyle(color: Colors.white),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
+                                    backgroundColor: _primaryColor,
                                     padding: EdgeInsets.symmetric(
                                       vertical: 15,
                                     ),
@@ -918,7 +927,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                   backgroundColor: Colors.grey[900],
                   title: Row(
                     children: [
-                      Icon(Icons.download, color: Colors.amber),
+                      Icon(Icons.download, color: _primaryColor),
                       SizedBox(width: 8),
                       Text(
                         "Export Data",
@@ -997,8 +1006,8 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                           }
                                         },
                                         child: Text("Open File",
-                                            style:
-                                                TextStyle(color: Colors.amber)),
+                                            style: TextStyle(
+                                                color: _primaryColor)),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
@@ -1095,8 +1104,8 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                           }
                                         },
                                         child: Text("Open File",
-                                            style:
-                                                TextStyle(color: Colors.amber)),
+                                            style: TextStyle(
+                                                color: _primaryColor)),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
@@ -1135,7 +1144,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         "Cancel",
-                        style: TextStyle(color: Colors.amber),
+                        style: TextStyle(color: _primaryColor),
                       ),
                     ),
                   ],
@@ -1343,7 +1352,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                           }
                                         : null,
                                     tooltip: 'Previous Page',
-                                    color: Colors.blueGrey[800],
+                                    color: _primaryColor,
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -1368,7 +1377,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                           }
                                         : null,
                                     tooltip: 'Next Page',
-                                    color: Colors.blueGrey[800],
+                                    color: _primaryColor,
                                   ),
                                 ],
                               ),
@@ -1391,7 +1400,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                 }
               },
               child: Icon(Icons.add, color: Colors.white),
-              backgroundColor: Colors.blueGrey[800],
+              backgroundColor: _primaryColor,
             )
           : null,
     );

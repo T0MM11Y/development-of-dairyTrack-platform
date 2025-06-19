@@ -1,3 +1,6 @@
+import 'package:dairytrack_mobile/controller/APIURL2/providers/financeProvider.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/providers/orderProvider.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockHistoryProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productTypeProvider.dart';
 import 'package:dairytrack_mobile/services/notificationService.dart';
@@ -21,8 +24,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ProductStockHistoryProvider()),
         ChangeNotifierProvider(create: (_) => StockProvider()),
         ChangeNotifierProvider(create: (_) => ProductTypeProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => FinanceProvider()),
       ],
       child: const MyApp(),
     ),

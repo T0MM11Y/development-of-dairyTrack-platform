@@ -170,19 +170,20 @@ Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
-      title: const Text('Edit Gejala'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
+  title: const Text(
+    'Edit Gejala',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Colors.white,
+      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
     ),
+  ),
+  centerTitle: true,
+  elevation: 8,
+  backgroundColor: Colors.teal[400],
+),
+
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : SingleChildScrollView(
@@ -260,8 +261,8 @@ Widget build(BuildContext context) {
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.teal[600],
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.teal[400],
+                        foregroundColor: Colors.white,   
                       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),

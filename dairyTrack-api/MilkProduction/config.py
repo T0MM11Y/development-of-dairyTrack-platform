@@ -7,9 +7,9 @@ class Config:
     # local development
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or 'mysql+pymysql://root:@127.0.0.1/dairy_track' 
     
-     # production
+    # production
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or (
-        'mysql+pymysql://DairyTrack_represent:212bf667b8832e0a530401195b131a542e31a4f0@rlsoy.h.filess.io:3307/DairyTrack_represent'
+        'mysql+pymysql://tthsanbe_TA:Cy2U0x1JJRFY@178.248.73.218:3306/tthsanbe_t5th'
     )
 
 

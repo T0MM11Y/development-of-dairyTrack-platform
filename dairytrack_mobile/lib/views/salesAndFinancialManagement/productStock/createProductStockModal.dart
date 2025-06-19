@@ -38,24 +38,41 @@ class _CreateStockModalState extends State<CreateStockModal> {
     });
   }
 
-  Future<void> _selectDate(BuildContext context, bool isProduction) async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectDateTime(BuildContext context, bool isProduction) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    if (picked != null) {
-      setState(() {
-        if (isProduction) {
-          _productionDate = picked;
-          _productionDateController.text =
-              DateFormat('dd MMM yyyy').format(picked);
-        } else {
-          _expiryDate = picked;
-          _expiryDateController.text = DateFormat('dd MMM yyyy').format(picked);
-        }
-      });
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+
+      if (pickedTime != null) {
+        final DateTime combinedDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        setState(() {
+          if (isProduction) {
+            _productionDate = combinedDateTime;
+            _productionDateController.text =
+                DateFormat('dd MMM yyyy HH:mm').format(combinedDateTime);
+          } else {
+            _expiryDate = combinedDateTime;
+            _expiryDateController.text =
+                DateFormat('dd MMM yyyy HH:mm').format(combinedDateTime);
+          }
+        });
+      }
     }
   }
 
@@ -65,27 +82,25 @@ class _CreateStockModalState extends State<CreateStockModal> {
         _productionDate != null &&
         _expiryDate != null) {
       try {
-        final userId = await AuthUtils.getUserId(); // Fetch user_id
+        final userId = await AuthUtils.getUserId();
         final newStock = {
           'productType': _selectedProductType,
           'initialQuantity': int.parse(_initialQuantityController.text),
-          'productionAt':
-              DateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(_productionDate!),
-          'expiryAt': DateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(_expiryDate!),
+          'productionAt': _productionDate!.toIso8601String(),
+          'expiryAt': _expiryDate!.toIso8601String(),
           'status': _status,
           'totalMilkUsed': double.parse(_totalMilkUsedController.text),
-          'createdBy': userId, // Use fetched user_id
+          'createdBy': userId,
         };
 
         _logger.i('Submitting stock: $newStock');
 
         final success = await provider.createStock(newStock);
         if (success) {
-          Navigator.pop(context);
+          Navigator.pop(context); // Close modal
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Stok produk berhasil ditambahkan')),
           );
-          provider.fetchStocks();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(provider.errorMessage)),
@@ -94,7 +109,7 @@ class _CreateStockModalState extends State<CreateStockModal> {
       } catch (e) {
         _logger.e('Error submitting stock: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menambahkan stok: $e')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
@@ -114,7 +129,7 @@ class _CreateStockModalState extends State<CreateStockModal> {
     return Consumer<ProductTypeProvider>(
       builder: (context, productTypeProvider, child) {
         return AlertDialog(
-          title: const Text('Tambah Stok Produk'),
+          title: const Text('Stock Product'),
           content: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -148,7 +163,7 @@ class _CreateStockModalState extends State<CreateStockModal> {
                       },
                       validator: (value) {
                         if (value == null) {
-                          return 'Jenis produk harus dipilih';
+                          return 'Jenis produk harus diisi';
                         }
                         return null;
                       },
@@ -162,11 +177,11 @@ class _CreateStockModalState extends State<CreateStockModal> {
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Jumlah awal tidak boleh kosong';
+                      if (value == null || value!.isEmpty) {
+                        return 'Jumlah awalikan tidak boleh kosong';
                       }
-                      if (int.tryParse(value) == null) {
-                        return 'Jumlah harus berupa angka';
+                      if (int.tryParse(value!) == null) {
+                        return 'Jumlahnya harus berupa angka';
                       }
                       return null;
                     },
@@ -175,15 +190,15 @@ class _CreateStockModalState extends State<CreateStockModal> {
                   TextFormField(
                     controller: _totalMilkUsedController,
                     decoration: const InputDecoration(
-                      labelText: 'Total Susu Digunakan (liter)',
+                      labelText: 'Total Susu yang digunakan (liter)',
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value!.isEmpty) {
                         return 'Total susu tidak boleh kosong';
                       }
-                      if (double.tryParse(value) == null) {
+                      if (double.tryParse(value!) == null) {
                         return 'Total susu harus berupa angka';
                       }
                       return null;
@@ -201,7 +216,7 @@ class _CreateStockModalState extends State<CreateStockModal> {
                       DropdownMenuItem(
                           value: 'contamination', child: Text('Kontaminasi')),
                       DropdownMenuItem(
-                          value: 'expired', child: Text('Kadaluarsa')),
+                          value: 'expired', child: Text('Kedaluwarsa')),
                     ],
                     value: _status,
                     onChanged: (value) {
@@ -211,41 +226,40 @@ class _CreateStockModalState extends State<CreateStockModal> {
                     },
                     validator: (value) {
                       if (value == null) {
-                        return 'Status harus dipilih';
+                        return 'Status harus diisi';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
-                    controller: _productionDateController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Tanggal Produksi',
-                      border: OutlineInputBorder(),
-                      hintText: 'Pilih tanggal',
-                    ),
-                    onTap: () => _selectDate(context, true),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Tanggal produksi harus dipilih';
-                      }
-                      return null;
-                    },
-                  ),
+                      controller: _productionDateController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Tanggal & Waktu Produksi',
+                        border: OutlineInputBorder(),
+                        hintText: 'Pilih tanggal dan waktu',
+                      ),
+                      onTap: () => _selectDateTime(context, true),
+                      validator: (value) {
+                        if (value == null || value!.isEmpty) {
+                          return 'Tanggal dan waktu produksi harus dipilih';
+                        }
+                        return null;
+                      }),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _expiryDateController,
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: 'Tanggal Kadaluarsa',
+                      labelText: 'Tanggal & Waktu Kadaluarsa',
                       border: OutlineInputBorder(),
-                      hintText: 'Pilih tanggal',
+                      hintText: 'Pilih tanggal dan waktu',
                     ),
-                    onTap: () => _selectDate(context, false),
+                    onTap: () => _selectDateTime(context, false),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Tanggal kadaluarsa harus dipilih';
+                      if (value == null || value!.isEmpty) {
+                        return 'Tanggal dan waktu kadaluarsa harus dipilih';
                       }
                       return null;
                     },
@@ -256,8 +270,8 @@ class _CreateStockModalState extends State<CreateStockModal> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
             ),
             Consumer<StockProvider>(
               builder: (context, stockProvider, child) {

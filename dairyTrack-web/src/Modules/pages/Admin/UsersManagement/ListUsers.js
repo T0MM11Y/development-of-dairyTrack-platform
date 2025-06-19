@@ -740,10 +740,11 @@ const Users = () => {
                                   } border-0`}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (!isSupervisor)
+                                    // Disable delete for Admin users
+                                    if (!isSupervisor && user.role_id !== 1)
                                       handleDeleteUser(user.id);
                                   }}
-                                  disabled={isSupervisor}
+                                  disabled={isSupervisor || user.role_id === 1}
                                 >
                                   <i className="fas fa-trash-alt"></i>
                                 </button>

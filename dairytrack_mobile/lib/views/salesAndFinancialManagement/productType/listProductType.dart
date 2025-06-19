@@ -142,7 +142,9 @@ class _ListProductTypesState extends State<ListProductTypes> {
                             },
                           ),
                         ),
-                        StatisticsCard(totalCount: totalItems),
+                        StatisticsCard(
+                            totalCount: totalItems,
+                            label: 'Sum Of Product Types'),
                         Expanded(
                           child: provider.productTypes.isEmpty
                               ? Center(

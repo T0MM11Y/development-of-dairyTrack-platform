@@ -29,6 +29,7 @@ class _DiseaseHistoryListViewState extends State<DiseaseHistoryListView> {
   List<dynamic> _userManagedCows = [];
   bool get _isAdmin => _currentUser?['role_id'] == 1;
 bool get _isSupervisor => _currentUser?['role_id'] == 2;
+bool get _isFarmer => _currentUser?['role_id'] == 3;
 
 
   bool _loading = true;
@@ -171,20 +172,24 @@ Widget build(BuildContext context) {
 
   return Scaffold(
     backgroundColor: const Color(0xFFf5f7fa),
-    appBar: AppBar(
-      title: const Text('Riwayat Penyakit'),
-      centerTitle: true,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+  appBar: AppBar(
+    title: const Text(
+      'Riwayat Penyakit',
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        fontSize: 20,
+        shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
       ),
     ),
+    centerTitle: true,
+    elevation: 8,
+    backgroundColor: _isFarmer
+        ? Colors.teal[400]
+        : _isSupervisor
+            ? Colors.blue[700]
+            : Colors.blueGrey[800],
+  ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : Column(
@@ -295,70 +300,68 @@ Widget build(BuildContext context) {
                                         },
                                       ),
                                       ElevatedButton.icon(
-                                        icon: const Icon(Icons.edit, size: 18),
-                                        label: const Text('Edit'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.orange,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                        onPressed: () {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Role ini tidak memiliki izin mengedit')),
-                                            );
-                                            return;
-                                          }
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => EditDiseaseHistoryView(
-                                                historyId: item['id'],
-                                                onUpdated: _loadData,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      ElevatedButton.icon(
-                                        icon: const Icon(Icons.delete, size: 18),
-                                        label: const Text('Hapus'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                        onPressed: () async {
-                                          if (_isAdmin || _isSupervisor) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Role ini tidak memiliki izin menghapus')),
-                                            );
-                                            return;
-                                          }
-                                          final confirm = await showDialog(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Konfirmasi Hapus'),
-                                              content: const Text('Yakin ingin menghapus data ini?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(ctx, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () => Navigator.pop(ctx, true),
-                                                  child: const Text('Hapus'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true) {
-                                            _deleteHistory(item['id']);
-                                          }
-                                        },
-                                      ),
+  icon: const Icon(Icons.edit, size: 18),
+  label: const Text('Edit'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditDiseaseHistoryView(
+          historyId: item['id'],
+          onUpdated: _loadData,
+        ),
+      ),
+    );
+  },
+),
+                                          ElevatedButton.icon(
+  icon: const Icon(Icons.delete, size: 18),
+  label: const Text('Hapus'),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.redAccent,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Data Tidak Bisa Dihapus'),
+        content: const Text('Data riwayat tidak dapat dihapus karena merupakan arsip medis.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  },
+),
                                     ],
                                   ),
                                 ],
@@ -388,11 +391,30 @@ Widget build(BuildContext context) {
                 ),
             ],
           ),
-    floatingActionButton: FloatingActionButton(
-      backgroundColor: Colors.green[700],
-      tooltip: 'Tambah Riwayat Penyakit',
-      child: const Icon(Icons.add),
-      onPressed: () {
+   floatingActionButton: FloatingActionButton(
+backgroundColor: _isFarmer
+      ? Colors.teal[400]
+      : _isSupervisor
+          ? Colors.blue[700]
+          : Colors.blueGrey[800],  tooltip: 'Tambah Riwayat Penyakit',
+  child: const Icon(Icons.add),
+  onPressed: () {
+    if (_isAdmin || _isSupervisor) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Akses Ditolak'),
+          content: const Text('Role ini tidak memiliki izin untuk menambah riwayat penyakit.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
         final availableChecks = _healthChecks.where((hc) {
           final status = (hc['status'] ?? '').toLowerCase();
           final cowId = hc['cow'] is Map ? hc['cow']['id'] : hc['cow'];

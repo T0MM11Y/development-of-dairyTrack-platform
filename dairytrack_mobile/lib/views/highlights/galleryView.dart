@@ -6,7 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
 class GalleryView extends StatefulWidget {
-  const GalleryView({Key? key}) : super(key: key);
+  final String? userRole; // Tambahkan parameter userRole opsional
+
+  const GalleryView({
+    Key? key,
+    this.userRole, // Tambahkan ke konstruktor
+  }) : super(key: key);
 
   @override
   _GalleryViewState createState() => _GalleryViewState();
@@ -22,6 +27,9 @@ class _GalleryViewState extends State<GalleryView> {
   String? errorMessage;
   String searchQuery = ''; // Added for search functionality
   bool isSearching = false; // Added to track search state
+
+  // Helper untuk pengecekan role
+  bool get _isSupervisor => widget.userRole == 'Supervisor';
 
   @override
   void initState() {
@@ -82,7 +90,9 @@ class _GalleryViewState extends State<GalleryView> {
                 style:
                     TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
-        backgroundColor: Colors.blueGrey[800],
+        // Ganti warna AppBar berdasarkan role
+        backgroundColor:
+            _isSupervisor ? Colors.deepOrange[400] : Colors.blueGrey[800],
         elevation: 0,
         leading: isSearching
             ? IconButton(
@@ -99,7 +109,8 @@ class _GalleryViewState extends State<GalleryView> {
                 onPressed: () => Navigator.of(context).pop(),
               ),
         actions: [
-          if (!isSearching)
+          // Hilangkan search jika supervisor
+          if (!isSearching && !_isSupervisor)
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),
               onPressed: () {
@@ -120,13 +131,16 @@ class _GalleryViewState extends State<GalleryView> {
         ],
       ),
       body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddGalleryDialog(context);
-        },
-        backgroundColor: Colors.blueGrey[800],
-        child: const Icon(Icons.add_photo_alternate, color: Colors.white),
-      ),
+      // Hilangkan FAB jika supervisor
+      floatingActionButton: _isSupervisor
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                _showAddGalleryDialog(context);
+              },
+              backgroundColor: Colors.blueGrey[800],
+              child: const Icon(Icons.add_photo_alternate, color: Colors.white),
+            ),
       backgroundColor: Colors.grey[100],
     );
   }
@@ -279,18 +293,16 @@ class _GalleryViewState extends State<GalleryView> {
   Widget _buildGalleryItem(BuildContext context, Gallery gallery) {
     return Card(
       elevation: 8,
-      shadowColor: Colors.transparent, // Updated shadowColor
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero), // Updated shape
+      shadowColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: InkWell(
-        borderRadius: BorderRadius.zero, // Updated borderRadius
+        borderRadius: BorderRadius.zero,
         onTap: () {
-          //show fullscreen image
           _showFullScreenImage(context, gallery.imageUrl);
         },
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.zero, // Updated borderRadius
+            borderRadius: BorderRadius.zero,
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -308,7 +320,7 @@ class _GalleryViewState extends State<GalleryView> {
                 child: Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.zero, // Updated borderRadius
+                      borderRadius: BorderRadius.zero,
                       child: Container(
                         decoration: BoxDecoration(
                           boxShadow: [
@@ -377,15 +389,13 @@ class _GalleryViewState extends State<GalleryView> {
                         ),
                       ),
                     ),
-                    // Gradient overlay for better text readability
                     Positioned(
                       top: 0,
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.zero, // Updated borderRadius
+                          borderRadius: BorderRadius.zero,
                           gradient: LinearGradient(
                             colors: [
                               Colors.black.withOpacity(0.6),
@@ -403,7 +413,6 @@ class _GalleryViewState extends State<GalleryView> {
                   ],
                 ),
               ),
-              // ...existing code...
               Expanded(
                 flex: 2,
                 child: Padding(
@@ -411,7 +420,6 @@ class _GalleryViewState extends State<GalleryView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title with enhanced styling
                       Text(
                         gallery.title,
                         style: const TextStyle(
@@ -424,7 +432,6 @@ class _GalleryViewState extends State<GalleryView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Date with icon
                       Row(
                         children: [
                           Icon(
@@ -447,76 +454,71 @@ class _GalleryViewState extends State<GalleryView> {
                         ],
                       ),
                       const Spacer(),
-                      // Action buttons with enhanced design
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Edit button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(
-                                  8), // Keeping button radius for now, can be changed if needed
-                              border: Border.all(
-                                color: Colors.blue[200]!,
-                                width: 1,
+                      // Hilangkan action buttons jika supervisor
+                      if (!_isSupervisor)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Edit button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.blue[200]!,
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(
-                                    8), // Keeping button radius
-                                onTap: () {
-                                  _showEditGalleryDialog(context, gallery);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(
-                                      6.0), // Reduced padding
-                                  child: Icon(
-                                    Icons.edit_outlined,
-                                    color: Colors.blue[700],
-                                    size: 16, // Reduced icon size
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () {
+                                    _showEditGalleryDialog(context, gallery);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: Icon(
+                                      Icons.edit_outlined,
+                                      color: Colors.blue[700],
+                                      size: 16,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 4), // Reduced spacing
-                          // Delete button
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(
-                                  8), // Keeping button radius for now
-                              border: Border.all(
-                                color: Colors.red[200]!,
-                                width: 1,
+                            const SizedBox(width: 4),
+                            // Delete button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.red[200]!,
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(
-                                    8), // Keeping button radius
-                                onTap: () {
-                                  _showDeleteConfirmationDialog(
-                                      context, gallery.id);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(
-                                      6.0), // Reduced padding
-                                  child: Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red[700],
-                                    size: 16, // Reduced icon size
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () {
+                                    _showDeleteConfirmationDialog(
+                                        context, gallery.id);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red[700],
+                                      size: 16,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -527,9 +529,11 @@ class _GalleryViewState extends State<GalleryView> {
       ),
     );
   }
-  // ...existing code...
 
   Future<void> _showAddGalleryDialog(BuildContext context) async {
+    // Blokir akses jika supervisor
+    if (_isSupervisor) return;
+
     String title = '';
     String imagePath = '';
     final ImagePicker _picker = ImagePicker();
@@ -651,9 +655,7 @@ class _GalleryViewState extends State<GalleryView> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     child: Image.file(
-                                      // Menggunakan Image.file
-                                      File(
-                                          imagePath), // Membuat objek File dari path
+                                      File(imagePath),
                                       width: double.infinity,
                                       height: double.infinity,
                                       fit: BoxFit.cover,
@@ -870,6 +872,9 @@ class _GalleryViewState extends State<GalleryView> {
 
   Future<void> _showEditGalleryDialog(
       BuildContext context, Gallery gallery) async {
+    // Blokir akses jika supervisor
+    if (_isSupervisor) return;
+
     String title = gallery.title;
     String imagePath = gallery.imageUrl;
     final ImagePicker _picker = ImagePicker();
@@ -1022,8 +1027,8 @@ class _GalleryViewState extends State<GalleryView> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: hasNewImage
-                                  ? Image.asset(
-                                      imagePath,
+                                  ? Image.file(
+                                      File(imagePath),
                                       width: double.infinity,
                                       height: double.infinity,
                                       fit: BoxFit.cover,
@@ -1208,27 +1213,28 @@ class _GalleryViewState extends State<GalleryView> {
 
   Future<void> _showDeleteConfirmationDialog(
       BuildContext context, int galleryId) async {
+    // Blokir akses jika supervisor
+    if (_isSupervisor) return;
+
     return showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900], // Dark background color
+          backgroundColor: Colors.grey[900],
           title: const Text('Delete Gallery',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)), // White text color
+              style:
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
           content: const Text('Are you sure you want to delete this gallery?',
-              style: TextStyle(color: Colors.white70)), // Lighter white text
+              style: TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
-              child: const Text('Cancel',
-                  style:
-                      TextStyle(color: Colors.white70)), // Lighter white text
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.white70)),
               onPressed: () => Navigator.of(context).pop(),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700], // Darker red
+                backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,
               ),
               child: const Text(
@@ -1238,7 +1244,7 @@ class _GalleryViewState extends State<GalleryView> {
               onPressed: () async {
                 final result = await galleryController.deleteGallery(galleryId);
                 if (result['success']) {
-                  _loadGalleries(); // Reload gallery list
+                  _loadGalleries();
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -1251,7 +1257,6 @@ class _GalleryViewState extends State<GalleryView> {
                     ),
                   );
                 } else {
-                  // Show error message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(result['message']),

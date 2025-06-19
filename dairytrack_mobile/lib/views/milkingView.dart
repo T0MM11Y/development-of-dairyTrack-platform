@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,9 +34,12 @@ class _MilkingViewState extends State<MilkingView> {
   List<dynamic> userManagedCows = [];
   List<dynamic> milkers = [];
   List<dynamic> availableFarmersForCow = [];
+  bool isActionLoading = false;
 
   bool loading = true;
   bool loadingFarmers = false;
+  bool isModalActionLoading = false;
+
   String? error;
 
   // Search and filter variables
@@ -75,6 +80,15 @@ class _MilkingViewState extends State<MilkingView> {
   Map<String, dynamic>? selectedSession;
   bool isEditing = false;
 
+  // ADD STREAM CONTROLLERS
+  final StreamController<List<dynamic>> _farmersStreamController =
+      StreamController<List<dynamic>>.broadcast();
+  final StreamController<bool> _loadingStreamController =
+      StreamController<bool>.broadcast();
+
+  Stream<List<dynamic>> get _farmersStream => _farmersStreamController.stream;
+  Stream<bool> get _loadingStream => _loadingStreamController.stream;
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +106,10 @@ class _MilkingViewState extends State<MilkingView> {
     _timeController.dispose();
     _editDateController.dispose();
     _editTimeController.dispose();
+// DISPOSE STREAM CONTROLLERS
+    _farmersStreamController.close();
+    _loadingStreamController.close();
+
     super.dispose();
   }
 
@@ -230,38 +248,54 @@ class _MilkingViewState extends State<MilkingView> {
     }
   }
 
-  // Fetch farmers for specific cow (admin only)
   Future<void> _fetchFarmersForCow(String cowId) async {
-    if (currentUser?['role_id'] != 1 || cowId.isEmpty) return;
+    print('DEBUG: _fetchFarmersForCow called with cowId: $cowId');
 
-    setState(() {
-      loadingFarmers = true;
-    });
+    if (currentUser?['role_id'] != 1 || cowId.isEmpty) {
+      print('DEBUG: Not admin or cowId empty, resetting farmers list');
+      _farmersStreamController.add([]);
+      _loadingStreamController.add(false);
+      return;
+    }
+
+    print('DEBUG: Starting to fetch farmers for cow $cowId');
 
     try {
       final result =
           await cattleDistributionController.getFarmersForCow(int.parse(cowId));
 
+      print('DEBUG: API result: $result');
+      print('DEBUG: Farmers data: ${result['farmers']}');
+
       if (result['success'] == true) {
-        setState(() {
-          availableFarmersForCow = result['farmers'] as List<dynamic>? ?? [];
-        });
+        final farmers = result['farmers'] as List<dynamic>? ?? [];
+        print('DEBUG: Setting ${farmers.length} farmers for cow $cowId');
+
+        // Update streams
+        _farmersStreamController.add(farmers);
+        _loadingStreamController.add(false);
+
+        // Also update state for backward compatibility
+        if (mounted) {
+          setState(() {
+            availableFarmersForCow = farmers;
+            loadingFarmers = false;
+          });
+        }
+
+        print('DEBUG: Streams updated - farmersCount: ${farmers.length}');
       } else {
-        print('Error fetching farmers for cow: ${result['message']}');
-        setState(() {
-          availableFarmersForCow = [];
-        });
+        print('DEBUG: API returned error: ${result['message']}');
+        _farmersStreamController.add([]);
+        _loadingStreamController.add(false);
       }
     } catch (e) {
-      print('Error fetching farmers for cow: $e');
-      setState(() {
-        availableFarmersForCow = [];
-      });
-    } finally {
-      setState(() {
-        loadingFarmers = false;
-      });
+      print('DEBUG: Exception occurred: $e');
+      _farmersStreamController.add([]);
+      _loadingStreamController.add(false);
     }
+
+    print('DEBUG: _fetchFarmersForCow completed for cowId: $cowId');
   }
 
   // Get local date string
@@ -278,12 +312,6 @@ class _MilkingViewState extends State<MilkingView> {
     } catch (e) {
       return '';
     }
-  }
-
-  // Get local date time for form
-  String _getLocalDateTime() {
-    final now = DateTime.now();
-    return DateFormat('yyyy-MM-ddTHH:mm').format(now);
   }
 
   // Calculate milk statistics
@@ -388,8 +416,6 @@ class _MilkingViewState extends State<MilkingView> {
 
   // Get filtered and paginated sessions
   Map<String, dynamic> get _filteredAndPaginatedSessions {
-    final today = _getLocalDateString();
-
     // Filter sessions based on user role
     List<dynamic> filteredSessions = sessions;
     if (currentUser?['role_id'] != 1 && userManagedCows.isNotEmpty) {
@@ -552,26 +578,41 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-  // Handle cow selection in add modal
   void _handleCowSelectionInAdd(String cowId) {
+    print('DEBUG: _handleCowSelectionInAdd called with cowId: $cowId');
+
     setState(() {
       newSession['cow_id'] = cowId;
-      newSession['milker_id'] = '';
+      newSession['milker_id'] = ''; // Reset milker_id
     });
 
-    if (currentUser?['role_id'] == 1) {
+    // Reset streams
+    _farmersStreamController.add([]);
+    _loadingStreamController.add(false);
+
+    // Hanya fetch farmers jika cowId valid dan user adalah admin
+    if (currentUser?['role_id'] == 1 && cowId.isNotEmpty && cowId != '') {
+      print('DEBUG: Setting loadingFarmers to true for cowId: $cowId');
+      _loadingStreamController.add(true);
       _fetchFarmersForCow(cowId);
+    } else {
+      print('DEBUG: Not fetching farmers - not admin or empty cowId');
     }
   }
 
-  // Handle cow selection in edit modal
   void _handleCowSelectionInEdit(String cowId) {
     setState(() {
       selectedSession!['cow_id'] = cowId;
-      selectedSession!['milker_id'] = '';
+      selectedSession!['milker_id'] = ''; // Reset milker_id
     });
 
-    if (currentUser?['role_id'] == 1) {
+    // Reset streams
+    _farmersStreamController.add([]);
+    _loadingStreamController.add(false);
+
+    // Hanya fetch farmers jika cowId valid dan user adalah admin
+    if (currentUser?['role_id'] == 1 && cowId.isNotEmpty && cowId != '') {
+      _loadingStreamController.add(true);
       _fetchFarmersForCow(cowId);
     }
   }
@@ -621,6 +662,9 @@ class _MilkingViewState extends State<MilkingView> {
       selectedSession = Map<String, dynamic>.from(session);
       selectedSession!['cow_id'] = session['cow_id'].toString();
       selectedSession!['milking_time'] = '${dateString}T$timeString';
+      // Reset farmers list and loading state
+      availableFarmersForCow = [];
+      loadingFarmers = false;
     });
 
     // Set controller values
@@ -628,6 +672,14 @@ class _MilkingViewState extends State<MilkingView> {
     _editNotesController.text = selectedSession!['notes']?.toString() ?? '';
     _editDateController.text = dateString;
     _editTimeController.text = timeString;
+
+    // Fetch farmers for the selected cow if admin
+    if (currentUser?['role_id'] == 1 && selectedSession!['cow_id'].isNotEmpty) {
+      setState(() {
+        loadingFarmers = true;
+      });
+      _fetchFarmersForCow(selectedSession!['cow_id']);
+    }
 
     showModalBottomSheet(
       context: context,
@@ -637,9 +689,14 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-  // Add new session
+// Ubah _handleAddSession
   Future<void> _handleAddSession() async {
     if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      isActionLoading = true;
+      isModalActionLoading = true; // Disable seluruh modal
+    });
 
     final userId = currentUser?['id']?.toString() ??
         currentUser?['user_id']?.toString() ??
@@ -648,6 +705,10 @@ class _MilkingViewState extends State<MilkingView> {
 
     // Validation for milker_id
     if (currentUser?['role_id'] == 1 && finalMilkerId.isEmpty) {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
       _showErrorDialog('Silakan pilih pemerah');
       return;
     }
@@ -657,6 +718,10 @@ class _MilkingViewState extends State<MilkingView> {
     }
 
     if (finalMilkerId.isEmpty) {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
       _showErrorDialog('ID pemerah tidak valid');
       return;
     }
@@ -687,12 +752,22 @@ class _MilkingViewState extends State<MilkingView> {
       }
     } catch (e) {
       _showErrorDialog('Terjadi kesalahan: $e');
+    } finally {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
     }
   }
 
-  // Edit session
+  // Ubah _handleEditSession
   Future<void> _handleEditSession() async {
     if (!_editFormKey.currentState!.validate()) return;
+
+    setState(() {
+      isActionLoading = true;
+      isModalActionLoading = true; // Disable seluruh modal
+    });
 
     final sessionData = {
       'cow_id': int.parse(selectedSession!['cow_id']),
@@ -718,6 +793,11 @@ class _MilkingViewState extends State<MilkingView> {
       }
     } catch (e) {
       _showErrorDialog('Terjadi kesalahan: $e');
+    } finally {
+      setState(() {
+        isActionLoading = false;
+        isModalActionLoading = false;
+      });
     }
   }
 
@@ -726,6 +806,7 @@ class _MilkingViewState extends State<MilkingView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF23272F), // Dark background
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -735,7 +816,7 @@ class _MilkingViewState extends State<MilkingView> {
               'Konfirmasi Hapus',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.red[700],
+                color: Colors.red[300], // Lighter red for dark bg
               ),
             ),
           ],
@@ -744,22 +825,24 @@ class _MilkingViewState extends State<MilkingView> {
           'Apakah Anda yakin ingin menghapus sesi pemerahan ini? Tindakan ini tidak dapat dibatalkan.',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[800],
+            color: Colors.white, // White text for dark bg
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed:
+                isActionLoading ? null : () => Navigator.pop(context, false),
             child: Text(
               'Batal',
               style: TextStyle(
-                color: Colors.blue[700],
+                color: Color(0xFF3D90D7),
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed:
+                isActionLoading ? null : () => Navigator.pop(context, true),
             icon: Icon(Icons.delete, size: 16, color: Colors.white),
             label: Text(
               'Hapus',
@@ -780,6 +863,9 @@ class _MilkingViewState extends State<MilkingView> {
     );
 
     if (confirmed == true) {
+      setState(() {
+        isActionLoading = true;
+      });
       try {
         final response =
             await milkingSessionController.deleteMilkingSession(sessionId);
@@ -792,6 +878,10 @@ class _MilkingViewState extends State<MilkingView> {
         }
       } catch (e) {
         _showErrorDialog('Terjadi kesalahan: $e');
+      } finally {
+        setState(() {
+          isActionLoading = false;
+        });
       }
     }
   }
@@ -836,34 +926,130 @@ class _MilkingViewState extends State<MilkingView> {
     }
   }
 
-  // Show error dialog
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Error!'),
-        content: Text(message),
+        backgroundColor: const Color(0xFF23272F), // Dark background
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.red[900]!.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.all(8),
+              child:
+                  Icon(Icons.error_outline, color: Colors.red[300], size: 28),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Terjadi Kesalahan',
+              style: TextStyle(
+                color: Colors.red[200],
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info, color: Colors.red[200], size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            icon: Icon(Icons.close, color: Colors.blue[200]),
+            label: Text('Tutup',
+                style: TextStyle(
+                    color: Colors.blue[200], fontWeight: FontWeight.bold)),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue[200],
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Show success dialog
   void _showSuccessDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Berhasil!'),
-        content: Text(message),
+        backgroundColor: const Color(0xFF23272F), // Dark background
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green[900]!.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.all(8),
+              child: Icon(Icons.check_circle_outline,
+                  color: Colors.greenAccent[200], size: 28),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Berhasil!',
+              style: TextStyle(
+                color: Colors.greenAccent[200],
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, color: Colors.greenAccent[100], size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            icon: Icon(Icons.check, color: Colors.blue[200]),
+            label: Text('OK',
+                style: TextStyle(
+                    color: Colors.blue[200], fontWeight: FontWeight.bold)),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue[200],
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ],
       ),
@@ -887,7 +1073,7 @@ class _MilkingViewState extends State<MilkingView> {
       return Scaffold(
         appBar: AppBar(
           title: Text('Manajemen Pemerahan'),
-          backgroundColor: Colors.blue[700],
+          backgroundColor: Color(0xFF3D90D7),
           foregroundColor: Colors.white,
         ),
         body: Center(
@@ -900,7 +1086,7 @@ class _MilkingViewState extends State<MilkingView> {
       return Scaffold(
         appBar: AppBar(
           title: Text('Manajemen Pemerahan'),
-          backgroundColor: Colors.blue[700],
+          backgroundColor: Color(0xFF3D90D7),
           foregroundColor: Colors.white,
         ),
         body: Center(
@@ -930,7 +1116,7 @@ class _MilkingViewState extends State<MilkingView> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text('Manajemen Pemerahan'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor: Color(0xFF3D90D7),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -974,7 +1160,7 @@ class _MilkingViewState extends State<MilkingView> {
           children: [
             // Header with stats
             Container(
-              color: Colors.blue[700],
+              color: Color(0xFF3D90D7),
               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,19 +1189,19 @@ class _MilkingViewState extends State<MilkingView> {
                         'Total Volume',
                         '${milkStats['hasActiveFilters'] ? milkStats['totalVolume'] : milkStats['baseTotalVolume']} L',
                         Icons.local_drink,
-                        Colors.green,
+                        const Color.fromARGB(255, 127, 239, 90),
                       ),
                       _buildCompactStatCard(
                         'Hari Ini',
                         '${milkStats['hasActiveFilters'] ? milkStats['todayVolume'] : milkStats['baseTodayVolume']} L',
                         Icons.today,
-                        Colors.blue,
+                        const Color.fromARGB(255, 30, 210, 255),
                       ),
                       _buildCompactStatCard(
                         'Rata-rata',
                         '${milkStats['hasActiveFilters'] ? milkStats['avgVolumePerSession'] : milkStats['baseAvgVolumePerSession']} L',
                         Icons.trending_up,
-                        Colors.purple,
+                        const Color.fromARGB(255, 234, 152, 248),
                       ),
                     ],
                   ),
@@ -1195,44 +1381,10 @@ class _MilkingViewState extends State<MilkingView> {
           ? null
           : FloatingActionButton(
               onPressed: _openAddModal,
-              backgroundColor: Colors.blue[700],
+              backgroundColor: Color(0xFF3D90D7),
               child: Icon(Icons.add, color: Colors.white),
               mini: true,
             ),
-    );
-  }
-
-  // Build time info widget
-  Widget _buildTimeInfo(
-      String period, String time, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 14),
-          SizedBox(height: 2),
-          Text(
-            period,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            time,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 7,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
@@ -1262,516 +1414,360 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-// Helper for compact session card
   Widget _buildCompactSessionCard(dynamic session, int index) {
     final isSupervisor = currentUser?['role_id'] == 2;
     final volume = double.parse(session['volume'].toString());
-    final volumeColor = volume >= 15
-        ? Colors.green
-        : volume >= 10
-            ? Colors.orange
-            : Colors.blue;
+    final volumeColor = Color(0xFF3D90D7)!.withOpacity(0.8);
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey[50]!,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: Offset(0, 4),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 400 + index * 60),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: Offset(0, 2),
+        );
+      },
+      child: Card(
+        elevation: 6,
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shadowColor: Colors.blueGrey.withOpacity(0.2),
+        color: Colors.white,
+        child: ExpansionTile(
+          leading: CircleAvatar(
+            radius: 20,
+            backgroundColor: volumeColor.withOpacity(0.1),
+            child: Icon(
+              Icons.water_drop,
+              color: volumeColor,
+              size: 28,
+            ),
           ),
-        ],
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 0.5,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showSessionDetails(session),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row with Session Number and Volume
-                Row(
-                  children: [
-                    // Session Number Badge
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue[600]!, Colors.blue[700]!],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
+          title: Text(
+            '${session['cow_name'] ?? 'Sapi #${session['cow_id']}'} • ${session['milker_name'] ?? 'Pemerah #${session['milker_id']}'}',
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                fontFamily: "Roboto, Monospace",
+                letterSpacing: 1.5,
+                color: Colors.blueGrey[800]),
+          ),
+          subtitle: Text(
+            "Volume: ${volume.toStringAsFixed(1)} L • ${DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(session['milking_time']))}",
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          ),
+          trailing: Chip(
+            label: Text("${volume.toStringAsFixed(1)} L"),
+            backgroundColor: volumeColor.withOpacity(0.1),
+            labelStyle: TextStyle(
+              color: volumeColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cow & Milker Info (horizontal layout)
+                  Row(
+                    children: [
+                      // Cow Info
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor:
+                                    Color(0xFF3D90D7).withOpacity(0.15),
+                                child: Icon(Icons.pets,
+                                    color: Color(0xFF3D90D7), size: 20),
+                                radius: 18,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      session['cow_name'] ??
+                                          'ID: ${session['cow_id']}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.blueGrey[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Sapi',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.blueGrey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.tag, size: 14, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text(
-                            '#${((currentPage - 1) * sessionsPerPage + index + 1).toString().padLeft(3, '0')}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Colors.white,
+                      SizedBox(width: 12),
+                      // Milker Info
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor:
+                                    Color(0xFF3D90D7).withOpacity(0.15),
+                                child: Icon(Icons.person,
+                                    color: Color(0xFF3D90D7), size: 20),
+                                radius: 18,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      session['milker_name'] ??
+                                          'ID: ${session['milker_id']}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.blueGrey[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Pemerah',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.blueGrey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Date & Time Info
+                  Row(
+                    children: [
+                      // Date
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_today,
+                                size: 14, color: Colors.blueGrey[700]),
+                            SizedBox(width: 6),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(
+                                  DateTime.parse(session['milking_time'])),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blueGrey[800],
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
-                    // Volume Badge
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [volumeColor.withOpacity(0.8), volumeColor],
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: volumeColor.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
+                      ),
+                      SizedBox(width: 10),
+                      // Time
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: _getMilkingTimeLabel(session['milking_time']),
+                      ),
+                    ],
+                  ),
+
+                  // Volume Detail Row
+                  SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF3D90D7).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: Color(0xFF3D90D7).withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.water_drop,
+                            size: 16, color: Color(0xFF3D90D7)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Volume: ${volume.toStringAsFixed(1)} L',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF3D90D7),
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Notes Preview (if exists)
+                  if (session['notes'] != null &&
+                      session['notes'].toString().isNotEmpty) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.water_drop, size: 14, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text(
-                            '${volume.toStringAsFixed(1)} L',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Colors.white,
+                          Icon(Icons.sticky_note_2,
+                              size: 16, color: Colors.blueGrey[600]),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              session['notes'].toString().length > 80
+                                  ? '${session['notes'].toString().substring(0, 80)}...'
+                                  : session['notes'].toString(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blueGrey[700],
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ],
-                ),
 
-                SizedBox(height: 16),
+                  Divider(height: 24, color: Colors.grey[300]),
 
-                // Cow and Milker Info
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Column(
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      // Cow Info
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.pink[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(Icons.pets,
-                                size: 16, color: Colors.pink[700]),
+                      ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.visibility,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          "Detail",
+                          style: TextStyle(fontSize: 13, color: Colors.white),
+                        ),
+                        onPressed: isActionLoading
+                            ? null
+                            : () => _showSessionDetails(session),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey[600],
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Sapi',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  session['cow_name'] ??
-                                      'ID: ${session['cow_id']}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
                       ),
-
-                      SizedBox(height: 12),
-
-                      // Milker Info
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(Icons.person,
-                                size: 16, color: Colors.blue[700]),
+                      if (!isSupervisor) ...[
+                        SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          icon: const Icon(
+                            Icons.edit,
+                            size: 18,
+                            color: Colors.white,
                           ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Pemerah',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  session['milker_name'] ??
-                                      'ID: ${session['milker_id']}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                          label: const Text(
+                            "Edit",
+                            style: TextStyle(fontSize: 13, color: Colors.white),
                           ),
-                        ],
-                      ),
+                          onPressed: isActionLoading
+                              ? null
+                              : () => _openEditModal(session),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF3D90D7),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          icon: const Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            "Delete",
+                            style: TextStyle(fontSize: 13, color: Colors.white),
+                          ),
+                          onPressed: isActionLoading
+                              ? null
+                              : () => _handleDeleteSession(session['id']),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[600],
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-
-                SizedBox(height: 16),
-
-                // Date and Time Row
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        Colors.indigo[50]!,
-                        Colors.purple[50]!,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.indigo[100]!),
-                  ),
-                  child: Row(
-                    children: [
-                      // Date Info
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo[100],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Icon(Icons.calendar_today,
-                                  size: 14, color: Colors.indigo[700]),
-                            ),
-                            SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Tanggal',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat('dd MMM yyyy').format(
-                                      DateTime.parse(session['milking_time'])),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Vertical Divider
-                      Container(
-                        height: 30,
-                        width: 1,
-                        color: Colors.grey[300],
-                        margin: EdgeInsets.symmetric(horizontal: 8),
-                      ),
-
-                      // Time Badge
-                      _getMilkingTimeLabel(session['milking_time']),
-                    ],
-                  ),
-                ),
-
-                // Notes Preview (if exists)
-                if (session['notes'] != null &&
-                    session['notes'].toString().isNotEmpty)
-                  Container(
-                    margin: EdgeInsets.only(top: 12),
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber[200]!),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.sticky_note_2,
-                            size: 14, color: Colors.amber[700]),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            session['notes'].toString().length > 50
-                                ? '${session['notes'].toString().substring(0, 50)}...'
-                                : session['notes'].toString(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.amber[800],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                SizedBox(height: 16),
-
-                // Action Buttons
-                // ...existing code...
-                if (!isSupervisor)
-                  Container(
-                    margin: EdgeInsets.only(top: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.grey[50]!,
-                              Colors.white,
-                            ],
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            // Edit Button
-                            Expanded(
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () => _openEditModal(session),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    bottomLeft: Radius.circular(16),
-                                  ),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 16, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        right: BorderSide(
-                                          color: Colors.grey[200]!,
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: [
-                                                Colors.blue[400]!,
-                                                Colors.blue[600]!,
-                                              ],
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.blue
-                                                    .withOpacity(0.3),
-                                                blurRadius: 8,
-                                                offset: Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Icon(
-                                            Icons.edit_rounded,
-                                            size: 20,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Edit',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.blue[700],
-                                          ),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Ubah Data',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.blue[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // Delete Button
-                            Expanded(
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () =>
-                                      _handleDeleteSession(session['id']),
-                                  borderRadius: BorderRadius.only(
-                                    topRight: Radius.circular(16),
-                                    bottomRight: Radius.circular(16),
-                                  ),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 16, horizontal: 12),
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                              colors: [
-                                                Colors.red[400]!,
-                                                Colors.red[600]!,
-                                              ],
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color:
-                                                    Colors.red.withOpacity(0.3),
-                                                blurRadius: 8,
-                                                offset: Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Icon(
-                                            Icons.delete_rounded,
-                                            size: 20,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Hapus',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.red[700],
-                                          ),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Hapus Data',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.red[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                // ...existing code...
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1783,133 +1779,297 @@ class _MilkingViewState extends State<MilkingView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.indigo[600]!, Colors.purple[600]!],
-                ),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => Center(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.95,
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, 10),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.white, size: 24),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Detail Sesi Pemerahan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header dengan gradient
+              Container(
                 padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF3D90D7), Colors.blue[800]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
                   children: [
-                    // Session Info Card
-                    _buildDetailCard(
-                      'Informasi Sesi',
-                      [
-                        _buildDetailRow(
-                            'Nomor Sesi', '#${session['id']}', Icons.tag),
-                        _buildDetailRow(
-                            'Volume',
-                            '${double.parse(session['volume'].toString()).toStringAsFixed(1)} L',
-                            Icons.water_drop),
-                        _buildDetailRow(
-                            'Tanggal',
-                            DateFormat('dd MMMM yyyy').format(
-                                DateTime.parse(session['milking_time'])),
-                            Icons.calendar_today),
-                        _buildDetailRow(
-                            'Waktu',
-                            DateFormat('HH:mm').format(
-                                DateTime.parse(session['milking_time'])),
-                            Icons.access_time),
-                      ],
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          Icon(Icons.water_drop, color: Colors.white, size: 24),
                     ),
-
-                    SizedBox(height: 16),
-
-                    // Cow Info Card
-                    _buildDetailCard(
-                      'Informasi Sapi',
-                      [
-                        _buildDetailRow(
-                            'Nama Sapi',
-                            session['cow_name'] ?? 'Tidak diketahui',
-                            Icons.pets),
-                        _buildDetailRow('ID Sapi', session['cow_id'].toString(),
-                            Icons.fingerprint),
-                      ],
-                    ),
-
-                    SizedBox(height: 16),
-
-                    // Milker Info Card
-                    _buildDetailCard(
-                      'Informasi Pemerah',
-                      [
-                        _buildDetailRow(
-                            'Nama Pemerah',
-                            session['milker_name'] ?? 'Tidak diketahui',
-                            Icons.person),
-                        _buildDetailRow('ID Pemerah',
-                            session['milker_id'].toString(), Icons.badge),
-                      ],
-                    ),
-
-                    // Notes Card (if exists)
-                    if (session['notes'] != null &&
-                        session['notes'].toString().isNotEmpty) ...[
-                      SizedBox(height: 16),
-                      _buildDetailCard(
-                        'Catatan',
-                        [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[200]!),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Detail Sesi Pemerahan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
                             ),
-                            child: Text(
-                              session['notes'].toString(),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                                height: 1.5,
-                              ),
+                          ),
+                          Text(
+                            'Informasi lengkap sesi #${session['id']}',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close, color: Colors.white, size: 28),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+              ),
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Session Info Card
+                      _buildAnimatedDetailCard(
+                        'Informasi Sesi',
+                        Icons.info_outline,
+                        Colors.blue,
+                        [
+                          _buildDetailInfoRow(
+                              'Nomor Sesi', '#${session['id']}', Icons.tag),
+                          _buildDetailInfoRow(
+                              'Volume',
+                              '${double.parse(session['volume'].toString()).toStringAsFixed(1)} L',
+                              Icons.water_drop),
+                          _buildDetailInfoRow(
+                              'Tanggal',
+                              DateFormat('dd MMMM yyyy').format(
+                                  DateTime.parse(session['milking_time'])),
+                              Icons.calendar_today),
+                          _buildDetailInfoRow(
+                              'Waktu',
+                              DateFormat('HH:mm').format(
+                                  DateTime.parse(session['milking_time'])),
+                              Icons.access_time),
+                        ],
+                        0,
+                      ),
+
+                      SizedBox(height: 16),
+
+                      // Cow Info Card
+                      _buildAnimatedDetailCard(
+                        'Informasi Sapi',
+                        Icons.pets,
+                        Colors.pink,
+                        [
+                          _buildDetailInfoRow(
+                              'Nama Sapi',
+                              session['cow_name'] ?? 'Tidak diketahui',
+                              Icons.pets),
+                          _buildDetailInfoRow('ID Sapi',
+                              session['cow_id'].toString(), Icons.fingerprint),
+                        ],
+                        1,
+                      ),
+
+                      SizedBox(height: 16),
+
+                      // Milker Info Card
+                      _buildAnimatedDetailCard(
+                        'Informasi Pemerah',
+                        Icons.person,
+                        Colors.green,
+                        [
+                          _buildDetailInfoRow(
+                              'Nama Pemerah',
+                              session['milker_name'] ?? 'Tidak diketahui',
+                              Icons.person),
+                          _buildDetailInfoRow('ID Pemerah',
+                              session['milker_id'].toString(), Icons.badge),
+                        ],
+                        2,
+                      ),
+
+                      // Notes Card (if exists)
+                      if (session['notes'] != null &&
+                          session['notes'].toString().isNotEmpty) ...[
+                        SizedBox(height: 16),
+                        _buildAnimatedDetailCard(
+                          'Catatan',
+                          Icons.sticky_note_2,
+                          Colors.orange,
+                          [
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.orange[200]!),
+                              ),
+                              child: Text(
+                                session['notes'].toString(),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.orange[900],
+                                  height: 1.6,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                          3,
+                        ),
+                      ],
+
+                      SizedBox(height: 20),
+
+                      // Action Button
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.check, color: Colors.white),
+                          label: Text(
+                            'Tutup Detail',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF3D90D7),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method untuk animated detail card (mirip dengan listOfCowsView.dart)
+  Widget _buildAnimatedDetailCard(String title, IconData titleIcon,
+      Color accentColor, List<Widget> children, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 400 + index * 100),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withOpacity(0.1),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: accentColor.withOpacity(0.2), width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Card Header
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accentColor.withOpacity(0.1),
+                    accentColor.withOpacity(0.05)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border(
+                  bottom: BorderSide(color: accentColor.withOpacity(0.2)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(titleIcon, color: accentColor, size: 20),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor.withOpacity(0.8),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Card Content
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: children,
               ),
             ),
           ],
@@ -1918,64 +2078,20 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-  // Helper method untuk detail card
-  Widget _buildDetailCard(String title, List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-            ),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper method untuk detail row
-  Widget _buildDetailRow(String label, String value, IconData icon) {
+  // Helper method untuk detail info row (mirip dengan listOfCowsView.dart)
+  Widget _buildDetailInfoRow(String label, String value, IconData icon) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: Color(0xFF3D90D7).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 16, color: Colors.blue[700]),
+            child: Icon(icon, size: 16, color: Color(0xFF3D90D7)),
           ),
           SizedBox(width: 12),
           Expanded(
@@ -1988,14 +2104,17 @@ class _MilkingViewState extends State<MilkingView> {
                     fontSize: 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
                   ),
                 ),
+                SizedBox(height: 4),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
+                    fontSize: 15,
+                    color: Colors.blueGrey[800],
                     fontWeight: FontWeight.w600,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -2005,6 +2124,7 @@ class _MilkingViewState extends State<MilkingView> {
       ),
     );
   }
+// ...existing code...
 
   // Build empty state
   Widget _buildEmptyState() {
@@ -2042,7 +2162,7 @@ class _MilkingViewState extends State<MilkingView> {
               icon: Icon(Icons.clear_all),
               label: Text('Reset Filter'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[700],
+                backgroundColor: Color(0xFF3D90D7),
                 foregroundColor: Colors.white,
               ),
             ),
@@ -2102,12 +2222,12 @@ class _MilkingViewState extends State<MilkingView> {
                         height: 32,
                         decoration: BoxDecoration(
                           color: currentPage == pageNumber
-                              ? Colors.blue[700]
+                              ? Color(0xFF3D90D7)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: currentPage == pageNumber
-                                ? Colors.blue[700]!
+                                ? Color(0xFF3D90D7)!
                                 : Colors.grey[300]!,
                           ),
                         ),
@@ -2145,6 +2265,13 @@ class _MilkingViewState extends State<MilkingView> {
 
 // Build add session modal
   Widget _buildAddSessionModal() {
+    // Cek apakah sapi sudah dipilih
+    final isCowSelected = newSession['cow_id'] != null &&
+        newSession['cow_id'].toString().isNotEmpty &&
+        newSession['cow_id'] != '';
+
+    final List<dynamic> filteredFarmers =
+        isCowSelected ? availableFarmersForCow : [];
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
@@ -2191,78 +2318,392 @@ class _MilkingViewState extends State<MilkingView> {
                   // Cow selection
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Sapi',
+                      labelText: 'Pilih Sapi *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.pets),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
-                    value: newSession['cow_id'].isEmpty
+                    value: newSession['cow_id'].isEmpty ||
+                            newSession['cow_id'] == ''
                         ? null
                         : newSession['cow_id'],
                     items: [
                       DropdownMenuItem(
-                          value: '', child: Text('-- Pilih Sapi --')),
+                          value: '',
+                          child: Text('-- Pilih Sapi --',
+                              style: TextStyle(color: Colors.grey[600]))),
                       ...(currentUser?['role_id'] == 1
                               ? cowList
                               : userManagedCows)
                           .where((cow) =>
-                              (cow['gender'] ?? cow.gender)?.toLowerCase() ==
-                              'female')
-                          .map((cow) => DropdownMenuItem(
-                                value: (cow['id'] ?? cow.id).toString(),
-                                child: Text(
-                                    '${cow['name'] ?? cow.name} (ID: ${cow['id'] ?? cow.id})'),
-                              )),
+                              (cow is Map &&
+                                  (cow['gender'] ?? '').toLowerCase() ==
+                                      'female') ||
+                              (cow is Cow &&
+                                  (cow.gender ?? '').toLowerCase() == 'female'))
+                          .map((cow) {
+                            final cowName = cow is Map ? cow['name'] : cow.name;
+                            final cowId = cow is Map ? cow['id'] : cow.id;
+
+                            // Validasi nama sapi tidak kosong
+                            if (cowName == null ||
+                                cowName.toString().trim().isEmpty) {
+                              return null; // Skip sapi dengan nama kosong
+                            }
+
+                            return DropdownMenuItem(
+                              value: cowId.toString(),
+                              child: Text('$cowName (ID: $cowId)'),
+                            );
+                          })
+                          .where((item) => item != null)
+                          .cast<DropdownMenuItem<String>>()
                     ],
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Pilih sapi' : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty || value == '') {
+                        return 'Silakan pilih sapi terlebih dahulu';
+                      }
+                      return null;
+                    },
                     onChanged: (value) => _handleCowSelectionInAdd(value ?? ''),
                   ),
                   SizedBox(height: 16),
-
-                  // Milker selection
                   if (currentUser?['role_id'] == 1)
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'Pilih Pemerah',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                      value: newSession['milker_id'].isEmpty
-                          ? null
-                          : newSession['milker_id'],
-                      items: [
-                        DropdownMenuItem(
-                            value: '', child: Text('-- Pilih Pemerah --')),
-                        ...availableFarmersForCow
-                            .map((farmer) => DropdownMenuItem(
-                                  value: (farmer['user_id'] ?? farmer['id'])
-                                      .toString(),
-                                  child: Text(
-                                      '${farmer['name']} (ID: ${farmer['user_id'] ?? farmer['id']})'),
-                                )),
-                      ],
-                      validator: (value) =>
-                          value?.isEmpty == true ? 'Pilih pemerah' : null,
-                      onChanged: (value) => setState(() {
-                        newSession['milker_id'] = value ?? '';
-                      }),
+                    StreamBuilder<bool>(
+                      stream: _loadingStream,
+                      initialData: false,
+                      builder: (context, loadingSnapshot) {
+                        final isLoading = loadingSnapshot.data ?? false;
+
+                        return StreamBuilder<List<dynamic>>(
+                          stream: _farmersStream,
+                          initialData: [],
+                          builder: (context, farmersSnapshot) {
+                            final farmers = farmersSnapshot.data ?? [];
+                            final isCowSelected = newSession['cow_id'] !=
+                                    null &&
+                                newSession['cow_id'].toString().isNotEmpty &&
+                                newSession['cow_id'] != '';
+
+                            print(
+                                'DEBUG: StreamBuilder rebuild - cowId: ${newSession['cow_id']}, isCowSelected: $isCowSelected, isLoading: $isLoading, farmersCount: ${farmers.length}');
+
+                            return Column(
+                              children: [
+                                DropdownButtonFormField<String>(
+                                  key: ValueKey(
+                                      'milker_dropdown_${newSession['cow_id']}_${farmers.length}_$isLoading'),
+                                  decoration: InputDecoration(
+                                    labelText: 'Pilih Pemerah *',
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                    prefixIcon: Icon(Icons.person),
+                                    errorStyle: TextStyle(fontSize: 12),
+                                    fillColor: isCowSelected
+                                        ? Colors.white
+                                        : Colors.grey[100],
+                                    filled: true,
+                                  ),
+                                  value: isCowSelected &&
+                                          newSession['milker_id'].isNotEmpty &&
+                                          newSession['milker_id'] != '' &&
+                                          farmers.any((farmer) =>
+                                              (farmer['user_id'] ??
+                                                      farmer['id'])
+                                                  .toString() ==
+                                              newSession['milker_id'])
+                                      ? newSession['milker_id']
+                                      : null,
+                                  items: [
+                                    DropdownMenuItem(
+                                        value: '',
+                                        child: Text(
+                                            !isCowSelected
+                                                ? '-- Pilih Sapi Terlebih Dahulu --'
+                                                : isLoading
+                                                    ? '-- Memuat Pemerah... --'
+                                                    : farmers.isEmpty
+                                                        ? '-- Tidak Ada Pemerah Tersedia --'
+                                                        : '-- Pilih Pemerah --',
+                                            style: TextStyle(
+                                                color: Colors.grey[600]))),
+                                    if (isCowSelected && !isLoading)
+                                      ...farmers
+                                          .map((farmer) {
+                                            final farmerName =
+                                                farmer['username'] ??
+                                                    farmer['name'];
+                                            final farmerId =
+                                                farmer['user_id'] ??
+                                                    farmer['id'];
+                                            if (farmerName == null ||
+                                                farmerName
+                                                    .toString()
+                                                    .trim()
+                                                    .isEmpty) {
+                                              return null;
+                                            }
+                                            return DropdownMenuItem(
+                                              value: farmerId.toString(),
+                                              child: Text(
+                                                  '$farmerName (ID: $farmerId)'),
+                                            );
+                                          })
+                                          .where((item) => item != null)
+                                          .cast<DropdownMenuItem<String>>(),
+                                  ],
+                                  validator: (value) {
+                                    if (!isCowSelected) {
+                                      return 'Pilih sapi terlebih dahulu';
+                                    }
+                                    if (isLoading) {
+                                      return 'Menunggu data pemerah dimuat...';
+                                    }
+                                    if (farmers.isEmpty) {
+                                      return 'Tidak ada pemerah tersedia untuk sapi ini';
+                                    }
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value == '') {
+                                      return 'Silakan pilih pemerah';
+                                    }
+                                    return null;
+                                  },
+                                  onChanged: (isCowSelected &&
+                                          !isLoading &&
+                                          farmers.isNotEmpty)
+                                      ? (value) {
+                                          print(
+                                              'DEBUG: Milker selected: $value');
+                                          setState(() {
+                                            newSession['milker_id'] =
+                                                value ?? '';
+                                          });
+                                        }
+                                      : null,
+                                  disabledHint: Text(
+                                      !isCowSelected
+                                          ? 'Pilih sapi terlebih dahulu'
+                                          : isLoading
+                                              ? 'Memuat data pemerah...'
+                                              : 'Tidak ada pemerah tersedia',
+                                      style:
+                                          TextStyle(color: Colors.grey[500])),
+                                ),
+
+                                // Loading indicator
+                                if (isCowSelected && isLoading) ...[
+                                  SizedBox(height: 8),
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border:
+                                          Border.all(color: Colors.blue[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.blue[600]!),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Memuat data pemerah untuk sapi yang dipilih...',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.blue[800],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+
+                                // No farmers warning
+                                if (isCowSelected &&
+                                    !isLoading &&
+                                    farmers.isEmpty) ...[
+                                  SizedBox(height: 8),
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border:
+                                          Border.all(color: Colors.red[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.warning,
+                                            color: Colors.red[700], size: 20),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.red[800],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          },
+                        );
+                      },
                     )
                   else
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Pemerah',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.person),
-                        filled: true,
-                        fillColor: Colors.grey[100],
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
-                      initialValue:
-                          '${currentUser?['name'] ?? currentUser?['username']} (ID: ${currentUser?['id'] ?? currentUser?['user_id']})',
-                      readOnly: true,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person, color: Colors.grey[600]),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pemerah',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '${currentUser?['name'] ?? currentUser?['username'] ?? 'Nama tidak tersedia'} (ID: ${currentUser?['id'] ?? currentUser?['user_id'] ?? 'ID tidak tersedia'})',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[800],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+
+                  // Loading indicator for farmers
+                  if (currentUser?['role_id'] == 1 &&
+                      loadingFarmers &&
+                      isCowSelected) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.blue[600]!),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Memuat data pemerah untuk sapi yang dipilih...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Warning message if cow/milker data is incomplete
+                  if ((currentUser?['role_id'] == 1 ? cowList : userManagedCows)
+                      .any((cow) {
+                    final cowName = cow is Map ? cow['name'] : cow.name;
+                    return cowName == null || cowName.toString().trim().isEmpty;
+                  })) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning,
+                              color: Colors.orange[700], size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Beberapa sapi tidak memiliki nama yang valid dan tidak ditampilkan dalam daftar',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange[800],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // No farmers available warning
+                  if (currentUser?['role_id'] == 1 &&
+                      isCowSelected &&
+                      !loadingFarmers &&
+                      filteredFarmers.isEmpty) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.red[700], size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[800],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   SizedBox(height: 16),
 
                   // Volume input with quick buttons
@@ -2272,18 +2713,22 @@ class _MilkingViewState extends State<MilkingView> {
                       TextFormField(
                         controller: _volumeController,
                         decoration: InputDecoration(
-                          labelText: 'Volume (Liter)',
+                          labelText: 'Volume (Liter) *',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8)),
                           prefixIcon: Icon(Icons.local_drink),
+                          errorStyle: TextStyle(fontSize: 12),
                         ),
                         keyboardType:
                             TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
-                          if (value?.isEmpty == true) return 'Masukkan volume';
+                          if (value?.isEmpty == true)
+                            return 'Masukkan volume susu';
                           final volume = double.tryParse(value!);
                           if (volume == null || volume <= 0)
-                            return 'Volume harus lebih dari 0';
+                            return 'Volume harus berupa angka positif';
+                          if (volume > 100)
+                            return 'Volume terlalu besar (maksimal 100L)';
                           return null;
                         },
                         onChanged: (value) => setState(() {
@@ -2356,12 +2801,18 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _dateController,
                     decoration: InputDecoration(
-                      labelText: 'Tanggal Pemerahan',
+                      labelText: 'Tanggal Pemerahan *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.calendar_today),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
                     readOnly: true,
+                    validator: (value) {
+                      if (value?.isEmpty == true)
+                        return 'Pilih tanggal pemerahan';
+                      return null;
+                    },
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
@@ -2386,12 +2837,18 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _timeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Pemerahan',
+                      labelText: 'Waktu Pemerahan *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.access_time),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
                     readOnly: true,
+                    validator: (value) {
+                      if (value?.isEmpty == true)
+                        return 'Pilih waktu pemerahan';
+                      return null;
+                    },
                     onTap: () async {
                       final time = await showTimePicker(
                         context: context,
@@ -2520,6 +2977,7 @@ class _MilkingViewState extends State<MilkingView> {
                           prefixIcon: Icon(Icons.note),
                         ),
                         maxLines: 4,
+                        maxLength: 500,
                         onChanged: (value) => setState(() {
                           newSession['notes'] = value;
                         }),
@@ -2530,10 +2988,12 @@ class _MilkingViewState extends State<MilkingView> {
                         Container(
                           margin: EdgeInsets.only(top: 4),
                           child: Text(
-                            'Karakter: ${newSession['notes'].length}',
+                            'Karakter: ${newSession['notes'].length}/500',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: newSession['notes'].length > 450
+                                  ? Colors.red[600]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ),
@@ -2543,8 +3003,6 @@ class _MilkingViewState extends State<MilkingView> {
               ),
             ),
           ),
-
-          // Modal footer
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -2555,8 +3013,15 @@ class _MilkingViewState extends State<MilkingView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Batal'),
+                    onPressed:
+                        isActionLoading ? null : () => Navigator.pop(context),
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text('Batal'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -2565,8 +3030,24 @@ class _MilkingViewState extends State<MilkingView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _handleAddSession,
-                    child: Text('Simpan'),
+                    onPressed: isActionLoading
+                        ? null
+                        : () {
+                            if (!isActionLoading) {
+                              _handleAddSession();
+                            }
+                          },
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text('Simpan'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
                       foregroundColor: Colors.white,
@@ -2582,9 +3063,49 @@ class _MilkingViewState extends State<MilkingView> {
     );
   }
 
-  // Build edit session modal
+// Build edit session modal with validation
   Widget _buildEditSessionModal() {
     if (selectedSession == null) return Container();
+
+    // --- FIX: Ensure unique cow IDs for dropdown ---
+    final cowSource = currentUser?['role_id'] == 1 ? cowList : userManagedCows;
+    final uniqueCowMap = <String, dynamic>{};
+    for (var cow in cowSource) {
+      final id = (cow is Map ? cow['id'] : cow.id).toString();
+      final name = cow is Map ? cow['name'] : cow.name;
+
+      // Skip sapi dengan nama kosong
+      if (name != null && name.toString().trim().isNotEmpty) {
+        if (!uniqueCowMap.containsKey(id)) {
+          uniqueCowMap[id] = cow;
+        }
+      }
+    }
+
+    // Check if cow is selected
+    final selectedCowId = selectedSession!['cow_id'].toString();
+    final isCowSelected = selectedCowId.isNotEmpty && selectedCowId != '';
+    final cowDropdownValue =
+        uniqueCowMap.containsKey(selectedCowId) ? selectedCowId : null;
+
+    // --- FIX: Ensure unique milker IDs for dropdown (if needed) ---
+    final uniqueFarmerMap = <String, dynamic>{};
+    for (var farmer in availableFarmersForCow) {
+      final id = (farmer['user_id'] ?? farmer['id']).toString();
+      final name = farmer['username'] ?? farmer['name'];
+
+      // Skip pemerah dengan nama kosong
+      if (name != null && name.toString().trim().isNotEmpty) {
+        if (!uniqueFarmerMap.containsKey(id)) {
+          uniqueFarmerMap[id] = farmer;
+        }
+      }
+    }
+    final selectedMilkerId = selectedSession!['milker_id'].toString();
+    final milkerDropdownValue =
+        isCowSelected && uniqueFarmerMap.containsKey(selectedMilkerId)
+            ? selectedMilkerId
+            : null;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -2632,77 +3153,299 @@ class _MilkingViewState extends State<MilkingView> {
                   // Cow selection
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Sapi',
+                      labelText: 'Pilih Sapi *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.pets),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
-                    value: selectedSession!['cow_id'].isEmpty
-                        ? null
-                        : selectedSession!['cow_id'],
+                    value: cowDropdownValue,
                     items: [
                       DropdownMenuItem(
-                          value: '', child: Text('-- Pilih Sapi --')),
-                      ...(currentUser?['role_id'] == 1
-                              ? cowList
-                              : userManagedCows)
+                          value: '',
+                          child: Text('-- Pilih Sapi --',
+                              style: TextStyle(color: Colors.grey[600]))),
+                      ...uniqueCowMap.values
                           .where((cow) =>
-                              (cow['gender'] ?? cow.gender)?.toLowerCase() ==
-                              'female')
+                              (cow is Map &&
+                                  (cow['gender'] ?? '').toLowerCase() ==
+                                      'female') ||
+                              (cow is Cow &&
+                                  (cow.gender ?? '').toLowerCase() == 'female'))
                           .map((cow) => DropdownMenuItem(
-                                value: (cow['id'] ?? cow.id).toString(),
+                                value: (cow is Map ? cow['id'] : cow.id)
+                                    .toString(),
                                 child: Text(
-                                    '${cow['name'] ?? cow.name} (ID: ${cow['id'] ?? cow.id})'),
-                              )),
+                                    '${cow is Map ? cow['name'] : cow.name} (ID: ${(cow is Map ? cow['id'] : cow.id)})'),
+                              ))
                     ],
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Pilih sapi' : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty || value == '') {
+                        return 'Silakan pilih sapi';
+                      }
+                      return null;
+                    },
                     onChanged: (value) =>
                         _handleCowSelectionInEdit(value ?? ''),
                   ),
                   SizedBox(height: 16),
 
-                  // Milker selection
                   if (currentUser?['role_id'] == 1)
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'Pilih Pemerah',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                      value: selectedSession!['milker_id'].toString(),
-                      items: [
-                        DropdownMenuItem(
-                            value: '', child: Text('-- Pilih Pemerah --')),
-                        ...availableFarmersForCow
-                            .map((farmer) => DropdownMenuItem(
-                                  value: (farmer['user_id'] ?? farmer['id'])
-                                      .toString(),
-                                  child: Text(
-                                      '${farmer['name']} (ID: ${farmer['user_id'] ?? farmer['id']})'),
-                                )),
-                      ],
-                      validator: (value) =>
-                          value?.isEmpty == true ? 'Pilih pemerah' : null,
-                      onChanged: (value) => setState(() {
-                        selectedSession!['milker_id'] = value ?? '';
-                      }),
+                    StreamBuilder<bool>(
+                      stream: _loadingStream,
+                      initialData: false,
+                      builder: (context, loadingSnapshot) {
+                        final isLoading = loadingSnapshot.data ?? false;
+
+                        return StreamBuilder<List<dynamic>>(
+                          stream: _farmersStream,
+                          initialData: [],
+                          builder: (context, farmersSnapshot) {
+                            final farmers = farmersSnapshot.data ?? [];
+                            final selectedCowId =
+                                selectedSession!['cow_id'].toString();
+                            final isCowSelected =
+                                selectedCowId.isNotEmpty && selectedCowId != '';
+
+                            final selectedMilkerId =
+                                selectedSession!['milker_id'].toString();
+                            final milkerDropdownValue = isCowSelected &&
+                                    farmers.any((farmer) =>
+                                        (farmer['user_id'] ?? farmer['id'])
+                                            .toString() ==
+                                        selectedMilkerId)
+                                ? selectedMilkerId
+                                : null;
+
+                            return DropdownButtonFormField<String>(
+                              key: ValueKey(
+                                  'milker_dropdown_edit_${selectedSession!['cow_id']}_${farmers.length}_$isLoading'),
+                              decoration: InputDecoration(
+                                labelText: 'Pilih Pemerah *',
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                                prefixIcon: Icon(Icons.person),
+                                errorStyle: TextStyle(fontSize: 12),
+                                fillColor: isCowSelected
+                                    ? Colors.white
+                                    : Colors.grey[100],
+                                filled: true,
+                              ),
+                              value: milkerDropdownValue,
+                              items: [
+                                DropdownMenuItem(
+                                    value: '',
+                                    child: Text(
+                                        !isCowSelected
+                                            ? '-- Pilih Sapi Terlebih Dahulu --'
+                                            : isLoading
+                                                ? '-- Memuat Pemerah... --'
+                                                : farmers.isEmpty
+                                                    ? '-- Tidak Ada Pemerah Tersedia --'
+                                                    : '-- Pilih Pemerah --',
+                                        style: TextStyle(
+                                            color: Colors.grey[600]))),
+                                if (isCowSelected && !isLoading)
+                                  ...farmers
+                                      .map((farmer) {
+                                        final farmerName = farmer['username'] ??
+                                            farmer['name'];
+                                        final farmerId =
+                                            farmer['user_id'] ?? farmer['id'];
+                                        if (farmerName == null ||
+                                            farmerName
+                                                .toString()
+                                                .trim()
+                                                .isEmpty) {
+                                          return null;
+                                        }
+                                        return DropdownMenuItem(
+                                          value: farmerId.toString(),
+                                          child: Text(
+                                              '$farmerName (ID: $farmerId)'),
+                                        );
+                                      })
+                                      .where((item) => item != null)
+                                      .cast<DropdownMenuItem<String>>(),
+                              ],
+                              validator: (value) {
+                                if (!isCowSelected) {
+                                  return 'Pilih sapi terlebih dahulu';
+                                }
+                                if (isLoading) {
+                                  return 'Menunggu data pemerah dimuat...';
+                                }
+                                if (farmers.isEmpty) {
+                                  return 'Tidak ada pemerah tersedia untuk sapi ini';
+                                }
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    value == '') {
+                                  return 'Silakan pilih pemerah';
+                                }
+                                return null;
+                              },
+                              onChanged: (isCowSelected &&
+                                      !isLoading &&
+                                      farmers.isNotEmpty)
+                                  ? (value) {
+                                      setState(() {
+                                        selectedSession!['milker_id'] =
+                                            value ?? '';
+                                      });
+                                    }
+                                  : null,
+                              disabledHint: Text(
+                                  !isCowSelected
+                                      ? 'Pilih sapi terlebih dahulu'
+                                      : isLoading
+                                          ? 'Memuat data pemerah...'
+                                          : 'Tidak ada pemerah tersedia',
+                                  style: TextStyle(color: Colors.grey[500])),
+                            );
+                          },
+                        );
+                      },
                     )
                   else
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Pemerah',
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.person),
-                        filled: true,
-                        fillColor: Colors.grey[100],
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
-                      initialValue: selectedSession!['milker_name'] ??
-                          'ID: ${selectedSession!['milker_id']}',
-                      readOnly: true,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person, color: Colors.grey[600]),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pemerah',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  selectedSession!['milker_name'] ??
+                                      'ID: ${selectedSession!['milker_id']}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[800],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+
+                  // Loading indicator for farmers
+                  if (currentUser?['role_id'] == 1 &&
+                      loadingFarmers &&
+                      isCowSelected) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.blue[600]!),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Memuat data pemerah untuk sapi yang dipilih...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Warning message if data is incomplete
+                  if (uniqueCowMap.length < cowSource.length ||
+                      (currentUser?['role_id'] == 1 &&
+                          uniqueFarmerMap.length <
+                              availableFarmersForCow.length)) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning,
+                              color: Colors.orange[700], size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Beberapa data sapi atau pemerah tidak memiliki nama yang valid',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange[800],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // No farmers available warning
+                  if (currentUser?['role_id'] == 1 &&
+                      isCowSelected &&
+                      !loadingFarmers &&
+                      availableFarmersForCow.isEmpty) ...[
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.red[700], size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[800],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   SizedBox(height: 16),
 
                   // Volume input with quick buttons
@@ -2712,18 +3455,22 @@ class _MilkingViewState extends State<MilkingView> {
                       TextFormField(
                         controller: _editVolumeController,
                         decoration: InputDecoration(
-                          labelText: 'Volume (Liter)',
+                          labelText: 'Volume (Liter) *',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8)),
                           prefixIcon: Icon(Icons.local_drink),
+                          errorStyle: TextStyle(fontSize: 12),
                         ),
                         keyboardType:
                             TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
-                          if (value?.isEmpty == true) return 'Masukkan volume';
+                          if (value?.isEmpty == true)
+                            return 'Masukkan volume susu';
                           final volume = double.tryParse(value!);
                           if (volume == null || volume <= 0)
-                            return 'Volume harus lebih dari 0';
+                            return 'Volume harus berupa angka positif';
+                          if (volume > 100)
+                            return 'Volume terlalu besar (maksimal 100L)';
                           return null;
                         },
                         onChanged: (value) => setState(() {
@@ -2796,12 +3543,18 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _editDateController,
                     decoration: InputDecoration(
-                      labelText: 'Tanggal Pemerahan',
+                      labelText: 'Tanggal Pemerahan *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.calendar_today),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
                     readOnly: true,
+                    validator: (value) {
+                      if (value?.isEmpty == true)
+                        return 'Pilih tanggal pemerahan';
+                      return null;
+                    },
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
@@ -2826,12 +3579,18 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _editTimeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Pemerahan',
+                      labelText: 'Waktu Pemerahan *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.access_time),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
                     readOnly: true,
+                    validator: (value) {
+                      if (value?.isEmpty == true)
+                        return 'Pilih waktu pemerahan';
+                      return null;
+                    },
                     onTap: () async {
                       final currentTime = _editTimeController.text.split(':');
                       final time = await showTimePicker(
@@ -2968,6 +3727,7 @@ class _MilkingViewState extends State<MilkingView> {
                           prefixIcon: Icon(Icons.note),
                         ),
                         maxLines: 4,
+                        maxLength: 500,
                         onChanged: (value) => setState(() {
                           selectedSession!['notes'] = value;
                         }),
@@ -2979,10 +3739,16 @@ class _MilkingViewState extends State<MilkingView> {
                         Container(
                           margin: EdgeInsets.only(top: 4),
                           child: Text(
-                            'Karakter: ${selectedSession!['notes']?.toString().length ?? 0}',
+                            'Karakter: ${selectedSession!['notes']?.toString().length ?? 0}/500',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: (selectedSession!['notes']
+                                              ?.toString()
+                                              .length ??
+                                          0) >
+                                      450
+                                  ? Colors.red[600]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ),
@@ -2993,7 +3759,6 @@ class _MilkingViewState extends State<MilkingView> {
             ),
           ),
 
-          // Modal footer
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -3004,8 +3769,15 @@ class _MilkingViewState extends State<MilkingView> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Batal'),
+                    onPressed:
+                        isActionLoading ? null : () => Navigator.pop(context),
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text('Batal'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -3014,8 +3786,24 @@ class _MilkingViewState extends State<MilkingView> {
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _handleEditSession,
-                    child: Text('Perbarui'),
+                    onPressed: isActionLoading
+                        ? null
+                        : () {
+                            if (!isActionLoading) {
+                              _handleEditSession();
+                            }
+                          },
+                    child: isActionLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text('Perbarui'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange[700],
                       foregroundColor: Colors.white,

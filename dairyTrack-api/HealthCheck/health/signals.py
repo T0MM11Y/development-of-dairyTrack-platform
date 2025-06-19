@@ -22,7 +22,7 @@ def get_primary_manager(cow):
 # 🔥 HealthCheck: Evaluasi dan Buat Notifikasi jika abnormal
 @receiver(post_save, sender=HealthCheck)
 def check_and_update_health_status(sender, instance, created, **kwargs):
-    if hasattr(instance, 'disease_history'):
+    if instance.disease_histories.exists():
         if instance.status != 'handled':
             HealthCheck.objects.filter(id=instance.id).update(status='handled')
         return
