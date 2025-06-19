@@ -78,6 +78,15 @@ const getCurrentWeather = async () => {
   }
 };
 
+const isValidDate = (dateString) => {
+  const date = new Date(dateString);
+  // Check if date is valid and matches the input (to handle cases like "2025-13-01")
+  return (
+    !isNaN(date.getTime()) &&
+    dateString === date.toISOString().split("T")[0]
+  );
+};
+
 // Calculate total nutrients
 const calculateTotalNutrients = async (items, transaction) => {
   console.log(`Calculating total nutrients for ${items.length} feed items`);
@@ -172,9 +181,16 @@ exports.createDailyFeed = async (req, res) => {
       return res.status(400).json({ success: false, message: "Harap lengkapi cow_id, date, dan session." });
     }
 
+    // Check date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       await transaction.rollback();
       return res.status(400).json({ success: false, message: "Format tanggal harus YYYY-MM-DD." });
+    }
+
+    // Check if date is valid
+    if (!isValidDate(date)) {
+      await transaction.rollback();
+      return res.status(400).json({ success: false, message: "Tanggal tidak valid. Periksa tahun, bulan, atau hari." });
     }
 
     if (!["Pagi", "Siang", "Sore"].includes(session)) {
@@ -289,10 +305,12 @@ exports.createDailyFeed = async (req, res) => {
     if (error.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({ success: false, message: "Data tidak valid: sapi atau user tidak ditemukan." });
     }
+    if (error.name === "SequelizeDatabaseError" && error.message.includes("invalid input syntax for type date")) {
+      return res.status(400).json({ success: false, message: "Tanggal tidak valid. Periksa format atau keberadaan tanggal." });
+    }
     return res.status(500).json({ success: false, message: "Terjadi kesalahan pada server." });
   }
 };
-
 // Update daily feed
 exports.updateDailyFeed = async (req, res) => {
   const { id } = req.params;
@@ -337,6 +355,12 @@ exports.updateDailyFeed = async (req, res) => {
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       await transaction.rollback();
       return res.status(400).json({ success: false, message: "Format tanggal harus YYYY-MM-DD." });
+    }
+
+    // Check if date is valid
+    if (date && !isValidDate(date)) {
+      await transaction.rollback();
+      return res.status(400).json({ success: false, message: "Tanggal tidak valid. Periksa tahun, bulan, atau hari." });
     }
 
     if (session && !["Pagi", "Siang", "Sore"].includes(session)) {
@@ -436,6 +460,9 @@ exports.updateDailyFeed = async (req, res) => {
     }
     if (error.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({ success: false, message: "Data tidak valid: sapi atau user tidak ditemukan." });
+    }
+    if (error.name === "SequelizeDatabaseError" && error.message.includes("invalid input syntax for type date")) {
+      return res.status(400).json({ success: false, message: "Tanggal tidak valid. Periksa format atau keberadaan tanggal." });
     }
     return res.status(500).json({ success: false, message: "Terjadi kesalahan pada server." });
   }

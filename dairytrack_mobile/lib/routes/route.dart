@@ -35,6 +35,7 @@ import '../views/feedManagement/nutrition/listNutrition.dart';
 import '../views/feedManagement/feed/listFeed.dart';
 import '../views/feedManagement/feedStock/listFeedStock.dart';
 import '../views/feedManagement/dailyFeedSchedule/listSchedule.dart';
+import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 
 class AppRoutes {
   // Route names
@@ -71,11 +72,12 @@ class AppRoutes {
   static const String reproductionList = '/reproduction';
 
   // Feed Management
-  static const String feedTypeList= '/feed-type';
-  static const String nutritionList= '/nutrition';
-  static const String feedList= '/feed';
-  static const String feedStockList= '/feed-stock';
-  static const String dailyFeedSchedule= '/feed-schedule';
+  static const String feedTypeList = '/feed-type';
+  static const String nutritionList = '/nutrition';
+  static const String feedList = '/feed';
+  static const String feedStockList = '/feed-stock';
+  static const String dailyFeedSchedule = '/feed-schedule';
+  static const String feedUsage = '/feed-usage';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -188,30 +190,35 @@ class AppRoutes {
           settings: settings,
         );
 
-        // Feed Management
-        case feedTypeList:
+      // Feed Management
+      case feedTypeList:
         return MaterialPageRoute(
           builder: (_) => FeedTypeView(),
           settings: settings,
         );
-        case nutritionList:
+      case nutritionList:
         return MaterialPageRoute(
           builder: (_) => NutrisiView(),
           settings: settings,
         );
-        case feedList:
+      case feedList:
         return MaterialPageRoute(
           builder: (_) => FeedView(),
           settings: settings,
         );
-        case feedStockList:
+      case feedStockList:
         return MaterialPageRoute(
           builder: (_) => FeedStockList(),
           settings: settings,
         );
-        case dailyFeedSchedule:
+      case dailyFeedSchedule:
         return MaterialPageRoute(
           builder: (_) => DailyFeedView(),
+          settings: settings,
+        );
+      case feedUsage:
+        return MaterialPageRoute(
+          builder: (_) => FeedUsagePage(),
           settings: settings,
         );
 

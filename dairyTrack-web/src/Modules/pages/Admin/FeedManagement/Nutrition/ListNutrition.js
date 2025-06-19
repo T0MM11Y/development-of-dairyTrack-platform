@@ -217,7 +217,6 @@ const NutritionListPage = () => {
                     <th>#</th>
                     <th>Nama Nutrisi</th>
                     <th>Satuan</th>
-                    <th>Pemilik</th>
                     <th>Dibuat Oleh</th>
                     <th>Diperbarui Oleh</th>
                     <th>Tanggal Dibuat</th>
@@ -238,7 +237,6 @@ const NutritionListPage = () => {
                         <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                         <td>{item.name}</td>
                         <td>{item.unit}</td>
-                        <td>{item.user_name || "Tidak diketahui"}</td>
                         <td>
                           {item.created_by
                             ? item.created_by.name

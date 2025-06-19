@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const feedStockController = require("../controllers/feedStockController");
-const { verifyToken, validateAdminFarmerCRUD } = require("../controllers/verifyTokenController");
+const { verifyToken, validateAdminFarmerCRUD, validateAdminOnly } = require("../controllers/verifyTokenController");
 
 // FeedStockHistory routes
 router.get("/history", verifyToken, (req, res, next) => {
@@ -16,7 +16,7 @@ router.get("/history/id/:id", verifyToken, (req, res, next) => {
   console.log(`Hit route: GET /feedStock/history/id/${req.params.id}`);
   feedStockController.getFeedStockHistoryById(req, res, next);
 });
-router.delete("/history/:id", verifyToken, validateAdminFarmerCRUD, (req, res, next) => {
+router.delete("/history/:id", verifyToken, validateAdminOnly, (req, res, next) => {
   console.log(`Hit route: DELETE /feedStock/history/${req.params.id}`);
   feedStockController.deleteFeedStockHistory(req, res, next);
 });

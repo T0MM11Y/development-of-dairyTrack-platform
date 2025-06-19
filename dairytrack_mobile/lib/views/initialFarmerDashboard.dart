@@ -185,6 +185,12 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           widget: () => DailyFeedItemsPage(),
         ),
         NavigationItem(
+          icon: Icons.checklist,
+          label: 'Grafik Pakan',
+          route: 'feed-usage',
+          widget: () => FeedUsagePage(),
+        ),
+        NavigationItem(
           icon: Icons.medical_services,
           label: 'Pemeriksaan Kesehatan',
           route: 'health-checks',

@@ -102,7 +102,35 @@ const validateFarmerOnly = (req, res, next) => {
   if (["Admin", "Supervisor"].includes(role)) {
     return res.status(403).json({
       success: false,
-      message: "Akses ditolak. Hanya Farmer yang dapat menambah, mengedit, atau menghapus jadwal pakan.",
+      message: "Akses ditolak. Hanya Farmer yang dapat menambah, mengedit, atau menghapus jadwal maupun item pakan.",
+    });
+  }
+
+  // Role tidak valid
+  return res.status(403).json({
+    success: false,
+    message: "Role tidak valid atau tidak memiliki akses.",
+  });
+};
+const validateAdminOnly = (req, res, next) => {
+  const { role } = req.user;
+  const method = req.method;
+
+  // Farmer bisa melakukan semua operasi (CRUD)
+  if (role === "Admin") {
+    return next();
+  }
+
+  // Admin dan Supervisor hanya bisa READ (GET)
+  if (["Farmer", "Supervisor"].includes(role) && method === "GET") {
+    return next();
+  }
+
+  // Jika Admin atau Supervisor mencoba POST, PUT, atau DELETE
+  if (["Farmer", "Supervisor"].includes(role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Akses ditolak. Hanya Admin yang dapat menghapus data ini",
     });
   }
 
@@ -117,4 +145,5 @@ module.exports = {
   verifyToken,
   validateAdminFarmerCRUD,
   validateFarmerOnly,
+  validateAdminOnly
 };

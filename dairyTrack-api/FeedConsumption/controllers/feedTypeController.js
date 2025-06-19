@@ -94,11 +94,11 @@ exports.deleteFeedType = async (req, res) => {
   try {
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Feed type not found" });
+      return res.status(404).json({ success: false, message: "Jenis Pakan tidak ditemukan" });
     }
 
     await feedType.destroy();
-    res.status(200).json({ success: true, message: "Feed type deleted successfully" });
+    res.status(200).json({ success: true, message: "Jenis Pakan berhasil di hapus" });
   } catch (err) {
     console.error("Error in deleteFeedType:", err);
     res.status(500).json({
@@ -115,12 +115,12 @@ exports.updateFeedType = async (req, res) => {
 
   try {
     if (!name) {
-      return res.status(400).json({ success: false, message: "Name is required" });
+      return res.status(400).json({ success: false, message: "Nama harus di isi" });
     }
 
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Feed type not found" });
+      return res.status(404).json({ success: false, message: "Jenis pakan tidak ditemukan" });
     }
 
     // Validate user existence
@@ -186,7 +186,7 @@ exports.getFeedTypeById = async (req, res) => {
     });
 
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Feed type not found" });
+      return res.status(404).json({ success: false, message: "Jenis pakan tidak ditemukan" });
     }
 
     res.status(200).json({
