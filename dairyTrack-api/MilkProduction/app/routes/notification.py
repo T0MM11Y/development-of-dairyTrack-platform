@@ -89,3 +89,19 @@ def delete_notification(notification_id):
     db.session.commit()
     
     return jsonify({'message': 'Notifikasi dihapus'})
+
+# ...existing code...
+
+@notification_bp.route('/clear-all', methods=['DELETE'])
+def clear_all_notifications():
+    user_id = request.json.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Missing user_id in request body"}), 400
+
+    notifications = Notification.query.filter_by(user_id=user_id).all()
+    for n in notifications:
+        db.session.delete(n)
+    db.session.commit()
+    return jsonify({'message': 'Semua notifikasi dihapus'})
+
+# ...existing code...

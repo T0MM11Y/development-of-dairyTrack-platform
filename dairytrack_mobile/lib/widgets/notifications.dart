@@ -20,6 +20,9 @@ class _NotificationWidgetState extends State<NotificationWidget>
   int unreadCount = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  // Tambahkan variabel pencarian
+  String _searchQuery = '';
+  List<dynamic> _filteredNotifications = [];
 
   // Add user role variable
   String userRole = 'Farmer';
@@ -110,9 +113,11 @@ class _NotificationWidgetState extends State<NotificationWidget>
           unreadCount = notifications
               .where((notif) => !(notif['is_read'] ?? false))
               .length;
+          _applySearchFilter(); // Terapkan filter setelah load
         } else {
           notifications = [];
           unreadCount = 0;
+          _filteredNotifications = [];
           _showErrorSnackBar(notifResult['message']);
         }
 
@@ -125,9 +130,24 @@ class _NotificationWidgetState extends State<NotificationWidget>
         isLoading = false;
         notifications = [];
         unreadCount = 0;
+        _filteredNotifications = [];
       });
       _showErrorSnackBar('Terjadi kesalahan saat memuat notifikasi');
       print('Error loading notifications: $e');
+    }
+  }
+
+  // Fungsi filter pencarian
+  void _applySearchFilter() {
+    if (_searchQuery.isEmpty) {
+      _filteredNotifications = List.from(notifications);
+    } else {
+      final query = _searchQuery.toLowerCase();
+      _filteredNotifications = notifications.where((notif) {
+        final title = (notif['title'] ?? '').toString().toLowerCase();
+        final message = (notif['message'] ?? '').toString().toLowerCase();
+        return title.contains(query) || message.contains(query);
+      }).toList();
     }
   }
 
@@ -231,47 +251,47 @@ class _NotificationWidgetState extends State<NotificationWidget>
   }
 
   // Get relative time
- /// Fungsi untuk menampilkan waktu relatif seperti "2 jam lalu"
-String _getRelativeTime(String? timestamp) {
-  if (timestamp == null) return 'Tidak diketahui';
+  /// Fungsi untuk menampilkan waktu relatif seperti "2 jam lalu"
+  String _getRelativeTime(String? timestamp) {
+    if (timestamp == null) return 'Tidak diketahui';
 
-  try {
-    final now = DateTime.now();
-    final utcDate = DateTime.parse(timestamp);
-    final wibDate = utcDate.add(Duration(hours: 7)); // Geser ke WIB
-    final difference = now.difference(wibDate);
+    try {
+      final now = DateTime.now();
+      final utcDate = DateTime.parse(timestamp);
+      final wibDate = utcDate.add(Duration(hours: 7)); // Geser ke WIB
+      final difference = now.difference(wibDate);
 
-    if (difference.inMinutes < 1) {
-      return 'Baru saja';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} menit lalu';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} jam lalu';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} hari lalu';
-    } else {
-      return DateFormat('dd MMM yyyy', 'id_ID').format(wibDate);
+      if (difference.inMinutes < 1) {
+        return 'Baru saja';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} menit lalu';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours} jam lalu';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays} hari lalu';
+      } else {
+        return DateFormat('dd MMM yyyy', 'id_ID').format(wibDate);
+      }
+    } catch (e) {
+      return 'Tidak diketahui';
     }
-  } catch (e) {
-    return 'Tidak diketahui';
   }
-}
 
-/// Fungsi untuk menampilkan waktu lengkap dalam WIB
-String _formatDateTime(String? timestamp) {
-  if (timestamp == null) return 'Tidak diketahui';
+  /// Fungsi untuk menampilkan waktu lengkap dalam WIB
+  String _formatDateTime(String? timestamp) {
+    if (timestamp == null) return 'Tidak diketahui';
 
-  try {
-    // Parsing manual dengan timezone awareness
-    final date = DateFormat("yyyy-MM-ddTHH:mm:ssZ").parseUTC(timestamp).toLocal();
+    try {
+      // Parsing manual dengan timezone awareness
+      final date =
+          DateFormat("yyyy-MM-ddTHH:mm:ssZ").parseUTC(timestamp).toLocal();
 
-    return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
-  } catch (e) {
-    print('DEBUG - Error parsing date: $e');
-    return 'Tidak diketahui';
+      return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
+    } catch (e) {
+      print('DEBUG - Error parsing date: $e');
+      return 'Tidak diketahui';
+    }
   }
-}
-
 
   // Show error snackbar
   void _showErrorSnackBar(String message) {
@@ -329,6 +349,51 @@ String _formatDateTime(String? timestamp) {
         ),
       );
     }
+  }
+
+  // Widget search bar
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: 'Cari notifikasi...',
+          prefixIcon: Icon(Icons.search, color: _primaryColor),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide(color: _primaryColor.withOpacity(0.2)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide(color: _primaryColor.withOpacity(0.2)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide(color: _primaryColor, width: 1.5),
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    setState(() {
+                      _searchQuery = '';
+                      _applySearchFilter();
+                    });
+                  },
+                )
+              : null,
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+            _applySearchFilter();
+          });
+        },
+      ),
+    );
   }
 
   @override
@@ -453,7 +518,12 @@ String _formatDateTime(String? timestamp) {
               ? _buildLoadingState()
               : notifications.isEmpty
                   ? _buildEmptyState()
-                  : _buildNotificationList(),
+                  : Column(
+                      children: [
+                        _buildSearchBar(),
+                        Expanded(child: _buildNotificationList()),
+                      ],
+                    ),
         ),
       ),
     );
@@ -583,193 +653,215 @@ String _formatDateTime(String? timestamp) {
   Widget _buildNotificationList() {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: ListView.builder(
-        padding: EdgeInsets.all(16),
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          final isUnread = !(notification['is_read'] ?? false);
-          final type = notification['type'];
-          final color = _getNotificationColor(type);
-
-          return Container(
-            margin: EdgeInsets.only(bottom: 16),
-            child: Material(
-              elevation: isUnread ? 2 : 1,
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.white,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () async {
-                  if (isUnread) {
-                    await _markAsRead(notification['id'], index);
-                  }
-                  _showNotificationDetail(notification);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color:
-                          isUnread ? color.withOpacity(0.3) : Colors.grey[100]!,
-                      width: isUnread ? 1 : 0.5,
-                    ),
+      child: _filteredNotifications.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 64),
+                child: Text(
+                  'Tidak ada notifikasi yang cocok.',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              _getNotificationIcon(type),
-                              color: color,
-                              size: 20,
-                            ),
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.all(16),
+              itemCount: _filteredNotifications.length,
+              itemBuilder: (context, index) {
+                final notification = _filteredNotifications[index];
+                final isUnread = !(notification['is_read'] ?? false);
+                final type = notification['type'];
+                final color = _getNotificationColor(type);
+
+                return Container(
+                  margin: EdgeInsets.only(bottom: 16),
+                  child: Material(
+                    elevation: isUnread ? 2 : 1,
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () async {
+                        if (isUnread) {
+                          await _markAsRead(notification['id'],
+                              notifications.indexOf(notification));
+                        }
+                        _showNotificationDetail(notification);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isUnread
+                                ? color.withOpacity(0.3)
+                                : Colors.grey[100]!,
+                            width: isUnread ? 1 : 0.5,
                           ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        notification['title'] ?? 'Notifikasi',
-                                        style: TextStyle(
-                                          fontWeight: isUnread
-                                              ? FontWeight.bold
-                                              : FontWeight.w600,
-                                          fontSize: 15,
-                                          color: Colors.grey[800],
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    _getNotificationIcon(type),
+                                    color: color,
+                                    size: 20,
+                                  ),
+                                ),
+                                SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              notification['title'] ??
+                                                  'Notifikasi',
+                                              style: TextStyle(
+                                                fontWeight: isUnread
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w600,
+                                                fontSize: 15,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                          ),
+                                          if (isUnread)
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: color,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.access_time_rounded,
+                                              size: 12,
+                                              color: Colors.grey[400]),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            _getRelativeTime(
+                                                notification['created_at']),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_horiz_rounded,
+                                      color: Colors.grey[400], size: 20),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  onSelected: (value) async {
+                                    switch (value) {
+                                      case 'mark_read':
+                                        if (isUnread) {
+                                          await _markAsRead(
+                                              notification['id'],
+                                              notifications
+                                                  .indexOf(notification));
+                                        }
+                                        break;
+                                      case 'delete':
+                                        _showDeleteConfirmation(
+                                            notification['id'],
+                                            notifications
+                                                .indexOf(notification));
+                                        break;
+                                      case 'details':
+                                        _showNotificationDetail(notification);
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    if (isUnread)
+                                      PopupMenuItem(
+                                        value: 'mark_read',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.mark_email_read_rounded,
+                                                size: 18,
+                                                color:
+                                                    _primaryAccentColor), // Use dynamic color
+                                            SizedBox(width: 12),
+                                            Text('Tandai Dibaca'),
+                                          ],
                                         ),
+                                      ),
+                                    PopupMenuItem(
+                                      value: 'details',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.info_rounded,
+                                              size: 18, color: Colors.blue),
+                                          SizedBox(width: 12),
+                                          Text('Detail'),
+                                        ],
                                       ),
                                     ),
-                                    if (isUnread)
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: color,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.access_time_rounded,
-                                        size: 12, color: Colors.grey[400]),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      _getRelativeTime(
-                                          notification['created_at']),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[500],
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete_rounded,
+                                              size: 18, color: Colors.red),
+                                          SizedBox(width: 12),
+                                          Text('Hapus'),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          ),
-                          PopupMenuButton<String>(
-                            icon: Icon(Icons.more_horiz_rounded,
-                                color: Colors.grey[400], size: 20),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            onSelected: (value) async {
-                              switch (value) {
-                                case 'mark_read':
-                                  if (isUnread) {
-                                    await _markAsRead(
-                                        notification['id'], index);
-                                  }
-                                  break;
-                                case 'delete':
-                                  _showDeleteConfirmation(
-                                      notification['id'], index);
-                                  break;
-                                case 'details':
-                                  _showNotificationDetail(notification);
-                                  break;
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              if (isUnread)
-                                PopupMenuItem(
-                                  value: 'mark_read',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.mark_email_read_rounded,
-                                          size: 18,
-                                          color:
-                                              _primaryAccentColor), // Use dynamic color
-                                      SizedBox(width: 12),
-                                      Text('Tandai Dibaca'),
-                                    ],
-                                  ),
-                                ),
-                              PopupMenuItem(
-                                value: 'details',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.info_rounded,
-                                        size: 18, color: Colors.blue),
-                                    SizedBox(width: 12),
-                                    Text('Detail'),
-                                  ],
+                            SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                notification['message'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
+                                  height: 1.4,
                                 ),
                               ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_rounded,
-                                        size: 18, color: Colors.red),
-                                    SizedBox(width: 12),
-                                    Text('Hapus'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          notification['message'] ?? '',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[700],
-                            height: 1.4,
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 
