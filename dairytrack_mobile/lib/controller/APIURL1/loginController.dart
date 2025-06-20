@@ -21,15 +21,17 @@ class LoginController {
         await prefs.setString('authToken', responseData['token']);
 
         // ✅ Simpan juga data user ke SharedPreferences
-        await prefs.setString('user', jsonEncode({
-          'id': responseData['user_id'],
-          'username': responseData['username'],
-          'name': responseData['name'],
-          'email': responseData['email'],
-          'role': responseData['role'],
-          'role_id': responseData['role_id'],
-          'token': responseData['token'],
-        }));
+        await prefs.setString(
+            'user',
+            jsonEncode({
+              'id': responseData['user_id'],
+              'username': responseData['username'],
+              'name': responseData['name'],
+              'email': responseData['email'],
+              'role': responseData['role'],
+              'role_id': responseData['role_id'],
+              'token': responseData['token'],
+            }));
 
         return responseData;
       } else {
@@ -71,6 +73,59 @@ class LoginController {
       }
     } catch (e) {
       return {'success': false, 'message': 'An error occurred: $e'};
+    }
+  }
+
+  // Add change password method
+  Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+    final userString = prefs.getString('user');
+
+    if (token == null || userString == null) {
+      return {'status': 'error', 'message': 'User not authenticated'};
+    }
+
+    // Get user ID from stored user data
+    final userData = jsonDecode(userString);
+    final userId = userData['id'];
+
+    final url = Uri.parse('$API_URL1/user/change-password/$userId');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'status': 'success',
+          'message': responseData['message'] ?? 'Password changed successfully',
+        };
+      } else {
+        return {
+          'status': 'error',
+          'message': responseData['message'] ?? 'Failed to change password',
+        };
+      }
+    } catch (e) {
+      return {
+        'status': 'error',
+        'message': 'An error occurred: $e',
+      };
     }
   }
 }

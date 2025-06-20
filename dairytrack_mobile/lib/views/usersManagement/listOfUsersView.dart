@@ -262,7 +262,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 "OK",
-                style: TextStyle(color: _primaryColor),
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ],
