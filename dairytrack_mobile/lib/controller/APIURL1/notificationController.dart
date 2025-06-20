@@ -114,6 +114,32 @@ class NotificationController {
     }
   }
 
+  // Clear all notifications
+  Future<Map<String, dynamic>> clearAllNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('userId');
+
+      if (userId == null) {
+        return {'success': false, 'message': 'User not authenticated'};
+      }
+
+      final url = Uri.parse('$baseUrl/clear-all');
+      final response = await http.delete(
+        url,
+        headers: _headers,
+        body: jsonEncode({'user_id': userId}),
+      );
+
+      return _handleResponse(
+        response,
+        defaultErrorMsg: 'Failed to clear all notifications',
+      );
+    } catch (e) {
+      return {'success': false, 'message': 'An error occurred: $e'};
+    }
+  }
+
   // Get unread notification count
   Future<Map<String, dynamic>> getUnreadCount() async {
     try {
