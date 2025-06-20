@@ -436,6 +436,8 @@ const paginatedData = sortedFilteredData.slice(
                       <th>#</th>
                       <th>Nama Sapi</th>
                       <th>Status Penanganan</th>
+                                          <th>Diperiksa Oleh</th>
+
                       <th>Aksi</th>
                     </tr>
                   </thead>
@@ -472,6 +474,8 @@ const paginatedData = sortedFilteredData.slice(
         : "Belum Ditangani"}
     </Badge>
   </td>
+  <td>{item.created_by?.name || "Tidak diketahui"}</td>   
+
                           <td>
                             <OverlayTrigger
                               overlay={<Tooltip>Lihat Detail</Tooltip>}

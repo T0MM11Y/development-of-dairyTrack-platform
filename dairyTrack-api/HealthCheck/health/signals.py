@@ -10,13 +10,9 @@ from .models import (
     Symptom,
     Notification,
     Reproduction,
-    UserCowAssociation
 )
 
-# 🔥 Helper: Ambil satu manajer dari tabel relasi eksplisit
-def get_primary_manager(cow):
-    assoc = UserCowAssociation.objects.filter(cow=cow).select_related('user').first()
-    return assoc.user if assoc else None
+
 
 
 # 🔥 HealthCheck: Evaluasi dan Buat Notifikasi jika abnormal
@@ -72,26 +68,32 @@ message=f"Pemeriksaan kesehatan sapi {instance.cow.name} mendeteksi: " + " ".joi
                 created_at=now()
             )
 
+# ⏰ Interval dalam detik (30 menit)
+REMINDER_INTERVAL = 30 * 60  # 1800 detik
 
+def send_followup_reminder(health_check_id, attempt=1, max_attempts=10):
+    refreshed = HealthCheck.objects.filter(id=health_check_id).first()
+    if not refreshed or refreshed.status == 'handled' or attempt > max_attempts:
+        return  # Stop jika sudah ditangani atau melebihi jumlah percobaan
 
-# 🔥 Reminder setelah 1 hari jika belum ditangani
+    user = refreshed.checked_by or getattr(refreshed, 'created_by', None)
+    if user:
+        Notification.objects.create(
+            cow=refreshed.cow,
+            user=user,
+            message=f"[#{attempt}] Segera periksa kesehatan sapi {refreshed.cow.name}! Pemeriksaan belum ditangani.",
+            type="follow_up",
+            created_at=now()
+        )
+
+    # Jadwalkan ulang pengingat setelah interval
+    Timer(REMINDER_INTERVAL, send_followup_reminder, args=(health_check_id, attempt + 1)).start()
+
 @receiver(post_save, sender=HealthCheck)
 def schedule_followup_check(sender, instance, created, **kwargs):
     if created:
-        def check_status_later():
-            refreshed = HealthCheck.objects.filter(id=instance.id).first()
-            if refreshed and refreshed.status != 'handled':
-                user = get_primary_manager(refreshed.cow)
-                if user:
-                    Notification.objects.create(
-                        cow=refreshed.cow,
-                        user=user,
-                        message="Segera periksa kesehatan sapi! Pemeriksaan belum ditangani lebih dari 1 hari.",
-                        type="follow_up",
-                        created_at=now()
-                    )
+        Timer(REMINDER_INTERVAL, send_followup_reminder, args=(instance.id,)).start()
 
-        Timer(86400, check_status_later).start()
 
 
 # 🔥 Update status HealthCheck ke handled saat DiseaseHistory dibuat

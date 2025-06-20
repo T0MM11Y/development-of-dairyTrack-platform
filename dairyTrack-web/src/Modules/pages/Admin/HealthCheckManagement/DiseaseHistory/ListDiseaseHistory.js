@@ -260,6 +260,7 @@ const isSupervisor = currentUser?.role_id === 2;
                       <th>Tanggal</th>
                       <th>Sapi</th>
                       <th>Penyakit</th>
+                      <th>Penanggung Jawab</th>
                       <th>Status</th>
                       <th>Aksi</th>
                     </tr>
@@ -278,6 +279,7 @@ const isSupervisor = currentUser?.role_id === 2;
                           <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
                           <td>{cow ? `${cow.name} (${cow.breed})` : check?.cow ? `ID: ${cowId}` : "-"}</td>
                           <td>{item.disease_name}</td>
+  <td>{item.created_by?.name || "Tidak diketahui"}</td>   
                           <td>
                             {check?.status === "handled" ? (
                               <Badge bg="success">Sudah Ditangani</Badge>

@@ -258,6 +258,8 @@ const availableCows = Array.isArray(rawCows)
                     <th>Detak</th>
                     <th>Napas</th>
                     <th>Ruminasi</th>
+                    <th>Diperiksa Oleh</th>
+
                     <th>Status</th>
                     <th>Aksi</th>
                   </tr>
@@ -279,6 +281,7 @@ const availableCows = Array.isArray(rawCows)
                         <td>{item.heart_rate} bpm</td>
                         <td>{item.respiration_rate} bpm</td>
                         <td>{item.rumination} kontraksi</td>
+<td>{item.checked_by?.name || "Tidak diketahui"}</td>
                         <td>
                           <Badge bg={
                             item.status === "healthy" ? "primary" :
