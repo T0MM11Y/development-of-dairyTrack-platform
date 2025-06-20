@@ -853,51 +853,49 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
     );
   }
 
+  // ...existing code...
+
   Widget _buildBatchCard(Map<String, dynamic> batch) {
     final urgencyColor = urgencyColors[batch['urgency_level']] ?? Colors.grey;
     final statusColor = statusColors[batch['status']] ?? Colors.grey;
 
     return Card(
-      elevation: 6,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      shadowColor: Colors.blueGrey.withOpacity(0.2),
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: urgencyColor.withOpacity(0.1),
-          child: Icon(
-            Icons.water_drop,
-            color: urgencyColor,
-            size: 32,
-          ),
+          radius: 22,
+          backgroundColor: urgencyColor.withOpacity(0.15),
+          child: Icon(Icons.water_drop, color: urgencyColor, size: 24),
         ),
         title: Text(
           batch['batch_number'] ?? 'N/A',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          "Volume: ${batch['total_volume'] ?? 0}L, Status: ${batch['status'] ?? 'UNKNOWN'}",
-          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          "${batch['total_volume'] ?? 0}L • ${batch['status'] ?? 'UNKNOWN'}",
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
         trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
             color: urgencyColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: urgencyColor.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+            border:
+                Border.all(color: urgencyColor.withOpacity(0.3), width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.access_time, size: 14, color: urgencyColor),
-              SizedBox(width: 4),
+              Icon(Icons.schedule, size: 12, color: urgencyColor),
+              SizedBox(width: 2),
               Text(
                 _formatTimeRemaining(batch),
                 style: TextStyle(
                   color: urgencyColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
                 ),
               ),
             ],
@@ -905,25 +903,26 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildBatchInfoRow('Volume', '${batch['total_volume'] ?? 0}L'),
-                _buildBatchInfoRow('Status', batch['status'] ?? 'UNKNOWN'),
-                _buildBatchInfoRow(
+                _buildCompactInfoRow(
+                    'Volume', '${batch['total_volume'] ?? 0}L'),
+                _buildCompactInfoRow('Status', batch['status'] ?? 'UNKNOWN'),
+                _buildCompactInfoRow(
                     'Urgency', batch['urgency_level'] ?? 'unknown'),
                 if (batch['production_date'] != null)
-                  _buildBatchInfoRow(
-                      'Produced',
-                      DateFormat('dd/MM/yy HH:mm')
-                          .format(DateTime.parse(batch['production_date']))),
+                  _buildCompactInfoRow(
+                    'Produced',
+                    DateFormat('dd/MM/yy HH:mm')
+                        .format(DateTime.parse(batch['production_date'])),
+                  ),
                 if (batch['expiry_date'] != null)
-                  _buildBatchInfoRow(
-                      'Expires',
-                      DateFormat('dd/MM/yy HH:mm')
-                          .format(DateTime.parse(batch['expiry_date']))),
-                Divider(height: 24),
+                  _buildCompactInfoRow(
+                    'Expires',
+                    DateFormat('dd/MM/yy HH:mm')
+                        .format(DateTime.parse(batch['expiry_date'])),
+                  ),
               ],
             ),
           ),
@@ -932,6 +931,37 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
     );
   }
 
+  Widget _buildCompactInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ...existing code...
   Widget _buildBatchInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
