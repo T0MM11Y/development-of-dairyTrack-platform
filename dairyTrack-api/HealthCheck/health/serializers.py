@@ -68,17 +68,58 @@ class HealthCheckEditSerializer(serializers.ModelSerializer):
             'needs_attention', 'is_followed_up', 'created_at'
         ]
 
-class SymptomSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+# Read: untuk GET
+class SymptomReadSerializer(serializers.ModelSerializer):
     created_by = UserSimpleSerializer(read_only=True)
+    edited_by = UserSimpleSerializer(read_only=True)
 
     class Meta:
         model = Symptom
         fields = '__all__'
+
+
+# Write: untuk POST/PUT
+class SymptomWriteSerializer(serializers.ModelSerializer):
+    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+
+    class Meta:
+        model = Symptom
+        fields = [
+            "eye_condition",
+            "mouth_condition",
+            "nose_condition",
+            "anus_condition",
+            "leg_condition",
+            "skin_condition",
+            "behavior",
+            "weight_condition",
+            "reproductive_condition",
+            "edited_by",
+        ]
+class SymptomCreateSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+
+    class Meta:
+        model = Symptom
+        fields = [
+            "health_check",
+            "created_by",
+            "eye_condition",
+            "mouth_condition",
+            "nose_condition",
+            "anus_condition",
+            "leg_condition",
+            "skin_condition",
+            "behavior",
+            "weight_condition",
+            "reproductive_condition",
+        ]
+
+
+
 class DiseaseHistoryListSerializer(serializers.ModelSerializer):
     health_check = HealthCheckListSerializer()
-    symptom = SymptomSerializer()
+    symptom = SymptomWriteSerializer()
     created_by = UserSimpleSerializer(read_only=True)
 
 

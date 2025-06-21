@@ -434,9 +434,12 @@ const paginatedData = sortedFilteredData.slice(
                   <thead className="table-light">
                     <tr>
                       <th>#</th>
+                      <th>Tanggal</th>
+
                       <th>Nama Sapi</th>
+                      <th>Penanggung Jawab</th>
                       <th>Status Penanganan</th>
-                                          <th>Diperiksa Oleh</th>
+                                          
 
                       <th>Aksi</th>
                     </tr>
@@ -456,7 +459,11 @@ const paginatedData = sortedFilteredData.slice(
                       return (
                         <tr key={item.id}>
                            <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+                          <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
+
   <td>{cowName}</td>
+    <td>{item.created_by?.name || "Tidak diketahui"}</td>   
+
   <td>
     <Badge
       bg={
@@ -474,7 +481,6 @@ const paginatedData = sortedFilteredData.slice(
         : "Belum Ditangani"}
     </Badge>
   </td>
-  <td>{item.created_by?.name || "Tidak diketahui"}</td>   
 
                           <td>
                             <OverlayTrigger

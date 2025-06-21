@@ -258,7 +258,7 @@ const availableCows = Array.isArray(rawCows)
                     <th>Detak</th>
                     <th>Napas</th>
                     <th>Ruminasi</th>
-                    <th>Diperiksa Oleh</th>
+                    <th>Penanggung Jawab</th>
 
                     <th>Status</th>
                     <th>Aksi</th>
