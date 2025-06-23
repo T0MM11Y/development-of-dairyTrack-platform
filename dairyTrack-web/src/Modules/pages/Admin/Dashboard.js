@@ -935,10 +935,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-bar me-2"></i>
-                    Statistik Sistem
+                    System Statistics
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Ringkasan data keseluruhan sistem
+                    Summary of overall system data
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1041,7 +1041,7 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
-                    Distribusi Fase Laktasi
+                    Distribution Lactation Phases
                   </h5>
                   <p style={styles.subheading} className="mb-0">
                     Composition of lactation phase of cows on farms{" "}

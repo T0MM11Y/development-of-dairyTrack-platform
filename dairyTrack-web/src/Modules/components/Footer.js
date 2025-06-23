@@ -90,10 +90,10 @@ const Footer = () => {
   };
 
   const quickLinks = [
-    { to: "/", label: "Beranda", icon: "fas fa-home" },
-    { to: "/about", label: "Tentang Kami", icon: "fas fa-info-circle" },
+    { to: "/", label: "Home", icon: "fas fa-home" },
+    { to: "/about", label: "About", icon: "fas fa-info-circle" },
     { to: "/blog", label: "Blog", icon: "fas fa-blog" },
-    { to: "/gallery", label: "Galeri", icon: "fas fa-images" },
+    { to: "/gallery", label: "Gallery", icon: "fas fa-images" },
   ];
 
   const socialLinks = [

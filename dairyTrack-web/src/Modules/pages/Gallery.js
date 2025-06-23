@@ -162,14 +162,14 @@ const HeroSection = React.memo(({ galleries, availableYears }) => (
                 Visual Journey
               </div>
               <h1 className="hero-title">
-                Galeri
-                <span className="gradient-text"> Foto</span>
+                Photo
+                <span className="gradient-text"> Gallery</span>
               </h1>
               <div className="title-divider" />
               <p className="hero-description">
-                Jelajahi koleksi foto-foto terbaik kami yang menampilkan
-                aktivitas, fasilitas, hewan ternak, dan produk DairyTrack.
-                Temukan cerita visual di balik setiap momen di peternakan kami.
+                Explore our best photo collection featuring activities,
+                facilities, livestock, and DairyTrack products. Discover the
+                visual stories behind every moment at our farm.
               </p>
 
               <div className="hero-stats">

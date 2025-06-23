@@ -314,13 +314,13 @@ const Product = () => {
                     Quality Products
                   </div>
                   <h1 className="hero-title">
-                    Produk <span className="gradient-text">Premium</span>
+                    Premium <span className="gradient-text">Products</span>
                   </h1>
                   <div className="title-divider"></div>
                   <p className="hero-description">
-                    Temukan berbagai produk olahan susu dan pangan sehat
-                    berkualitas dari Dairy~Track. Diproses dengan standar tinggi
-                    untuk kesehatan dan kepuasan Anda.
+                    Discover a variety of high-quality dairy and healthy food
+                    products from Dairy~Track. Processed with high standards for
+                    your health and satisfaction.
                   </p>
                   <div className="hero-stats">
                     <motion.div

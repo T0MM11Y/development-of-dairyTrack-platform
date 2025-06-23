@@ -124,25 +124,25 @@ const About = () => {
     {
       icon: "fas fa-chart-line",
       value: "1000+",
-      label: "Liter Susu/Hari",
+      label: "Liters of Milk/Day",
       color: theme.primary,
     },
     {
       icon: "fas fa-user-graduate",
       value: "50+",
-      label: "Peternak Terlatih",
+      label: "Trained Farmers",
       color: theme.secondary,
     },
     {
       icon: "fas fa-dna",
       value: "10+",
-      label: "Riset Genetik",
+      label: "Genetic Research",
       color: theme.accent,
     },
     {
       icon: "fas fa-award",
       value: "5+",
-      label: "Penghargaan Sapi",
+      label: "Cattle Awards",
       color: theme.primary,
     },
   ];
@@ -152,7 +152,7 @@ const About = () => {
       icon: "fas fa-glass-whiskey",
       title: "Sapi Perah",
       description:
-        "Fokus pada produksi susu berkualitas tinggi melalui manajemen nutrisi, kesehatan, dan lingkungan kandang yang optimal.",
+        "Focus on high quality milk production through optimal management of nutrition, health and barn environment..",
       color: theme.secondary,
       link: "https://id.wikipedia.org/wiki/Sapi_perah", // Wikipedia Indonesia
     },
@@ -160,7 +160,7 @@ const About = () => {
       icon: "fas fa-dna",
       title: "Girolando",
       description:
-        "Sapi Girolando adalah hasil persilangan antara sapi Gir dan Holstein, menggabungkan ketahanan tropis dengan produktivitas susu tinggi.",
+        "Girolando cattle are a cross between Giro and Holstein cattle, combining tropical hardiness with high milk productivity..",
       color: theme.primary,
       link: "https://en.wikipedia.org/wiki/Girolando", // Wikipedia English (karena tidak tersedia versi Bahasa Indonesia)
     },
@@ -168,7 +168,7 @@ const About = () => {
       icon: "fas fa-stethoscope",
       title: "Kesehatan & Nutrisi",
       description:
-        "TSTH² menerapkan standar kesehatan hewan dan nutrisi berbasis riset untuk memastikan kesejahteraan sapi.",
+        "TSTH² implements research-based animal health and nutrition standards to ensure cow welfare..",
       color: theme.accent,
       link: "https://www.fao.org/dairy-production-products/animal-health-and-welfare/en/", // FAO - Kesehatan & Kesejahteraan Hewan
     },
@@ -176,7 +176,7 @@ const About = () => {
       icon: "fas fa-leaf",
       title: "Lingkungan Hijau",
       description:
-        "Komitmen pada keberlanjutan dengan menjaga keseimbangan ekosistem dan mendukung praktik peternakan ramah lingkungan.",
+        "Commitment to sustainability by maintaining ecosystem balance and supporting environmentally friendly farming practices..",
       color: theme.primary,
       link: "https://www.fao.org/sustainability/en/", // FAO - Sustainability in Agriculture
     },
@@ -185,26 +185,26 @@ const About = () => {
   const girolandoFeatures = [
     {
       icon: "fas fa-sun",
-      title: "Adaptabilitas Iklim",
-      description: "Toleransi panas dan kelembaban tinggi di iklim tropis",
+      title: "Climate Adaptability",
+      description: "High tolerance to heat and humidity in tropical climates",
+      // icon color white
     },
     {
       icon: "fas fa-shield-virus",
-      title: "Resistensi Penyakit",
-      description: "Ketahanan terhadap parasit dan penyakit tropis",
+      title: "Disease Resistance",
+      description: "Resistant to parasites and tropical diseases",
     },
     {
       icon: "fas fa-tint",
-      title: "Produksi Susu",
-      description: "Rata-rata 15-25 liter/hari dengan kadar lemak 4-5%",
+      title: "Milk Production",
+      description: "Average 15-25 liters/day with 4-5% fat content",
     },
     {
       icon: "fas fa-calendar-alt",
-      title: "Masa Laktasi",
-      description: "Periode laktasi 275-305 hari dengan persistensi baik",
+      title: "Lactation Period",
+      description: "Lactation period of 275-305 days with good persistence",
     },
   ];
-
   return (
     <div className="modern-about">
       {/* Enhanced Hero Section */}
@@ -242,35 +242,37 @@ const About = () => {
                 >
                   <div className="hero-badge">
                     <i className="fas fa-paw me-2"></i>
-                    Pusat Riset Peternakan Sapi
+                    Cattle Breeding Research Center
                   </div>
                   <h1 className="hero-title">
-                    Seputar Sapi di
+                    About Cows in
                     <span className="gradient-text"> TSTH²</span>
                   </h1>
                   <div className="title-divider"></div>
                   <p className="hero-description">
-                    TSTH² tidak hanya fokus pada tanaman herbal dan
-                    hortikultura, tetapi juga menjadi pusat pengembangan dan
-                    riset sapi perah. Kami berkomitmen pada inovasi peternakan
-                    sapi yang berkelanjutan dan modern.
+                    TSTH² not only focuses on herbal plants and horticulture,
+                    but also becomes a center for dairy cattle development and
+                    research. We are committed to sustainable and modern cattle
+                    farming innovation..
                   </p>
 
                   <div className="hero-features">
-                    {["Riset Genetik", "Teknologi Modern", "Berkelanjutan"].map(
-                      (feature, i) => (
-                        <motion.div
-                          key={i}
-                          className="hero-feature"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.5 + i * 0.1 }}
-                        >
-                          <i className="fas fa-check-circle"></i>
-                          <span>{feature}</span>
-                        </motion.div>
-                      )
-                    )}
+                    {[
+                      "Genetic Research",
+                      "Modern Technology",
+                      "Sustainability",
+                    ].map((feature, i) => (
+                      <motion.div
+                        key={i}
+                        className="hero-feature"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                      >
+                        <i className="fas fa-check-circle"></i>
+                        <span>{feature}</span>
+                      </motion.div>
+                    ))}
                   </div>
                 </motion.div>
               </Col>
@@ -297,7 +299,7 @@ const About = () => {
                   >
                     <div className="stat-content">
                       <div className="stat-number">200+</div>
-                      <div className="stat-label text-dark">Sapi</div>
+                      <div className="stat-label text-dark">Cows</div>
                     </div>
                   </motion.div>
 
@@ -312,7 +314,7 @@ const About = () => {
                   >
                     <div className="stat-content">
                       <div className="stat-number">99%</div>
-                      <div className="stat-label text-dark">Sehat</div>
+                      <div className="stat-label text-dark">Healthy</div>
                     </div>
                   </motion.div>
                 </motion.div>
@@ -329,10 +331,10 @@ const About = () => {
             <Col md={10} className="text-center">
               <AnimatedSection>
                 <div className="section-header">
-                  <div className="section-badge">Tentang Kami</div>
+                  <div className="section-badge">About Us</div>
                   <h2 className="section-title">
-                    Pusat Riset & Inovasi
-                    <span className="gradient-text"> Peternakan Sapi</span>
+                    Research & Innovation Center
+                    <span className="gradient-text"> Cattle farm</span>
                   </h2>
                   <div className="section-divider">
                     <div className="divider-line"></div>
@@ -340,10 +342,10 @@ const About = () => {
                     <div className="divider-line"></div>
                   </div>
                   <p className="section-description">
-                    TSTH² mengembangkan teknologi dan manajemen peternakan sapi
-                    berbasis data, nutrisi, dan kesehatan hewan. Kami mendukung
-                    peternak lokal untuk meningkatkan produktivitas dan kualitas
-                    sapi Indonesia.
+                    TSTH² develops technology and management of cattle farming
+                    based on data, nutrition, and animal health. We support
+                    local farmers to improve the productivity and quality of
+                    Indonesian cattle.
                   </p>
                 </div>
               </AnimatedSection>
@@ -402,8 +404,7 @@ const About = () => {
                           target="_blank" // Open in new tab
                           rel="noopener noreferrer" // Security measure
                         >
-                          Pelajari Lebih
-                          <i className="fas fa-arrow-right ms-2"></i>
+                          Learn More <i className="fas fa-arrow-right ms-2"></i>
                         </Button>
                       </div>
                     </div>
@@ -430,8 +431,8 @@ const About = () => {
                     />
                     <div className="image-overlay">
                       <div className="overlay-content">
-                        <h5>Kualitas Terjamin</h5>
-                        <p>Sapi sehat & produktif</p>
+                        <h5>Guaranteed Quality</h5>
+                        <p>Healthy & productive cows</p>
                       </div>
                     </div>
                   </div>
@@ -447,7 +448,7 @@ const About = () => {
                     </div>
                     <div className="badge-content">
                       <div className="badge-number">200+</div>
-                      <div className="badge-label">Populasi Sapi</div>
+                      <div className="badge-label">Cattle Population</div>
                     </div>
                   </motion.div>
                 </div>
@@ -463,10 +464,10 @@ const About = () => {
                   </h2>
                   <div className="title-divider"></div>
                   <p className="stats-description">
-                    Kami mengintegrasikan teknologi digital untuk monitoring
-                    sapi, pencatatan produksi susu, pertumbuhan, dan kesehatan.
-                    TSTH² juga aktif dalam pelatihan peternak dan pengembangan
-                    SDM peternakan sapi.
+                    We integrate digital technology for monitoring cattle,
+                    recording milk production, growth, and health. TSTH² is also
+                    active in training farmers and developing human resources
+                    for cattle farming.
                   </p>
 
                   <motion.div
@@ -522,9 +523,9 @@ const About = () => {
             <Col md={10} className="text-center">
               <AnimatedSection>
                 <div className="section-header">
-                  <div className="section-badge">Breed Unggulan</div>
+                  <div className="section-badge">Featured Breeds</div>
                   <h2 className="section-title">
-                    Pengembangan Breed
+                    Breed Development
                     <span className="gradient-text"> Girolando</span>
                   </h2>
                   <div className="section-divider">
@@ -556,7 +557,7 @@ const About = () => {
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     <div className="video-badge-content">
-                      <div className="badge-title">Breed Unggulan</div>
+                      <div className="badge-title">Featured Breeds</div>
                       <div className="badge-subtitle">TSTH²</div>
                     </div>
                   </motion.div>
@@ -568,15 +569,13 @@ const About = () => {
               <AnimatedSection variant={animations.slideInRight}>
                 <div className="girolando-content">
                   <h3 className="content-title">
-                    Karakteristik Breed Girolando
+                    Girolando Breed Characteristics
                   </h3>
                   <p className="content-description">
-                    Girolando dikembangkan pertama kali di Brasil dan sekarang
-                    menjadi salah satu breed sapi perah utama di daerah tropis.
-                    Di TSTH², kami memilih Girolando karena keunggulannya dalam
-                    hal:
+                    Girolando was first developed in Brazil and is now one of
+                    the main dairy cattle breeds in tropical regions. At TSTH²,
+                    we choose Girolando because of its advantages in:
                   </p>
-
                   <motion.div
                     className="features-grid"
                     variants={animations.staggerContainer}
@@ -591,8 +590,17 @@ const About = () => {
                         className="feature-item"
                         whileHover={{ scale: 1.02 }}
                       >
-                        <div className="feature-item-icon">
-                          <i className={feature.icon}></i>
+                        <div
+                          className="feature-item-icon"
+                          style={{
+                            background: theme.gradients.primary,
+                            color: "#fff",
+                          }}
+                        >
+                          <i
+                            className={feature.icon}
+                            style={{ color: "#fff" }}
+                          ></i>
                         </div>
                         <div className="feature-item-content">
                           <h5 className="feature-item-title">
@@ -605,13 +613,11 @@ const About = () => {
                       </motion.div>
                     ))}
                   </motion.div>
-
                   <p className="additional-info">
                     Di TSTH², kami memelihara populasi Girolando dengan
                     perbandingan genetik 5/8 Holstein dan 3/8 Gir yang telah
                     terbukti optimal untuk kondisi iklim Indonesia.
                   </p>
-
                   <div className="action-buttons">
                     <motion.a
                       href="https://openknowledge.fao.org/bitstreams/94676ea4-7091-4c52-adea-d23f573d0b50/download"
@@ -622,7 +628,7 @@ const About = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <i className="fas fa-book-open me-2"></i>
-                      Download Penelitian FAO
+                      Download FAO Research
                     </motion.a>
                     <motion.a
                       href="https://www.embrapa.br/en/gado-de-leite"
@@ -648,16 +654,18 @@ const About = () => {
         <Container>
           <AnimatedSection>
             <div className="section-header text-center mb-5">
-              <div className="section-badge">Komitmen Kami</div>
-              <h2 className="section-title">Visi & Misi Peternakan Sapi</h2>
+              <div className="section-badge">Our Commitment</div>
+              <h2 className="section-title">
+                Vision & Mission of Cattle Farming
+              </h2>
               <div className="section-divider">
                 <div className="divider-line"></div>
                 <div className="divider-dot"></div>
                 <div className="divider-line"></div>
               </div>
               <p className="section-description">
-                Menjadi pusat unggulan riset, inovasi, dan pengembangan sapi di
-                Indonesia.
+                Becoming a leading center for research, innovation, and cattle
+                development in Indonesia.
               </p>
             </div>
           </AnimatedSection>
@@ -678,13 +686,13 @@ const About = () => {
                   </div>
                   <div className="card-content">
                     <p>
-                      Menjadi pusat riset dan inovasi peternakan sapi yang
-                      menghasilkan teknologi, produk untuk mendukung ketahanan
-                      pangan nasional. Kami berkomitmen untuk menjadi rujukan di
-                      tingkat nasional dan regional dalam pengembangan
-                      peternakan sapi yang berkelanjutan, efisien, dengan
-                      integrasi teknologi modern untuk kesejahteraan peternak
-                      dan kemandirian industri peternakan Indonesia.
+                      Becoming a center for cattle farming research and
+                      innovation that produces technology and products to
+                      support national food security. We are committed to being
+                      a reference at the national and regional levels in the
+                      development of sustainable and efficient cattle farming,
+                      with the integration of modern technology for the welfare
+                      of farmers and the independence of Indonesia's
                     </p>
                   </div>
                 </motion.div>
@@ -713,10 +721,10 @@ const About = () => {
                       viewport={{ once: true }}
                     >
                       {[
-                        "Mengembangkan sistem pemeliharaan sapi berbasis teknologi dan data.",
-                        "Melakukan riset nutrisi, kesehatan, dan genetika sapi untuk meningkatkan produktivitas.",
-                        "Meningkatkan kapasitas peternak melalui pelatihan dan pendampingan.",
-                        "Menjadi pusat kolaborasi nasional dan internasional di bidang peternakan sapi.",
+                        "Developing a cattle maintenance system based on technology and data.",
+                        "Conducting research on nutrition, health, and cattle genetics to increase productivity.",
+                        "Enhancing farmers' capacity through training and mentoring.",
+                        "Becoming a center for national and international collaboration in the field of cattle farming.",
                       ].map((mission, index) => (
                         <motion.div
                           key={index}
