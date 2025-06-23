@@ -73,7 +73,6 @@ import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
 import Product from "./pages/Product";
 import Order from "./pages/Order";
 
-
 // Protected Route component to check authentication
 const ProtectedRoute = ({ children, ...rest }) => {
   // Check if user data exists in localStorage
@@ -158,6 +157,17 @@ function App() {
                 <Admin />
               </AdminLayout>
             </ProtectedRoute>
+            <ProtectedRoute path="/supervisor" exact>
+              <AdminLayout>
+                <Admin />
+              </AdminLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/farmer" exact>
+              <AdminLayout>
+                <Admin />
+              </AdminLayout>
+            </ProtectedRoute>
+
             <ProtectedRoute path="/admin/list-users">
               <AdminLayout>
                 <ListUsers />
@@ -293,7 +303,7 @@ function App() {
                 <HealthDashboard />
               </AdminLayout>
             </ProtectedRoute>
-            
+
             {/* Feed Management */}
             <ProtectedRoute path="/admin/list-feedType">
               <AdminLayout>

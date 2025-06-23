@@ -183,19 +183,71 @@ const NotificationDropdown = () => {
   // Initialize user - ONE TIME ONLY
   useEffect(() => {
     if (!initializedRef.current) {
+      // Pengecekan user data
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      if (userData.user_id || userData.id) {
-        const normalizedUser = {
-          ...userData,
-          user_id: userData.user_id || userData.id,
-        };
-        setCurrentUser(normalizedUser);
-        console.log(
-          "Notification component initialized with user:",
-          normalizedUser
-        );
-        initializedRef.current = true;
+      if (!userData.user_id && !userData.id) {
+        // Redirect to login if no user data found
+        window.location.href = "/";
+        return;
       }
+
+      const normalizedUser = {
+        ...userData,
+        user_id: userData.user_id || userData.id,
+      };
+
+      // Role-based URL validation
+      const currentPath = window.location.pathname.toLowerCase();
+      const userRole = normalizedUser.role_id;
+
+      // Check if URL contains role-specific paths that don't match user's role
+      if (currentPath.includes("/admin") && userRole !== 1) {
+        // User is not admin but trying to access admin routes
+        console.log(
+          "Unauthorized access to admin routes - redirecting to login"
+        );
+        window.location.href = "/";
+        return;
+      }
+
+      if (currentPath.includes("/supervisor") && userRole !== 2) {
+        // User is not supervisor but trying to access supervisor routes
+        console.log(
+          "Unauthorized access to supervisor routes - redirecting to login"
+        );
+        window.location.href = "/";
+        return;
+      }
+
+      if (currentPath.includes("/farmer") && userRole !== 3) {
+        // User is not farmer but trying to access farmer routes
+        console.log(
+          "Unauthorized access to farmer routes - redirecting to login"
+        );
+        window.location.href = "/";
+        return;
+      }
+
+      // Additional check for dashboard routes based on role
+      if (currentPath.includes("/dashboard")) {
+        const allowedRoles = [1, 2, 3]; // Admin, Supervisor, Farmer
+        if (!allowedRoles.includes(userRole)) {
+          console.log(
+            "Unauthorized access to dashboard - redirecting to login"
+          );
+          window.location.href = "/";
+          return;
+        }
+      }
+
+      setCurrentUser(normalizedUser);
+      console.log(
+        "Notification component initialized with user:",
+        normalizedUser,
+        "Current path:",
+        currentPath
+      );
+      initializedRef.current = true;
     }
   }, []);
 

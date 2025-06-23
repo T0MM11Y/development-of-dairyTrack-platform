@@ -216,9 +216,14 @@ const Header = () => {
       const result = await login(username, password);
 
       if (result.success) {
-        // Simpan data user ke localStorage
+        // Simpan data user dan token ke localStorage
         localStorage.setItem("user", JSON.stringify(result.data));
+        localStorage.setItem("token", result.token || result.data.token); // Simpan token
         console.log("User data saved to localStorage:", result.data);
+        console.log(
+          "Token saved to localStorage:",
+          result.token || result.data.token
+        );
 
         setErrorMessage("");
         setSuccessMessage("Login Successful! Redirecting...");
@@ -228,7 +233,22 @@ const Header = () => {
           setRedirecting(true); // Tampilkan loading overlay
 
           setTimeout(() => {
-            window.location.href = "/admin";
+            // Redirect berdasarkan role
+            const userRole = result.data.role_id;
+
+            if (userRole === 1) {
+              // Admin
+              window.location.href = "/admin";
+            } else if (userRole === 2) {
+              // Supervisor
+              window.location.href = "/supervisor";
+            } else if (userRole === 3) {
+              // Farmer
+              window.location.href = "/farmer";
+            } else {
+              // Role tidak dikenal, redirect ke home
+              window.location.href = "/";
+            }
           }, 1500); // Delay untuk menampilkan loading overlay
         }, 2000);
 
