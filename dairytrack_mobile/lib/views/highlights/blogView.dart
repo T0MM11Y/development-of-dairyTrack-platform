@@ -1078,7 +1078,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           const DropdownMenuItem(
             value: null,
             child: Text(
-              'Semua Kategori',
+              'All Categories',
               style: TextStyle(color: darkText),
             ),
           ),
@@ -1451,7 +1451,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         controller: _blogTitleController,
                         style: const TextStyle(color: darkText),
                         decoration: const InputDecoration(
-                          labelText: 'Judul Blog',
+                          labelText: 'Blog Title',
                           prefixIcon: Icon(Icons.title, color: darkAccent),
                         ),
                       ),
@@ -1460,7 +1460,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         controller: _blogContentController,
                         style: const TextStyle(color: darkText),
                         decoration: const InputDecoration(
-                          labelText: 'Konten Blog',
+                          labelText: 'Blog Content',
                           prefixIcon:
                               Icon(Icons.description, color: darkAccent),
                         ),
@@ -1485,7 +1485,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                 setState(() {});
                               },
                               icon: const Icon(Icons.image),
-                              label: const Text('Pilih Gambar'),
+                              label: const Text('Select Image'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: darkAccent,
                                 foregroundColor: Colors.white,
@@ -1516,7 +1516,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            'Belum ada gambar dipilih',
+                                            'No images selected yet',
                                             style: TextStyle(
                                               color: darkTextSecondary,
                                               fontSize: 12,
@@ -1565,7 +1565,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         );
                       } else {
                         _showSnackBar(
-                          'Mohon lengkapi semua field dan pilih gambar',
+                          'Please complete all fields and select an image.',
                           backgroundColor: darkWarning,
                           icon: Icons.warning,
                         );
@@ -1611,7 +1611,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  'Tambah Kategori Baru',
+                  'Add New Category',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: darkText,
@@ -1636,7 +1636,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   controller: _categoryDescriptionController,
                   style: const TextStyle(color: darkText),
                   decoration: const InputDecoration(
-                    labelText: 'Deskripsi Kategori',
+                    labelText: 'Category Description',
                     prefixIcon: Icon(Icons.description, color: darkInfo),
                   ),
                   maxLines: 3,
@@ -1662,7 +1662,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     );
                   } else {
                     _showSnackBar(
-                      'Mohon lengkapi semua field',
+                      'Please complete all fields',
                       backgroundColor: darkWarning,
                       icon: Icons.warning,
                     );
@@ -1732,7 +1732,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Belum ada kategori',
+                            'There are no categories yet',
                             style: TextStyle(
                               color: darkTextSecondary,
                               fontSize: 16,
@@ -1828,7 +1828,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Deskripsi:',
+                                            'Description:',
                                             style: TextStyle(
                                               color: darkTextSecondary,
                                               fontSize: 12,
@@ -1921,7 +1921,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  'Hapus',
+                                                  'Delete',
                                                   style: TextStyle(
                                                     color: darkError,
                                                     fontSize: 12,
@@ -1970,7 +1970,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Total: ${_categories.length} kategori',
+                                'Total: ${_categories.length} category',
                                 style: TextStyle(
                                   color: darkInfo,
                                   fontSize: 12,
@@ -2065,7 +2065,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   controller: editDescriptionController,
                   style: const TextStyle(color: darkText),
                   decoration: const InputDecoration(
-                    labelText: 'Deskripsi Kategori',
+                    labelText: 'Category Description',
                     prefixIcon: Icon(Icons.description, color: darkWarning),
                   ),
                   maxLines: 3,
@@ -2095,13 +2095,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     Navigator.of(context).pop(); // Close edit dialog
                   } else {
                     _showSnackBar(
-                      'Mohon lengkapi semua field',
+                      'Please complete all fields',
                       backgroundColor: darkWarning,
                       icon: Icons.warning,
                     );
                   }
                 },
-                child: const Text('Simpan'),
+                child: const Text('Save'),
               ),
             ],
           ),
@@ -2160,7 +2160,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     const SizedBox(width: 12),
                     Expanded(
                       child: const Text(
-                        'Tetapkan Kategori ke Blog',
+                        'Assign Category to Blog',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: darkText,
@@ -2245,7 +2245,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                       color: darkInfo, size: 16),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Kategori yang sudah dimiliki:',
+                                    'Categories you already own:',
                                     style: TextStyle(
                                       color: darkInfo,
                                       fontSize: 12,
@@ -2291,7 +2291,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                       // Dropdown untuk kategori yang tersedia
                       DropdownButtonFormField<Category>(
                         decoration: const InputDecoration(
-                          labelText: 'Pilih Kategori',
+                          labelText: 'Select Category',
                           prefixIcon:
                               Icon(Icons.category, color: Colors.purple),
                         ),
@@ -2308,8 +2308,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                     width: double.infinity,
                                     child: Text(
                                       _selectedBlog == null
-                                          ? 'Pilih blog terlebih dahulu'
-                                          : 'Semua kategori sudah ditetapkan',
+                                          ? 'Choose a blog first'
+                                          : 'All categories have been defined',
                                       style: TextStyle(
                                         color: darkTextSecondary,
                                         fontStyle: FontStyle.italic,
@@ -2387,7 +2387,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             });
                           }
                         : null, // Disable button jika tidak ada kategori yang tersedia
-                    child: const Text('Tetapkan'),
+                    child: const Text('Set'),
                   ),
                 ],
               );
@@ -2456,7 +2456,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                           controller: editTitleController,
                           style: const TextStyle(color: darkText),
                           decoration: InputDecoration(
-                            labelText: 'Judul Blog',
+                            labelText: 'Blog Title',
                             labelStyle:
                                 const TextStyle(color: darkTextSecondary),
                             prefixIcon:
@@ -2496,7 +2496,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                               height: 1.5,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Konten Blog',
+                              labelText: 'Blog Content',
                               labelStyle:
                                   const TextStyle(color: darkTextSecondary),
                               prefixIcon: const Padding(
@@ -2524,7 +2524,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                               contentPadding: const EdgeInsets.all(16),
                               alignLabelWithHint: true,
                               hintText:
-                                  'Tulis konten blog Anda di sini...\n\nAnda dapat menulis teks panjang dengan multiple paragraf.',
+                                  'Write your Blog Content here...\n\nYou can write long texts with multiple paragraphs.',
                               hintStyle: const TextStyle(
                                 color: darkTextSecondary,
                                 fontSize: 13,
@@ -2589,7 +2589,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                     if (pickedFile != null) {
                                       editBlogImage = File(pickedFile.path);
                                       _showSnackBar(
-                                        'Gambar baru dipilih',
+                                        'A new image is selected',
                                         icon: Icons.image,
                                       );
                                     }
@@ -2622,7 +2622,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           child: const Center(
                                             child: Text(
-                                              'Gambar tidak dapat dimuat',
+                                              'Image cannot be loaded',
                                               style: TextStyle(
                                                 color: darkTextSecondary,
                                               ),
@@ -2650,7 +2650,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Batal',
+                    child: const Text('Cancelled',
                         style: TextStyle(color: darkTextSecondary)),
                   ),
                   ElevatedButton(
@@ -2670,13 +2670,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         );
                       } else {
                         _showSnackBar(
-                          'Mohon lengkapi semua field',
+                          'Please complete all fields',
                           backgroundColor: darkWarning,
                           icon: Icons.warning,
                         );
                       }
                     },
-                    child: const Text('Simpan'),
+                    child: const Text('Save'),
                   ),
                 ],
               );

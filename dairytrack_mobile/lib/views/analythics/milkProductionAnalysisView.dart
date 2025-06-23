@@ -1339,7 +1339,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statistik Performa',
+            'Performance Statistics',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -1357,27 +1357,27 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             children: [
               _buildStatCard(
                 icon: Icons.water_drop,
-                title: 'Total Periode',
+                title: 'Total Period',
                 value: '${_cowPerformance!['rangeVolume']?.toString() ?? '0'}L',
                 color: primaryColor,
               ),
               _buildStatCard(
                 icon: Icons.trending_up,
-                title: 'Rata-rata/Sesi',
+                title: 'Average/Session',
                 value:
                     '${_cowPerformance!['avgPerSession']?.toString() ?? '0'}L',
                 color: successColor,
               ),
               _buildStatCard(
                 icon: Icons.event_available,
-                title: 'Sesi Periode',
+                title: 'Period Session',
                 value:
                     '${_cowPerformance!['rangeSessions']?.toString() ?? '0'}',
                 color: warningColor,
               ),
               _buildStatCard(
                 icon: Icons.arrow_upward,
-                title: 'Tertinggi',
+                title: 'Highest',
                 value:
                     '${_cowPerformance!['highestProduction']?.toString() ?? '0'}L',
                 color: Colors.green[600]!,
@@ -1400,7 +1400,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Terakhir Perah',
+                        'Last Milk',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.purple[600],
@@ -1567,7 +1567,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Trend Produksi Harian',
+            'Daily Production Trend',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
