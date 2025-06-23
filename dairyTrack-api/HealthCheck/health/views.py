@@ -34,11 +34,22 @@ class HealthCheckDetailView(generics.RetrieveUpdateDestroyAPIView):
 # ✅ CRUD untuk Symptoms
 class SymptomListCreateView(generics.ListCreateAPIView):
     queryset = Symptom.objects.all()
-    serializer_class = SymptomSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SymptomReadSerializer
+        return SymptomCreateSerializer  # jika kamu pakai create serializer
+
 
 class SymptomDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Symptom.objects.all()
-    serializer_class = SymptomSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SymptomReadSerializer
+        return SymptomWriteSerializer
+
+
 
 # ✅ CRUD untuk DiseaseHistory
 class DiseaseHistoryListCreateView(generics.ListCreateAPIView):

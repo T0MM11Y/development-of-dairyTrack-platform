@@ -4,6 +4,10 @@ from django.utils.timezone import localtime
 from pytz import timezone
 
 
+class UserSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name']
 
 
 # ✅ Cow Preview Serializer untuk nested
@@ -29,6 +33,7 @@ class HealthCheckCreateSerializer(serializers.ModelSerializer):
 # ✅ HealthCheck - untuk List/Detail (tampilkan cow detail + tanggal)
 class HealthCheckListSerializer(serializers.ModelSerializer):
     cow = CowSimpleSerializer()
+    checked_by = UserSimpleSerializer(read_only=True)  # ✅ override di sini
 
     class Meta:
         model = HealthCheck
@@ -43,7 +48,8 @@ class HealthCheckListSerializer(serializers.ModelSerializer):
             'status',
             'needs_attention',
             'is_followed_up',
-            'created_at'
+            'created_at',
+            'checked_by'
         ]
         
 class HealthCheckEditSerializer(serializers.ModelSerializer):
@@ -62,15 +68,60 @@ class HealthCheckEditSerializer(serializers.ModelSerializer):
             'needs_attention', 'is_followed_up', 'created_at'
         ]
 
-class SymptomSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+# Read: untuk GET
+class SymptomReadSerializer(serializers.ModelSerializer):
+    created_by = UserSimpleSerializer(read_only=True)
+    edited_by = UserSimpleSerializer(read_only=True)
+
     class Meta:
         model = Symptom
         fields = '__all__'
+
+
+# Write: untuk POST/PUT
+class SymptomWriteSerializer(serializers.ModelSerializer):
+    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+
+    class Meta:
+        model = Symptom
+        fields = [
+            "eye_condition",
+            "mouth_condition",
+            "nose_condition",
+            "anus_condition",
+            "leg_condition",
+            "skin_condition",
+            "behavior",
+            "weight_condition",
+            "reproductive_condition",
+            "edited_by",
+        ]
+class SymptomCreateSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+
+    class Meta:
+        model = Symptom
+        fields = [
+            "health_check",
+            "created_by",
+            "eye_condition",
+            "mouth_condition",
+            "nose_condition",
+            "anus_condition",
+            "leg_condition",
+            "skin_condition",
+            "behavior",
+            "weight_condition",
+            "reproductive_condition",
+        ]
+
+
+
 class DiseaseHistoryListSerializer(serializers.ModelSerializer):
     health_check = HealthCheckListSerializer()
-    symptom = SymptomSerializer()
+    symptom = SymptomWriteSerializer()
+    created_by = UserSimpleSerializer(read_only=True)
+
 
     class Meta:
         model = DiseaseHistory
@@ -82,6 +133,7 @@ class DiseaseHistoryListSerializer(serializers.ModelSerializer):
             'description',
             'treatment_done',
             'created_at',
+            'created_by',
         ]
 class DiseaseHistoryCreateSerializer(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
@@ -116,6 +168,8 @@ class DiseaseHistoryUpdateSerializer(serializers.ModelSerializer):
 class ReproductionListSerializer(serializers.ModelSerializer):
     cow = CowSimpleSerializer()
     alerts = serializers.SerializerMethodField()
+    created_by = UserSimpleSerializer(read_only=True)
+
 
     class Meta:
         model = Reproduction
@@ -125,13 +179,14 @@ class ReproductionListSerializer(serializers.ModelSerializer):
             'calving_interval',
             'service_period',
             'conception_rate',
-            "calving_date",                # ✅ tambahkan ini
-            "previous_calving_date",       # ✅ tambahkan ini
-            "insemination_date",           # ✅ tambahkan ini
-            "total_insemination",          # ✅ tambahkan ini
-            "successful_pregnancy",        # ✅ tambahkan ini
+            "calving_date",               
+            "previous_calving_date",       
+            "insemination_date",           
+            "total_insemination",          
+            "successful_pregnancy",        
             'recorded_at',
             'alerts',
+            'created_by',
         ]
 
     def get_alerts(self, obj):

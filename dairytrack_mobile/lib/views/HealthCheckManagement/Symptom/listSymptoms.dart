@@ -505,6 +505,10 @@ Padding(
                                     'Tanggal Pemeriksaan: ${formatToWIB(item['created_at'])}',
                                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                                   ),
+                                  Text(
+  'Penanggung Jawab: ${item['created_by']?['name'] ?? 'Tidak diketahui'}',
+  style: TextStyle(fontSize: 13, color: Colors.grey),
+),
                                   if ((item['description'] ?? '').toString().isNotEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 6),

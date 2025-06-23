@@ -228,6 +228,7 @@ const isSupervisor = currentUser?.role_id === 2;
                       <th>Service Period</th>
                       <th>Conception Rate</th>
                       <th>Tanggal Dicatat</th>
+                      <th>Penanggung Jawab</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
@@ -248,6 +249,8 @@ const isSupervisor = currentUser?.role_id === 2;
                               })
                             : "-"}
                         </td>
+                          <td>{item.created_by?.name || "Tidak diketahui"}</td>   
+
                         <td>
                           <OverlayTrigger
   placement="top"
