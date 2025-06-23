@@ -10,4 +10,44 @@ pandas==1.5.3
 openpyxl==3.0.10
 fpdf2==2.5.6
 apscheduler==3.10.1
-pytz ==2023.3
+pytz==2023.3
+
+# Socket.IO untuk real-time notifications
+Flask-SocketIO==5.3.4
+python-socketio==5.8.0
+
+# Database connector
+PyMySQL==1.0.3
+mysql-connector-python==8.0.33
+
+# File handling dan security
+Werkzeug-FileWrapper==0.1.2
+secure-filename==0.1
+
+# Untuk image processing dan file uploads
+Pillow==10.0.0
+
+# HTTP requests (jika diperlukan untuk external API calls)
+requests==2.31.0
+
+# Logging dan monitoring
+python-logging==0.4.9.6
+
+# Testing (untuk development)
+pytest==7.4.0
+pytest-flask==1.2.0
+
+# Validation
+marshmallow==3.20.1
+email-validator==2.0.0
+
+# Security
+cryptography==41.0.3
+bcrypt==4.0.1
+
+# Environment dan configuration
+configparser==5.3.0
+
+# Additional utilities
+python-dateutil==2.8.2
+six==1.16.0
