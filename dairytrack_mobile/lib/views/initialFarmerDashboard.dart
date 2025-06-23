@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:async';
 
+import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/services/notificationService.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
-import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 
 //Feed View
 import 'package:dairytrack_mobile/views/feedManagement/dailyFeedSchedule/listSchedule.dart';
@@ -12,6 +12,7 @@ import 'package:dairytrack_mobile/views/feedManagement/dailyFeedItem/listFeedIte
 import 'package:dairytrack_mobile/views/feedManagement/feed/listFeed.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.dart';
 import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
+import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 
@@ -23,8 +24,6 @@ import 'dart:math';
 import 'package:intl/date_symbol_data_local.dart';
 
 // Import controllers
-import '../controller/APIURL1/cowManagementController.dart';
-import '../controller/APIURL1/usersManagementController.dart';
 import '../controller/APIURL1/milkingSessionController.dart';
 import '../controller/APIURL1/cattleDistributionController.dart';
 import '../controller/APIURL1/notificationController.dart';
@@ -38,7 +37,6 @@ import '../views/HealthCheckManagement/HealthDashboard/dashboard.dart';
 
 // Import views for navigation
 import 'cowManagement/listOfCowsView.dart';
-import 'usersManagement/listOfUsersView.dart';
 import 'loginView.dart';
 import '../widgets/notifications.dart';
 
@@ -49,16 +47,18 @@ class InitialFarmerDashboard extends StatefulWidget {
 
 class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
     with TickerProviderStateMixin {
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabExpandAnimation;
+  late AnimationController _fabExpandController;
+
   // Controllers
-  final CowManagementController _cowController = CowManagementController();
-  final UsersManagementController _usersController =
-      UsersManagementController();
   final MilkingSessionController _milkingController =
       MilkingSessionController();
   final CattleDistributionController _cattleController =
       CattleDistributionController();
   final NotificationController _notificationController =
       NotificationController();
+  bool _isFabExpanded = false;
 
   // Animation controllers
   late AnimationController _welcomeAnimationController;
@@ -75,7 +75,6 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
   late Animation<double> _notificationBadgeAnimation;
 
   // Navigation and UI state
-  int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Data variables
@@ -125,50 +124,49 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
         ),
         NavigationItem(
           icon: Icons.pets,
-          label: 'Sapi Saya',
+          label: 'My Cows',
           route: 'cows',
           widget: () => ListOfCowsView(),
         ),
         NavigationItem(
           icon: Icons.local_drink,
-          label: 'Pemerahan',
+          label: 'Milking',
           route: 'milking',
           widget: () => MilkingView(),
         ),
         NavigationItem(
           icon: Icons.bar_chart,
-          label: 'Analisis Milking',
+          label: 'Milking Analysis',
           route: 'analytics',
           widget: () => MilkProductionAnalysisView(),
         ),
         NavigationItem(
           icon: Icons.analytics,
-          label: 'Analisis Kualitas Susu',
+          label: 'Milk Quality Analysis',
           route: 'milkQuality',
           widget: () => MilkQualityControlsView(),
         ),
         NavigationItem(
           icon: Icons.category,
-          label: 'Jenis Pakan',
+          label: 'Feed Types',
           route: 'feed-type',
           widget: () => FeedTypeView(),
         ),
         NavigationItem(
-          icon: Icons
-              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
-          label: 'Jenis Nutrisi',
+          icon: Icons.local_florist,
+          label: 'Nutrition Types',
           route: 'nutrition',
           widget: () => NutrisiView(),
         ),
         NavigationItem(
           icon: Icons.kitchen,
-          label: 'Pakan',
+          label: 'Feed',
           route: 'feed',
           widget: () => FeedView(),
         ),
         NavigationItem(
           icon: Icons.inventory,
-          label: 'Stock Pakan',
+          label: 'Feed Stock',
           route: 'feed-stock',
           widget: () => FeedStockList(),
         ),
@@ -180,43 +178,43 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
         ),
         NavigationItem(
           icon: Icons.checklist,
-          label: 'Feed Item Harian',
+          label: 'Daily Feed Items',
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
         NavigationItem(
           icon: Icons.checklist,
-          label: 'Grafik Pakan',
+          label: 'Feed Usage Chart',
           route: 'feed-usage',
           widget: () => FeedUsagePage(),
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Pemeriksaan Kesehatan',
+          label: 'Health Checks',
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
         NavigationItem(
           icon: Icons.visibility,
-          label: 'Gejala',
+          label: 'Symptoms',
           route: 'symptoms',
           widget: () => SymptomListView(),
         ),
         NavigationItem(
           icon: Icons.coronavirus,
-          label: 'Riwayat Penyakit',
+          label: 'Disease History',
           route: 'disease-history',
           widget: () => DiseaseHistoryListView(),
         ),
         NavigationItem(
           icon: Icons.pregnant_woman,
-          label: 'Reproduksi',
+          label: 'Reproduction',
           route: 'reproduction',
           widget: () => ReproductionListView(),
         ),
         NavigationItem(
           icon: Icons.monitor_heart,
-          label: 'HealthDashboard',
+          label: 'Health Dashboard',
           route: 'health-dashboard',
           widget: () => HealthDashboardView(),
         ),
@@ -225,6 +223,14 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
   @override
   void initState() {
     super.initState();
+    _fabExpandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fabExpandAnimation = CurvedAnimation(
+      parent: _fabExpandController,
+      curve: Curves.easeInOut,
+    );
     _initializeAnimations();
     _initializeLocale();
     _getCurrentUser();
@@ -256,7 +262,15 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
       duration: Duration(milliseconds: 600),
       vsync: this,
     );
-
+// Tambahkan FAB animation controller
+    _fabAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabExpandAnimation = CurvedAnimation(
+      parent: _fabAnimationController,
+      curve: Curves.easeInOut,
+    );
     _welcomeAnimation = CurvedAnimation(
       parent: _welcomeAnimationController,
       curve: Curves.elasticOut,
@@ -396,8 +410,21 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
     _floatingAnimationController.dispose();
     _pulseAnimationController.dispose();
     _notificationBadgeController.dispose();
+    _fabAnimationController.dispose(); // Tambahkan ini
     _notificationTimer?.cancel();
     super.dispose();
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _isFabExpanded = !_isFabExpanded;
+    });
+
+    if (_isFabExpanded) {
+      _fabAnimationController.forward();
+    } else {
+      _fabAnimationController.reverse();
+    }
   }
 
   Future<void> _getCurrentUser() async {
@@ -454,6 +481,371 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
         settings: RouteSettings(name: item.route),
       ),
     );
+  }
+
+  // ...existing code...
+  Widget _buildFloatingActionButtons() {
+    // Group navigation items by category
+    final cowManagement = [navigationItems[1]]; // My Cows
+    final milkingAnalysis = [
+      navigationItems[2],
+      navigationItems[3],
+      navigationItems[4]
+    ]; // Milking, Analysis
+    final feedManagement = navigationItems.sublist(5, 12); // Feed related
+    final healthManagement = navigationItems.sublist(12); // Health related
+
+    return Positioned(
+      bottom: 20,
+      right: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isFabExpanded) ...[
+            // Health Management Group
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Health Management',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "health_management",
+                      backgroundColor: Colors.red[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showMenuDialog('Health Management', healthManagement);
+                      },
+                      child: const Icon(Icons.health_and_safety, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Feed Management Group
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.green[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Feed Management',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "feed_management",
+                      backgroundColor: Colors.green[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showMenuDialog('Feed Management', feedManagement);
+                      },
+                      child: const Icon(Icons.grass, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Milking & Analysis Group
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Milking & Analysis',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "milking_analysis",
+                      backgroundColor: Colors.blueGrey[700],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showMenuDialog('Milking & Analysis', milkingAnalysis);
+                      },
+                      child: const Icon(Icons.local_drink, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Cattle Management Group
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.brown[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'My Cows',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "cattle_management",
+                      backgroundColor: Colors.brown[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _navigateToView(cowManagement[0]);
+                      },
+                      child: const Icon(Icons.pets, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Change Password FAB
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.purple[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Change Password',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "change_password",
+                      backgroundColor: Colors.purple[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showChangePasswordDialog();
+                      },
+                      child: const Icon(Icons.lock_reset, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          // Main FAB
+          FloatingActionButton(
+            heroTag: "main_fab",
+            backgroundColor:
+                _isFabExpanded ? Colors.grey[600] : Colors.blueGrey[800],
+            foregroundColor: Colors.white,
+            elevation: 8,
+            onPressed: _toggleFab,
+            child: AnimatedRotation(
+              duration: const Duration(milliseconds: 300),
+              turns: _isFabExpanded ? 0.125 : 0.0,
+              child: Icon(
+                _isFabExpanded ? Icons.close : Icons.menu,
+                size: 28,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMenuDialog(String title, List<NavigationItem> items) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.teal[50],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.teal[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getGroupIcon(title),
+                  color: Colors.teal[600],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal[800],
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.teal[200]!),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        item.icon,
+                        color: Colors.teal[600],
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      item.label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.teal[800],
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.teal[400],
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToView(item);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Close',
+                style: TextStyle(color: Colors.teal[600]),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _getGroupIcon(String title) {
+    switch (title) {
+      case 'Health Management':
+        return Icons.health_and_safety;
+      case 'Feed Management':
+        return Icons.grass;
+      case 'Milking & Analysis':
+        return Icons.local_drink;
+      case 'Cattle Management':
+        return Icons.pets;
+      default:
+        return Icons.menu;
+    }
   }
 
   Future<void> _initializeDashboard() async {
@@ -829,7 +1221,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Notifikasi Terbaru',
+                    'Latest Notifications',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1174,7 +1566,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400
@@ -1218,7 +1610,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Farmer Dashboard - Kelola peternakan Anda dengan mudah dan efisien',
+                    'Farmer Dashboard - Manage your farm easily and efficiently',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
@@ -1342,7 +1734,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Analisis Produksi Susu (7 Hari Terakhir)',
+                    'Milk Production Analysis (Last 7 Days)',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1354,7 +1746,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Grafik menampilkan tren total produksi susu harian dari sapi yang Anda kelola',
+              'The graph shows the trend of total daily milk production from the cows you manage.',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1372,7 +1764,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                               size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data produksi susu',
+                            'There is no milk production data yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -1467,7 +1859,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Detail Produksi'),
+        title: Text('Production Details'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1518,7 +1910,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Distribusi Fase Laktasi',
+                    'Distribution of Lactation Phases',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1530,7 +1922,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Komposisi fase laktasi sapi yang Anda kelola',
+              'The composition of the lactation phase of the cows you manage',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1547,7 +1939,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                           Icon(Icons.pets, size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data sapi',
+                            'There is no data on cattle yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -1638,7 +2030,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Sapi yang Anda Kelola & Produksi Susu',
+                      'The Cows You Manage & Milk Production',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -1882,7 +2274,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Tidak memproduksi susu',
+                        'Does not produce milk',
                         style: TextStyle(
                           fontSize: 8,
                           color: Colors.grey[600],
@@ -2021,54 +2413,61 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
               fontWeight: FontWeight.bold,
             ),
           ),
-          leading: IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          ),
+          automaticallyImplyLeading: false, // Hilangkan hamburger menu
           actions: [
             _buildNotificationButton(),
             SizedBox(width: 8),
           ],
         ),
-        drawer: _buildSidebar(),
-        body: isLoading
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.teal[400]!),
+        body: Stack(
+          // Ganti body menjadi Stack
+          children: [
+            // Main content
+            isLoading
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.teal[400]!),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading farm data...',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Memuat data peternakan...',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
+                  )
+                : RefreshIndicator(
+                    onRefresh: _initializeDashboard,
+                    color: const Color.fromRGBO(0, 150, 136, 1),
+                    child: SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          _buildWelcomeCard(),
+                          _buildNotificationPreview(),
+                          _buildMilkProductionChart(),
+                          _buildLactationChart(),
+                          _buildMyCowsList(),
+                          SizedBox(height: 80), // beri ruang untuk FAB
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: _initializeDashboard,
-                color: const Color.fromRGBO(0, 150, 136, 1),
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildWelcomeCard(),
-                      _buildNotificationPreview(),
-                      _buildMilkProductionChart(),
-                      _buildLactationChart(),
-                      _buildMyCowsList(),
-                      SizedBox(height: 80), // beri ruang untuk FAB
-                    ],
                   ),
-                ),
-              ),
-        // Tambahkan FloatingActionButton untuk logout
+
+            // Floating Action Buttons
+            _buildFloatingActionButtons(),
+          ],
+        ),
+
+        // Pindahkan logout FAB ke kiri bawah
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
             final shouldLogout = await showDialog<bool>(
@@ -2076,17 +2475,17 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
               builder: (context) => AlertDialog(
                 backgroundColor: const Color(0xFF23272F),
                 title: Text(
-                  'Konfirmasi Keluar',
+                  'Confirm Exit',
                   style: TextStyle(color: Colors.white),
                 ),
                 content: Text(
-                  'Apakah Anda yakin ingin keluar dari aplikasi?',
+                  'Are you sure you want to exit the application?',
                   style: TextStyle(color: Colors.white70),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: Text('Batal',
+                    child: Text('Cancel',
                         style: TextStyle(color: Colors.tealAccent)),
                   ),
                   ElevatedButton(
@@ -2098,8 +2497,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child:
-                        Text('Keluar', style: TextStyle(color: Colors.white)),
+                    child: Text('Exit', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -2111,302 +2509,754 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
           backgroundColor: Colors.red[400],
           elevation: 4,
           child: Icon(Icons.logout, color: Colors.white, size: 24),
-          tooltip: 'Keluar',
+          tooltip: 'Exit',
         ),
       ),
     );
   }
-  // ...existing code...
 
-  Widget _buildSidebar() {
-    return Drawer(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: 200,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.teal[400]!, Colors.teal[600]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+  void _showChangePasswordDialog() {
+    final _currentPasswordController = TextEditingController();
+    final _newPasswordController = TextEditingController();
+    final _confirmPasswordController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+    final _loginController = LoginController();
+    bool _isCurrentPasswordVisible = false;
+    bool _isNewPasswordVisible = false;
+    bool _isConfirmPasswordVisible = false;
+    bool _isLoading = false;
+
+    // Password strength variables
+    double _passwordStrength = 0.0;
+    String _passwordFeedback = "";
+    Color _strengthColor = Colors.red;
+
+    // Password strength calculation function
+    void _calculatePasswordStrength(String password) {
+      if (password.isEmpty) {
+        _passwordStrength = 0.0;
+        _passwordFeedback = "";
+        _strengthColor = Colors.red;
+        return;
+      }
+
+      double strength = 0;
+      String feedback = "";
+
+      // Length check
+      if (password.length >= 8) {
+        strength += 25;
+      } else {
+        feedback = "Password should be at least 8 characters";
+      }
+
+      // Contains lowercase
+      if (RegExp(r'[a-z]').hasMatch(password)) strength += 15;
+      // Contains uppercase
+      if (RegExp(r'[A-Z]').hasMatch(password)) strength += 15;
+      // Contains numbers
+      if (RegExp(r'[0-9]').hasMatch(password)) strength += 15;
+      // Contains special chars
+      if (RegExp(r'[^A-Za-z0-9]').hasMatch(password)) strength += 30;
+
+      // Set feedback and color based on strength
+      if (strength <= 30) {
+        feedback = feedback.isEmpty ? "Password is weak" : feedback;
+        _strengthColor = Colors.red;
+      } else if (strength <= 60) {
+        feedback = feedback.isEmpty ? "Password is moderate" : feedback;
+        _strengthColor = Colors.orange;
+      } else if (strength <= 80) {
+        feedback = feedback.isEmpty ? "Password is strong" : feedback;
+        _strengthColor = Colors.blue;
+      } else {
+        feedback = "Password is very strong";
+        _strengthColor = Colors.green;
+      }
+
+      _passwordStrength = strength;
+      _passwordFeedback = feedback;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent tap outside to dismiss
+      builder: (BuildContext context) {
+        return PopScope(
+          // Use PopScope instead of WillPopScope for newer Flutter versions
+          canPop: false, // Completely prevent popping
+          onPopInvoked: (bool didPop) {
+            // This will be called when back button is pressed, but won't dismiss
+            if (didPop) return;
+            // Optionally show a message that dialog cannot be dismissed
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Please complete the password change or cancel'),
+                duration: Duration(seconds: 1),
               ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+            );
+          },
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      child: Text(
-                        '👨‍🌾',
-                        style: TextStyle(fontSize: 35),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      currentUser?['name'] ?? 'Farmer',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.teal[50],
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      child: Icon(
+                        Icons.lock_outline,
+                        color: Colors.teal[600],
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        'Farmer',
+                        'Change Password',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                          color: Colors.teal[800],
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-          // Menu dengan ExpansionTile
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  // Dashboard - menu utama tanpa grouping
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: _selectedIndex == 0 ? Colors.teal[50] : null,
+                content: SingleChildScrollView(
+                  child: Container(
+                    width: double.maxFinite,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
                     ),
-                    child: ListTile(
-                      leading: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _selectedIndex == 0
-                              ? Colors.teal[700]!.withOpacity(0.2)
-                              : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.dashboard,
-                          color: _selectedIndex == 0
-                              ? Colors.teal[700]
-                              : Colors.grey[600],
-                          size: 20,
-                        ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Current Password Field
+                          TextFormField(
+                            controller: _currentPasswordController,
+                            obscureText: !_isCurrentPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Current Password',
+                              hintText: 'Enter your current password',
+                              prefixIcon:
+                                  Icon(Icons.lock, color: Colors.teal[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isCurrentPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isCurrentPasswordVisible =
+                                        !_isCurrentPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.teal[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your current password';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+
+                          // New Password Field with Strength Indicator
+                          TextFormField(
+                            controller: _newPasswordController,
+                            obscureText: !_isNewPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'New Password',
+                              hintText: 'Enter your new password',
+                              prefixIcon: Icon(Icons.lock_reset,
+                                  color: Colors.teal[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isNewPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isNewPasswordVisible =
+                                        !_isNewPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.teal[600]!),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _calculatePasswordStrength(value);
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a new password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Password Strength Indicator
+                          if (_newPasswordController.text.isNotEmpty) ...[
+                            SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Password Strength',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: Colors.grey[300],
+                                    ),
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: _passwordStrength / 100,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: _strengthColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  if (_passwordFeedback.isNotEmpty)
+                                    Text(
+                                      _passwordFeedback,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _strengthColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Requirements:',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Min 8 characters',
+                                              _newPasswordController
+                                                      .text.length >=
+                                                  8,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Uppercase (A-Z)',
+                                              RegExp(r'[A-Z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Lowercase (a-z)',
+                                              RegExp(r'[a-z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Number (0-9)',
+                                              RegExp(r'[0-9]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      _buildRequirementChip(
+                                        'Special character (!@#\$%^&*)',
+                                        RegExp(r'[^A-Za-z0-9]').hasMatch(
+                                            _newPasswordController.text),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          SizedBox(height: 16),
+
+                          // Confirm Password Field
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: !_isConfirmPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Confirm New Password',
+                              hintText: 'Confirm your new password',
+                              prefixIcon: Icon(Icons.lock_clock,
+                                  color: Colors.teal[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.teal[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your new password';
+                              }
+                              if (value != _newPasswordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                       ),
-                      title: Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          color: _selectedIndex == 0
-                              ? Colors.teal[700]
-                              : Colors.grey[800],
-                          fontWeight: _selectedIndex == 0
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          fontSize: 14,
-                        ),
-                      ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                          },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isLoading || _passwordStrength < 50
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              try {
+                                final result =
+                                    await _loginController.changePassword(
+                                  oldPassword: _currentPasswordController.text,
+                                  newPassword: _newPasswordController.text,
+                                );
+
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                if (result['status'] == 'success') {
+                                  _showPasswordChangeSuccessDialog();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.error,
+                                              color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(result['message'] ??
+                                                'Failed to change password'),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.red[600],
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.error, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text('An error occurred: $e'),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.red[600],
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _passwordStrength >= 50
+                          ? Colors.teal[600]
+                          : Colors.grey[400],
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = 0;
-                        });
-                        Navigator.pop(context);
-                        _navigateToView(navigationItems[0]);
-                      },
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
-                  ),
-
-                  // Manajemen Sapi
-                  _buildExpansionTile(
-                    title: 'Manajemen Sapi',
-                    icon: Icons.pets,
-                    color: Colors.brown,
-                    items: [
-                      {'index': 1, 'item': navigationItems[1]}, // Sapi Saya
-                    ],
-                  ),
-
-                  // Pemerahan & Analisis
-                  _buildExpansionTile(
-                    title: 'Pemerahan & Analisis',
-                    icon: Icons.local_drink,
-                    color: Colors.blue,
-                    items: [
-                      {'index': 2, 'item': navigationItems[2]}, // Pemerahan
-                      {
-                        'index': 3,
-                        'item': navigationItems[3]
-                      }, // Analisis Milking
-                      {
-                        'index': 4,
-                        'item': navigationItems[4]
-                      }, // Analisis Kualitas Susu
-                    ],
-                  ),
-
-                  // Manajemen Pakan
-                  _buildExpansionTile(
-                    title: 'Manajemen Pakan',
-                    icon: Icons.grass,
-                    color: Colors.green,
-                    items: [
-                      {'index': 5, 'item': navigationItems[5]}, // Jenis Pakan
-                      {'index': 6, 'item': navigationItems[6]}, // Jenis Nutrisi
-                      {'index': 7, 'item': navigationItems[7]}, // Pakan
-                      {'index': 8, 'item': navigationItems[8]}, // Stock Pakan
-                      {'index': 9, 'item': navigationItems[9]}, // Feed Schedule
-                      {
-                        'index': 10,
-                        'item': navigationItems[10]
-                      }, // Feed Item Harian
-                    ],
-                  ),
-
-                  // Kesehatan Sapi
-                  _buildExpansionTile(
-                    title: 'Kesehatan Sapi',
-                    icon: Icons.medical_services,
-                    color: Colors.red,
-                    items: [
-                      {
-                        'index': 11,
-                        'item': navigationItems[11]
-                      }, // Pemeriksaan Kesehatan
-                      {'index': 12, 'item': navigationItems[12]}, // Gejala
-                      {
-                        'index': 13,
-                        'item': navigationItems[13]
-                      }, // Riwayat Penyakit
-                      {'index': 14, 'item': navigationItems[14]}, // Reproduksi
-                      {
-                        'index': 15,
-                        'item': navigationItems[15]
-                      }, // Health Dashboard
-                    ],
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text('Change Password'),
                   ),
                 ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+// Updated helper widget for requirement chips with better layout
+  Widget _buildRequirementChip(String text, bool isValid) {
+    return Container(
+      width: double.infinity, // Take full width
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isValid ? Colors.green[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isValid ? Colors.green[300]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 14,
+            color: isValid ? Colors.green[600] : Colors.grey[500],
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 10,
+                color: isValid ? Colors.green[700] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildExpansionTile({
-    required String title,
-    required IconData icon,
-    required Color color,
-    required List<Map<String, dynamic>> items,
-  }) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: ExpansionTile(
-        leading: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey[800],
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        iconColor: color,
-        collapsedIconColor: color,
-        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        childrenPadding: EdgeInsets.only(left: 16, right: 8, bottom: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        children: items.map((itemData) {
-          final index = itemData['index'] as int;
-          final item = itemData['item'] as NavigationItem;
-          final isSelected = _selectedIndex == index;
-
-          return Container(
-            margin: EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: isSelected ? Colors.teal[50] : null,
+// ...existing code...
+  // Add this new method for success dialog
+  void _showPasswordChangeSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          // Add this wrapper here too
+          onWillPop: () async {
+            // Prevent back button from closing the dialog
+            return false;
+          },
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              leading: Container(
-                padding: EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.teal[700]!.withOpacity(0.2)
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  item.icon,
-                  color: isSelected ? Colors.teal[700] : Colors.grey[600],
-                  size: 18,
-                ),
+            content: Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Success animation icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green[600],
+                      size: 50,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Success title
+                  Text(
+                    'Password Changed Successfully!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Success message
+                  Text(
+                    'Your password has been changed successfully. For security reasons, you will be redirected to the login page to sign in with your new password.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 24),
+
+                  // Countdown or direct redirect button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close success dialog
+                        _redirectToLogin();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Continue to Login',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              title: Text(
-                item.label,
-                style: TextStyle(
-                  color: isSelected ? Colors.teal[700] : Colors.grey[800],
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
+            ),
+          ),
+        );
+      },
+    );
+
+    // Auto redirect after 5 seconds if user doesn't click
+    Timer(Duration(seconds: 5), () {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Close success dialog if still open
+        _redirectToLogin();
+      }
+    });
+  }
+
+  // Add this method to handle redirect to login
+  Future<void> _redirectToLogin() async {
+    try {
+      // Clear all user data from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Show a brief loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.teal[600]!),
                 ),
+                SizedBox(height: 16),
+                Text(
+                  'Redirecting to login...',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait a moment for the loading indicator
+      await Future.delayed(Duration(seconds: 1));
+
+      // Navigate to login and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginView(),
+        ),
+        (route) => false,
+      );
+
+      // Show welcome back message on login page
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Please sign in with your new password',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
+              backgroundColor: Colors.blue[600],
+              behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              onTap: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
-                Navigator.pop(context);
-                _navigateToView(item);
-              },
+              duration: Duration(seconds: 3),
             ),
           );
-        }).toList(),
-      ),
-    );
+        }
+      });
+    } catch (e) {
+      print('Error during redirect to login: $e');
+      // Fallback navigation
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LoginView()),
+        (route) => false,
+      );
+    }
   }
+
+// Enhanced navigation item with subtle animation and better styling
+
+// Enhanced expansion tile with subtle animations and better styling
 }
 
 // Navigation Item class

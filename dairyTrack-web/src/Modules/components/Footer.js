@@ -132,13 +132,13 @@ const Footer = () => {
   const contactInfo = [
     {
       icon: "fas fa-map-marker-alt",
-      title: "Alamat",
+      title: "Address",
       content:
         "Kec. Pollung, Kab. Humbang Hasundutan\nSumatera Utara, Indonesia 22457",
     },
     {
       icon: "fas fa-phone",
-      title: "Telepon",
+      title: "Telephone",
       content: "(0623) 9876-5432",
     },
     {
@@ -148,7 +148,7 @@ const Footer = () => {
     },
     {
       icon: "fas fa-clock",
-      title: "Jam Operasional",
+      title: "Operating Hours",
       content: "Senin - Jumat: 08:00 - 17:00\nSabtu: 08:00 - 14:00",
     },
   ];
@@ -214,10 +214,10 @@ const Footer = () => {
                   </div>
 
                   <p className="company-description">
-                    Menyediakan produk susu berkualitas premium dari peternakan
-                    ke meja makan, menjaga standar kesegaran dan rasa tertinggi
-                    sambil mendukung praktik pertanian berkelanjutan untuk masa
-                    depan yang lebih baik.
+                    Providing premium quality dairy products from the farm to
+                    your table, maintaining the highest standards of freshness
+                    and taste while supporting sustainable farming practices for
+                    a better future.
                   </p>
 
                   <div className="company-stats">
@@ -226,21 +226,21 @@ const Footer = () => {
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="stat-number">15+</div>
-                      <div className="stat-label">Tahun Pengalaman</div>
+                      <div className="stat-label">Years of Experience</div>
                     </motion.div>
                     <motion.div
                       className="stat-item"
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="stat-number">1000+</div>
-                      <div className="stat-label">Pelanggan Puas</div>
+                      <div className="stat-label">Satisfied Customer</div>
                     </motion.div>
                   </div>
 
                   <div className="social-section">
                     <h6 className="social-title">
                       <i className="fas fa-share-alt me-2"></i>
-                      Ikuti Kami
+                      Follow Us
                     </h6>
                     <div className="social-links">
                       {socialLinks.map((social, index) => (
@@ -274,7 +274,7 @@ const Footer = () => {
                 >
                   <h5 className="section-title">
                     <i className="fas fa-link me-2"></i>
-                    Tautan Cepat
+                    Quick Links{" "}
                   </h5>
                   <motion.ul
                     className="footer-menu"
@@ -309,7 +309,7 @@ const Footer = () => {
                 >
                   <h5 className="section-title">
                     <i className="fas fa-address-book me-2"></i>
-                    Hubungi Kami
+                    Contact us
                   </h5>
                   <motion.div
                     className="contact-list"
@@ -347,7 +347,7 @@ const Footer = () => {
                 >
                   <h5 className="section-title">
                     <i className="fas fa-map-marked-alt me-2"></i>
-                    Temukan Kami
+                    Find Us
                   </h5>
                   <motion.div
                     className="map-container"

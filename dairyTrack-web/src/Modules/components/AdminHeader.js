@@ -8,6 +8,7 @@ import {
   FaBars,
   FaTimes,
   FaInfoCircle,
+  FaSpinner,
 } from "react-icons/fa";
 
 import Modal from "react-bootstrap/Modal";
@@ -28,6 +29,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   const [changeLoading, setChangeLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordFeedback, setPasswordFeedback] = useState("");
+  const [logoutLoading, setLogoutLoading] = useState(false); // New state for logout loading
 
   const dropdownRef = useRef(null);
 
@@ -154,26 +156,21 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
   };
 
   const toggleDropdown = () => {
-    setDropdownOpen((prev) => !prev);
+    if (!logoutLoading) {
+      // Prevent dropdown toggle during logout
+      setDropdownOpen((prev) => !prev);
+    }
   };
 
   const confirmLogout = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You will be logged out of your account.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, logout!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        handleLogout();
-      }
-    });
+    if (logoutLoading) return; // Prevent multiple logout attempts
+    handleLogout(); // Directly call logout without confirmation
   };
 
   const handleLogout = async () => {
+    setLogoutLoading(true); // Start loading
+    setDropdownOpen(false); // Close dropdown
+
     try {
       const storedUser = localStorage.getItem("user");
       if (!storedUser) {
@@ -191,24 +188,44 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
         throw new Error(response.message || "Logout failed");
       }
 
+      // Clear localStorage first
       localStorage.removeItem("user");
+
+      // Set loading to false before showing success alert
+      setLogoutLoading(false);
+
+      // Show success alert after logout is successful
       await Swal.fire({
         icon: "success",
         title: "Logout Successful",
-        text: "You have been logged out successfully.",
+        text: "You have been logged out successfully",
+        confirmButtonText: "OK",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: true,
       });
+
+      // Redirect after user clicks OK
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if logout fails, clear local storage and redirect
+      // Even if logout fails, clear local storage
       localStorage.removeItem("user");
-      Swal.fire({
+      setLogoutLoading(false);
+
+      // Show error alert but still redirect
+      await Swal.fire({
         icon: "warning",
-        title: "Logout Issue",
-        text: "There was an issue with logout, but you've been signed out locally.",
-      }).then(() => {
-        window.location.href = "/";
+        title: "Logout Completed",
+        text: "Session ended. You will be redirected to login page.",
+        confirmButtonText: "OK",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: true,
       });
+
+      // Redirect after user clicks OK
+      window.location.href = "/";
     }
   };
 
@@ -246,6 +263,9 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       flexWrap: "wrap",
       overflow: "visible",
       height: "70px",
+      opacity: logoutLoading ? 0.7 : 1, // Dim header during logout
+      pointerEvents: logoutLoading ? "none" : "auto", // Disable interactions during logout
+      transition: "opacity 0.3s ease",
     },
     // Retro overlay pattern
     headerOverlay: {
@@ -270,7 +290,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       borderRadius: "8px",
       padding: "10px",
       marginRight: "15px",
-      cursor: "pointer",
+      cursor: logoutLoading ? "not-allowed" : "pointer", // Change cursor during logout
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       display: "flex",
       alignItems: "center",
@@ -282,6 +302,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
         "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
       textShadow: "0 1px 2px rgba(0,0,0,0.3)",
       zIndex: 3,
+      opacity: logoutLoading ? 0.5 : 1, // Dim during logout
     },
     headerLeft: {
       display: "flex",
@@ -300,8 +321,8 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       fontSize: "1.2rem",
       margin: 0,
       fontWeight: "600",
-      color: "#333333", // Ubah dari putih ke hitam
-      textShadow: "none", // Hapus bayangan teks
+      color: "#333333",
+      textShadow: "none",
     },
     dateTime: {
       fontFamily: "Roboto, sans-serif",
@@ -332,32 +353,33 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       position: "relative",
       display: "flex",
       alignItems: "center",
-      cursor: "pointer",
+      cursor: logoutLoading ? "not-allowed" : "pointer", // Change cursor during logout
       padding: "5px 10px",
       borderRadius: "20px",
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      // Retro glassmorphism effect
-      background: "rgba(255,255,255,0.1)",
-      backdropFilter: "blur(10px)",
-      border: "1px solid rgba(255,255,255,0.2)",
-      zIndex: 10, // Added z-index
+      background: "rgba(240,240,240,0.5)",
+      border: "1px solid rgba(200,200,200,0.5)",
+      zIndex: 10,
+      opacity: logoutLoading ? 0.7 : 1, // Dim during logout
     },
     notificationContainer: {
       position: "relative",
-      zIndex: 10, // Added z-index
+      zIndex: 10,
       marginRight: "15px",
+      opacity: logoutLoading ? 0.5 : 1, // Dim during logout
+      pointerEvents: logoutLoading ? "none" : "auto", // Disable during logout
     },
     dropdown: {
       position: "absolute",
-      top: "100%", // Changed from 50px to 100%
+      top: "100%",
       right: "0",
-      marginTop: "5px", // Small gap
+      marginTop: "5px",
       // Retro dropdown styling
       background: "linear-gradient(145deg, #2A2A2A, #1A1A1A)",
       borderRadius: "12px",
       boxShadow: "0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1)",
       minWidth: "180px",
-      zIndex: 9999, // Very high z-index
+      zIndex: 9999,
       overflow: "visible",
       border: "2px solid #FF6B35",
       backdropFilter: "blur(10px)",
@@ -424,21 +446,52 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       overflow: "hidden",
       textOverflow: "ellipsis",
       maxWidth: "150px",
-      color: "#333333", // Ubah dari putih ke hitam
+      color: "#333333",
       fontWeight: "600",
-      textShadow: "none", // Hapus bayangan teks
+      textShadow: "none",
     },
-    userDropdown: {
-      position: "relative",
+    // New styles for loading overlay
+    loadingOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0, 0, 0, 0.7)",
+      zIndex: 99999,
       display: "flex",
       alignItems: "center",
-      cursor: "pointer",
-      padding: "5px 10px",
+      justifyContent: "center",
+      backdropFilter: "blur(5px)",
+    },
+    loadingContent: {
+      background: "linear-gradient(145deg, #2A2A2A, #1A1A1A)",
+      color: "#F7F7F7",
+      padding: "40px 50px",
       borderRadius: "20px",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      background: "rgba(240,240,240,0.5)", // Warna latar lebih terang
-      border: "1px solid rgba(200,200,200,0.5)",
-      zIndex: 10,
+      textAlign: "center",
+      boxShadow:
+        "0 20px 60px rgba(0,0,0,0.8), 0 0 0 2px rgba(255, 107, 53, 0.3)",
+      border: "2px solid #FF6B35",
+      backdropFilter: "blur(10px)",
+      minWidth: "300px",
+    },
+    loadingSpinner: {
+      fontSize: "48px",
+      color: "#FF6B35",
+      marginBottom: "20px",
+      animation: "spin 1s linear infinite",
+    },
+    loadingText: {
+      fontSize: "18px",
+      fontWeight: "600",
+      marginBottom: "10px",
+      letterSpacing: "0.5px",
+    },
+    loadingSubtext: {
+      fontSize: "14px",
+      color: "#B0B0B0",
+      fontWeight: "400",
     },
   };
 
@@ -551,6 +604,30 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           }
         }
         
+        /* Spinner animation for loading */
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        
+        /* Loading overlay fade in */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        .loading-overlay {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        
         /* Fix for Bootstrap modal z-index conflicts */
         .modal {
           z-index: 10500 !important;
@@ -560,7 +637,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           z-index: 10400 !important;
         }
         
-        /* SweetAlert z-index fix */
+        /* SweetAlert z-index fix - kept for password change functionality */
         .swal2-container {
           z-index: 10600 !important;
         }
@@ -572,6 +649,12 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           
           .header-content h1 {
             font-size: 1.1rem;
+          }
+          
+          .loading-content {
+            margin: 20px;
+            padding: 30px 40px;
+            min-width: 250px;
           }
         }
         
@@ -601,6 +684,20 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           .user-profile {
             margin-left: auto;
           }
+          
+          .loading-content {
+            margin: 15px;
+            padding: 25px 30px;
+            min-width: 200px;
+          }
+          
+          .loading-text {
+            font-size: 16px !important;
+          }
+          
+          .loading-spinner {
+            font-size: 40px !important;
+          }
         }
         
         @media (max-width: 480px) {
@@ -611,9 +708,30 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
           .header-content h1 {
             font-size: 1rem;
           }
+          
+          .loading-content {
+            margin: 10px;
+            padding: 20px 25px;
+            min-width: 180px;
+          }
         }
         `}
       </style>
+
+      {/* Loading Overlay */}
+      {logoutLoading && (
+        <div style={styles.loadingOverlay} className="loading-overlay">
+          <div style={styles.loadingContent}>
+            <div style={styles.loadingSpinner}>
+              <FaSpinner />
+            </div>
+            <div style={styles.loadingText}>Logging out...</div>
+            <div style={styles.loadingSubtext}>
+              Please wait while we securely log you out
+            </div>
+          </div>
+        </div>
+      )}
 
       <header style={styles.header} className="admin-header admin-header-fixed">
         {/* Retro overlay pattern */}
@@ -622,20 +740,25 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
         <div style={styles.headerLeft}>
           <button
             className="sidebar-toggle"
-            onClick={toggleSidebar}
+            onClick={logoutLoading ? undefined : toggleSidebar} // Disable during logout
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
             style={styles.sidebarToggle}
+            disabled={logoutLoading} // Disable button during logout
             onMouseEnter={(e) => {
-              e.target.style.transform = "scale(1.1) rotate(5deg)";
-              e.target.style.boxShadow =
-                "0 6px 20px rgba(255, 107, 53, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)";
+              if (!logoutLoading) {
+                e.target.style.transform = "scale(1.1) rotate(5deg)";
+                e.target.style.boxShadow =
+                  "0 6px 20px rgba(255, 107, 53, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.target.style.transform = "scale(1) rotate(0deg)";
-              e.target.style.boxShadow =
-                "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)";
+              if (!logoutLoading) {
+                e.target.style.transform = "scale(1) rotate(0deg)";
+                e.target.style.boxShadow =
+                  "0 4px 15px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)";
+              }
             }}
           >
             {sidebarCollapsed ? <FaBars /> : <FaTimes />}
@@ -719,62 +842,64 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                     : "AU"}
                 </div>
 
-                {dropdownOpen && (
-                  <div
-                    style={styles.dropdown}
-                    className="dropdown-menu show user-dropdown-menu"
-                  >
-                    <button
-                      className="dropdown-item"
-                      style={styles.dropdownItem}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowChangePasswordModal(true);
-                        setDropdownOpen(false);
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor =
-                          "rgba(255, 107, 53, 0.2)";
-                        e.target.style.color = "#FF6B35";
-                        e.target.style.transform = "translateX(5px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = "transparent";
-                        e.target.style.color = "#F7F7F7";
-                        e.target.style.transform = "translateX(0)";
-                      }}
+                {dropdownOpen &&
+                  !logoutLoading && ( // Hide dropdown during logout
+                    <div
+                      style={styles.dropdown}
+                      className="dropdown-menu show user-dropdown-menu"
                     >
-                      Change Password
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      style={styles.dropdownItem}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        confirmLogout();
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor =
-                          "rgba(255, 107, 53, 0.2)";
-                        e.target.style.color = "#FF6B35";
-                        e.target.style.transform = "translateX(5px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = "transparent";
-                        e.target.style.color = "#F7F7F7";
-                        e.target.style.transform = "translateX(0)";
-                      }}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
+                      <button
+                        className="dropdown-item"
+                        style={styles.dropdownItem}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowChangePasswordModal(true);
+                          setDropdownOpen(false);
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor =
+                            "rgba(255, 107, 53, 0.2)";
+                          e.target.style.color = "#FF6B35";
+                          e.target.style.transform = "translateX(5px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = "transparent";
+                          e.target.style.color = "#F7F7F7";
+                          e.target.style.transform = "translateX(0)";
+                        }}
+                      >
+                        Change Password
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        style={styles.dropdownItem}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          confirmLogout();
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor =
+                            "rgba(255, 107, 53, 0.2)";
+                          e.target.style.color = "#FF6B35";
+                          e.target.style.transform = "translateX(5px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = "transparent";
+                          e.target.style.color = "#F7F7F7";
+                          e.target.style.transform = "translateX(0)";
+                        }}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
 
                 {/* Change Password Modal */}
                 <Modal
                   show={showChangePasswordModal}
                   onHide={() => {
-                    if (!changeLoading) {
+                    if (!changeLoading && !logoutLoading) {
+                      // Prevent closing during logout
                       setShowChangePasswordModal(false);
                       setOldPassword("");
                       setNewPassword("");
@@ -784,9 +909,9 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                   }}
                   centered
                   backdrop="static"
-                  keyboard={!changeLoading}
+                  keyboard={!changeLoading && !logoutLoading}
                 >
-                  <Modal.Header closeButton={!changeLoading}>
+                  <Modal.Header closeButton={!changeLoading && !logoutLoading}>
                     <Modal.Title>Change Password</Modal.Title>
                   </Modal.Header>
                   <Modal.Body>
@@ -798,7 +923,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                         className="form-control"
                         value={oldPassword}
                         onChange={(e) => setOldPassword(e.target.value)}
-                        disabled={changeLoading}
+                        disabled={changeLoading || logoutLoading}
                         placeholder="Enter your current password"
                         autoComplete="current-password"
                       />
@@ -806,7 +931,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                         type="button"
                         style={styles.passwordToggle}
                         onClick={() => setShowOldPassword((prev) => !prev)}
-                        disabled={changeLoading}
+                        disabled={changeLoading || logoutLoading}
                         aria-label={
                           showOldPassword ? "Hide password" : "Show password"
                         }
@@ -826,7 +951,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                           setNewPassword(e.target.value);
                           calculatePasswordStrength(e.target.value);
                         }}
-                        disabled={changeLoading}
+                        disabled={changeLoading || logoutLoading}
                         placeholder="Enter your new password"
                         autoComplete="new-password"
                       />
@@ -834,7 +959,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                         type="button"
                         style={styles.passwordToggle}
                         onClick={() => setShowNewPassword((prev) => !prev)}
-                        disabled={changeLoading}
+                        disabled={changeLoading || logoutLoading}
                         aria-label={
                           showNewPassword ? "Hide password" : "Show password"
                         }
@@ -881,7 +1006,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                         setPasswordStrength(0);
                         setPasswordFeedback("");
                       }}
-                      disabled={changeLoading}
+                      disabled={changeLoading || logoutLoading}
                     >
                       Cancel
                     </Button>
@@ -890,6 +1015,7 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
                       onClick={handleChangePassword}
                       disabled={
                         changeLoading ||
+                        logoutLoading ||
                         !oldPassword ||
                         !newPassword ||
                         newPassword.length < 8

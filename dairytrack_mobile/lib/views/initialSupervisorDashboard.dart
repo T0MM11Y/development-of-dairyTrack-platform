@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
@@ -70,6 +71,9 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
       CattleDistributionController();
   final NotificationController _notificationController =
       NotificationController();
+  bool _isFabExpanded = false;
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabExpandAnimation;
 
   // Animation controllers
   late AnimationController _welcomeAnimationController;
@@ -134,37 +138,37 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         ),
         NavigationItem(
           icon: Icons.people,
-          label: 'Pantau Pengguna',
+          label: 'Monitor Users',
           route: 'farmers',
           widget: () => ListOfUsersView(),
         ),
         NavigationItem(
           icon: Icons.pets,
-          label: 'Data Sapi',
+          label: 'Cattle Data',
           route: 'cattle',
           widget: () => ListOfCowsView(),
         ),
         NavigationItem(
           icon: Icons.local_drink,
-          label: 'Pemerahan',
+          label: 'Milking',
           route: 'milking',
           widget: () => MilkingView(),
         ),
         NavigationItem(
           icon: Icons.bar_chart,
-          label: 'Analisis Milking',
+          label: 'Milking Analysis',
           route: 'analytics',
           widget: () => MilkProductionAnalysisView(),
         ),
         NavigationItem(
           icon: Icons.analytics,
-          label: 'Analisis Kualitas Susu',
+          label: 'Milk Quality Analysis',
           route: 'milkQuality',
           widget: () => MilkQualityControlsView(),
         ),
         NavigationItem(
           icon: Icons.analytics,
-          label: 'Distribusi Sapi',
+          label: 'Cattle Distribution',
           route: 'distribution',
           widget: () => CattleDistribution(),
         ),
@@ -184,56 +188,55 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Pemeriksaan Kesehatan',
+          label: 'Health Checks',
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
         NavigationItem(
           icon: Icons.visibility,
-          label: 'Gejala',
+          label: 'Symptoms',
           route: 'symptoms',
           widget: () => SymptomListView(),
         ),
         NavigationItem(
           icon: Icons.coronavirus,
-          label: 'Riwayat Penyakit',
+          label: 'Disease History',
           route: 'disease-history',
           widget: () => DiseaseHistoryListView(),
         ),
         NavigationItem(
           icon: Icons.pregnant_woman,
-          label: 'Reproduksi',
+          label: 'Reproduction',
           route: 'reproduction',
           widget: () => ReproductionListView(),
         ),
         NavigationItem(
           icon: Icons.monitor_heart,
-          label: 'HealthDashboard',
+          label: 'Health Dashboard',
           route: 'health-dashboard',
           widget: () => HealthDashboardView(),
         ),
         NavigationItem(
           icon: Icons.category,
-          label: 'Jenis Pakan',
+          label: 'Feed Types',
           route: 'feed-type',
           widget: () => FeedTypeView(),
         ),
         NavigationItem(
-          icon: Icons
-              .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
-          label: 'Jenis Nutrisi',
+          icon: Icons.local_florist,
+          label: 'Nutrition Types',
           route: 'nutrition',
           widget: () => NutrisiView(),
         ),
         NavigationItem(
           icon: Icons.kitchen,
-          label: 'Pakan',
+          label: 'Feed',
           route: 'feed',
           widget: () => FeedView(),
         ),
         NavigationItem(
           icon: Icons.inventory,
-          label: 'Stock Pakan',
+          label: 'Feed Stock',
           route: 'feed-stock',
           widget: () => FeedStockList(),
         ),
@@ -245,7 +248,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         ),
         NavigationItem(
           icon: Icons.checklist,
-          label: 'Feed Item Harian',
+          label: 'Daily Feed Items',
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
@@ -254,6 +257,14 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
   @override
   void initState() {
     super.initState();
+    _fabAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabExpandAnimation = CurvedAnimation(
+      parent: _fabAnimationController,
+      curve: Curves.easeInOut,
+    );
     _initializeAnimations();
     _initializeLocale();
     _getCurrentUser();
@@ -302,6 +313,17 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
     _welcomeAnimationController.forward();
     _cardAnimationController.forward();
     _floatingAnimationController.repeat(reverse: true);
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _isFabExpanded = !_isFabExpanded;
+    });
+    if (_isFabExpanded) {
+      _fabAnimationController.forward();
+    } else {
+      _fabAnimationController.reverse();
+    }
   }
 
   void _startNotificationPolling() {
@@ -364,6 +386,234 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
     _notificationBadgeController.dispose();
     _notificationTimer?.cancel();
     super.dispose();
+  }
+
+  Widget _buildFloatingActionButtons() {
+    // Kelompokkan menu sesuai kebutuhan supervisor
+    final userManagement = [navigationItems[1]];
+    final cattleManagement = [navigationItems[2], navigationItems[6]];
+    final milkingAnalysis = [
+      navigationItems[3],
+      navigationItems[4],
+      navigationItems[5]
+    ];
+    final cattleHealth = [
+      navigationItems[9],
+      navigationItems[10],
+      navigationItems[11],
+      navigationItems[12],
+      navigationItems[13]
+    ];
+    final feedManagement = [
+      navigationItems[14],
+      navigationItems[15],
+      navigationItems[16],
+      navigationItems[17],
+      navigationItems[18],
+      navigationItems[19]
+    ];
+    final contentMedia = [navigationItems[7], navigationItems[8]];
+
+    return Positioned(
+      bottom: 20,
+      right: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isFabExpanded) ...[
+            _buildFabGroup('Content & Media', Icons.library_books, Colors.teal,
+                contentMedia),
+            _buildFabGroup(
+                'Feed Management', Icons.grass, Colors.green, feedManagement),
+            _buildFabGroup('Cattle Health', Icons.medical_services, Colors.red,
+                cattleHealth),
+            _buildFabGroup('Milking & Analysis', Icons.local_drink, Colors.blue,
+                milkingAnalysis),
+            _buildFabGroup('Cattle Management', Icons.pets, Colors.brown,
+                cattleManagement),
+            _buildFabGroup('User Management', Icons.people, Colors.deepOrange,
+                userManagement),
+            // Change Password
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange[400],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Change Password',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "change_password",
+                      backgroundColor: Colors.teal[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showChangePasswordDialog();
+                      },
+                      child: const Icon(Icons.lock_reset, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          // Main FAB
+          FloatingActionButton(
+            heroTag: "main_fab",
+            backgroundColor:
+                _isFabExpanded ? Colors.grey[600] : Colors.deepOrange[400],
+            foregroundColor: Colors.white,
+            elevation: 8,
+            onPressed: _toggleFab,
+            child: AnimatedRotation(
+              duration: const Duration(milliseconds: 300),
+              turns: _isFabExpanded ? 0.125 : 0.0,
+              child: Icon(_isFabExpanded ? Icons.close : Icons.menu, size: 28),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFabGroup(
+      String title, IconData icon, Color color, List<NavigationItem> items) {
+    return ScaleTransition(
+      scale: _fabExpandAnimation,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                title,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FloatingActionButton(
+              heroTag: title,
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              elevation: 6,
+              mini: true,
+              onPressed: () {
+                _toggleFab();
+                _showMenuDialog(title, items);
+              },
+              child: Icon(icon, size: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMenuDialog(String title, List<NavigationItem> items) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.teal[50],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.teal[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.menu, color: Colors.teal[600], size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal[800],
+                      fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.teal[200]!),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(item.icon, color: Colors.teal[600], size: 20),
+                    ),
+                    title: Text(
+                      item.label,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600, color: Colors.teal[800]),
+                    ),
+                    trailing: Icon(Icons.arrow_forward_ios,
+                        size: 16, color: Colors.teal[400]),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToView(item);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Close', style: TextStyle(color: Colors.teal[600])),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _getCurrentUser() async {
@@ -984,7 +1234,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400
@@ -2222,332 +2472,61 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
     );
   }
 
-  Widget _buildSidebar() {
-    return Drawer(
-      child: Column(
-        children: [
-          // Header section tetap sama
-          Container(
-            width: double.infinity,
-            height: 220,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.deepOrange[400]!, Colors.deepOrange[400]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      child: Icon(
-                        Icons.admin_panel_settings,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      currentUser?['name'] ?? 'Supervisor',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        'Supervisor',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Menu dengan ExpansionTile
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  // Dashboard - menu utama tanpa grouping
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: _selectedIndex == 0
-                          ? Colors.deepOrange[400]!.withOpacity(0.1)
-                          : null,
-                    ),
-                    child: ListTile(
-                      leading: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _selectedIndex == 0
-                              ? Colors.deepOrange[400]!.withOpacity(0.2)
-                              : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.dashboard,
-                          color: _selectedIndex == 0
-                              ? Colors.deepOrange[400]
-                              : Colors.grey[600],
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          color: _selectedIndex == 0
-                              ? Colors.deepOrange[400]
-                              : Colors.grey[800],
-                          fontWeight: _selectedIndex == 0
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          fontSize: 14,
-                        ),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = 0;
-                        });
-                        Navigator.pop(context);
-                        _navigateToView(navigationItems[0]);
-                      },
-                    ),
-                  ),
-
-                  // Manajemen Pengguna
-                  _buildExpansionTile(
-                    title: 'Manajemen Pengguna',
-                    icon: Icons.people,
-                    color: Colors.blue,
-                    items: [
-                      {
-                        'index': 1,
-                        'item': navigationItems[1]
-                      }, // Pantau Pengguna
-                    ],
-                  ),
-
-                  // Manajemen Sapi
-                  _buildExpansionTile(
-                    title: 'Manajemen Sapi',
-                    icon: Icons.pets,
-                    color: Colors.brown,
-                    items: [
-                      {'index': 2, 'item': navigationItems[2]}, // Data Sapi
-                      {
-                        'index': 6,
-                        'item': navigationItems[6]
-                      }, // Distribusi Sapi
-                    ],
-                  ),
-
-                  // Pemerahan & Analisis
-                  _buildExpansionTile(
-                    title: 'Pemerahan & Analisis',
-                    icon: Icons.local_drink,
-                    color: Colors.teal,
-                    items: [
-                      {'index': 3, 'item': navigationItems[3]}, // Pemerahan
-                      {
-                        'index': 4,
-                        'item': navigationItems[4]
-                      }, // Analisis Milking
-                      {
-                        'index': 5,
-                        'item': navigationItems[5]
-                      }, // Analisis Kualitas Susu
-                    ],
-                  ),
-
-                  // Kesehatan Sapi
-                  _buildExpansionTile(
-                    title: 'Kesehatan Sapi',
-                    icon: Icons.medical_services,
-                    color: Colors.red,
-                    items: [
-                      {
-                        'index': 9,
-                        'item': navigationItems[9]
-                      }, // Pemeriksaan Kesehatan
-                      {'index': 10, 'item': navigationItems[10]}, // Gejala
-                      {
-                        'index': 11,
-                        'item': navigationItems[11]
-                      }, // Riwayat Penyakit
-                      {'index': 12, 'item': navigationItems[12]}, // Reproduksi
-                      {
-                        'index': 13,
-                        'item': navigationItems[13]
-                      }, // Health Dashboard
-                    ],
-                  ),
-
-                  // Manajemen Pakan
-                  _buildExpansionTile(
-                    title: 'Manajemen Pakan',
-                    icon: Icons.grass,
-                    color: Colors.green,
-                    items: [
-                      {'index': 14, 'item': navigationItems[14]}, // Jenis Pakan
-                      {
-                        'index': 15,
-                        'item': navigationItems[15]
-                      }, // Jenis Nutrisi
-                      {'index': 16, 'item': navigationItems[16]}, // Pakan
-                      {'index': 17, 'item': navigationItems[17]}, // Stock Pakan
-                      {
-                        'index': 18,
-                        'item': navigationItems[18]
-                      }, // Feed Schedule
-                      {
-                        'index': 19,
-                        'item': navigationItems[19]
-                      }, // Feed Item Harian
-                    ],
-                  ),
-
-                  // Konten & Media
-                  _buildExpansionTile(
-                    title: 'Konten & Media',
-                    icon: Icons.library_books,
-                    color: Colors.purple,
-                    items: [
-                      {'index': 7, 'item': navigationItems[7]}, // Blog
-                      {'index': 8, 'item': navigationItems[8]}, // Gallery
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpansionTile({
+  // Enhanced navigation item with subtle animation and better styling
+  Widget _buildNavItem({
     required String title,
     required IconData icon,
+    required int index,
     required Color color,
-    required List<Map<String, dynamic>> items,
   }) {
-    return Container(
+    final isSelected = _selectedIndex == index;
+
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
       margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        color: isSelected ? color.withOpacity(0.08) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(
+                color: color.withOpacity(0.3),
+                width: 1,
+              )
+            : null,
       ),
-      child: ExpansionTile(
+      child: ListTile(
+        dense: true,
+        visualDensity: VisualDensity(horizontal: 0, vertical: -1),
         leading: Container(
-          padding: EdgeInsets.all(8),
+          padding: EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
-            color: color,
-            size: 20,
+            color: isSelected ? color : Colors.grey[600],
+            size: 18,
           ),
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: Colors.grey[800],
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+            color: isSelected ? color : Colors.grey[800],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+            letterSpacing: 0.2,
           ),
         ),
-        iconColor: color,
-        collapsedIconColor: color,
-        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        childrenPadding: EdgeInsets.only(left: 16, right: 8, bottom: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        children: items.map((itemData) {
-          final index = itemData['index'] as int;
-          final item = itemData['item'] as NavigationItem;
-          final isSelected = _selectedIndex == index;
-
-          return Container(
-            margin: EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color:
-                  isSelected ? Colors.deepOrange[400]!.withOpacity(0.1) : null,
-            ),
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              leading: Container(
-                padding: EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.deepOrange[400]!.withOpacity(0.2)
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  item.icon,
-                  color: isSelected ? Colors.deepOrange[400] : Colors.grey[600],
-                  size: 18,
-                ),
-              ),
-              title: Text(
-                item.label,
-                style: TextStyle(
-                  color: isSelected ? Colors.deepOrange[400] : Colors.grey[800],
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              onTap: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
-                Navigator.pop(context);
-                _navigateToView(item);
-              },
-            ),
-          );
-        }).toList(),
+        selected: isSelected,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+          Navigator.pop(context);
+          _navigateToView(navigationItems[index]);
+        },
       ),
     );
   }
@@ -2569,6 +2548,746 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           content: Text('Terjadi kesalahan saat keluar'),
           backgroundColor: Colors.red,
         ),
+      );
+    }
+  }
+
+  void _showChangePasswordDialog() {
+    final _currentPasswordController = TextEditingController();
+    final _newPasswordController = TextEditingController();
+    final _confirmPasswordController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+    final _loginController = LoginController();
+    bool _isCurrentPasswordVisible = false;
+    bool _isNewPasswordVisible = false;
+    bool _isConfirmPasswordVisible = false;
+    bool _isLoading = false;
+
+    // Password strength variables
+    double _passwordStrength = 0.0;
+    String _passwordFeedback = "";
+    Color _strengthColor = Colors.red;
+
+    // Password strength calculation function
+    void _calculatePasswordStrength(String password) {
+      if (password.isEmpty) {
+        _passwordStrength = 0.0;
+        _passwordFeedback = "";
+        _strengthColor = Colors.red;
+        return;
+      }
+
+      double strength = 0;
+      String feedback = "";
+
+      // Length check
+      if (password.length >= 8) {
+        strength += 25;
+      } else {
+        feedback = "Password should be at least 8 characters";
+      }
+
+      // Contains lowercase
+      if (RegExp(r'[a-z]').hasMatch(password)) strength += 15;
+      // Contains uppercase
+      if (RegExp(r'[A-Z]').hasMatch(password)) strength += 15;
+      // Contains numbers
+      if (RegExp(r'[0-9]').hasMatch(password)) strength += 15;
+      // Contains special chars
+      if (RegExp(r'[^A-Za-z0-9]').hasMatch(password)) strength += 30;
+
+      // Set feedback and color based on strength
+      if (strength <= 30) {
+        feedback = feedback.isEmpty ? "Password is weak" : feedback;
+        _strengthColor = Colors.red;
+      } else if (strength <= 60) {
+        feedback = feedback.isEmpty ? "Password is moderate" : feedback;
+        _strengthColor = Colors.orange;
+      } else if (strength <= 80) {
+        feedback = feedback.isEmpty ? "Password is strong" : feedback;
+        _strengthColor = Colors.blue;
+      } else {
+        feedback = "Password is very strong";
+        _strengthColor = Colors.green;
+      }
+
+      _passwordStrength = strength;
+      _passwordFeedback = feedback;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent tap outside to dismiss
+      builder: (BuildContext context) {
+        return PopScope(
+          // Use PopScope instead of WillPopScope for newer Flutter versions
+          canPop: false, // Completely prevent popping
+          onPopInvoked: (bool didPop) {
+            // This will be called when back button is pressed, but won't dismiss
+            if (didPop) return;
+            // Optionally show a message that dialog cannot be dismissed
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Please complete the password change or cancel'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.lock_outline,
+                        color: Colors.orange[600],
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Change Password',
+                        style: TextStyle(
+                          color: Colors.blueGrey[800],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: SingleChildScrollView(
+                  child: Container(
+                    width: double.maxFinite,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Current Password Field
+                          TextFormField(
+                            controller: _currentPasswordController,
+                            obscureText: !_isCurrentPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Current Password',
+                              hintText: 'Enter your current password',
+                              prefixIcon:
+                                  Icon(Icons.lock, color: Colors.orange[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isCurrentPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isCurrentPasswordVisible =
+                                        !_isCurrentPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your current password';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+
+                          // New Password Field with Strength Indicator
+                          TextFormField(
+                            controller: _newPasswordController,
+                            obscureText: !_isNewPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'New Password',
+                              hintText: 'Enter your new password',
+                              prefixIcon: Icon(Icons.lock_reset,
+                                  color: Colors.orange[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isNewPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isNewPasswordVisible =
+                                        !_isNewPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange[600]!),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _calculatePasswordStrength(value);
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a new password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Password Strength Indicator
+                          if (_newPasswordController.text.isNotEmpty) ...[
+                            SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Password Strength',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: Colors.grey[300],
+                                    ),
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: _passwordStrength / 100,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: _strengthColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  if (_passwordFeedback.isNotEmpty)
+                                    Text(
+                                      _passwordFeedback,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _strengthColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Requirements:',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Min 8 characters',
+                                              _newPasswordController
+                                                      .text.length >=
+                                                  8,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Uppercase (A-Z)',
+                                              RegExp(r'[A-Z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Lowercase (a-z)',
+                                              RegExp(r'[a-z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Number (0-9)',
+                                              RegExp(r'[0-9]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      _buildRequirementChip(
+                                        'Special character (!@#\$%^&*)',
+                                        RegExp(r'[^A-Za-z0-9]').hasMatch(
+                                            _newPasswordController.text),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          SizedBox(height: 16),
+
+                          // Confirm Password Field
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: !_isConfirmPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Confirm New Password',
+                              hintText: 'Confirm your new password',
+                              prefixIcon: Icon(Icons.lock_clock,
+                                  color: Colors.orange[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.orange[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your new password';
+                              }
+                              if (value != _newPasswordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                          },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isLoading || _passwordStrength < 50
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              try {
+                                final result =
+                                    await _loginController.changePassword(
+                                  oldPassword: _currentPasswordController.text,
+                                  newPassword: _newPasswordController.text,
+                                );
+
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                if (result['status'] == 'success') {
+                                  _showPasswordChangeSuccessDialog();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.error,
+                                              color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(result['message'] ??
+                                                'Failed to change password'),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.red[600],
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.error, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text('An error occurred: $e'),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.red[600],
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _passwordStrength >= 50
+                          ? Colors.blueGrey[600]
+                          : Colors.grey[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text('Change Password'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+// Updated helper widget for requirement chips with better layout
+  Widget _buildRequirementChip(String text, bool isValid) {
+    return Container(
+      width: double.infinity, // Take full width
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isValid ? Colors.green[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isValid ? Colors.green[300]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 14,
+            color: isValid ? Colors.green[600] : Colors.grey[500],
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 10,
+                color: isValid ? Colors.green[700] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// ...existing code...
+  // Add this new method for success dialog
+  void _showPasswordChangeSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          // Add this wrapper here too
+          onWillPop: () async {
+            // Prevent back button from closing the dialog
+            return false;
+          },
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            content: Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Success animation icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green[600],
+                      size: 50,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Success title
+                  Text(
+                    'Password Changed Successfully!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Success message
+                  Text(
+                    'Your password has been changed successfully. For security reasons, you will be redirected to the login page to sign in with your new password.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 24),
+
+                  // Countdown or direct redirect button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close success dialog
+                        _redirectToLogin();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Continue to Login',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    // Auto redirect after 5 seconds if user doesn't click
+    Timer(Duration(seconds: 5), () {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Close success dialog if still open
+        _redirectToLogin();
+      }
+    });
+  }
+
+  // Add this method to handle redirect to login
+  Future<void> _redirectToLogin() async {
+    try {
+      // Clear all user data from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Show a brief loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.blueGrey[600]!),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Redirecting to login...',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait a moment for the loading indicator
+      await Future.delayed(Duration(seconds: 1));
+
+      // Navigate to login and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginView(),
+        ),
+        (route) => false,
+      );
+
+      // Show welcome back message on login page
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Please sign in with your new password',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.blue[600],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      print('Error during redirect to login: $e');
+      // Fallback navigation
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LoginView()),
+        (route) => false,
       );
     }
   }
@@ -2597,17 +3316,14 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)], // Warna gradasi
+          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor:
-            Colors.transparent, // Transparan agar background terlihat
-        drawer:
-            MediaQuery.of(context).size.width > 600 ? null : _buildSidebar(),
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
             'Supervisor Dashboard',
@@ -2618,240 +3334,79 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           ),
           backgroundColor: Colors.deepOrange[400],
           elevation: 0,
-          leading: MediaQuery.of(context).size.width > 600
-              ? null
-              : IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
           actions: [
             _buildNotificationButton(),
             SizedBox(width: 8),
           ],
         ),
-        body: Row(
+        body: Stack(
           children: [
-            // Sidebar for larger screens
-            if (MediaQuery.of(context).size.width > 600)
-              Container(
-                width: 250,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(2, 0),
-                    ),
-                  ],
-                ),
+            RefreshIndicator(
+              color: Colors.deepOrange[400],
+              onRefresh: _initializeDashboard,
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(bottom: 80),
                 child: Column(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.deepOrange[400]!,
-                            Colors.deepOrange[400]!
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white.withOpacity(0.3),
-                            child: Icon(
-                              Icons.admin_panel_settings,
-                              size: 35,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            currentUser?['name'] ?? 'Supervisor',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Supervisor',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: navigationItems.length,
-                        itemBuilder: (context, index) {
-                          final item = navigationItems[index];
-                          final isSelected = _selectedIndex == index;
-
-                          return ListTile(
-                            leading: Icon(
-                              item.icon,
-                              color: isSelected
-                                  ? Colors.deepOrange[400]
-                                  : Colors.grey[600],
-                              size: 20,
-                            ),
-                            title: Text(
-                              item.label,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.deepOrange[400]
-                                    : Colors.grey[800],
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                fontSize: 14,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedTileColor:
-                                Colors.deepOrange[400]!.withOpacity(0.1),
-                            onTap: () {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                              _navigateToView(item);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    Divider(),
-                    ListTile(
-                      leading: Icon(Icons.logout, color: Colors.red, size: 20),
-                      title: Text(
-                        'Keluar',
-                        style: TextStyle(color: Colors.red, fontSize: 14),
-                      ),
-                      onTap: () async {
-                        final shouldLogout = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: const Color(0xFF23272F),
-                            title: Text(
-                              'Konfirmasi Keluar',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: Text(
-                              'Apakah Anda yakin ingin keluar dari aplikasi?',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text('Batal',
-                                    style: TextStyle(
-                                        color: Colors.deepOrange[400])),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red[400],
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text('Keluar',
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (shouldLogout == true) {
-                          _logout();
-                        }
-                      },
-                    ),
+                    _buildWelcomeCard(),
+                    _buildNotificationPreview(),
+                    _buildQuickStats(),
+                    _buildStatsOverview(),
+                    _buildLactationChart(),
+                    SizedBox(height: 80),
                   ],
-                ),
-              ),
-
-            // Main content
-            Expanded(
-              child: RefreshIndicator(
-                color: Colors.deepOrange[400],
-                onRefresh: _initializeDashboard,
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).size.width <= 600 ? 80 : 20,
-                  ),
-                  child: Column(
-                    children: [
-                      _buildWelcomeCard(),
-                      _buildNotificationPreview(),
-                      _buildQuickStats(),
-                      _buildStatsOverview(),
-                      _buildLactationChart(),
-                      SizedBox(height: 80), // beri ruang untuk FAB
-                    ],
-                  ),
                 ),
               ),
             ),
+            _buildFloatingActionButtons(),
           ],
         ),
-        // Tambahkan FloatingActionButton untuk logout
-        floatingActionButton: MediaQuery.of(context).size.width <= 600
-            ? FloatingActionButton(
-                onPressed: () async {
-                  final shouldLogout = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: const Color(0xFF23272F),
-                      title: Text(
-                        'Konfirmasi Keluar',
-                        style: TextStyle(color: Colors.white),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final shouldLogout = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: const Color(0xFF23272F),
+                title: Text(
+                  'Konfirmasi Keluar',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: Text(
+                  'Apakah Anda yakin ingin keluar dari aplikasi?',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Batal',
+                        style: TextStyle(color: Colors.deepOrange[400])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      content: Text(
-                        'Apakah Anda yakin ingin keluar dari aplikasi?',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('Batal',
-                              style: TextStyle(color: Colors.deepOrange[400])),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[400],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text('Keluar',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
                     ),
-                  );
-                  if (shouldLogout == true) {
-                    _logout();
-                  }
-                },
-                backgroundColor: Colors.red[400],
-                elevation: 4,
-                child: Icon(Icons.logout, color: Colors.white, size: 24),
-                tooltip: 'Keluar',
-              )
-            : null, // Hanya tampilkan pada layar kecil (mobile)
+                    child:
+                        Text('Keluar', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+            if (shouldLogout == true) {
+              _logout();
+            }
+          },
+          backgroundColor: Colors.red[400],
+          elevation: 4,
+          child: Icon(Icons.logout, color: Colors.white, size: 24),
+          tooltip: 'Keluar',
+        ),
       ),
     );
   }

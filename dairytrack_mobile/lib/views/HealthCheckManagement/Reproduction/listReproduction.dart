@@ -334,6 +334,17 @@ backgroundColor: _isFarmer
                                       const SizedBox(height: 4),
                                       Text('💉 Service Period: $servicePeriod',
                                           style: const TextStyle(fontSize: 14)),
+                                      const SizedBox(height: 4),
+Text(
+  '🗓️ Tanggal Dicatat: ${item['recorded_at'] != null ? DateFormat("dd MMM yyyy", "id_ID").format(DateTime.parse(item['recorded_at']).toLocal()) : "-"}',
+  style: TextStyle(fontSize: 14),
+),
+const SizedBox(height: 4),
+Text(
+  '👤 Penanggung Jawab: ${item['created_by']?['name'] ?? 'Tidak diketahui'}',
+  style: TextStyle(fontSize: 14),
+),
+
                                     ],
                                   ),
                                 ),

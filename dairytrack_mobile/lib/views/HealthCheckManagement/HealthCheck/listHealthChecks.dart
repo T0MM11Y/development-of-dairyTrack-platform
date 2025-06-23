@@ -274,6 +274,7 @@ Widget build(BuildContext context) {
                                     Text('Detak Jantung: ${item['heart_rate']} bpm'),
                                     Text('Napas: ${item['respiration_rate']} bpm'),
                                     Text('Ruminasi: ${item['rumination']} kontraksi'),
+                                    Text('Penanggung Jawab: ${item['checked_by']?['name'] ?? 'Tidak diketahui'}'),
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [

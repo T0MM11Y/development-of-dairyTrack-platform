@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
@@ -69,7 +70,10 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
       CattleDistributionController();
   final NotificationController _notificationController =
       NotificationController();
-
+// Tambahkan variabel untuk FAB
+  bool _isFabExpanded = false;
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabExpandAnimation;
   // Animation controllers
   late AnimationController _welcomeAnimationController;
   late AnimationController _cardAnimationController;
@@ -288,6 +292,14 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
   @override
   void initState() {
     super.initState();
+    _fabAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabExpandAnimation = CurvedAnimation(
+      parent: _fabAnimationController,
+      curve: Curves.easeInOut,
+    );
     _initializeAnimations();
     _initializeLocale();
     _getCurrentUser();
@@ -296,6 +308,17 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
 
   Future<void> _initializeLocale() async {
     await initializeDateFormatting('id_ID', null);
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _isFabExpanded = !_isFabExpanded;
+    });
+    if (_isFabExpanded) {
+      _fabAnimationController.forward();
+    } else {
+      _fabAnimationController.reverse();
+    }
   }
 
   void _initializeAnimations() {
@@ -388,6 +411,986 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         recentNotifications = [];
       });
     }
+  }
+
+  Widget _buildFloatingActionButtons() {
+    // Kelompokkan menu sesuai kebutuhan admin
+    final cattleManagement = [navigationItems[1], navigationItems[6]];
+    final milkingAnalysis = [
+      navigationItems[2],
+      navigationItems[3],
+      navigationItems[4]
+    ];
+    final userManagement = [navigationItems[5]];
+    final contentManagement = [navigationItems[7], navigationItems[8]];
+    final cattleHealth = [
+      navigationItems[9],
+      navigationItems[10],
+      navigationItems[11],
+      navigationItems[12],
+      navigationItems[24]
+    ];
+    final feedManagement = [
+      navigationItems[19],
+      navigationItems[20],
+      navigationItems[21],
+      navigationItems[22],
+      navigationItems[23],
+      navigationItems[25]
+    ];
+    final productsSales = [
+      navigationItems[13],
+      navigationItems[14],
+      navigationItems[15],
+      navigationItems[16],
+      navigationItems[17]
+    ];
+
+    return Positioned(
+      bottom: 20,
+      right: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isFabExpanded) ...[
+            _buildFabGroup('Products & Sales', Icons.storefront,
+                Colors.deepPurple, productsSales),
+            _buildFabGroup(
+                'Feed Management', Icons.grass, Colors.green, feedManagement),
+            _buildFabGroup('Cattle Health', Icons.medical_services, Colors.red,
+                cattleHealth),
+            _buildFabGroup('Content Management', Icons.library_books,
+                Colors.amber, contentManagement),
+            _buildFabGroup(
+                'User Management', Icons.people, Colors.blue, userManagement),
+            _buildFabGroup('Milking & Analysis', Icons.local_drink,
+                Colors.blueGrey, milkingAnalysis),
+            _buildFabGroup('Cattle Management', Icons.pets, Colors.brown,
+                cattleManagement),
+            // Change Password
+            ScaleTransition(
+              scale: _fabExpandAnimation,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.purple[600],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Change Password',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FloatingActionButton(
+                      heroTag: "change_password",
+                      backgroundColor: Colors.purple[600],
+                      foregroundColor: Colors.white,
+                      elevation: 6,
+                      mini: true,
+                      onPressed: () {
+                        _toggleFab();
+                        _showChangePasswordDialog();
+                      },
+                      child: const Icon(Icons.lock_reset, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          // Main FAB
+          FloatingActionButton(
+            heroTag: "main_fab",
+            backgroundColor:
+                _isFabExpanded ? Colors.grey[600] : Colors.blueGrey[800],
+            foregroundColor: Colors.white,
+            elevation: 8,
+            onPressed: _toggleFab,
+            child: AnimatedRotation(
+              duration: const Duration(milliseconds: 300),
+              turns: _isFabExpanded ? 0.125 : 0.0,
+              child: Icon(_isFabExpanded ? Icons.close : Icons.menu, size: 28),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final _currentPasswordController = TextEditingController();
+    final _newPasswordController = TextEditingController();
+    final _confirmPasswordController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+    final _loginController = LoginController();
+    bool _isCurrentPasswordVisible = false;
+    bool _isNewPasswordVisible = false;
+    bool _isConfirmPasswordVisible = false;
+    bool _isLoading = false;
+
+    // Password strength variables
+    double _passwordStrength = 0.0;
+    String _passwordFeedback = "";
+    Color _strengthColor = Colors.red;
+
+    // Password strength calculation function
+    void _calculatePasswordStrength(String password) {
+      if (password.isEmpty) {
+        _passwordStrength = 0.0;
+        _passwordFeedback = "";
+        _strengthColor = Colors.red;
+        return;
+      }
+
+      double strength = 0;
+      String feedback = "";
+
+      // Length check
+      if (password.length >= 8) {
+        strength += 25;
+      } else {
+        feedback = "Password should be at least 8 characters";
+      }
+
+      // Contains lowercase
+      if (RegExp(r'[a-z]').hasMatch(password)) strength += 15;
+      // Contains uppercase
+      if (RegExp(r'[A-Z]').hasMatch(password)) strength += 15;
+      // Contains numbers
+      if (RegExp(r'[0-9]').hasMatch(password)) strength += 15;
+      // Contains special chars
+      if (RegExp(r'[^A-Za-z0-9]').hasMatch(password)) strength += 30;
+
+      // Set feedback and color based on strength
+      if (strength <= 30) {
+        feedback = feedback.isEmpty ? "Password is weak" : feedback;
+        _strengthColor = Colors.red;
+      } else if (strength <= 60) {
+        feedback = feedback.isEmpty ? "Password is moderate" : feedback;
+        _strengthColor = Colors.orange;
+      } else if (strength <= 80) {
+        feedback = feedback.isEmpty ? "Password is strong" : feedback;
+        _strengthColor = Colors.blue;
+      } else {
+        feedback = "Password is very strong";
+        _strengthColor = Colors.green;
+      }
+
+      _passwordStrength = strength;
+      _passwordFeedback = feedback;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent tap outside to dismiss
+      builder: (BuildContext context) {
+        return PopScope(
+          // Use PopScope instead of WillPopScope for newer Flutter versions
+          canPop: false, // Completely prevent popping
+          onPopInvoked: (bool didPop) {
+            // This will be called when back button is pressed, but won't dismiss
+            if (didPop) return;
+            // Optionally show a message that dialog cannot be dismissed
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Please complete the password change or cancel'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.lock_outline,
+                        color: Colors.blueGrey[600],
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Change Password',
+                        style: TextStyle(
+                          color: Colors.blueGrey[800],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: SingleChildScrollView(
+                  child: Container(
+                    width: double.maxFinite,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Current Password Field
+                          TextFormField(
+                            controller: _currentPasswordController,
+                            obscureText: !_isCurrentPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Current Password',
+                              hintText: 'Enter your current password',
+                              prefixIcon:
+                                  Icon(Icons.lock, color: Colors.blueGrey[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isCurrentPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isCurrentPasswordVisible =
+                                        !_isCurrentPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blueGrey[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your current password';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+
+                          // New Password Field with Strength Indicator
+                          TextFormField(
+                            controller: _newPasswordController,
+                            obscureText: !_isNewPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'New Password',
+                              hintText: 'Enter your new password',
+                              prefixIcon: Icon(Icons.lock_reset,
+                                  color: Colors.blueGrey[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isNewPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isNewPasswordVisible =
+                                        !_isNewPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blueGrey[600]!),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _calculatePasswordStrength(value);
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a new password';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Password Strength Indicator
+                          if (_newPasswordController.text.isNotEmpty) ...[
+                            SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Password Strength',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: Colors.grey[300],
+                                    ),
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: _passwordStrength / 100,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: _strengthColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  if (_passwordFeedback.isNotEmpty)
+                                    Text(
+                                      _passwordFeedback,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _strengthColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Requirements:',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Min 8 characters',
+                                              _newPasswordController
+                                                      .text.length >=
+                                                  8,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Uppercase (A-Z)',
+                                              RegExp(r'[A-Z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Lowercase (a-z)',
+                                              RegExp(r'[a-z]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: _buildRequirementChip(
+                                              'Number (0-9)',
+                                              RegExp(r'[0-9]').hasMatch(
+                                                  _newPasswordController.text),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 4),
+                                      _buildRequirementChip(
+                                        'Special character (!@#\$%^&*)',
+                                        RegExp(r'[^A-Za-z0-9]').hasMatch(
+                                            _newPasswordController.text),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          SizedBox(height: 16),
+
+                          // Confirm Password Field
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: !_isConfirmPasswordVisible,
+                            decoration: InputDecoration(
+                              labelText: 'Confirm New Password',
+                              hintText: 'Confirm your new password',
+                              prefixIcon: Icon(Icons.lock_clock,
+                                  color: Colors.blueGrey[600]),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPasswordVisible
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.blueGrey[600]!),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your new password';
+                              }
+                              if (value != _newPasswordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                          },
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isLoading || _passwordStrength < 50
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isLoading = true;
+                              });
+
+                              try {
+                                final result =
+                                    await _loginController.changePassword(
+                                  oldPassword: _currentPasswordController.text,
+                                  newPassword: _newPasswordController.text,
+                                );
+
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                if (result['status'] == 'success') {
+                                  _showPasswordChangeSuccessDialog();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.error,
+                                              color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(result['message'] ??
+                                                'Failed to change password'),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.red[600],
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+
+                                Navigator.pop(context);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.error, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text('An error occurred: $e'),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.red[600],
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _passwordStrength >= 50
+                          ? Colors.blueGrey[600]
+                          : Colors.grey[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text('Change Password'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+// Updated helper widget for requirement chips with better layout
+  Widget _buildRequirementChip(String text, bool isValid) {
+    return Container(
+      width: double.infinity, // Take full width
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isValid ? Colors.green[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isValid ? Colors.green[300]! : Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 14,
+            color: isValid ? Colors.green[600] : Colors.grey[500],
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 10,
+                color: isValid ? Colors.green[700] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// ...existing code...
+  // Add this new method for success dialog
+  void _showPasswordChangeSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          // Add this wrapper here too
+          onWillPop: () async {
+            // Prevent back button from closing the dialog
+            return false;
+          },
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            content: Container(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Success animation icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green[600],
+                      size: 50,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Success title
+                  Text(
+                    'Password Changed Successfully!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Success message
+                  Text(
+                    'Your password has been changed successfully. For security reasons, you will be redirected to the login page to sign in with your new password.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 24),
+
+                  // Countdown or direct redirect button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close success dialog
+                        _redirectToLogin();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Continue to Login',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    // Auto redirect after 5 seconds if user doesn't click
+    Timer(Duration(seconds: 5), () {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Close success dialog if still open
+        _redirectToLogin();
+      }
+    });
+  }
+
+  // Add this method to handle redirect to login
+  Future<void> _redirectToLogin() async {
+    try {
+      // Clear all user data from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Show a brief loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.blueGrey[600]!),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Redirecting to login...',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait a moment for the loading indicator
+      await Future.delayed(Duration(seconds: 1));
+
+      // Navigate to login and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginView(),
+        ),
+        (route) => false,
+      );
+
+      // Show welcome back message on login page
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Please sign in with your new password',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.blue[600],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      print('Error during redirect to login: $e');
+      // Fallback navigation
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => LoginView()),
+        (route) => false,
+      );
+    }
+  }
+
+  Widget _buildFabGroup(
+      String title, IconData icon, Color color, List<NavigationItem> items) {
+    return ScaleTransition(
+      scale: _fabExpandAnimation,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                title,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FloatingActionButton(
+              heroTag: title,
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              elevation: 6,
+              mini: true,
+              onPressed: () {
+                _toggleFab();
+                _showMenuDialog(title, items);
+              },
+              child: Icon(icon, size: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMenuDialog(String title, List<NavigationItem> items) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey[50],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.menu, color: Colors.blueGrey[600], size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey[800],
+                      fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blueGrey[200]!),
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(item.icon,
+                          color: Colors.blueGrey[600], size: 20),
+                    ),
+                    title: Text(
+                      item.label,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blueGrey[800]),
+                    ),
+                    trailing: Icon(Icons.arrow_forward_ios,
+                        size: 16, color: Colors.blueGrey[400]),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToView(item);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child:
+                  Text('Close', style: TextStyle(color: Colors.blueGrey[600])),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -732,7 +1735,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Notifikasi Terbaru',
+                    'Latest Notifications',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -767,7 +1770,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                     ).then((_) => _loadNotifications());
                   },
                   child: Text(
-                    'Lihat Semua',
+                    'See All',
                     style: TextStyle(
                       color: Colors.blueGrey[700],
                       fontSize: 12,
@@ -805,14 +1808,14 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                       title: Row(
                         children: [
                           Icon(Icons.notifications,
-                              color: Colors.teal, size: 24),
+                              color: Colors.blueGrey, size: 24),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               notification['title'] ?? 'Notifikasi',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.teal[800],
+                                color: Colors.blueGrey[800],
                               ),
                             ),
                           ),
@@ -830,7 +1833,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           onPressed: () => Navigator.pop(context),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.white,
-                            backgroundColor: Colors.teal,
+                            backgroundColor: Colors.blueGrey,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -1018,7 +2021,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Selamat Datang, ${currentUser!['name']}!',
+                          'Welcome, ${currentUser!['name']}!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: MediaQuery.of(context).size.width < 400
@@ -1049,7 +2052,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Admin Dashboard - Kelola semua aspek peternakan dengan kontrol penuh',
+                    'Admin Dashboard - Manage all aspects of the farm with full control',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
@@ -1133,7 +2136,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Statistik Sistem',
+                          'System Statistics',
                           style: TextStyle(
                             fontSize: 16, // Konsisten dengan judul lain
                             fontWeight: FontWeight.w700,
@@ -1142,7 +2145,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Overview data peternakan',
+                          'Overview of livestock data',
                           style: TextStyle(
                             fontSize: 12, // Konsisten dengan subtitle lain
                             color: Colors.grey[600],
@@ -1177,7 +2180,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                   children: [
                     _buildStatCard(
                       icon: Icons.pets,
-                      title: 'Total Sapi',
+                      title: 'Total Cow',
                       value: '${dashboardStats['totalCows']}',
                       color: Colors.brown[600]!,
                       bgColor: Colors.brown[50]!,
@@ -1375,7 +2378,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Distribusi Fase Laktasi',
+                    'Distribution of Lactation Phases',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1387,7 +2390,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Komposisi fase laktasi sapi di peternakan',
+              'Composition of lactation phase of cows on farms',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1460,7 +2463,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                         ),
                       ),
                       Text(
-                        'Total Sapi',
+                        'Total Cow',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -1560,7 +2563,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               SizedBox(width: 8),
               Text(
-                'Statistik Detail',
+                'Detailed Statistics',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1673,7 +2676,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Grafik Aktivitas Harian',
+                    'Daily Activity Chart',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1685,7 +2688,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Visualisasi data peternakan hari ini',
+              'Todays livestock data visualization',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1718,7 +2721,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         'label': 'Total\nBlog',
         'value': dashboardStats['totalBlogs'],
         'maxValue': 100.0,
-        'color': Colors.teal[600]!,
+        'color': Colors.blueGrey[600]!,
         'unit': '',
         'icon': Icons.article,
       },
@@ -1884,7 +2887,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               ),
               SizedBox(width: 6),
               Text(
-                'Informasi Data',
+                'Data Information',
                 style: TextStyle(
                   fontSize: 11, // Font lebih kecil
                   fontWeight: FontWeight.w600,
@@ -1898,14 +2901,14 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             children: [
               _buildCompactLegendItem(
                 color: Colors.blue[600]!,
-                label: 'Produksi Susu',
+                label: 'Milk Production',
                 value:
                     '${dashboardStats['totalMilkToday'].toStringAsFixed(1)}L',
               ),
               SizedBox(width: 12),
               _buildCompactLegendItem(
-                color: Colors.teal[600]!,
-                label: 'Artikel Blog',
+                color: Colors.blueGrey[600]!,
+                label: 'Blog Articles',
                 value: '${dashboardStats['totalBlogs']}',
               ),
             ],
@@ -1921,7 +2924,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Klik grafik untuk detail',
+                  'Click the graphic for details',
                   style: TextStyle(
                     fontSize: 9, // Font lebih kecil
                     color: Colors.grey[500],
@@ -1998,7 +3001,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         'label': 'Total\nBlog',
         'value': dashboardStats['totalBlogs'],
         'maxValue': 100.0,
-        'color': Colors.teal[600]!,
+        'color': Colors.blueGrey[600]!,
         'unit': '',
         'icon': Icons.article,
       },
@@ -2177,7 +3180,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               ),
               SizedBox(width: 16),
               _buildLegendItem(
-                color: Colors.teal[600]!,
+                color: Colors.blueGrey[600]!,
                 label: 'Artikel Blog Aktif',
                 value: '${dashboardStats['totalBlogs']} artikel',
               ),
@@ -2257,58 +3260,96 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
 
   Widget _buildSidebar() {
     return Drawer(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
       child: Column(
         children: [
+          // Enhanced professional header
           Container(
             width: double.infinity,
-            height: 220,
+            height: 110, // Slightly taller for better proportion
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blueGrey[800]!, Colors.blueGrey[600]!],
+                colors: [Colors.blueGrey[800]!, Colors.blueGrey[700]!],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blueGrey[900]!.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                padding: EdgeInsets.all(14),
+                child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      child: Icon(
-                        Icons.admin_panel_settings,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      currentUser?['name'] ?? 'Administrator',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
+                    // Enhanced avatar with subtle glow
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(15),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.15),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'Administrator',
-                        style: TextStyle(
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white.withOpacity(0.18),
+                        child: Icon(
+                          Icons.admin_panel_settings,
                           color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          size: 26,
                         ),
+                      ),
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            currentUser?['name'] ?? 'Administrator',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Administrator',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -2316,289 +3357,297 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
               ),
             ),
           ),
-          // Menu dengan ExpansionTile
+
+          // Main menu with enhanced styling
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Column(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: ListView(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                 children: [
-                  // Dashboard - menu utama tanpa grouping
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: _selectedIndex == 0
-                          ? Colors.blueGrey[800]!.withOpacity(0.1)
-                          : null,
-                    ),
-                    child: ListTile(
-                      leading: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _selectedIndex == 0
-                              ? Colors.blueGrey[800]!.withOpacity(0.2)
-                              : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.dashboard,
-                          color: _selectedIndex == 0
-                              ? Colors.blueGrey[800]
-                              : Colors.grey[600],
-                          size: 20,
+                  // Dashboard item with subtle highlight
+                  _buildNavItem(
+                    title: 'Dashboard',
+                    icon: Icons.dashboard,
+                    index: 0,
+                    color: Colors.blueGrey[700]!,
+                  ),
+
+                  // Enhanced divider
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    child: Container(
+                      height: 1.2,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.blueGrey[200]!.withOpacity(0.1),
+                            Colors.blueGrey[300]!.withOpacity(0.8),
+                            Colors.blueGrey[200]!.withOpacity(0.1),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
                       ),
-                      title: Text(
-                        'Dashboard',
-                        style: TextStyle(
-                          color: _selectedIndex == 0
-                              ? Colors.blueGrey[800]
-                              : Colors.grey[800],
-                          fontWeight: _selectedIndex == 0
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          fontSize: 14,
-                        ),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = 0;
-                        });
-                        Navigator.pop(context);
-                        _navigateToView(navigationItems[0]);
-                      },
                     ),
                   ),
 
-                  // Manajemen Sapi
-                  _buildExpansionTile(
-                    title: 'Manajemen Sapi',
+                  // Enhanced navigation groups with consistent styling
+                  _buildNavGroup(
+                    title: 'Cattle Management',
                     icon: Icons.pets,
-                    color: Colors.brown,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {'index': 1, 'item': navigationItems[1]}, // Sapi
-                      {
-                        'index': 6,
-                        'item': navigationItems[6]
-                      }, // Distribusi Sapi
+                      {'index': 1, 'item': navigationItems[1]},
+                      {'index': 6, 'item': navigationItems[6]},
                     ],
                   ),
 
-                  // Pemerahan & Analisis
-                  _buildExpansionTile(
-                    title: 'Pemerahan & Analisis',
+                  _buildNavGroup(
+                    title: 'Milking & Analysis',
                     icon: Icons.local_drink,
-                    color: Colors.blue,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {'index': 2, 'item': navigationItems[2]}, // Pemerahan
-                      {
-                        'index': 3,
-                        'item': navigationItems[3]
-                      }, // Analisis Milking
-                      {
-                        'index': 4,
-                        'item': navigationItems[4]
-                      }, // Analisis Kualitas Susu
+                      {'index': 2, 'item': navigationItems[2]},
+                      {'index': 3, 'item': navigationItems[3]},
+                      {'index': 4, 'item': navigationItems[4]},
                     ],
                   ),
 
-                  // Manajemen Pengguna
-                  _buildExpansionTile(
-                    title: 'Manajemen Pengguna',
+                  _buildNavGroup(
+                    title: 'User Management',
                     icon: Icons.people,
-                    color: Colors.indigo,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {'index': 5, 'item': navigationItems[5]}, // Pengguna
+                      {'index': 5, 'item': navigationItems[5]},
                     ],
                   ),
 
-                  // Konten & Media
-                  _buildExpansionTile(
-                    title: 'Konten & Media',
+                  _buildNavGroup(
+                    title: 'Content Management',
                     icon: Icons.library_books,
-                    color: Colors.purple,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {'index': 7, 'item': navigationItems[7]}, // Blog
-                      {'index': 8, 'item': navigationItems[8]}, // Galeri
+                      {'index': 7, 'item': navigationItems[7]},
+                      {'index': 8, 'item': navigationItems[8]},
                     ],
                   ),
 
-                  // Kesehatan Sapi
-                  _buildExpansionTile(
-                    title: 'Kesehatan Sapi',
+                  _buildNavGroup(
+                    title: 'Cattle Health',
                     icon: Icons.medical_services,
-                    color: Colors.red,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {
-                        'index': 9,
-                        'item': navigationItems[9]
-                      }, // Pemeriksaan Kesehatan
-                      {'index': 10, 'item': navigationItems[10]}, // Gejala
-                      {
-                        'index': 11,
-                        'item': navigationItems[11]
-                      }, // Riwayat Penyakit
-                      {'index': 12, 'item': navigationItems[12]}, // Reproduksi
-                      {
-                        'index': 24,
-                        'item': navigationItems[24]
-                      }, // Health Dashboard
+                      {'index': 9, 'item': navigationItems[9]},
+                      {'index': 10, 'item': navigationItems[10]},
+                      {'index': 11, 'item': navigationItems[11]},
+                      {'index': 12, 'item': navigationItems[12]},
+                      {'index': 24, 'item': navigationItems[24]},
                     ],
                   ),
 
-                  // Manajemen Pakan
-                  _buildExpansionTile(
-                    title: 'Manajemen Pakan',
+                  _buildNavGroup(
+                    title: 'Feed Management',
                     icon: Icons.grass,
-                    color: Colors.green,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {'index': 19, 'item': navigationItems[19]}, // Jenis Pakan
-                      {
-                        'index': 20,
-                        'item': navigationItems[20]
-                      }, // Jenis Nutrisi
-                      {'index': 21, 'item': navigationItems[21]}, // Pakan
-                      {'index': 22, 'item': navigationItems[22]}, // Stock Pakan
-                      {
-                        'index': 23,
-                        'item': navigationItems[23]
-                      }, // Feed Schedule
-                      {
-                        'index': 25,
-                        'item': navigationItems[25]
-                      }, // Feed Item Harian
+                      {'index': 19, 'item': navigationItems[19]},
+                      {'index': 20, 'item': navigationItems[20]},
+                      {'index': 21, 'item': navigationItems[21]},
+                      {'index': 22, 'item': navigationItems[22]},
+                      {'index': 23, 'item': navigationItems[23]},
+                      {'index': 25, 'item': navigationItems[25]},
                     ],
                   ),
 
-                  // Manajemen Produk & Penjualan
-                  _buildExpansionTile(
-                    title: 'Produk & Penjualan',
+                  _buildNavGroup(
+                    title: 'Products & Sales',
                     icon: Icons.storefront,
-                    color: Colors.orange,
+                    color: Colors.blueGrey[700]!,
                     items: [
-                      {
-                        'index': 13,
-                        'item': navigationItems[13]
-                      }, // Product Type
-                      {
-                        'index': 14,
-                        'item': navigationItems[14]
-                      }, // Product Stock
-                      {
-                        'index': 15,
-                        'item': navigationItems[15]
-                      }, // Product History
-                      {'index': 16, 'item': navigationItems[16]}, // Sales
-                      {'index': 17, 'item': navigationItems[17]}, // Finance
+                      {'index': 13, 'item': navigationItems[13]},
+                      {'index': 14, 'item': navigationItems[14]},
+                      {'index': 15, 'item': navigationItems[15]},
+                      {'index': 16, 'item': navigationItems[16]},
+                      {'index': 17, 'item': navigationItems[17]},
                     ],
                   ),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildExpansionTile({
+  // Enhanced navigation item with subtle animation and better styling
+  Widget _buildNavItem({
     required String title,
     required IconData icon,
+    required int index,
     required Color color,
-    required List<Map<String, dynamic>> items,
   }) {
-    return Container(
+    final isSelected = _selectedIndex == index;
+
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
       margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        color: isSelected ? color.withOpacity(0.08) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(
+                color: color.withOpacity(0.3),
+                width: 1,
+              )
+            : null,
       ),
-      child: ExpansionTile(
+      child: ListTile(
+        dense: true,
+        visualDensity: VisualDensity(horizontal: 0, vertical: -1),
         leading: Container(
-          padding: EdgeInsets.all(8),
+          padding: EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
-            color: color,
-            size: 20,
+            color: isSelected ? color : Colors.grey[600],
+            size: 18,
           ),
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: Colors.grey[800],
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+            color: isSelected ? color : Colors.grey[800],
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+            letterSpacing: 0.2,
           ),
         ),
-        iconColor: color,
-        collapsedIconColor: color,
-        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        childrenPadding: EdgeInsets.only(left: 16, right: 8, bottom: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        children: items.map((itemData) {
-          final index = itemData['index'] as int;
-          final item = itemData['item'] as NavigationItem;
-          final isSelected = _selectedIndex == index;
+        selected: isSelected,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+          Navigator.pop(context);
+          _navigateToView(navigationItems[index]);
+        },
+      ),
+    );
+  }
 
-          return Container(
-            margin: EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: isSelected ? Colors.blueGrey[800]!.withOpacity(0.1) : null,
+  // Enhanced expansion tile with subtle animations and better styling
+  Widget _buildNavGroup({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Map<String, dynamic>> items,
+  }) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+      ),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 4),
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: color.withOpacity(0.2),
+              width: 3,
             ),
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              leading: Container(
-                padding: EdgeInsets.all(6),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: ExpansionTile(
+            leading: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 18,
+              ),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 0.2,
+              ),
+            ),
+            childrenPadding: EdgeInsets.only(left: 16),
+            iconColor: color,
+            collapsedIconColor: color,
+            backgroundColor: Colors.grey[100],
+            collapsedBackgroundColor: Colors.transparent,
+            initiallyExpanded: false,
+            tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            children: items.map((itemData) {
+              final index = itemData['index'] as int;
+              final item = itemData['item'] as NavigationItem;
+              final isSelected = _selectedIndex == index;
+
+              return AnimatedContainer(
+                duration: Duration(milliseconds: 150),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.blueGrey[800]!.withOpacity(0.2)
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  color:
+                      isSelected ? color.withOpacity(0.08) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(
-                  item.icon,
-                  color: isSelected ? Colors.blueGrey[800] : Colors.grey[600],
-                  size: 18,
+                margin: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                child: ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity(horizontal: 0, vertical: -2),
+                  leading: Icon(
+                    item.icon,
+                    color: isSelected ? color : Colors.grey[600],
+                    size: 16,
+                  ),
+                  title: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? color : Colors.grey[800],
+                      fontWeight:
+                          isSelected ? FontWeight.w500 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedTileColor: color.withOpacity(0.1),
+                  onTap: () {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                    Navigator.pop(context);
+                    _navigateToView(item);
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              title: Text(
-                item.label,
-                style: TextStyle(
-                  color: isSelected ? Colors.blueGrey[800] : Colors.grey[800],
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              onTap: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
-                Navigator.pop(context);
-                _navigateToView(item);
-              },
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
@@ -2624,6 +3673,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
     }
   }
 
+// ...existing code...
   @override
   Widget build(BuildContext context) {
     if (currentUser == null || isLoading) {
@@ -2648,17 +3698,14 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)], // Warna gradasi
+          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor:
-            Colors.transparent, // Transparan agar background terlihat
-        drawer:
-            MediaQuery.of(context).size.width > 600 ? null : _buildSidebar(),
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
             'Admin Dashboard',
@@ -2669,244 +3716,83 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           ),
           backgroundColor: Colors.blueGrey[800],
           elevation: 0,
-          leading: MediaQuery.of(context).size.width > 600
-              ? null
-              : IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
           actions: [
             _buildNotificationButton(),
             SizedBox(width: 8),
           ],
         ),
-        body: Row(
+        body: Stack(
           children: [
-            // Sidebar for larger screens
-            if (MediaQuery.of(context).size.width > 600)
-              Container(
-                width: 250,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(2, 0),
-                    ),
-                  ],
-                ),
+            RefreshIndicator(
+              color: Colors.blueGrey[800],
+              onRefresh: _initializeDashboard,
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(bottom: 80),
                 child: Column(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blueGrey[800]!,
-                            Colors.blueGrey[600]!
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white.withOpacity(0.3),
-                            child: Icon(
-                              Icons.admin_panel_settings,
-                              size: 35,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            currentUser?['name'] ?? 'Administrator',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Administrator',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: navigationItems.length,
-                        itemBuilder: (context, index) {
-                          final item = navigationItems[index];
-                          final isSelected = _selectedIndex == index;
-
-                          return ListTile(
-                            leading: Icon(
-                              item.icon,
-                              color: isSelected
-                                  ? Colors.blueGrey[800]
-                                  : Colors.grey[600],
-                              size: 20,
-                            ),
-                            title: Text(
-                              item.label,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.blueGrey[800]
-                                    : Colors.grey[800],
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                fontSize: 14,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedTileColor:
-                                Colors.blueGrey[800]!.withOpacity(0.1),
-                            onTap: () {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                              _navigateToView(item);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    Divider(),
-                    ListTile(
-                      leading: Icon(Icons.logout, color: Colors.red, size: 20),
-                      title: Text(
-                        'Keluar',
-                        style: TextStyle(color: Colors.red, fontSize: 14),
-                      ),
-                      onTap: () async {
-                        final shouldLogout = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: const Color(0xFF23272F),
-                            title: Text(
-                              'Konfirmasi Keluar',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: Text(
-                              'Apakah Anda yakin ingin keluar dari aplikasi?',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text('Batal',
-                                    style:
-                                        TextStyle(color: Colors.blueGrey[300])),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red[400],
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text('Keluar',
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (shouldLogout == true) {
-                          _logout();
-                        }
-                      },
-                    ),
+                    _buildWelcomeCard(),
+                    _buildNotificationPreview(),
+                    _buildQuickStats(),
+                    _buildStatsOverview(),
+                    _buildLactationChart(),
+                    SizedBox(height: 80),
                   ],
-                ),
-              ),
-
-            // Main content
-            Expanded(
-              child: RefreshIndicator(
-                color: Colors.blueGrey[800],
-                onRefresh: _initializeDashboard,
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).size.width <= 600 ? 80 : 20,
-                  ),
-                  child: Column(
-                    children: [
-                      _buildWelcomeCard(),
-                      _buildNotificationPreview(),
-                      _buildQuickStats(),
-                      _buildStatsOverview(),
-                      _buildLactationChart(),
-                      SizedBox(height: 80), // beri ruang untuk FAB
-                    ],
-                  ),
                 ),
               ),
             ),
+            _buildFloatingActionButtons(),
           ],
         ),
-        // Tambahkan FloatingActionButton untuk logout
-        floatingActionButton: MediaQuery.of(context).size.width <= 600
-            ? FloatingActionButton(
-                onPressed: () async {
-                  final shouldLogout = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: const Color(0xFF23272F),
-                      title: Text(
-                        'Konfirmasi Keluar',
-                        style: TextStyle(color: Colors.white),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final shouldLogout = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: const Color(0xFF23272F),
+                title: Text(
+                  'Confirm Exit',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: Text(
+                  'Are you sure you want to exit the application?',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Cancel',
+                        style: TextStyle(color: Colors.blueGrey[300])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      content: Text(
-                        'Apakah Anda yakin ingin keluar dari aplikasi?',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('Batal',
-                              style: TextStyle(color: Colors.blueGrey[300])),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[400],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text('Keluar',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
                     ),
-                  );
-                  if (shouldLogout == true) {
-                    _logout();
-                  }
-                },
-                backgroundColor: Colors.red[400],
-                elevation: 4,
-                child: Icon(Icons.logout, color: Colors.white, size: 24),
-                tooltip: 'Keluar',
-              )
-            : null, // Hanya tampilkan pada layar kecil (mobile)
+                    child: Text('Exit', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+            if (shouldLogout == true) {
+              _logout();
+            }
+          },
+          backgroundColor: Colors.red[400],
+          elevation: 4,
+          child: Icon(Icons.logout, color: Colors.white, size: 24),
+          tooltip: 'Exit',
+        ),
       ),
     );
   }
 }
+// ...existing code...
 
 // Navigation item model
 class NavigationItem {

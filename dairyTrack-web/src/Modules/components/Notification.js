@@ -13,7 +13,10 @@ import {
 } from "react-bootstrap";
 import { useSocket } from "../../socket/socket";
 import { formatDistanceToNow } from "date-fns";
-import { deleteNotification } from "../controllers/notificationController";
+import {
+  deleteNotification,
+  clearAllNotifications,
+} from "../controllers/notificationController";
 import Swal from "sweetalert2";
 
 const NotificationDropdown = () => {
@@ -28,6 +31,9 @@ const NotificationDropdown = () => {
   // State management
   const [isOpen, setIsOpen] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
+  const [clearAllLoading, setClearAllLoading] = useState(false);
+  const [globalLoading, setGlobalLoading] = useState(false); // New global loading state
+
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -152,6 +158,21 @@ const NotificationDropdown = () => {
     return () => document.head.removeChild(style);
   }, []);
 
+  // Prevent page navigation during loading
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (globalLoading || clearAllLoading) {
+        e.preventDefault();
+        e.returnValue =
+          "Operation in progress. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [globalLoading, clearAllLoading]);
+
   // Request notification permission - ONE TIME ONLY
   useEffect(() => {
     if (Notification.permission === "default") {
@@ -198,7 +219,7 @@ const NotificationDropdown = () => {
     }
   }, [currentUser?.user_id, fetchNotifications]);
 
-  // Handle delete notification
+  // Handle delete notification with global loading
   const handleDeleteNotification = useCallback(
     async (notificationId) => {
       const userId = currentUser?.user_id || currentUser?.id;
@@ -221,9 +242,26 @@ const NotificationDropdown = () => {
           cancelButtonColor: "#3085d6",
           confirmButtonText: "Delete",
           cancelButtonText: "Cancel",
+          allowOutsideClick: !globalLoading,
+          allowEscapeKey: !globalLoading,
         });
 
         if (result.isConfirmed) {
+          setGlobalLoading(true);
+
+          // Show loading Swal
+          Swal.fire({
+            title: "Deleting Notification...",
+            text: "Please wait while we delete this notification",
+            icon: "info",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
           const response = await deleteNotification(notificationId, userId);
 
           if (response.success) {
@@ -233,11 +271,13 @@ const NotificationDropdown = () => {
               text: "Notification deleted successfully",
               timer: 1500,
               showConfirmButton: false,
+              allowOutsideClick: false,
+              allowEscapeKey: false,
             });
 
             if (!fetchCooldownRef.current) {
               fetchCooldownRef.current = true;
-              fetchNotifications().finally(() => {
+              await fetchNotifications().finally(() => {
                 setTimeout(() => {
                   fetchCooldownRef.current = false;
                 }, 3000);
@@ -258,9 +298,11 @@ const NotificationDropdown = () => {
           title: "Error",
           text: "An error occurred while deleting the notification",
         });
+      } finally {
+        setGlobalLoading(false);
       }
     },
-    [currentUser, fetchNotifications]
+    [currentUser, fetchNotifications, globalLoading]
   );
 
   // Filter logic - STABLE CALLBACK
@@ -273,10 +315,6 @@ const NotificationDropdown = () => {
     }
     if (filter === "unread") {
       filtered = filtered.filter((n) => !n.is_read);
-    } else if (filter === "low") {
-      filtered = filtered.filter((n) => n.type === "low_production");
-    } else if (filter === "high") {
-      filtered = filtered.filter((n) => n.type === "high_production");
     }
     return filtered;
   }, [notifications, filter, searchTerm]);
@@ -290,6 +328,8 @@ const NotificationDropdown = () => {
   // Handle dropdown toggle with strict cooldown
   const handleToggle = useCallback(
     (open) => {
+      if (globalLoading) return; // Prevent toggle during loading
+
       setIsOpen(open);
 
       if (open) {
@@ -316,7 +356,7 @@ const NotificationDropdown = () => {
         }
       }
     },
-    [fetchNotifications, notifications.length, lastFetch]
+    [fetchNotifications, notifications.length, lastFetch, globalLoading]
   );
 
   // Notification utility functions
@@ -375,26 +415,28 @@ const NotificationDropdown = () => {
   const handleMarkAsRead = useCallback(
     (id, e) => {
       if (e) e.preventDefault();
-      markAsRead(id);
+      if (!globalLoading) markAsRead(id);
     },
-    [markAsRead]
+    [markAsRead, globalLoading]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    notifications.forEach((n) => {
-      if (!n.is_read) markAsRead(n.id);
-    });
-  }, [notifications, markAsRead]);
+    if (!globalLoading) {
+      notifications.forEach((n) => {
+        if (!n.is_read) markAsRead(n.id);
+      });
+    }
+  }, [notifications, markAsRead, globalLoading]);
 
- const formatTimeAgo = (dateString) => {
-  try {
-    const utcDate = new Date(dateString);
-    const wibDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000); // Geser +7 jam
-    return formatDistanceToNow(wibDate, { addSuffix: true });
-  } catch {
-    return "Tanggal tidak valid";
-  }
-};
+  const formatTimeAgo = (dateString) => {
+    try {
+      const utcDate = new Date(dateString);
+      const wibDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
+      return formatDistanceToNow(wibDate, { addSuffix: true });
+    } catch {
+      return "Tanggal tidak valid";
+    }
+  };
 
   // Pagination
   const indexOfLast = currentPage * notificationsPerPage;
@@ -407,10 +449,25 @@ const NotificationDropdown = () => {
     filteredNotifications.length / notificationsPerPage
   );
 
-  const paginate = useCallback((pageNumber) => setCurrentPage(pageNumber), []);
+  const paginate = useCallback(
+    (pageNumber) => {
+      if (!globalLoading) setCurrentPage(pageNumber);
+    },
+    [globalLoading]
+  );
 
-  // Handle clear all notifications
+  // Enhanced Clear All function with global loading
   const handleClearAll = useCallback(async () => {
+    const userId = currentUser?.user_id || currentUser?.id;
+    if (!userId) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "You must be logged in to clear notifications",
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Clear All Notifications?",
       text: "This action cannot be undone",
@@ -420,16 +477,113 @@ const NotificationDropdown = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, clear them",
       cancelButtonText: "Cancel",
+      allowOutsideClick: !globalLoading,
+      allowEscapeKey: !globalLoading,
     });
 
-    if (result.isConfirmed && clearAllNotifications) {
-      clearAllNotifications();
-      setShowAllModal(false);
+    if (result.isConfirmed) {
+      setClearAllLoading(true);
+      setGlobalLoading(true);
+
+      try {
+        // Show loading Swal
+        Swal.fire({
+          title: "Clearing Notifications...",
+          text: "Please wait while we clear all notifications",
+          icon: "info",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        const response = await clearAllNotifications(userId);
+
+        if (response?.success) {
+          await fetchNotifications();
+
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "All notifications cleared successfully",
+            timer: 1800,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+          });
+
+          // Close modal after success
+          setTimeout(() => {
+            setShowAllModal(false);
+          }, 1800);
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: response?.message || "Failed to clear notifications",
+          });
+        }
+      } catch (error) {
+        console.error("Error clearing notifications:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred while clearing notifications",
+        });
+      } finally {
+        setClearAllLoading(false);
+        setGlobalLoading(false);
+      }
     }
-  }, [clearAllNotifications]);
+  }, [clearAllNotifications, fetchNotifications, currentUser, globalLoading]);
 
   return (
     <>
+      {/* Global Loading Overlay */}
+      {globalLoading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "30px",
+              borderRadius: "12px",
+              textAlign: "center",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+            }}
+          >
+            <Spinner
+              animation="border"
+              style={{ color: "#3D90D7", width: "50px", height: "50px" }}
+            />
+            <div
+              className="mt-3"
+              style={{ fontSize: "16px", fontWeight: "500" }}
+            >
+              Processing...
+            </div>
+            <div className="text-muted small mt-1">
+              Please wait, do not close this page
+            </div>
+          </div>
+        </div>
+      )}
+
       <OverlayTrigger
         placement="bottom"
         overlay={
@@ -440,12 +594,21 @@ const NotificationDropdown = () => {
           </Tooltip>
         }
       >
-        <Dropdown onToggle={handleToggle} show={isOpen} align="end">
+        <Dropdown
+          onToggle={handleToggle}
+          show={isOpen && !globalLoading}
+          align="end"
+        >
           <Dropdown.Toggle
             variant="link"
             className="nav-link p-0 text-dark position-relative"
             id="notification-dropdown"
-            style={{ outline: "none", boxShadow: "none" }}
+            style={{
+              outline: "none",
+              boxShadow: "none",
+              opacity: globalLoading ? 0.6 : 1,
+            }}
+            disabled={globalLoading}
           >
             <i className="fas fa-bell fa-lg" style={customStyles.bellIcon}></i>
             {unreadCount > 0 && (
@@ -505,7 +668,13 @@ const NotificationDropdown = () => {
               </div>
             ) : (
               <div
-                style={{ maxHeight: 350, overflowY: "auto", padding: "8px" }}
+                style={{
+                  maxHeight: 350,
+                  overflowY: "auto",
+                  padding: "8px",
+                  opacity: globalLoading ? 0.6 : 1,
+                  pointerEvents: globalLoading ? "none" : "auto",
+                }}
               >
                 {notifications.length === 0 ? (
                   <div className="text-center text-muted py-4">
@@ -541,12 +710,15 @@ const NotificationDropdown = () => {
                         style={{
                           ...customStyles.notificationItem,
                           ...(n.is_read ? {} : customStyles.unreadItem),
-                          cursor: "pointer",
+                          cursor: globalLoading ? "not-allowed" : "pointer",
+                          opacity: globalLoading ? 0.6 : 1,
                         }}
                       >
                         <div
                           className="d-flex flex-grow-1 align-items-start"
-                          onClick={(e) => handleMarkAsRead(n.id, e)}
+                          onClick={(e) =>
+                            !globalLoading && handleMarkAsRead(n.id, e)
+                          }
                         >
                           <div className="me-3">
                             <div
@@ -600,14 +772,19 @@ const NotificationDropdown = () => {
                             e.stopPropagation();
                             handleDeleteNotification(n.id);
                           }}
+                          disabled={globalLoading}
                           onMouseEnter={(e) => {
-                            e.target.style.background =
-                              "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
-                            e.target.style.color = "white";
+                            if (!globalLoading) {
+                              e.target.style.background =
+                                "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
+                              e.target.style.color = "white";
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.target.style.background = "";
-                            e.target.style.color = "";
+                            if (!globalLoading) {
+                              e.target.style.background = "";
+                              e.target.style.color = "";
+                            }
                           }}
                         >
                           <i className="fas fa-trash-alt"></i>
@@ -621,7 +798,10 @@ const NotificationDropdown = () => {
 
             <div
               className="px-3 py-3 border-top d-flex gap-2"
-              style={{ background: "rgba(61, 144, 215, 0.02)" }}
+              style={{
+                background: "rgba(61, 144, 215, 0.02)",
+                opacity: globalLoading ? 0.6 : 1,
+              }}
             >
               {unreadCount > 0 && (
                 <Button
@@ -635,6 +815,7 @@ const NotificationDropdown = () => {
                     fontWeight: "500",
                   }}
                   onClick={handleMarkAllAsRead}
+                  disabled={globalLoading}
                 >
                   Mark all read
                 </Button>
@@ -653,6 +834,7 @@ const NotificationDropdown = () => {
                   setShowAllModal(true);
                   setIsOpen(false);
                 }}
+                disabled={globalLoading}
               >
                 View all
               </Button>
@@ -664,12 +846,20 @@ const NotificationDropdown = () => {
       {/* Enhanced Modal */}
       <Modal
         show={showAllModal}
-        onHide={() => setShowAllModal(false)}
+        onHide={() => !globalLoading && setShowAllModal(false)}
         size="lg"
         centered
         style={{ backdropFilter: "blur(8px)" }}
+        backdrop={globalLoading ? "static" : true}
+        keyboard={!globalLoading}
       >
-        <Modal.Header closeButton style={customStyles.modalHeader}>
+        <Modal.Header
+          closeButton={!globalLoading}
+          style={{
+            ...customStyles.modalHeader,
+            opacity: globalLoading ? 0.6 : 1,
+          }}
+        >
           <Modal.Title
             style={{
               fontFamily: "Roboto, sans-serif",
@@ -679,12 +869,27 @@ const NotificationDropdown = () => {
             }}
           >
             <i className="fas fa-bell me-2"></i>All Notifications
+            {globalLoading && (
+              <Spinner
+                animation="border"
+                size="sm"
+                className="ms-2"
+                style={{ color: "white" }}
+              />
+            )}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ padding: "24px", background: "#f8f9fa" }}>
+        <Modal.Body
+          style={{
+            padding: "24px",
+            background: "#f8f9fa",
+            opacity: globalLoading ? 0.6 : 1,
+            pointerEvents: globalLoading ? "none" : "auto",
+          }}
+        >
           {/* Enhanced Filter Section */}
           <div className="d-flex flex-wrap mb-4 gap-2 align-items-center">
-            {["all", "unread", "low", "high"].map((filterType) => (
+            {["all", "unread"].map((filterType) => (
               <Button
                 key={filterType}
                 className="filter-button"
@@ -700,11 +905,10 @@ const NotificationDropdown = () => {
                 }}
                 size="sm"
                 onClick={() => setFilter(filterType)}
+                disabled={globalLoading}
               >
                 {filterType === "all" && "All"}
                 {filterType === "unread" && "Unread"}
-                {filterType === "low" && "🔻 Low"}
-                {filterType === "high" && "🔺 High"}
               </Button>
             ))}
             <FormControl
@@ -718,6 +922,7 @@ const NotificationDropdown = () => {
                 borderRadius: "8px",
                 border: "2px solid #e9ecef",
               }}
+              disabled={globalLoading}
             />
           </div>
 
@@ -769,6 +974,7 @@ const NotificationDropdown = () => {
                           }),
                       borderRadius: "12px",
                       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                      opacity: globalLoading ? 0.6 : 1,
                     }}
                   >
                     <Card.Body className="py-3 px-4 d-flex align-items-center">
@@ -799,6 +1005,7 @@ const NotificationDropdown = () => {
                                 fontWeight: "500",
                               }}
                               onClick={() => markAsRead(n.id)}
+                              disabled={globalLoading}
                             >
                               Mark as read
                             </Button>
@@ -831,16 +1038,21 @@ const NotificationDropdown = () => {
                           transition: "all 0.3s ease",
                         }}
                         onClick={() => handleDeleteNotification(n.id)}
+                        disabled={globalLoading}
                         onMouseEnter={(e) => {
-                          e.target.style.background =
-                            "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
-                          e.target.style.color = "white";
-                          e.target.style.transform = "scale(1.05)";
+                          if (!globalLoading) {
+                            e.target.style.background =
+                              "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
+                            e.target.style.color = "white";
+                            e.target.style.transform = "scale(1.05)";
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.background = "";
-                          e.target.style.color = "";
-                          e.target.style.transform = "scale(1)";
+                          if (!globalLoading) {
+                            e.target.style.background = "";
+                            e.target.style.color = "";
+                            e.target.style.transform = "scale(1)";
+                          }
                         }}
                       >
                         <i className="fas fa-trash-alt"></i>
@@ -862,25 +1074,27 @@ const NotificationDropdown = () => {
                 >
                   <li
                     className={`page-item ${
-                      currentPage === 1 ? "disabled" : ""
+                      currentPage === 1 || globalLoading ? "disabled" : ""
                     }`}
                   >
                     <button
                       className="page-link"
                       onClick={() => paginate(1)}
                       style={{ borderRadius: "8px 0 0 8px" }}
+                      disabled={globalLoading}
                     >
                       &laquo;
                     </button>
                   </li>
                   <li
                     className={`page-item ${
-                      currentPage === 1 ? "disabled" : ""
+                      currentPage === 1 || globalLoading ? "disabled" : ""
                     }`}
                   >
                     <button
                       className="page-link"
                       onClick={() => paginate(currentPage - 1)}
+                      disabled={globalLoading}
                     >
                       &lsaquo;
                     </button>
@@ -904,6 +1118,7 @@ const NotificationDropdown = () => {
                               }
                             : {}
                         }
+                        disabled={globalLoading}
                       >
                         {i + 1}
                       </button>
@@ -911,25 +1126,31 @@ const NotificationDropdown = () => {
                   ))}
                   <li
                     className={`page-item ${
-                      currentPage === totalPages ? "disabled" : ""
+                      currentPage === totalPages || globalLoading
+                        ? "disabled"
+                        : ""
                     }`}
                   >
                     <button
                       className="page-link"
                       onClick={() => paginate(currentPage + 1)}
+                      disabled={globalLoading}
                     >
                       &rsaquo;
                     </button>
                   </li>
                   <li
                     className={`page-item ${
-                      currentPage === totalPages ? "disabled" : ""
+                      currentPage === totalPages || globalLoading
+                        ? "disabled"
+                        : ""
                     }`}
                   >
                     <button
                       className="page-link"
                       onClick={() => paginate(totalPages)}
                       style={{ borderRadius: "0 8px 8px 0" }}
+                      disabled={globalLoading}
                     >
                       &raquo;
                     </button>
@@ -939,11 +1160,13 @@ const NotificationDropdown = () => {
             </div>
           )}
         </Modal.Body>
+
         <Modal.Footer
           className="d-flex justify-content-between"
           style={{
             background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
             borderRadius: "0 0 12px 12px",
+            opacity: globalLoading ? 0.6 : 1,
           }}
         >
           <Button
@@ -954,8 +1177,25 @@ const NotificationDropdown = () => {
               padding: "8px 20px",
               fontWeight: "500",
             }}
+            disabled={clearAllLoading || globalLoading}
           >
-            <i className="fas fa-trash me-2"></i>Clear all
+            {clearAllLoading ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
+                />
+                Clearing...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-trash me-2"></i>Clear all
+              </>
+            )}
           </Button>
           <Button
             onClick={() => setShowAllModal(false)}
@@ -966,6 +1206,7 @@ const NotificationDropdown = () => {
               padding: "8px 20px",
               fontWeight: "500",
             }}
+            disabled={clearAllLoading || globalLoading}
           >
             <i className="fas fa-times me-2"></i>Close
           </Button>

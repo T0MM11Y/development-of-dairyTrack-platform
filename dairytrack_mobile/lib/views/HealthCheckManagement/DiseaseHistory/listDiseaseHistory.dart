@@ -243,6 +243,7 @@ Widget build(BuildContext context) {
                           final createdAt = DateFormat("dd MMMM yyyy, HH:mm", "id_ID")
                                   .format(DateTime.parse(item['created_at']).toLocal()) +
                               ' WIB';
+final createdBy = item['created_by']?['name'] ?? 'Tidak diketahui';
 
                           return Card(
                             color: Colors.white,
@@ -271,6 +272,8 @@ Widget build(BuildContext context) {
                                   Text('🦠 Penyakit: $disease', style: const TextStyle(fontSize: 14)),
                                   const SizedBox(height: 4),
                                   Text('🕒 Tanggal: $createdAt', style: const TextStyle(color: Colors.grey)),
+                                  const SizedBox(height: 4),
+Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 12),
                                   Wrap(
                                     spacing: 10,

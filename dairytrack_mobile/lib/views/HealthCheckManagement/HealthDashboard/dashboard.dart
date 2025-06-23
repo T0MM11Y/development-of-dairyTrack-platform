@@ -318,17 +318,18 @@ Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
                       if (index < 0 || index >= data.length) return const SizedBox.shrink();
 
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: SizedBox(
-                          width: 60,
-                          child: Text(
-                            data[index]['name'],
-                            style: const TextStyle(fontSize: 11),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+  padding: const EdgeInsets.only(top: 8.0),
+  child: SizedBox(
+    width: 60,
+    child: Transform.rotate(
+      angle: -0.8, // ~ -45 derajat
+      child: Text(
+        data[index]['name'],
+        style: const TextStyle(fontSize: 11),
+        textAlign: TextAlign.left,
+      ),
+    ),
+  ),
                       );
                     },
                   ),

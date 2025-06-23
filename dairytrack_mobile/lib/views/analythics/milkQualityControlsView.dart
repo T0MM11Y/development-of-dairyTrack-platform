@@ -25,6 +25,12 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
   List<Map<String, dynamic>> _allBatchesData = [];
   List<Map<String, dynamic>> _filteredBatchesData = [];
 
+  // Pagination variables
+  int _currentPage = 1;
+  int _itemsPerPage = 10;
+  int _totalPages = 1;
+  List<Map<String, dynamic>> _paginatedData = [];
+
   // Filter states
   String _statusFilter = 'all';
   String _searchTerm = '';
@@ -34,6 +40,7 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
 
   // User data
   String _userId = '';
@@ -84,9 +91,11 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
   void dispose() {
     _animationController.dispose();
     _searchController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
+  // ...existing code...
   Future<void> _initializeUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -148,7 +157,6 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
 
     setState(() => _isLoading = true);
 
-    // ...existing code...
     try {
       // Jika Supervisor, gunakan 'Admin' untuk userRole saat request
       final effectiveRole = _userRole == 'Supervisor' ? 'Admin' : _userRole;
@@ -282,6 +290,48 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
 
       return statusMatch && searchMatch && urgencyMatch;
     }).toList();
+
+    // Reset to first page when filters change
+    _currentPage = 1;
+    _updatePagination();
+  }
+
+  void _updatePagination() {
+    final totalItems = _filteredBatchesData.length;
+    _totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_totalPages == 0) _totalPages = 1;
+
+    // Ensure current page is valid
+    if (_currentPage > _totalPages) {
+      _currentPage = _totalPages;
+    }
+
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage).clamp(0, totalItems);
+
+    setState(() {
+      _paginatedData = _filteredBatchesData.sublist(
+        startIndex,
+        endIndex,
+      );
+    });
+  }
+
+  void _goToPage(int page) {
+    if (page >= 1 && page <= _totalPages) {
+      setState(() {
+        _currentPage = page;
+        _updatePagination();
+      });
+    }
+  }
+
+  void _changeItemsPerPage(int newItemsPerPage) {
+    setState(() {
+      _itemsPerPage = newItemsPerPage;
+      _currentPage = 1;
+      _updatePagination();
+    });
   }
 
   Future<void> _updateExpiredBatches() async {
@@ -433,6 +483,7 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
                   children: [
                     _buildSearchBar(),
                     _buildSortingOptions(),
+                    _buildPaginationControls(),
                     Expanded(
                       child: _filteredBatchesData.isEmpty
                           ? Center(
@@ -442,22 +493,215 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
                           : ListView(
                               children: [
                                 _buildStatisticsCard(),
-                                ..._filteredBatchesData
+                                ..._paginatedData
                                     .asMap()
                                     .entries
                                     .map((entry) => _buildAnimatedBatchCard(
                                         entry.value, entry.key))
                                     .toList(),
-                                SizedBox(height: 80),
+                                SizedBox(height: 20),
                               ],
                             ),
                     ),
+                    if (_filteredBatchesData.isNotEmpty)
+                      _buildBottomPaginationControls(),
                   ],
                 ),
               ),
       ),
     );
   }
+// ...existing code...
+// ...existing code...
+
+  Widget _buildPaginationControls() {
+    if (_filteredBatchesData.isEmpty) return SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                flex: 2,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Items per page:',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _itemsPerPage,
+                          isDense: true,
+                          items: [5, 10, 15, 20, 25].map((int value) {
+                            return DropdownMenuItem<int>(
+                              value: value,
+                              child: Text(value.toString()),
+                            );
+                          }).toList(),
+                          onChanged: (int? newValue) {
+                            if (newValue != null) {
+                              _changeItemsPerPage(newValue);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              Flexible(
+                flex: 3,
+                child: Text(
+                  'Showing ${(_currentPage - 1) * _itemsPerPage + 1}-${(_currentPage * _itemsPerPage).clamp(0, _filteredBatchesData.length)} of ${_filteredBatchesData.length}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomPaginationControls() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Previous button
+            IconButton(
+              onPressed:
+                  _currentPage > 1 ? () => _goToPage(_currentPage - 1) : null,
+              icon: Icon(Icons.chevron_left, size: 20),
+              style: IconButton.styleFrom(
+                backgroundColor:
+                    _currentPage > 1 ? Colors.blue[50] : Colors.grey[100],
+                foregroundColor: _currentPage > 1 ? Colors.blue : Colors.grey,
+                minimumSize: Size(36, 36),
+                maximumSize: Size(36, 36),
+              ),
+            ),
+
+            SizedBox(width: 8),
+
+            // Page numbers
+            ..._buildPageNumbers(),
+
+            SizedBox(width: 8),
+
+            // Next button
+            IconButton(
+              onPressed: _currentPage < _totalPages
+                  ? () => _goToPage(_currentPage + 1)
+                  : null,
+              icon: Icon(Icons.chevron_right, size: 20),
+              style: IconButton.styleFrom(
+                backgroundColor: _currentPage < _totalPages
+                    ? Colors.blue[50]
+                    : Colors.grey[100],
+                foregroundColor:
+                    _currentPage < _totalPages ? Colors.blue : Colors.grey,
+                minimumSize: Size(36, 36),
+                maximumSize: Size(36, 36),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers() {
+    List<Widget> pageNumbers = [];
+    int startPage = (_currentPage - 2).clamp(1, _totalPages);
+    int endPage = (_currentPage + 2).clamp(1, _totalPages);
+
+    // Show first page if not in range
+    if (startPage > 1) {
+      pageNumbers.add(_buildPageButton(1));
+      if (startPage > 2) {
+        pageNumbers.add(Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child:
+              Text('...', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ));
+      }
+    }
+
+    // Show page range
+    for (int i = startPage; i <= endPage; i++) {
+      pageNumbers.add(_buildPageButton(i));
+    }
+
+    // Show last page if not in range
+    if (endPage < _totalPages) {
+      if (endPage < _totalPages - 1) {
+        pageNumbers.add(Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child:
+              Text('...', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ));
+      }
+      pageNumbers.add(_buildPageButton(_totalPages));
+    }
+
+    return pageNumbers;
+  }
+
+  Widget _buildPageButton(int pageNumber) {
+    bool isCurrentPage = pageNumber == _currentPage;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 2),
+      child: Material(
+        color: isCurrentPage ? Colors.blue : Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () => _goToPage(pageNumber),
+          child: Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            child: Text(
+              pageNumber.toString(),
+              style: TextStyle(
+                color: isCurrentPage ? Colors.white : Colors.black87,
+                fontWeight: isCurrentPage ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// ...existing code...
+// ...existing code...
 
   Widget _buildAnimatedBatchCard(Map<String, dynamic> batch, int index) {
     return TweenAnimationBuilder<double>(
@@ -609,51 +853,49 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
     );
   }
 
+  // ...existing code...
+
   Widget _buildBatchCard(Map<String, dynamic> batch) {
     final urgencyColor = urgencyColors[batch['urgency_level']] ?? Colors.grey;
     final statusColor = statusColors[batch['status']] ?? Colors.grey;
 
     return Card(
-      elevation: 6,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      shadowColor: Colors.blueGrey.withOpacity(0.2),
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: urgencyColor.withOpacity(0.1),
-          child: Icon(
-            Icons.water_drop,
-            color: urgencyColor,
-            size: 32,
-          ),
+          radius: 22,
+          backgroundColor: urgencyColor.withOpacity(0.15),
+          child: Icon(Icons.water_drop, color: urgencyColor, size: 24),
         ),
         title: Text(
           batch['batch_number'] ?? 'N/A',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          "Volume: ${batch['total_volume'] ?? 0}L, Status: ${batch['status'] ?? 'UNKNOWN'}",
-          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+          "${batch['total_volume'] ?? 0}L • ${batch['status'] ?? 'UNKNOWN'}",
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
         trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
             color: urgencyColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: urgencyColor.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+            border:
+                Border.all(color: urgencyColor.withOpacity(0.3), width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.access_time, size: 14, color: urgencyColor),
-              SizedBox(width: 4),
+              Icon(Icons.schedule, size: 12, color: urgencyColor),
+              SizedBox(width: 2),
               Text(
                 _formatTimeRemaining(batch),
                 style: TextStyle(
                   color: urgencyColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
                 ),
               ),
             ],
@@ -661,25 +903,26 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildBatchInfoRow('Volume', '${batch['total_volume'] ?? 0}L'),
-                _buildBatchInfoRow('Status', batch['status'] ?? 'UNKNOWN'),
-                _buildBatchInfoRow(
+                _buildCompactInfoRow(
+                    'Volume', '${batch['total_volume'] ?? 0}L'),
+                _buildCompactInfoRow('Status', batch['status'] ?? 'UNKNOWN'),
+                _buildCompactInfoRow(
                     'Urgency', batch['urgency_level'] ?? 'unknown'),
                 if (batch['production_date'] != null)
-                  _buildBatchInfoRow(
-                      'Produced',
-                      DateFormat('dd/MM/yy HH:mm')
-                          .format(DateTime.parse(batch['production_date']))),
+                  _buildCompactInfoRow(
+                    'Produced',
+                    DateFormat('dd/MM/yy HH:mm')
+                        .format(DateTime.parse(batch['production_date'])),
+                  ),
                 if (batch['expiry_date'] != null)
-                  _buildBatchInfoRow(
-                      'Expires',
-                      DateFormat('dd/MM/yy HH:mm')
-                          .format(DateTime.parse(batch['expiry_date']))),
-                Divider(height: 24),
+                  _buildCompactInfoRow(
+                    'Expires',
+                    DateFormat('dd/MM/yy HH:mm')
+                        .format(DateTime.parse(batch['expiry_date'])),
+                  ),
               ],
             ),
           ),
@@ -688,6 +931,37 @@ class _MilkQualityControlsViewState extends State<MilkQualityControlsView>
     );
   }
 
+  Widget _buildCompactInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ...existing code...
   Widget _buildBatchInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
