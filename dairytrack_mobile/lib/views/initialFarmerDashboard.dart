@@ -14,7 +14,7 @@ import 'package:dairytrack_mobile/views/feedManagement/feedStock/listFeedStock.d
 import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dart';
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
-// import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
+import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';

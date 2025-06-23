@@ -19,6 +19,10 @@ urlpatterns = [
     path("product-history/", views.StockHistoryCreateView.as_view(), name="product_history_view_create"),
     path("product-history/export/pdf/", views_export.export_pdf, name="product_history_export_pdf"),
     path("product-history/export/excel/", views_export.export_excel, name="product_history_export_excel"),
+
+
+    # New endpoint for cron job
+    path("trigger-cron/", views.trigger_cron, name="trigger-cron"),
 ]
 
 if settings.DEBUG:

@@ -20,7 +20,7 @@ const OrderStats = ({ stats }) => {
         </Card>
       </Col>
       <Col md={3}>
-        <Card className="bg-warning text-white mb-3 shadow-sm opacity-75">
+        <Card className="bg-info text-white mb-3 shadow-sm opacity-75">
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
@@ -35,7 +35,7 @@ const OrderStats = ({ stats }) => {
         </Card>
       </Col>
       <Col md={3}>
-        <Card className="bg-info text-white mb-3 shadow-sm opacity-75">
+        <Card className="bg-warning text-white mb-3 shadow-sm opacity-75">
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>

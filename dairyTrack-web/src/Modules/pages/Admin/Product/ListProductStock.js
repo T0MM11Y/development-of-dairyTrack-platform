@@ -109,11 +109,15 @@ const ProductStock = () => {
     const expiredStocks = productStocks.filter(
       (ps) => ps.status === "expired"
     ).length;
+    const contaminationStocks = productStocks.filter(
+      (ps) => ps.status === "contamination"
+    ).length;
 
     return {
       totalStocks,
       availableStocks,
       expiredStocks,
+      contaminationStocks,
     };
   }, [productStocks]);
 
