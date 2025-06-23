@@ -138,73 +138,74 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         ),
         NavigationItem(
           icon: Icons.pets,
-          label: 'Sapi',
+          label: 'Cattle', // Changed from 'Sapi'
           route: 'cows',
           widget: () => ListOfCowsView(),
         ),
         NavigationItem(
           icon: Icons.local_drink,
-          label: 'Pemerahan',
+          label: 'Milking', // Changed from 'Pemerahan'
           route: 'milking',
           widget: () => MilkingView(),
         ),
         NavigationItem(
           icon: Icons.bar_chart,
-          label: 'Analisis Milking',
+          label: 'Milking Analysis',
           route: 'analytics',
           widget: () => MilkProductionAnalysisView(),
         ),
         NavigationItem(
           icon: Icons.analytics,
-          label: 'Analisis Kualitas Susu',
+          label:
+              'Milk Quality Analysis', // Changed from 'Analisis Kualitas Susu'
           route: 'milkQuality',
           widget: () => MilkQualityControlsView(),
         ),
         NavigationItem(
           icon: Icons.people,
-          label: 'Pengguna',
+          label: 'User',
           route: 'users',
           widget: () => ListOfUsersView(),
         ),
         NavigationItem(
           icon: Icons.analytics,
-          label: 'Distribusi Sapi',
+          label: 'Cattle Distribution',
           route: 'distribution',
           widget: () => CattleDistribution(),
         ),
         NavigationItem(
           icon: Icons.article,
-          label: 'Blog',
+          label: 'Blogs',
           route: 'blogs',
           widget: () => BlogView(),
         ),
         NavigationItem(
           icon: Icons.photo_library,
-          label: 'Galeri',
+          label: 'Gallery',
           route: 'gallery',
           widget: () => GalleryView(),
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Pemeriksaan Kesehatan',
+          label: 'Medical Examination', // Fixed capitalization
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
         NavigationItem(
           icon: Icons.visibility,
-          label: 'Gejala',
+          label: 'Symptom',
           route: 'symptoms',
           widget: () => SymptomListView(),
         ),
         NavigationItem(
           icon: Icons.coronavirus,
-          label: 'Riwayat Penyakit',
+          label: 'Disease History',
           route: 'disease-history',
           widget: () => DiseaseHistoryListView(),
         ),
         NavigationItem(
           icon: Icons.pregnant_woman,
-          label: 'Reproduksi',
+          label: 'Reproduction',
           route: 'reproduction',
           widget: () => ReproductionListView(),
         ),
@@ -240,32 +241,32 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Pemeriksaan Kesehatan',
+          label: 'Health Examination', // Changed from 'Pemeriksaan Kesehatan'
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
         NavigationItem(
-          icon: Icons.category, // Jenis Pakan = kategori pakan
-          label: 'Jenis Pakan',
+          icon: Icons.category, // Feed type = feed category
+          label: 'Feed Type', // Changed from 'Jenis Pakan'
           route: 'feed-type',
           widget: () => FeedTypeView(),
         ),
         NavigationItem(
           icon: Icons
               .local_florist, // Changed: 'local_florist' better symbolizes nutrition with a natural, plant-based connotation.
-          label: 'Jenis Nutrisi',
+          label: 'Nutrition Type', // Changed from 'Jenis Nutrisi'
           route: 'nutrition',
           widget: () => NutrisiView(),
         ),
         NavigationItem(
           icon: Icons.kitchen,
-          label: 'Pakan',
+          label: 'Feed', // Changed from 'Pakan'
           route: 'feed',
           widget: () => FeedView(),
         ),
         NavigationItem(
           icon: Icons.inventory,
-          label: 'Stock Pakan',
+          label: 'Feed Stock', // Changed from 'Stock Pakan'
           route: 'feed-stock',
           widget: () => FeedStockList(),
         ),
@@ -277,13 +278,13 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         ),
         NavigationItem(
           icon: Icons.checklist,
-          label: 'Feed Item Harian',
+          label: 'Daily Feed Item', // Changed from 'Feed Item Harian'
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
         NavigationItem(
           icon: Icons.monitor_heart,
-          label: 'HealthDashboard',
+          label: 'Health Dashboard', // Changed from 'HealthDashboard'
           route: 'health-dashboard',
           widget: () => HealthDashboardView(),
         ),
