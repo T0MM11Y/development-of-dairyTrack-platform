@@ -7,6 +7,20 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
   // Get user role for filtering
   const userRole = userData?.role?.toLowerCase() || "";
 
+  // Function to get dashboard link based on user role
+  const getDashboardLink = (role) => {
+    switch (role) {
+      case "admin":
+        return "/admin";
+      case "supervisor":
+        return "/supervisor";
+      case "farmer":
+        return "/farmer";
+      default:
+        return "/admin";
+    }
+  };
+
   // Define all menu items (using useMemo to avoid recreating on every render)
   const allMenuItems = useMemo(
     () => [
@@ -14,7 +28,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         id: "dashboard",
         title: "Dashboard",
         icon: "far fa-tachometer-alt",
-        link: "/admin",
+        link: getDashboardLink(userRole),
         showForRoles: ["admin", "supervisor", "farmer"],
       },
       {
@@ -101,7 +115,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
           {
             id: "daily-feed-nutrition",
             title: "Daily Feed Nutrition",
-            link: "/admin/daily-feed-nutrition",
+            link: "/admin/daily-nutrition",
           },
         ],
         showForRoles: ["admin", "farmer", "supervisor"],
@@ -109,7 +123,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       {
         id: "health-check",
         title: "Health Check Management",
-        icon: "far fa-notes-medical", // Ganti ikon sesuai preferensi (misal: medical)
+        icon: "far fa-notes-medical",
         submenu: [
           {
             id: "health-checks",
@@ -151,15 +165,15 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             link: "/admin/health-dashboard",
           },
           {
-          id: "feed-trend",
-          title: "Feed Usage",
-          link: "/admin/daily-feed-usage",
-        },
-        {
-          id: "feed-trend",
-          title: "Daily Nutrition",
-          link: "/admin/daily-nutrition",
-        },
+            id: "feed-usage",
+            title: "Feed Usage",
+            link: "/admin/daily-feed-usage",
+          },
+          {
+            id: "daily-nutrition",
+            title: "Daily Nutrition",
+            link: "/admin/daily-nutrition",
+          },
         ],
         showForRoles: ["admin", "supervisor", "farmer"],
       },
@@ -184,7 +198,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
       {
         id: "salesAndFinancial",
         title: "Sales And Financial",
-        icon: "far fa-chart-bar", // Modified to bar chart for broader sales/finance context
+        icon: "far fa-chart-bar",
         submenu: [
           {
             id: "product-type",
@@ -205,7 +219,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             link: "/admin/finance-record",
           },
         ],
-        showForRoles: ["admin", "supervisor"], // Only visible for admin and supervisor
+        showForRoles: ["admin", "supervisor"],
       },
     ],
     [userRole]
@@ -245,6 +259,7 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
               <div className="email">
                 {userData.email || "No Email Provided"}
               </div>
+              <div className="role">{userData.role || "Unknown Role"}</div>
             </>
           ) : (
             <div>Loading...</div>
