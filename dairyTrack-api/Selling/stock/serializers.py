@@ -1,6 +1,9 @@
+# stock/serializers.py
+import os
 from rest_framework import serializers
 from django.conf import settings
 from .models import ProductType, ProductStock, StockHistory, User
+from django.db import IntegrityError
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,6 +21,35 @@ class ProductTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_name', 'product_description', 'image', 'price', 'unit', 
                   'created_at', 'updated_at', 'created_by', 'updated_by', 
                   'created_by_detail', 'updated_by_detail']
+        extra_kwargs = {
+            'product_name': {'validators': []},  # Disable default UniqueValidator
+        }
+
+    def validate_image(self, value):
+        """
+        Validate that the uploaded image has an allowed file extension.
+        """
+        if value:
+            allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+            ext = os.path.splitext(value.name)[1].lower()
+            if ext not in allowed_extensions:
+                raise serializers.ValidationError(
+                    {"error": f"Invalid image format. Allowed formats are: {', '.join(allowed_extensions)}."}
+                )
+        return value
+
+    def validate(self, data):
+        """
+        Validate product_name uniqueness at the serializer level.
+        """
+        product_name = data.get('product_name')
+        print("validate called with product_name:", product_name)  # Debug log
+        if product_name:
+            if self.instance and self.instance.product_name == product_name:
+                pass  # Skip uniqueness check if updating with the same name
+            elif ProductType.objects.filter(product_name=product_name).exists():
+                raise serializers.ValidationError({"error": "A product with this name already exists."})
+        return data
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -26,25 +58,47 @@ class ProductTypeSerializer(serializers.ModelSerializer):
             try:
                 data['created_by'] = int(data['created_by'])
             except ValueError:
-                raise serializers.ValidationError({"created_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+                raise serializers.ValidationError({"error": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
 
         if 'updated_by' in data and isinstance(data['updated_by'], str):
             try:
                 data['updated_by'] = int(data['updated_by']) if data['updated_by'] else None
             except ValueError:
-                raise serializers.ValidationError({"updated_by": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
+                raise serializers.ValidationError({"error": "Invalid user ID format. Must be an integer or valid string representation of an integer."})
 
         return super().to_internal_value(data)
 
     def validate_created_by(self, value):
         if not User.objects.filter(id=value.id).exists():
-            raise serializers.ValidationError("User does not exist!")
+            raise serializers.ValidationError({"error": "User does not exist!"})
         return value
 
     def validate_updated_by(self, value):
         if value and not User.objects.filter(id=value.id).exists():
-            raise serializers.ValidationError("User does not exist!")
+            raise serializers.ValidationError({"error": "User does not exist!"})
         return value
+
+    def create(self, validated_data):
+        """
+        Handle creation with proper error handling for duplicate product_name.
+        """
+        print("create called with validated_data:", validated_data)  # Debug log
+        try:
+            return super().create(validated_data)
+        except IntegrityError as e:
+            print("IntegrityError in create:", str(e))  # Debug log
+            raise serializers.ValidationError({"error": "A product with this name already exists."})
+
+    def update(self, instance, validated_data):
+        """
+        Handle update with proper error handling for duplicate product_name.
+        """
+        print("update called with validated_data:", validated_data)  # Debug log
+        try:
+            return super().update(instance, validated_data)
+        except IntegrityError as e:
+            print("IntegrityError in update:", str(e))  # Debug log
+            raise serializers.ValidationError({"error": "A product with this name already exists."})
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

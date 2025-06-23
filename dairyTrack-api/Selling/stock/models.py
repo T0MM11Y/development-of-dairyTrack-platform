@@ -57,7 +57,7 @@ class ProductType(models.Model):
     objects = models.Manager()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="product_type_created")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="product_type_updated")
-    product_name = models.CharField(max_length=255)
+    product_name = models.CharField(max_length=255, unique=True)
     product_description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -142,31 +142,34 @@ class ProductStock(models.Model):
 
         super().save(*args, **kwargs)
 
-        if previous and previous.status != "contamination" and self.status == "contamination":
-            if self.quantity > 0:
+        # Check for status change to "contamination" or "expired"
+        if previous and previous.status != self.status:
+            if self.status == "contamination" and self.quantity > 0:
                 StockHistory.objects.create(
                     product_stock=self,
                     change_type="contamination",
-                    quantity_change=self.quantity
+                    quantity_change=self.quantity,
+                    total_price=0.0
                 )
                 self.quantity = 0
                 super().save(update_fields=["quantity"])
-
+            elif self.status == "expired" and previous.status != "expired":
+                StockHistory.objects.create(
+                    product_stock=self,
+                    change_type="expired",
+                    quantity_change=self.quantity,
+                    total_price=0.0
+                )
     @classmethod
     def check_expired_products(cls):
         """Otomatis set produk expired jika sudah melewati tanggal kadaluarsa dan kirim notifikasi"""
-        from notifications.models import Notification  # Impor di dalam method untuk menghindari circular import
+        from notifications.models import Notification
         expired_products = cls.objects.filter(expiry_at__lt=timezone.now(), status="available")
         
         with transaction.atomic():
             for product in expired_products:
                 product.status = "expired"
-                StockHistory.objects.create(
-                    product_stock=product,
-                    change_type="expired",
-                    quantity_change=product.quantity
-                )
-                product.save()
+                product.save()  # This will trigger the save method, which handles StockHistory creation
 
                 # Kirim notifikasi bahwa produk telah kadaluarsa
                 Notification.objects.create(

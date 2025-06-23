@@ -562,7 +562,7 @@ const FinancePage = () => {
           <Row className="mb-4">
             <Col lg={6}>
               <div className="d-flex gap-2">
-                <Button
+                {/* <Button
                   variant="primary"
                   size="sm"
                   className="shadow-sm"
@@ -591,7 +591,7 @@ const FinancePage = () => {
                   {...disableIfSupervisor}
                 >
                   <i className="bx bx-plus me-1" /> Record New Expense
-                </Button>
+                </Button> */}
               </div>
             </Col>
             <Col lg={6}>

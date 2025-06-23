@@ -1,58 +1,311 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Product History Report</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; }
-        h2, p { text-align: center; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 6px; text-align: center; }
-        th { background-color: #f2f2f2; }
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2c5aa0;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .report-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #444;
+            margin: 10px 0;
+        }
+        
+        .report-subtitle {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .report-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2c5aa0;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #2c5aa0;
+            min-width: 120px;
+        }
+        
+        .info-value {
+            color: #444;
+            font-weight: 500;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c5aa0;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-container {
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1a4480 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #1a4480;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tbody tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 10px;
+        }
+        
+        .number-cell {
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .change-type {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .change-type-sold {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .change-type-expired {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .change-type-contamination {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .price-cell {
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+            background-color: #f8f9fa;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .generated-info {
+            margin-top: 10px;
+            font-size: 9px;
+            color: #999;
+        }
+        
+        @media print {
+            body { -webkit-print-color-adjust: exact; }
+            .table-container { box-shadow: none; }
+        }
     </style>
 </head>
 <body>
-    <h2>Product History Report</h2>
+    <div class="header">
+        <div class="company-name">PT. DAIRY TRACK</div>
+        <div class="report-title">Product Stock History Report</div>
+        <div class="report-subtitle">Comprehensive Transaction History</div>
+    </div>
 
-    {% if start_date and end_date %}
-        <p>Export period: {{ start_date }} - {{ end_date }}</p>
-    {% endif %}
+    <div class="report-info">
+        <div class="info-row">
+            <span class="info-label">Report Generated:</span>
+            <span class="info-value">{{ "now"|date:"d F Y H:i" }}</span>
+        </div>
+        {% if start_date and end_date %}
+        <div class="info-row">
+            <span class="info-label">Report Period:</span>
+            <span class="info-value">{{ start_date }} - {{ end_date }}</span>
+        </div>
+        {% else %}
+        <div class="info-row">
+            <span class="info-label">Report Period:</span>
+            <span class="info-value">All Available Data</span>
+        </div>
+        {% endif %}
+        <div class="info-row">
+            <span class="info-label">Total Records:</span>
+            <span class="info-value">{{ histories|length }}</span>
+        </div>
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Date & Time</th>
-                <th>Product Type</th>
-                <th>Change Type</th>
-                <th>Quantity</th>
-                <th>Total Price</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for history in histories %}
-            <tr>
-                <td>{{ history.change_date }}</td>
-                <td>
-                    {% if history.product_stock and history.product_stock.product_type %}
-                        {{ history.product_stock.product_type.product_name }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ history.change_type }}</td>
-                <td>
-                    {{ history.quantity_change }}
-                    {% if history.product_stock and history.product_stock.product_type and history.product_stock.product_type.unit %}
-                        {{ history.product_stock.product_type.unit }}
-                    {% endif %}
-                </td>
-                <td>{{ history.total_price }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No history available for selected period.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="summary-stats">
+        <div class="stat-item">
+            <span class="stat-number">{{ histories|length }}</span>
+            <span class="stat-label">Total Transactions</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ histories|length|floatformat:0 }}</span>
+            <span class="stat-label">Records Processed</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ histories.count }}</span>
+            <span class="stat-label">Active Entries</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 20%;">Date & Time</th>
+                    <th style="width: 25%;">Product Name</th>
+                    <th style="width: 15%;">Transaction Type</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 20%;">Total Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for history in histories %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ history.change_date|date:"d M Y H:i" }}</td>
+                    <td style="text-align: left; padding-left: 12px;">
+                        {% if history.product_stock and history.product_stock.product_type %}
+                            <strong>{{ history.product_stock.product_type.product_name }}</strong>
+                        {% else %}
+                            <em style="color: #999;">-</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="change-type change-type-{{ history.change_type|lower }}">
+                            {{ history.change_type }}
+                        </span>
+                    </td>
+                    <td class="number-cell">
+                        <strong>{{ history.quantity_change|floatformat:0 }}</strong>
+                        {% if history.product_stock and history.product_stock.product_type and history.product_stock.product_type.unit %}
+                            <small style="color: #666;">{{ history.product_stock.product_type.unit }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="number-cell price-cell">
+                        Rp {{ history.total_price|floatformat:0 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="no-data">
+                        <div>📊 No transaction history available for the selected period.</div>
+                        <div style="margin-top: 10px; font-size: 9px;">Please try adjusting your date range or filters.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div><strong>PT. DAIRY TRACK</strong> - Stock History Report</div>
+        <div class="generated-info">
+            Generated automatically on {{ "now"|date:"d F Y \a\t H:i" }} | 
+            Confidential Document - For Internal Use Only
+        </div>
+    </div>
 </body>
 </html>

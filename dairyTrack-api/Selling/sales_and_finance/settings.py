@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
-# from decouple import config
+from decouple import config # pylint: disable=import-error
 
 # Path dasar proyek
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -49,7 +49,7 @@ GUPSHUP_API_KEY = 'sk_49b512570561442898bf2a6cb4b4c001'
 GUPSHUP_SOURCE_NUMBER = '917834811114'
 
 # pengaturan untuk menjalankan tugas di latar belakang
-BACKGROUND_TASK_RUN_ASYNC = True
+# BACKGROUND_TASK_RUN_ASYNC = True
 # Application definition
 
 INSTALLED_APPS = [
@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # add depedencies
     'rest_framework',
-    'background_task',
+    # 'background_task',
     # 'stock',
     'stock.apps.StockConfig',
     'sales',
@@ -149,6 +149,34 @@ CORS_ALLOW_HEADERS = [
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'DairyTrack_represent',  # Nama database MySQL
+#         'USER': 'DairyTrack_represent',  # Username MySQL
+#         'PASSWORD': '212bf667b8832e0a530401195b131a542e31a4f0',  # Password MySQL
+#         'HOST': 'rlsoy.h.filess.io',  # Host MySQL
+#         'PORT': '3307',  # Port MySQL
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',  # Mendukung emoji dan karakter khusus
+#         },
+#     }
+# }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': config('DB_ENGINE'),
+#         'NAME': config('DB_NAME'),
+#         'USER': config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'HOST': config('DB_HOST'),
+#         'PORT': config('DB_PORT'),
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#         },
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -162,7 +190,6 @@ DATABASES = {
         },
     }
 }
-
 
 
 # Password validation
@@ -208,6 +235,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',

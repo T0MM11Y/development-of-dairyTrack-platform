@@ -1,3 +1,4 @@
+# stock/views.py
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
@@ -9,6 +10,16 @@ from .models import ProductType, ProductStock, StockHistory
 from django_filters.rest_framework import DjangoFilterBackend # pylint: disable=import-error
 from rest_framework import filters
 from .filters import StockHistoryFilter
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from .tasks import check_product_expiration
+from rest_framework import filters
+import logging
+
+logger = logging.getLogger('stock')
 
 # Untuk list & create ProductType (tanpa `pk`)
 class ProductTypeCreateView(generics.ListCreateAPIView):
@@ -23,9 +34,8 @@ class ProductTypeCreateView(generics.ListCreateAPIView):
                 "data": ProductTypeSerializer(instance).data
             }, status=201)
         except serializers.ValidationError as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
+            # Return error dictionary as-is
+            return Response(e.detail, status=400)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -45,9 +55,8 @@ class ProductTypeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView
                 "data": ProductTypeSerializer(instance).data
             }, status=200)
         except serializers.ValidationError as e:
-            return Response({
-                "error": str(e)
-            }, status=400)
+            # Return error dictionary as-is
+            return Response(e.detail, status=400)
 
     def perform_destroy(self, instance):
         try:
@@ -194,3 +203,21 @@ class SellProductView(APIView):
             return Response({
                 "error": str(e)
             }, status=400)
+        
+
+        # Endpoint untuk cron-job.org
+@csrf_exempt
+@require_POST
+def trigger_cron(request):
+    """
+    Endpoint untuk cron-job.org untuk menjalankan pengecekan stok kadaluarsa.
+    """
+    try:
+        logger.info("Cron trigger endpoint called at %s WIB", timezone.now().astimezone(timezone.get_current_timezone()))
+        check_product_expiration()
+        logger.info("Cron job completed successfully")
+        return JsonResponse({'status': 'success', 'message': 'Expiration check completed'}, status=200)
+    except Exception as e:
+        logger.error("Error in cron trigger: %s", str(e), exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        
