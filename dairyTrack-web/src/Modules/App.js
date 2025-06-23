@@ -172,50 +172,6 @@ const getDisplayUrl = (currentPath) => {
   return displayUrl;
 };
 
-// Helper function to get actual path from display URL
-const getActualPath = (displayPath) => {
-  // Check for exact reverse mapping first
-  if (reverseUrlDisplayMap[displayPath]) {
-    return reverseUrlDisplayMap[displayPath];
-  }
-
-  // Check for dynamic routes
-  for (const [actualPath, displayPattern] of Object.entries(urlDisplayMap)) {
-    const displayParts = displayPattern.split("/");
-    const pathParts = displayPath.split("/");
-
-    if (displayParts.length === pathParts.length) {
-      let actualPathResult = actualPath;
-      let matches = true;
-
-      for (let i = 0; i < displayParts.length; i++) {
-        if (displayParts[i] === pathParts[i]) {
-          continue;
-        } else {
-          // Check if this is a parameter placeholder in actual path
-          const actualParts = actualPath.split("/");
-          if (actualParts[i] && actualParts[i].startsWith(":")) {
-            actualPathResult = actualPathResult.replace(
-              actualParts[i],
-              pathParts[i]
-            );
-            continue;
-          } else {
-            matches = false;
-            break;
-          }
-        }
-      }
-
-      if (matches) {
-        return actualPathResult;
-      }
-    }
-  }
-
-  return null;
-};
-
 // Helper function to check if path exists in routes
 const isValidRoute = (path) => {
   const validRoutes = [
@@ -325,15 +281,6 @@ const URLDisplayHandler = () => {
     // Handle browser navigation (back/forward buttons)
     const handlePopState = (event) => {
       const currentDisplayUrl = window.location.pathname;
-      const actualPath = getActualPath(currentDisplayUrl);
-
-      if (actualPath && isValidRoute(actualPath)) {
-        // Valid route, navigate to actual path
-        if (currentDisplayUrl !== actualPath) {
-          window.history.replaceState(null, "", actualPath);
-          window.location.reload();
-        }
-      }
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -350,18 +297,6 @@ const URLDisplayHandler = () => {
 const RouteValidator = ({ children }) => {
   const location = useLocation();
   const currentPath = location.pathname;
-
-  // Check if current path is valid
-  if (!isValidRoute(currentPath)) {
-    // Check if it's a display URL that needs to be converted
-    const actualPath = getActualPath(currentPath);
-    if (actualPath && isValidRoute(actualPath)) {
-      return <Redirect to={actualPath} />;
-    }
-
-    // Invalid URL, show error message
-    return <InvalidUrlHandler />;
-  }
 
   return children;
 };
