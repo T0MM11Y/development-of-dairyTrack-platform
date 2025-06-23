@@ -100,8 +100,9 @@ const isSupervisor = currentUser?.role_id === 2;
       setData(visibleSymptoms);
       setError("");
     } catch (err) {
-      console.error("Gagal mengambil data gejala:", err.message);
-      setError("Gagal mengambil data gejala. Pastikan server API aktif.");
+      console.error("Failed to fetch symptom data:", err.message);
+setError("Failed to fetch symptom data. Please make sure the API server is running.");
+
     } finally {
       setLoading(false);
     }
@@ -130,58 +131,59 @@ const paginatedData = sortedFilteredData.slice(
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const getCowName = (hcId) => {
     const hc = healthChecks.find((h) => h.id === hcId);
-    if (!hc) return "Tidak ditemukan";
+    if (!hc) return "not found";
 
     const cowId = typeof hc.cow === "object" ? hc.cow.id : hc.cow;
     const cow = cows.find((c) => c.id === cowId);
-    return cow ? `${cow.name} (${cow.breed})` : "Tidak ditemukan";
+    return cow ? `${cow.name} (${cow.breed})` : "not found";
   };
 
   const handleDelete = async (id) => {
-    if (!id) return;
-    setSubmitting(true);
-    try {
-      await deleteSymptom(id);
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: "Data gejala berhasil dihapus.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      fetchData();
-      setDeleteId(null);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Menghapus",
-        text: "Terjadi kesalahan saat menghapus data.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (!id) return;
+  setSubmitting(true);
+  try {
+    await deleteSymptom(id);
+    Swal.fire({
+      icon: "success",
+      title: "Success",
+      text: "Symptom data has been successfully deleted.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    fetchData();
+    setDeleteId(null);
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Failed to Delete",
+      text: "An error occurred while deleting the data.",
+    });
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const prepareExportData = () => {
     return data.map((s) => {
       const hc = healthChecks.find((h) => h.id === s.health_check) || {};
       const cowName = getCowName(s.health_check);
-      return {
-        "Nama Sapi": cowName,
-        "Suhu Rektal": hc.rectal_temperature || "-",
-        "Denyut Jantung": hc.heart_rate || "-",
-        "Laju Pernapasan": hc.respiration_rate || "-",
-        Ruminasi: hc.rumination || "-",
-        "Kondisi Mata": s.eye_condition,
-        "Kondisi Mulut": s.mouth_condition,
-        "Kondisi Hidung": s.nose_condition,
-        "Kondisi Anus": s.anus_condition,
-        "Kondisi Kaki": s.leg_condition,
-        "Kondisi Kulit": s.skin_condition,
-        Perilaku: s.behavior,
-        "Berat Badan": s.weight_condition,
-        "Kondisi Kelamin": s.reproductive_condition,
-      };
+     return {
+  "Cow Name": cowName,
+  "Rectal Temperature": hc.rectal_temperature || "-",
+  "Heart Rate": hc.heart_rate || "-",
+  "Respiration Rate": hc.respiration_rate || "-",
+  Rumination: hc.rumination || "-",
+  "Eye Condition": s.eye_condition,
+  "Mouth Condition": s.mouth_condition,
+  "Nose Condition": s.nose_condition,
+  "Anus Condition": s.anus_condition,
+  "Leg Condition": s.leg_condition,
+  "Skin Condition": s.skin_condition,
+  Behavior: s.behavior,
+  "Body Weight": s.weight_condition,
+  "Reproductive Condition": s.reproductive_condition,
+};
+
     });
   };
   const exportToExcel = () => {
@@ -190,10 +192,10 @@ const paginatedData = sortedFilteredData.slice(
 
     const headers = Object.keys(exportData[0]);
 
-    // Baris 1: judul (cell A1), Baris 2: header, Baris 3+: data
     const dataWithTitle = [
-      ["Laporan Gejala Sapi"], // Judul
-      headers, // Header Kolom
+["Cow Symptom Report"], 
+
+      headers,
       ...exportData.map((row) => headers.map((key) => row[key])),
     ];
 
@@ -244,9 +246,10 @@ const paginatedData = sortedFilteredData.slice(
 
     // Buat workbook & simpan
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan_Gejala_Sapi");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Cow_Symptom_Report");
 
-    XLSX.writeFile(workbook, "Laporan_Gejala_Sapi.xlsx");
+XLSX.writeFile(workbook, "Cow_Symptom_Report.xlsx");
+
   };
 
   const exportToPDF = () => {
@@ -266,7 +269,7 @@ const paginatedData = sortedFilteredData.slice(
     doc.setFontSize(14);
     doc.setTextColor(40);
     doc.text(
-      "Laporan Data Gejala Sapi",
+      "Cow Symptom Data Report",
       doc.internal.pageSize.getWidth() / 2,
       20,
       {
@@ -305,7 +308,7 @@ const paginatedData = sortedFilteredData.slice(
       pageBreak: "auto",
     });
 
-    doc.save("Laporan_Data_Gejala.pdf");
+    doc.save("Cow_Symptom_Data_Report.pdf");
   };
 
   useEffect(() => {
@@ -345,8 +348,7 @@ const paginatedData = sortedFilteredData.slice(
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-grey py-3">
           <h4 className="mb-0 text-primary fw-bold">
-            <i className="fas fa-notes-medical me-2" /> Manajemen Gejala
-            Pemeriksaan
+  <i className="fas fa-notes-medical me-2" /> Health Check Symptom Management
           </h4>
         </Card.Header>
 
@@ -355,7 +357,7 @@ const paginatedData = sortedFilteredData.slice(
           <div className="d-flex justify-content-between mb-3">
             <InputGroup style={{ maxWidth: "300px" }}>
               <FormControl
-                placeholder="Cari nama sapi..."
+placeholder="Search cow name..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -370,9 +372,9 @@ const paginatedData = sortedFilteredData.slice(
     <Tooltip id="tooltip-gejala">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menambahkan data gejala"
-            : "Supervisor tidak dapat menambahkan data gejala")
-        : "Tambah Gejala"}
+               ? "Admin cannot add symptom data"
+        : "Supervisor cannot add symptom data")
+    : "Add Symptom"}
     </Tooltip>
   }
 >
@@ -385,9 +387,9 @@ const paginatedData = sortedFilteredData.slice(
         if (filteredHealthChecks.length === 0) {
           Swal.fire({
             icon: "warning",
-            title: "Tidak Bisa Menambahkan Gejala",
-            text: "Tidak ada data pemeriksaan yang tersedia. Mungkin semua pemeriksaan telah ditangani, sudah memiliki gejala, atau tidak termasuk dalam daftar sapi yang Anda kelola.",
-          });
+           title: "Cannot Add Symptom",
+    text: "No health check data available. All checks may have been handled, already have symptoms, or do not belong to the cows you manage.",
+  });
           return;
         }
 
@@ -399,7 +401,7 @@ const paginatedData = sortedFilteredData.slice(
       }}
     >
       <i className="ri-add-line me-1" />
-      Tambah Gejala
+      Add Data
     </Button>
   </span>
 </OverlayTrigger>
@@ -422,10 +424,10 @@ const paginatedData = sortedFilteredData.slice(
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="primary" />
-              <p className="mt-3 text-muted">Memuat data gejala...</p>
+  <p className="mt-3 text-muted">Loading symptom data...</p>
             </div>
           ) : data.length === 0 ? (
-            <p className="text-muted">Belum ada data gejala.</p>
+  <p className="text-muted">No symptom data available yet.</p>
           ) : (
             <>
               {/* Tabel Gejala */}
@@ -434,14 +436,11 @@ const paginatedData = sortedFilteredData.slice(
                   <thead className="table-light">
                     <tr>
                       <th>#</th>
-                      <th>Tanggal</th>
-
-                      <th>Nama Sapi</th>
-                      <th>Penanggung Jawab</th>
-                      <th>Status Penanganan</th>
-                                          
-
-                      <th>Aksi</th>
+                      <th>Date</th>
+            <th>Cow Name</th>
+            <th>Recorded By</th>
+            <th>Handling Status</th>
+            <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -454,7 +453,7 @@ const paginatedData = sortedFilteredData.slice(
                       );
                       const cowName = cow
                         ? `${cow.name} (${cow.breed})`
-                        : "Sapi tidak ditemukan";
+                        : "Cow not found";
 
                       return (
                         <tr key={item.id}>
@@ -462,7 +461,7 @@ const paginatedData = sortedFilteredData.slice(
                           <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
 
   <td>{cowName}</td>
-    <td>{item.created_by?.name || "Tidak diketahui"}</td>   
+    <td>{item.created_by?.name || "Uknown"}</td>   
 
   <td>
     <Badge
@@ -475,16 +474,16 @@ const paginatedData = sortedFilteredData.slice(
       }
     >
       {hc?.status === "handled"
-        ? "Sudah Ditangani"
+        ? "Handled"
         : hc?.status === "healthy"
-        ? "Sehat"
-        : "Belum Ditangani"}
+        ? "Healthy"
+        : "Not Handled"}
     </Badge>
   </td>
 
                           <td>
                             <OverlayTrigger
-                              overlay={<Tooltip>Lihat Detail</Tooltip>}
+                              overlay={<Tooltip>View Detail</Tooltip>}
                             >
                               <Button
                                 variant="outline-info"
@@ -502,9 +501,9 @@ const paginatedData = sortedFilteredData.slice(
     <Tooltip id="tooltip-edit-gejala">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat mengedit data gejala"
-            : "Supervisor tidak dapat mengedit data gejala")
-        : "Edit Gejala"}
+         ? "Admin cannot edit symptom data"
+        : "Supervisor cannot edit symptom data")
+    : "Edit Symptom"}
     </Tooltip>
   }
 >
@@ -519,20 +518,20 @@ const paginatedData = sortedFilteredData.slice(
         if (hc?.status === "handled") {
           Swal.fire({
             icon: "info",
-            title: "Tidak Bisa Diedit",
-            text: "Pemeriksaan ini sudah ditangani, data gejala tidak dapat diubah.",
-            confirmButtonText: "Mengerti",
-          });
+          title: "Cannot Be Edited",
+        text: "This health check has already been handled; symptom data cannot be modified.",
+        confirmButtonText: "Understood",
+      });
           return;
         }
 
         if (hc?.status === "healthy") {
           Swal.fire({
             icon: "info",
-            title: "Tidak Perlu Diedit",
-            text: "Pemeriksaan ini menunjukkan kondisi sehat dan tidak perlu diedit.",
-            confirmButtonText: "Mengerti",
-          });
+             title: "No Need to Edit",
+        text: "This health check indicates a healthy condition and does not need to be edited.",
+        confirmButtonText: "Understood",
+      });
           return;
         }
 
@@ -554,9 +553,9 @@ const paginatedData = sortedFilteredData.slice(
     <Tooltip id="tooltip-hapus-gejala">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menghapus data gejala"
-            : "Supervisor tidak dapat menghapus data gejala")
-        : "Hapus Gejala"}
+             ? "Admin cannot delete symptom data"
+        : "Supervisor cannot delete symptom data")
+    : "Delete Symptom"}
     </Tooltip>
   }
 >
@@ -568,14 +567,14 @@ const paginatedData = sortedFilteredData.slice(
         if (isAdmin || isSupervisor) return;
 
         Swal.fire({
-          title: "Yakin ingin menghapus?",
-          text: "Data gejala ini tidak dapat dikembalikan.",
+           title: "Are you sure you want to delete?",
+  text: "This symptom data cannot be recovered.",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#d33",
           cancelButtonColor: "#6c757d",
-          confirmButtonText: "Ya, hapus!",
-          cancelButtonText: "Batal",
+  confirmButtonText: "Yes, delete it!",
+  cancelButtonText: "Cancel",
         }).then((result) => {
           if (result.isConfirmed) {
             setDeleteId(item.id);
@@ -614,7 +613,7 @@ const paginatedData = sortedFilteredData.slice(
                     Prev
                   </Button>
                   <span className="fw-semibold">
-                    Halaman {currentPage} dari {totalPages}
+                    Page {currentPage} of {totalPages}
                   </span>
                   <Button
                     variant="outline-primary"

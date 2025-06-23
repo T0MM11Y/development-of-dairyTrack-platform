@@ -5,7 +5,7 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
   if (!history) return null;
 
   const renderSymptoms = () => {
-    if (!symptom) return <p className="text-muted fst-italic">Tidak ada gejala dicatat.</p>;
+if (!symptom) return <p className="text-muted fst-italic">No symptoms recorded.</p>;
 
     return Object.entries(symptom)
       .filter(([key]) => !["id", "health_check", "created_at", "created_by", "edited_by"].includes(key))
@@ -24,7 +24,7 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
       <Modal.Header closeButton>
         <Modal.Title className="d-flex align-items-center gap-2">
           <i className="bi bi-journal-medical text-primary fs-4"></i>
-          <span className="fw-semibold">Detail Riwayat Penyakit</span>
+<span className="fw-semibold">Disease History Details</span>
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -42,21 +42,21 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
         <div className="mb-4">
           <h6 className="text-secondary mb-2">
             <i className="bi bi-heart-pulse-fill me-2 text-danger"></i>
-            Detail Pemeriksaan
+    Health Check Details
           </h6>
           {check ? (
             <Row>
-              <Col md={6}><strong>Suhu Rektal:</strong> {check.rectal_temperature}°C</Col>
-              <Col md={6}><strong>Denyut Jantung:</strong> {check.heart_rate}</Col>
-              <Col md={6}><strong>Laju Pernapasan:</strong> {check.respiration_rate}</Col>
-              <Col md={6}><strong>Ruminasi:</strong> {check.rumination}</Col>
+              <Col md={6}><strong>Rectal Temperature:</strong> {check.rectal_temperature}°C</Col>
+              <Col md={6}><strong>Heart Rate:</strong> {check.heart_rate}</Col>
+              <Col md={6}><strong>Respiration Rate:</strong> {check.respiration_rate}</Col>
+              <Col md={6}><strong>Rumination:</strong> {check.rumination}</Col>
               <Col md={12} className="mt-2">
-                <strong>Tanggal Pemeriksaan:</strong>{" "}
+                <strong>Checkup Date:</strong>{" "}
                 {new Date(check.checkup_date).toLocaleString("id-ID")}
               </Col>
             </Row>
           ) : (
-            <p className="text-muted fst-italic">Data pemeriksaan tidak tersedia.</p>
+            <p className="text-muted fst-italic">Health check data not available.</p>
           )}
         </div>
 
@@ -66,7 +66,7 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
         <div className="mb-4">
           <h6 className="text-secondary mb-2">
             <i className="bi bi-virus2 me-2 text-warning"></i>
-            Gejala
+            Symptom
           </h6>
           {renderSymptoms()}
         </div>
@@ -77,11 +77,11 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
         <div>
           <h6 className="text-secondary mb-2">
             <i className="bi bi-clipboard2-pulse me-2 text-info"></i>
-            Deskripsi Riwayat
+    History Description
           </h6>
           <p>
             {history.description || (
-              <span className="text-muted fst-italic">Tidak ada deskripsi tersedia.</span>
+              <span className="text-muted fst-italic">No description available.</span>
             )}
           </p>
         </div>
@@ -89,7 +89,7 @@ const ViewDiseaseHistory = ({ show, onClose, history, check, symptom, cow }) => 
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
           <i className="bi bi-x-circle me-1"></i>
-          Tutup
+          Close
         </Button>
       </Modal.Footer>
     </Modal>

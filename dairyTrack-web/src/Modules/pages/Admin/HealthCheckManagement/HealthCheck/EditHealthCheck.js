@@ -61,8 +61,9 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
 
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Data pemeriksaan berhasil diperbarui.",
+       title: "Success",
+text: "Health check data has been successfully updated.",
+
         timer: 1500,
         showConfirmButton: false,
       });
@@ -71,11 +72,12 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Gagal memperbarui data.");
+setError("Failed to update data.");
       Swal.fire({
         icon: "error",
-        title: "Gagal Memperbarui",
-        text: "Terjadi kesalahan saat memperbarui data.",
+       title: "Failed to Update",
+text: "An error occurred while updating the data.",
+
       });
     } finally {
       setSubmitting(false);
@@ -90,7 +92,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Pemeriksaan</h4>
+            <h4 className="modal-title text-info fw-bold">Edit Health Check</h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -98,18 +100,18 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
             {loading || !form ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-info" role="status" />
-                <p className="mt-2">Memuat data...</p>
+                <p className="mt-2">Loading data...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Sapi</label>
+                    <label className="form-label fw-bold">Cow</label>
                     <input type="text" className="form-control" value={cowName} disabled readOnly />
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Pemeriksaan</label>
+                    <label className="form-label fw-bold">Checkup Date</label>
                     <input
                       type="text"
                       className="form-control"
@@ -119,7 +121,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Suhu Rektal (°C)</label>
+                    <label className="form-label fw-bold">rectal_temperature (°C)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -132,7 +134,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Denyut Jantung</label>
+                    <label className="form-label fw-bold">Heart Rate (bpm/minutes)</label>
                     <input
                       type="number"
                       name="heart_rate"
@@ -144,7 +146,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Laju Pernapasan</label>
+                    <label className="form-label fw-bold">Respiration Rate (bpm/minutes)</label>
                     <input
                       type="number"
                       name="respiration_rate"
@@ -156,7 +158,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Ruminasi</label>
+                    <label className="form-label fw-bold">Rumination (contraction/Minutes)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -183,7 +185,7 @@ const HealthCheckEditPage = ({ healthCheckId, onClose, onSaved }) => {
                 </div>
 
                 <button type="submit" className="btn btn-info w-100" disabled={submitting}>
-                  {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+{submitting ? "Saving..." : "Save Changes"}
                 </button>
               </form>
             )}

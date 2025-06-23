@@ -47,7 +47,7 @@ bool get _isFarmer => _currentUser?['role_id'] == 3;
 
     if (userString == null) {
       setState(() {
-        _error = 'User tidak ditemukan. Silakan login ulang.';
+        _error = 'User not found. Please log in again.';
         _loading = false;
       });
       return;
@@ -75,7 +75,7 @@ bool get _isFarmer => _currentUser?['role_id'] == 3;
   } catch (e) {
     debugPrint('❌ ERROR: $e');
     setState(() {
-      _error = 'Gagal memuat data.';
+      _error = 'Failed to load data.';
       _loading = false;
     });
   }
@@ -103,7 +103,7 @@ bool get _isFarmer => _currentUser?['role_id'] == 3;
     });
   } catch (e) {
     setState(() {
-      _error = 'Gagal mengambil data.';
+      _error = 'Failed to load data.';
       _loading = false;
     });
   }
@@ -124,7 +124,7 @@ Widget build(BuildContext context) {
   return Scaffold(
    appBar: AppBar(
   title: const Text(
-    'Data Reproduksi',
+    'Reproduction Data',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       color: Colors.white,
@@ -142,7 +142,7 @@ Widget build(BuildContext context) {
 ),
 
    floatingActionButton: FloatingActionButton(
-  tooltip: 'Tambah Data Reproduksi',
+  tooltip: 'Add Data',
 backgroundColor: _isFarmer
       ? Colors.teal[400]
       : _isSupervisor
@@ -152,12 +152,13 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menambah data reproduksi.'),
+          title: const Text('Access Denied'),
+content: const Text('Your role does not have the required permissions to add reproduction data.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -169,14 +170,15 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Tidak Ada Sapi Betina'),
-          content: const Text(
-            'Tidak dapat menambahkan data reproduksi karena tidak ada sapi betina yang tersedia.',
-          ),
+         title: const Text('No Female Cows Available'),
+content: const Text(
+  'Breeding data cannot be added because there are no available female cows.',
+),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -206,7 +208,7 @@ backgroundColor: _isFarmer
                     padding: const EdgeInsets.all(12.0),
                     child: TextField(
                       decoration: InputDecoration(
-                        labelText: 'Cari nama sapi...',
+                        labelText: 'Search cow name...',
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
                         fillColor: Colors.grey.shade100,
@@ -221,7 +223,7 @@ backgroundColor: _isFarmer
                   ),
                   Expanded(
                     child: _paginatedData.isEmpty
-                        ? const Center(child: Text('Tidak ada data reproduksi'))
+                        ? const Center(child: Text('No reproduction data available'))
                         : ListView.builder(
                             itemCount: _paginatedData.length,
                             itemBuilder: (context, index) {
@@ -271,12 +273,13 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+          title: const Text('Access Denied'),
+content: const Text('This role does not have permission to edit the data.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -298,7 +301,7 @@ backgroundColor: _isFarmer
                                               ),
                                            ElevatedButton.icon(
   icon: const Icon(Icons.delete, size: 18),
-  label: const Text('Hapus'),
+  label: const Text('Delete'),
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.redAccent,
     foregroundColor: Colors.white,
@@ -308,12 +311,13 @@ backgroundColor: _isFarmer
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Data Tidak Bisa Dihapus'),
-        content: const Text('Data reproduksi tidak dapat dihapus karena merupakan arsip medis.'),
+       title: const Text('Deletion Not Allowed'),
+content: const Text('This reproduction data cannot be deleted because it is part of the medical archive.'),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -336,12 +340,12 @@ backgroundColor: _isFarmer
                                           style: const TextStyle(fontSize: 14)),
                                       const SizedBox(height: 4),
 Text(
-  '🗓️ Tanggal Dicatat: ${item['recorded_at'] != null ? DateFormat("dd MMM yyyy", "id_ID").format(DateTime.parse(item['recorded_at']).toLocal()) : "-"}',
+  '🗓️ Recorded Date: ${item['recorded_at'] != null ? DateFormat("dd MMM yyyy", "id_ID").format(DateTime.parse(item['recorded_at']).toLocal()) : "-"}',
   style: TextStyle(fontSize: 14),
 ),
 const SizedBox(height: 4),
 Text(
-  '👤 Penanggung Jawab: ${item['created_by']?['name'] ?? 'Tidak diketahui'}',
+  '👤 Recorded By: ${item['created_by']?['name'] ?? 'Uknown'}',
   style: TextStyle(fontSize: 14),
 ),
 
@@ -364,7 +368,7 @@ Text(
                                 ? () => setState(() => _currentPage--)
                                 : null,
                           ),
-                          Text('Halaman $_currentPage'),
+                          Text('Page $_currentPage'),
                           IconButton(
                             icon: const Icon(Icons.arrow_forward),
                             onPressed: _currentPage * _pageSize < _data.length

@@ -63,7 +63,7 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = 'Gagal memuat data.';
+        _error = 'Failed to load data.';
       });
     }
   }
@@ -109,8 +109,9 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
           context: context,
           barrierDismissible: false,
           builder: (context) => const AlertDialog(
-            title: Text('Berhasil'),
-            content: Text('Pemeriksaan berhasil disimpan.'),
+            title: Text('Success'),
+content: Text('Health check has been successfully saved.'),
+
           ),
         );
 
@@ -126,8 +127,9 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Gagal'),
-          content: Text(result['message'] ?? 'Gagal menyimpan data.'),
+         title: const Text('Failed'),
+content: Text(result['message'] ?? 'Failed to save data.'),
+
         ),
       );
 
@@ -139,8 +141,9 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text('Kesalahan'),
-        content: Text('Terjadi kesalahan saat menyimpan data.'),
+       title: Text('Error'),
+content: Text('An error occurred while saving the data.'),
+
       ),
     );
 
@@ -162,7 +165,7 @@ Widget build(BuildContext context) {
   elevation: 8,
   backgroundColor: Colors.teal[400],
   title: const Text(
-    'Tambah Pemeriksaan',
+    'Add Data',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -190,7 +193,7 @@ Widget build(BuildContext context) {
                     ),
 
                   const Text(
-                    '📋 Informasi Pemeriksaan',
+                    '📋 Health Check Information',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 12),
@@ -209,8 +212,7 @@ Widget build(BuildContext context) {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              "Tidak ada sapi yang tersedia untuk diperiksa. Pastikan tidak ada pemeriksaan aktif.",
-                              style: TextStyle(color: Colors.orange),
+"No cows available for health check. Please ensure there are no active checks.",                              style: TextStyle(color: Colors.orange),
                             ),
                           ),
                         ],
@@ -219,7 +221,7 @@ Widget build(BuildContext context) {
                   else
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: '🐄 Pilih Sapi',
+                        labelText: '🐄 Select Cow',
                         filled: true,
                         fillColor: Colors.white,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -230,33 +232,33 @@ Widget build(BuildContext context) {
                       items: _availableCows.map((cow) {
                         return DropdownMenuItem<String>(
                           value: cow['id'].toString(),
-                          child: Text(cow['name'] ?? 'Tanpa Nama'),
+                          child: Text(cow['name'] ?? 'Unnamed'),
                         );
                       }).toList(),
-                      validator: (val) => val == null ? 'Wajib pilih sapi' : null,
+                      validator: (val) => val == null ? 'Cow selection is required' : null,
                     ),
 
                   const SizedBox(height: 16),
-                  _inputField(
-                    label: '🌡️ Suhu Rektal (°C)',
-                    controller: _tempController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _inputField(
-                    label: '❤️ Denyut Jantung (bpm)',
-                    controller: _heartRateController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _inputField(
-                    label: '🫁 Laju Pernapasan (bpm)',
-                    controller: _respirationController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  _inputField(
-                    label: '🐄 Ruminasi (menit)',
-                    controller: _ruminationController,
-                    keyboardType: TextInputType.number,
-                  ),
+_inputField(
+  label: '🌡️ Rectal Temperature (°C)',
+  controller: _tempController,
+  keyboardType: TextInputType.number,
+),
+_inputField(
+  label: '❤️ Heart Rate (bpm/minutes)',
+  controller: _heartRateController,
+  keyboardType: TextInputType.number,
+),
+_inputField(
+  label: '🫁 Respiration Rate (bpm/minutes)',
+  controller: _respirationController,
+  keyboardType: TextInputType.number,
+),
+_inputField(
+  label: '🐄 Rumination (contraction/minutes)',
+  controller: _ruminationController,
+  keyboardType: TextInputType.number,
+),
 
                   const SizedBox(height: 24),
                   SizedBox(
@@ -269,7 +271,7 @@ Widget build(BuildContext context) {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.save),
-                      label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                      label: Text(_submitting ? 'Saving...' : 'Save'),
                       onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -311,7 +313,7 @@ Widget _inputField({
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
       ),
-      validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
     ),
   );
 }

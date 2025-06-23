@@ -48,12 +48,12 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userString = prefs.getString('user');
-      if (userString == null) throw Exception('User tidak ditemukan');
+      if (userString == null) throw Exception('User not found');
       final user = jsonDecode(userString) as Map<String, dynamic>;
 
       final response = await _controller.getReproductionById(widget.reproductionId);
       if (response['success'] != true || response['data'] == null) {
-        throw Exception('Data reproduksi tidak ditemukan');
+        throw Exception('Reproduction data not found');
       }
 
       final reproduction = response['data'];
@@ -74,13 +74,13 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
         _form['insemination_date'] = reproduction['insemination_date'] ?? '';
         _form['total_insemination'] = reproduction['total_insemination']?.toString() ?? '';
         _form['edited_by'] = user['id'];
-        _cowName = cow != null ? '${cow['name']} (${cow['breed']})' : 'Tidak ditemukan';
+        _cowName = cow != null ? '${cow['name']} (${cow['breed']})' : 'Not found';
         _loading = false;
       });
     } catch (e) {
       debugPrint('❌ ERROR: $e');
       setState(() {
-        _error = 'Gagal memuat data reproduksi';
+        _error = 'Failed to load data reproduction.';
         _loading = false;
       });
     }
@@ -94,18 +94,19 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
   final insemination = DateTime.tryParse(_form['insemination_date']);
   final total = int.tryParse(_form['total_insemination']);
 
-  if (prev != null && calving != null && prev.isAfter(calving)) {
-    await _showError('Tanggal calving sebelumnya harus lebih awal.');
-    return;
-  }
-  if (insemination != null && calving != null && !insemination.isAfter(calving)) {
-    await _showError('Tanggal inseminasi harus setelah calving.');
-    return;
-  }
-  if (total == null || total < 1) {
-    await _showError('Jumlah inseminasi minimal 1.');
-    return;
-  }
+ if (prev != null && calving != null && prev.isAfter(calving)) {
+  await _showError('Previous calving date must be earlier.');
+  return;
+}
+if (insemination != null && calving != null && !insemination.isAfter(calving)) {
+  await _showError('Insemination date must be after the calving date.');
+  return;
+}
+if (total == null || total < 1) {
+  await _showError('Number of inseminations must be at least 1.');
+  return;
+}
+
 
   setState(() => _submitting = true);
 
@@ -125,8 +126,8 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const AlertDialog(
-          title: Text('Berhasil'),
-          content: Text('Data berhasil diperbarui.'),
+          title: Text('Success'),
+          content: Text('Success update data reproduction.'),
         ),
       );
 
@@ -138,7 +139,7 @@ class _ReproductionEditViewState extends State<ReproductionEditView> {
       }
     }
   } else {
-    await _showError(res['message'] ?? 'Gagal memperbarui');
+    await _showError(res['message'] ?? 'Failed update data reproduction.');
   }
 
   if (mounted) setState(() => _submitting = false);
@@ -151,7 +152,7 @@ Future<void> _showError(String msg) async {
     context: context,
     barrierDismissible: false,
     builder: (context) => AlertDialog(
-      title: const Text('Gagal'),
+      title: const Text('Failed'),
       content: Text(msg),
     ),
   );
@@ -187,7 +188,7 @@ Future<void> _showError(String msg) async {
             setState(() => _form[key] = picked.toIso8601String().split('T').first);
           }
         },
-        validator: (v) => _form[key] == null || _form[key].isEmpty ? 'Wajib diisi' : null,
+        validator: (v) => _form[key] == null || _form[key].isEmpty ? 'Required' : null,
       ),
     );
   }
@@ -203,7 +204,7 @@ Future<void> _showError(String msg) async {
         keyboardType: TextInputType.number,
         initialValue: _form[key],
         onChanged: (v) => _form[key] = v,
-        validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
       ),
     );
   }
@@ -213,7 +214,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
   title: const Text(
-    'Edit Data Reproduksi',
+    'Edit Data Reproduction',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -242,7 +243,7 @@ Widget build(BuildContext context) {
                   TextFormField(
                     readOnly: true,
                     decoration: InputDecoration(
-                      labelText: 'Sapi',
+                      labelText: 'Cow Name',
                       filled: true,
                       fillColor: Colors.grey.shade100,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -250,13 +251,13 @@ Widget build(BuildContext context) {
                     initialValue: _cowName,
                   ),
                   const SizedBox(height: 16),
-                  _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
+                  _dateField('📅 Date of Current Calving', 'calving_date'),
                   const SizedBox(height: 12),
-                  _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
+                  _dateField('📅 Date of Previous Calving ', 'previous_calving_date'),
                   const SizedBox(height: 12),
-                  _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
+                  _dateField('📅 Date of Insemination', 'insemination_date'),
                   const SizedBox(height: 12),
-                  _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
+                  _numberField('🔢 Total Insemination Attempts', 'total_insemination'),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -271,7 +272,7 @@ Widget build(BuildContext context) {
                               ),
                             )
                           : const Icon(Icons.save),
-                      label: Text(_submitting ? 'Menyimpan...' : 'Perbarui'),
+                      label: Text(_submitting ? 'Saving...' : 'Update Data'),
                       onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),

@@ -74,22 +74,23 @@ class _ReproductionCreateViewState extends State<ReproductionCreateView> {
   final total = int.tryParse(_form['total_insemination']);
   final success = int.tryParse(_form['successful_pregnancy']);
 
-  if (prevCalving != null && calving != null && prevCalving.isAfter(calving)) {
-    _showError("Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
-    return;
-  }
-  if (insemination != null && calving != null && !insemination.isAfter(calving)) {
-    _showError("Tanggal inseminasi harus setelah tanggal calving.");
-    return;
-  }
-  if (total == null || total < 1) {
-    _showError("Jumlah inseminasi harus minimal 1.");
-    return;
-  }
-  if (success == null || success < 1 || success > total) {
-    _showError("Kehamilan berhasil harus 1 sampai maksimal total inseminasi.");
-    return;
-  }
+ if (prevCalving != null && calving != null && prevCalving.isAfter(calving)) {
+  _showError("Previous calving date must be earlier than the current calving date.");
+  return;
+}
+if (insemination != null && calving != null && !insemination.isAfter(calving)) {
+  _showError("Insemination date must be after the calving date.");
+  return;
+}
+if (total == null || total < 1) {
+  _showError("Total inseminations must be at least 1.");
+  return;
+}
+if (success == null || success < 1 || success > total) {
+  _showError("Successful pregnancies must be between 1 and the total number of inseminations.");
+  return;
+}
+
 
   setState(() => _submitting = true);
 
@@ -108,8 +109,8 @@ class _ReproductionCreateViewState extends State<ReproductionCreateView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const AlertDialog(
-          title: Text('Berhasil'),
-          content: Text('Berhasil menyimpan data.'),
+          title: Text('Success'),
+          content: Text('Success to save data.'),
         ),
       );
       await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
@@ -120,7 +121,7 @@ class _ReproductionCreateViewState extends State<ReproductionCreateView> {
       }
     }
   } else {
-    _showError(res['message'] ?? 'Gagal menyimpan data');
+    _showError(res['message'] ?? 'Failed to save data.');
   }
 
   if (mounted) setState(() => _submitting = false);
@@ -133,7 +134,7 @@ Future<void> _showError(String msg) async {
     context: context,
     barrierDismissible: false,
     builder: (context) => AlertDialog(
-      title: const Text('Validasi Gagal'),
+      title: const Text('Failed validation'),
       content: Text(msg),
     ),
   );
@@ -169,7 +170,7 @@ Future<void> _showError(String msg) async {
             setState(() => _form[key] = picked.toIso8601String().split('T').first);
           }
         },
-        validator: (v) => _form[key] == null || _form[key].isEmpty ? 'Wajib diisi' : null,
+        validator: (v) => _form[key] == null || _form[key].isEmpty ? 'required' : null,
       ),
     );
   }
@@ -185,7 +186,7 @@ Future<void> _showError(String msg) async {
         keyboardType: TextInputType.number,
         initialValue: _form[key],
         onChanged: (v) => _form[key] = v,
-        validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+        validator: (v) => v == null || v.isEmpty ? 'required' : null,
       ),
     );
   }
@@ -194,7 +195,7 @@ Widget build(BuildContext context) {
   return Scaffold(
    appBar: AppBar(
   title: const Text(
-    'Tambah Data Reproduksi',
+    'Add Data',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -222,7 +223,7 @@ Widget build(BuildContext context) {
                     ),
                   DropdownButtonFormField(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Sapi',
+                      labelText: 'Select Cow',
                       filled: true,
                       fillColor: Colors.grey.shade100,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -237,16 +238,16 @@ Widget build(BuildContext context) {
                         )
                         .toList(),
                     onChanged: (val) => setState(() => _form['cow'] = val),
-                    validator: (val) => val == null ? 'Wajib pilih sapi' : null,
+                    validator: (val) => val == null ? 'Please select a cow' : null,
                   ),
                   const SizedBox(height: 16),
-                  _dateField('📅 Tanggal Calving Sekarang', 'calving_date'),
+                  _dateField('📅 Date of Current Calving', 'calving_date'),
                   const SizedBox(height: 12),
-                  _dateField('📅 Tanggal Calving Sebelumnya', 'previous_calving_date'),
+                  _dateField('📅 Date of Previous Calving', 'previous_calving_date'),
                   const SizedBox(height: 12),
-                  _dateField('📅 Tanggal Inseminasi', 'insemination_date'),
+                  _dateField('📅 Date of Insemination', 'insemination_date'),
                   const SizedBox(height: 12),
-                  _numberField('🔢 Jumlah Inseminasi', 'total_insemination'),
+                  _numberField('🔢 Total Number of Inseminations', 'total_insemination'),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -261,7 +262,7 @@ Widget build(BuildContext context) {
                               ),
                             )
                           : const Icon(Icons.save),
-                      label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                      label: Text(_submitting ? 'Saving...' : 'Save'),
                       onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),

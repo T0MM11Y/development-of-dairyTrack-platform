@@ -74,7 +74,7 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
 
   Future<void> _loadData({bool isFilter = false}) async {
     if (isFilter && (startDate == null || endDate == null)) {
-      _showAlertDialog('Tanggal Kosong', 'Silakan isi Tanggal Mulai dan Tanggal Berakhir terlebih dahulu.');
+      _showAlertDialog('Empty Date', 'Please fill in Start Date and End Date first.');
       return;
     }
 
@@ -91,9 +91,9 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
       final symptoms = _filterByDate(symptomRes['data'] ?? []);
       final reproductions = _filterByDate(reproRes['data'] ?? [], 'recorded_at');
 
-      final sehat = healthChecks.where((e) => !(e['needs_attention'] ?? false)).length;
-      final sakit = healthChecks.where((e) => (e['needs_attention'] ?? false) && e['status'] != 'handled').length;
-      final ditangani = healthChecks.where((e) => (e['needs_attention'] ?? false) && e['status'] == 'handled').length;
+      final healthy = healthChecks.where((e) => !(e['needs_attention'] ?? false)).length;
+      final sick = healthChecks.where((e) => (e['needs_attention'] ?? false) && e['status'] != 'handled').length;
+      final handled = healthChecks.where((e) => (e['needs_attention'] ?? false) && e['status'] == 'handled').length;
 
       setState(() {
         summary = {
@@ -106,9 +106,9 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
         chartDiseaseData = _groupBy(diseases, 'disease_name');
 
         chartHealthData = [
-          if (sehat > 0) {'name': 'Sehat', 'value': sehat},
-          if (sakit > 0) {'name': 'Butuh Perhatian', 'value': sakit},
-          if (ditangani > 0) {'name': 'Sudah Ditangani', 'value': ditangani},
+          if (healthy > 0) {'name': 'Healthy', 'value': healthy},
+          if (sick > 0) {'name': 'Needs Attention', 'value': sick},
+          if (handled > 0) {'name': 'Handled', 'value': handled},
         ];
 
         tableDiseaseData = diseases.map((e) => {
@@ -129,12 +129,12 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
       if (isFilter) {
         final total = healthChecks.length + diseases.length + symptoms.length + reproductions.length;
         _showAlertDialog(
-          total == 0 ? 'Tidak Ada Data' : 'Filter Berhasil',
-          total == 0 ? 'Tidak ditemukan data dalam rentang tanggal tersebut.' : 'Data berhasil difilter sesuai tanggal.',
+          total == 0 ? 'No Data Found' : 'Filter Successful',
+          total == 0 ? 'No data found in the selected date range.' : 'Data successfully filtered by date.',
         );
       }
     } catch (e) {
-      _showAlertDialog('Gagal Mengambil Data', 'Terjadi kesalahan saat mengambil data.');
+      _showAlertDialog('Failed to Fetch Data', 'An error occurred while fetching data.');
     } finally {
       setState(() => _loading = false);
     }
@@ -151,7 +151,7 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
   List<Map<String, dynamic>> _groupBy(List data, String field) {
     final Map<String, int> grouped = {};
     for (var item in data) {
-      final key = item[field] ?? 'Tidak Diketahui';
+      final key = item[field] ?? 'Unknown';
       grouped[key] = (grouped[key] ?? 0) + 1;
     }
     return grouped.entries.map((e) => {'name': e.key, 'value': e.value}).toList();
@@ -160,7 +160,7 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Kesehatan')),
+      appBar: AppBar(title: const Text('Health Dashboard')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -168,23 +168,23 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _sectionTitle('Filter Tanggal'),
+                  _sectionTitle('Date Filter'),
                   _buildDateFilter(),
                   const SizedBox(height: 24),
-                  _sectionTitle('Ringkasan'),
+                  _sectionTitle('Summary'),
                   _buildSummaryCards(),
                   const SizedBox(height: 24),
-                  _sectionTitle('Statistik Penyakit'),
+                  _sectionTitle('Disease Statistics'),
                   _buildChart(chartDiseaseData, Colors.red),
                   const SizedBox(height: 24),
-                  _sectionTitle('Kondisi Kesehatan Ternak'),
+                  _sectionTitle('Livestock Health Condition'),
                   _buildChart(chartHealthData, Colors.blue),
                   const SizedBox(height: 24),
-                  _sectionTitle('Tabel Riwayat Penyakit'),
+                  _sectionTitle('Disease History Table'),
                   _buildTable(paginatedDiseaseData, ['cowname', 'penyakit', 'keterangan']),
                   _buildPagination(diseasePage, tableDiseaseData.length, (v) => setState(() => diseasePage = v)),
                   const SizedBox(height: 24),
-                  _sectionTitle('Tabel Pemeriksaan Kesehatan'),
+                  _sectionTitle('Health Check Table'),
                   _buildTable(paginatedHealthData, ['cowname', 'suhu', 'detak', 'napas', 'ruminasi']),
                   _buildPagination(healthPage, tableHealthData.length, (v) => setState(() => healthPage = v)),
                 ],
@@ -198,12 +198,12 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _datePickerTile('Tanggal Mulai', startDate, (d) => setState(() => startDate = d)),
-        _datePickerTile('Tanggal Akhir', endDate, (d) => setState(() => endDate = d)),
+        _datePickerTile('Start Date', startDate, (d) => setState(() => startDate = d)),
+        _datePickerTile('End Date', endDate, (d) => setState(() => endDate = d)),
         ElevatedButton.icon(
           onPressed: () => _loadData(isFilter: true),
           icon: const Icon(Icons.search),
-          label: const Text('Cari'),
+          label: const Text('Search'),
         ),
         ElevatedButton.icon(
           onPressed: () {
@@ -221,152 +221,146 @@ class _HealthDashboardViewState extends State<HealthDashboardView> {
     );
   }
 
- Widget _buildSummaryCards() {
-  final items = [
-    ['Pemeriksaan', summary['pemeriksaan'], Colors.blue],
-    ['Gejala', summary['gejala'], Colors.indigo],
-    ['Penyakit', summary['penyakit'], Colors.red],
-    ['Reproduksi', summary['reproduksi'], Colors.orange],
-  ];
+  Widget _buildSummaryCards() {
+    final items = [
+      ['Health Checks', summary['pemeriksaan'], Colors.blue],
+      ['Symptoms', summary['gejala'], Colors.indigo],
+      ['Diseases', summary['penyakit'], Colors.red],
+      ['Reproduction', summary['reproduksi'], Colors.orange],
+    ];
 
-  return Wrap(
-    spacing: 12,
-    runSpacing: 12,
-    alignment: WrapAlignment.center, // ✅ Ini agar wrap-nya rata tengah
-    children: items.map((item) => _summaryCard(item[0] as String, item[1] as int, item[2] as Color)).toList(),
-  );
-}
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      alignment: WrapAlignment.center,
+      children: items.map((item) => _summaryCard(item[0] as String, item[1] as int, item[2] as Color)).toList(),
+    );
+  }
 
-
- Widget _summaryCard(String title, int? value, Color color) {
-  return Container(
-    width: 160,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
-      border: Border.all(color: color.withOpacity(0.3)),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center, // ✅ Vertikal center
-      crossAxisAlignment: CrossAxisAlignment.center, // ✅ Horizontal center
-      children: [
-        Icon(Icons.analytics, color: color, size: 30),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          '$value',
-          style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
-}
-
-
-Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
-  final int barCount = data.length;
-  final double screenWidth = MediaQuery.of(context).size.width;
-  final double barSpacing = 70;
-  final bool isScrollable = barCount > 4;
-  final double chartWidth = isScrollable ? barCount * barSpacing : screenWidth;
-
-  return SizedBox(
-    height: 300,
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
-      child: SizedBox(
-        width: chartWidth,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: BarChart(
-            BarChartData(
-              alignment: isScrollable ? BarChartAlignment.start : BarChartAlignment.spaceAround,
-              barGroups: List.generate(barCount, (i) {
-                return BarChartGroupData(
-                  x: i,
-                  barRods: [
-                    BarChartRodData(
-                      toY: (data[i]['value'] as num).toDouble(),
-                      width: 24,
-                      color: baseColor,
-                      borderRadius: BorderRadius.circular(4),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: true,
-                        toY: (data[i]['value'] as num).toDouble() + 2,
-                        color: Colors.grey[200]!,
-                      ),
-                    ),
-                  ],
-                );
-              }),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: true, reservedSize: 32),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, _) {
-                      final index = value.toInt();
-                      if (index < 0 || index >= data.length) return const SizedBox.shrink();
-
-                      return Padding(
-  padding: const EdgeInsets.only(top: 8.0),
-  child: SizedBox(
-    width: 60,
-    child: Transform.rotate(
-      angle: -0.8, // ~ -45 derajat
-      child: Text(
-        data[index]['name'],
-        style: const TextStyle(fontSize: 11),
-        textAlign: TextAlign.left,
+  Widget _summaryCard(String title, int? value, Color color) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
       ),
-    ),
-  ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(Icons.analytics, color: color, size: 30),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            '$value',
+            style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
+    final int barCount = data.length;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double barSpacing = 70;
+    final bool isScrollable = barCount > 4;
+    final double chartWidth = isScrollable ? barCount * barSpacing : screenWidth;
+
+    return SizedBox(
+      height: 300,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: chartWidth,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: BarChart(
+              BarChartData(
+                alignment: isScrollable ? BarChartAlignment.start : BarChartAlignment.spaceAround,
+                barGroups: List.generate(barCount, (i) {
+                  return BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: (data[i]['value'] as num).toDouble(),
+                        width: 24,
+                        color: baseColor,
+                        borderRadius: BorderRadius.circular(4),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: (data[i]['value'] as num).toDouble() + 2,
+                          color: Colors.grey[200]!,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= data.length) return const SizedBox.shrink();
+
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: SizedBox(
+                            width: 60,
+                            child: Transform.rotate(
+                              angle: -0.8,
+                              child: Text(
+                                data[index]['name'],
+                                style: const TextStyle(fontSize: 11),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: false,
+                      reservedSize: 32,
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: false),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    tooltipMargin: 12,
+                    fitInsideVertically: true,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        '${data[group.x.toInt()]['name']}\n${rod.toY.toInt()}',
+                        const TextStyle(color: Colors.white),
                       );
                     },
                   ),
-                ),
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                    reservedSize: 32, // ✅ beri ruang atas agar tooltip tidak terpotong
-                  ),
-                ),
-              ),
-              gridData: FlGridData(show: true),
-              borderData: FlBorderData(show: false),
-              barTouchData: BarTouchData(
-                enabled: true,
-                touchTooltipData: BarTouchTooltipData(
-                  // tooltipBgColor: Colors.black87,
-                  tooltipMargin: 12, // ✅ beri jarak tooltip ke batang
-                  fitInsideVertically: true, // ✅ biar tidak ketimpa atas
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    return BarTooltipItem(
-                      '${data[group.x.toInt()]['name']}\n${rod.toY.toInt()}',
-                      const TextStyle(color: Colors.white),
-                    );
-                  },
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-
-
-
+    );
+  }
 
   Widget _sectionTitle(String text) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -402,16 +396,25 @@ Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
   }
 
   Widget _buildTable(List<Map<String, dynamic>> data, List<String> keys) {
+     final Map<String, String> columnTitles = {
+    'cowname': 'Cow Name',
+    'penyakit': 'Disease',
+    'keterangan': 'Description',
+    'suhu': 'Temperature',
+    'detak': 'Heart Rate',
+    'napas': 'Respiration',
+    'ruminasi': 'Rumination',
+  };
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: keys.map((k) => DataColumn(label: Text(k.toUpperCase()))).toList(),
-          rows: data.map((row) {
-            return DataRow(cells: keys.map((k) => DataCell(Text(row[k]?.toString() ?? '-'))).toList());
-          }).toList(),
+    margin: const EdgeInsets.symmetric(vertical: 8),
+    elevation: 2,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: keys.map((k) => DataColumn(label: Text(columnTitles[k] ?? k))).toList(),
+        rows: data.map((row) {
+          return DataRow(cells: keys.map((k) => DataCell(Text(row[k]?.toString() ?? '-'))).toList());
+        }).toList(),
         ),
       ),
     );
@@ -425,13 +428,13 @@ Widget _buildChart(List<Map<String, dynamic>> data, Color baseColor) {
         TextButton.icon(
           onPressed: page > 1 ? () => onChange(page - 1) : null,
           icon: const Icon(Icons.chevron_left),
-          label: const Text("Sebelumnya"),
+          label: const Text("Previous"),
         ),
-        Text("Halaman $page dari $maxPage"),
+        Text("Page $page of $maxPage"),
         TextButton.icon(
           onPressed: page < maxPage ? () => onChange(page + 1) : null,
-          icon: const Text("Selanjutnya"),
-          label: const Icon(Icons.chevron_right),
+          icon: const Icon(Icons.chevron_right),
+          label: const Text("Next"),
         ),
       ],
     );

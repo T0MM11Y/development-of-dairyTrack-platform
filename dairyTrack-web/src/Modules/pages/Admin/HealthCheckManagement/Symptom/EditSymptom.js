@@ -84,7 +84,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
       });
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError("Gagal mengambil data gejala.");
+  setError("Failed to fetch symptom data.");
     } finally {
       setLoading(false);
     }
@@ -100,34 +100,35 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-  
-    try {
-      await updateSymptom(symptomId, form);
-  
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: "Data gejala berhasil diperbarui.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-  
-      if (onSaved) onSaved();
-    } catch (err) {
-      setError("Gagal memperbarui data gejala.");
-  
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Memperbarui",
-        text: "Terjadi kesalahan saat memperbarui data gejala.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  e.preventDefault();
+  setSubmitting(true);
+  setError("");
+
+  try {
+    await updateSymptom(symptomId, form);
+
+    Swal.fire({
+      icon: "success",
+      title: "Success",
+      text: "Symptom data has been successfully updated.",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    if (onSaved) onSaved();
+  } catch (err) {
+    setError("Failed to update symptom data.");
+
+    Swal.fire({
+      icon: "error",
+      title: "Failed to Update",
+      text: "An error occurred while updating symptom data.",
+    });
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
  return (
   <div
@@ -138,14 +139,14 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
       <div className="modal-content">
         <div className="modal-header">
           <h4 className="modal-title text-info fw-bold">
-            Edit Data Gejala
+            Edit Symptom Data
           </h4>
           <button className="btn-close" onClick={onClose} disabled={submitting}></button>
         </div>
         <div className="modal-body">
           {error && <p className="text-danger text-center">{error}</p>}
           {loading || !form ? (
-            <p className="text-center">Memuat data gejala...</p>
+<p className="text-center">Loading symptom data...</p>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="row">
@@ -184,7 +185,7 @@ const SymptomEditPage = ({ symptomId, onClose, onSaved }) => {
                 className="btn btn-info w-100 fw-semibold"
                 disabled={submitting}
               >
-                {submitting ? "Memperbarui..." : "Perbarui Data"}
+                {submitting ? "Updating..." : "Update Data"}
               </button>
             </form>
           )}

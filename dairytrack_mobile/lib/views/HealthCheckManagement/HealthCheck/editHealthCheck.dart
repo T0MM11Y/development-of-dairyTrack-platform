@@ -72,10 +72,10 @@ class _EditHealthCheckViewState extends State<EditHealthCheckView> {
         _heartRateController.text = _form!['heart_rate'].toString();
         _respirationController.text = _form!['respiration_rate'].toString();
         _ruminationController.text = _form!['rumination'].toString();
-        _cowName = cow.isNotEmpty ? "${cow['name']} (${cow['breed']})" : 'Sapi tidak ditemukan';
+        _cowName = cow.isNotEmpty ? "${cow['name']} (${cow['breed']})" : 'Cow not found';
       });
     } catch (e) {
-      setState(() => _error = 'Gagal memuat data pemeriksaan.');
+      setState(() => _error = 'Failed to load data health check.');
     } finally {
       setState(() => _loading = false);
     }
@@ -109,8 +109,8 @@ class _EditHealthCheckViewState extends State<EditHealthCheckView> {
           context: context,
           barrierDismissible: false,
           builder: (context) => const AlertDialog(
-            title: Text('Berhasil'),
-            content: Text('Pemeriksaan berhasil diperbarui.'),
+            title: Text('Success'),
+            content: Text('Success update data health check.'),
           ),
         );
 
@@ -125,8 +125,8 @@ class _EditHealthCheckViewState extends State<EditHealthCheckView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Gagal'),
-          content: Text(response['message'] ?? 'Gagal memperbarui data.'),
+          title: const Text('Failed'),
+          content: Text(response['message'] ?? 'Failed to update data.'),
         ),
       );
 
@@ -138,8 +138,9 @@ class _EditHealthCheckViewState extends State<EditHealthCheckView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text('Kesalahan'),
-        content: Text('Terjadi kesalahan saat memperbarui data.'),
+        title: Text('Error'),
+content: Text('An error occurred while updating the data.'),
+
       ),
     );
 
@@ -158,7 +159,7 @@ Widget build(BuildContext context) {
     backgroundColor: const Color(0xFFf5f7fa),
    appBar: AppBar(
   title: const Text(
-    'Edit Pemeriksaan',
+    'Edit Health Check',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -174,7 +175,7 @@ Widget build(BuildContext context) {
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _form == null
-            ? Center(child: Text(_error ?? 'Data tidak ditemukan'))
+            ? Center(child: Text(_error ?? 'Data not found'))
             : Padding(
                 padding: const EdgeInsets.all(16),
                 child: Form(
@@ -188,9 +189,9 @@ Widget build(BuildContext context) {
                               style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                         ),
 
-                      _readonlyField('🐄 Sapi', _cowName),
+                      _readonlyField('🐄 Cow', _cowName),
                       _readonlyField(
-                        '📅 Tanggal Pemeriksaan',
+                        '📅 Health Check Date',
                         _form?['checkup_date'] != null
                             ? DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
                                     .format(DateTime.parse(_form!['checkup_date']).toLocal()) +
@@ -198,15 +199,16 @@ Widget build(BuildContext context) {
                             : '-',
                       ),
 
-                      _inputField('🌡️ Suhu Rektal (°C)', _tempController),
-                      _inputField('❤️ Denyut Jantung (bpm)', _heartRateController),
-                      _inputField('🫁 Laju Pernapasan (bpm)', _respirationController),
-                      _inputField('🐄 Ruminasi (menit)', _ruminationController),
+                      _inputField('🌡️ Rectal Temperature (°C)', _tempController),
+_inputField('❤️ Heart Rate (bpm/minutes)', _heartRateController),
+_inputField('🫁 Respiration Rate (bpm/minutes)', _respirationController),
+_inputField('🐄 Rumination (contraction/minutes)', _ruminationController),
 
-                      _readonlyField(
-                        '📌 Status',
-                        _form!['status'] == 'handled' ? '✅ Sudah ditangani' : '⏳ Belum ditangani',
-                      ),
+_readonlyField(
+  '📌 Status',
+  _form!['status'] == 'handled' ? '✅ Handled' : '⏳ Not Handled',
+),
+
 
                       const SizedBox(height: 24),
                       SizedBox(
@@ -219,7 +221,7 @@ Widget build(BuildContext context) {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Icon(Icons.save),
-                          label: Text(_submitting ? 'Menyimpan...' : 'Simpan Perubahan'),
+                          label: Text(_submitting ? 'Saving...' : 'Save Changes'),
                           onPressed: _submitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -259,7 +261,7 @@ Widget _inputField(String label, TextEditingController controller) {
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
       ),
-      validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
     ),
   );
 }
