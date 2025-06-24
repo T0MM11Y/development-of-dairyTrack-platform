@@ -366,14 +366,15 @@ const Blog = () => {
                     Discover Knowledge
                   </div>
                   <h1 className="hero-title">
-                    Blog & Artikel
-                    <span className="gradient-text"> Terbaru</span>
+                    Latest
+                    <span className="gradient-text"> Blogs and Articles</span>
                   </h1>
                   <div className="title-divider"></div>
                   <p className="hero-description">
-                    Temukan inspirasi, wawasan, dan berita terbaru seputar dunia
-                    herbal, hortikultura, dan inovasi sains di Indonesia.
-                    Jelajahi artikel pilihan dan update terkini dari TSTH².
+                    Find inspiration, insights, and the latest news about the
+                    world of herbs, horticulture, and science innovation in
+                    Indonesia. Explore selected articles and the latest updates
+                    from TSTH².
                   </p>
 
                   <div className="hero-stats">
