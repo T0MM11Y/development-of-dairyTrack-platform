@@ -14,7 +14,7 @@ const Nutrisi = sequelize.define(
       allowNull: false,
       unique: true,
       validate: {
-        notEmpty: { msg: "Nutrient name cannot be empty" },
+        notEmpty: { msg: "Nama nutrisi tidak boleh kosong" },
       },
     },
     unit: {
@@ -22,7 +22,7 @@ const Nutrisi = sequelize.define(
       allowNull: false,
       defaultValue: "gram",
       validate: {
-        notEmpty: { msg: "Unit cannot be empty" },
+        notEmpty: { msg: "Unit tidak boleh kosong" },
       },
     },
     user_id: {
@@ -67,10 +67,16 @@ const Nutrisi = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "nutritions",
     timestamps: true,
+    paranoid: true,
   }
 );
 

@@ -22,31 +22,30 @@ const DailyFeedItems = sequelize.define(
       onDelete: "CASCADE",
       onUpdate: "CASCADE",
       validate: {
-        notNull: { msg: "Daily feed ID is required" },
-        isInt: { msg: "Daily feed ID must be an integer" },
+        notNull: { msg: "ID jadwal pakan harian harus diisi" },
+        isInt: { msg: "ID jadwal pakan harian harus berupa angka" },
       },
     },
     feed_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: "feed",
         key: "id",
       },
-      onDelete: "RESTRICT",
+      onDelete: "SET NULL",
       onUpdate: "CASCADE",
       validate: {
-        notNull: { msg: "Feed ID is required" },
-        isInt: { msg: "Feed ID must be an integer" },
+        isInt: { msg: "ID pakan harus berupa angka" },
       },
     },
     quantity: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
-        notNull: { msg: "Quantity is required" },
-        isDecimal: { msg: "Quantity must be a decimal number" },
-        min: { args: [0.01], msg: "Quantity must be greater than 0" },
+        notNull: { msg: "Kuantitas harus diisi" },
+        isDecimal: { msg: "Kuantitas harus berupa angka desimal" },
+        min: { args: [0.01], msg: "Kuantitas harus lebih dari 0" },
       },
     },
     user_id: {
@@ -91,10 +90,16 @@ const DailyFeedItems = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "daily_feed_items",
     timestamps: true,
+    paranoid: true,
     hooks: {
       beforeCreate: async (item, options) => {
         console.log("Starting beforeCreate hook for DailyFeedItems", {
@@ -105,14 +110,18 @@ const DailyFeedItems = sequelize.define(
         });
         const t = options.transaction;
         if (!options.userId) {
-          throw new Error("User ID is required for creating DailyFeedItems");
+          throw new Error("User ID diperlukan untuk membuat DailyFeedItems");
         }
         item.created_by = options.userId;
         item.updated_by = options.userId;
         item.user_id = options.userId;
 
+        if (!item.feed_id) {
+          throw new Error("ID pakan harus diisi untuk membuat DailyFeedItems");
+        }
+
         const feedStock = await FeedStock.findOne({
-          where: { feedId: item.feed_id },
+          where: { feedId: item.feed_id, deletedAt: null },
           transaction: t,
           lock: t.LOCK.UPDATE,
         });
@@ -145,26 +154,28 @@ const DailyFeedItems = sequelize.define(
         });
         const t = options.transaction;
         if (!options.userId) {
-          throw new Error("User ID is required for updating DailyFeedItems");
+          throw new Error("User ID diperlukan untuk memperbarui DailyFeedItems");
         }
         item.updated_by = options.userId;
 
         const originalItem = await DailyFeedItems.findByPk(item.id, {
           transaction: t,
+          paranoid: false,
         });
 
         if (!originalItem) {
           throw new Error(`Item pakan dengan ID ${item.id} tidak ditemukan`);
         }
 
+        const feedId = item.feed_id || originalItem.feed_id;
         const feedStock = await FeedStock.findOne({
-          where: { feedId: originalItem.feed_id },
+          where: { feedId, deletedAt: null },
           transaction: t,
           lock: t.LOCK.UPDATE,
         });
 
         if (!feedStock) {
-          throw new Error(`Stok pakan dengan ID ${originalItem.feed_id} tidak ditemukan`);
+          throw new Error(`Stok pakan dengan ID ${feedId} tidak ditemukan`);
         }
 
         const originalQty = parseFloat(originalItem.quantity);
@@ -173,7 +184,7 @@ const DailyFeedItems = sequelize.define(
 
         if (difference > 0) {
           if (parseFloat(feedStock.stock) < difference) {
-            throw new Error(`Stok tidak cukup untuk pakan dengan ID ${originalItem.feed_id}. Stok tersedia: ${feedStock.stock} kg`);
+            throw new Error(`Stok tidak cukup untuk pakan dengan ID ${feedId}. Stok tersedia: ${feedStock.stock} kg`);
           }
         }
 
@@ -183,7 +194,7 @@ const DailyFeedItems = sequelize.define(
           { transaction: t, userId: options.userId }
         );
         console.log("FeedStock updated in beforeUpdate", {
-          feedId: originalItem.feed_id,
+          feedId,
           newStock,
           userId: options.userId,
         });
@@ -197,11 +208,11 @@ const DailyFeedItems = sequelize.define(
         });
         const t = options.transaction;
         if (!options.userId) {
-          throw new Error("User ID is required for deleting DailyFeedItems");
+          throw new Error("User ID diperlukan untuk menghapus DailyFeedItems");
         }
 
         const feedStock = await FeedStock.findOne({
-          where: { feedId: item.feed_id },
+          where: { feedId: item.feed_id, deletedAt: null },
           transaction: t,
           lock: t.LOCK.UPDATE,
         });

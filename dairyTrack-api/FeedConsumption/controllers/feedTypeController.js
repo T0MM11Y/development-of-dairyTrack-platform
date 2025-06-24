@@ -1,5 +1,6 @@
 const FeedType = require("../models/feedTypeModel.js");
 const User = require("../models/userModel");
+const { Sequelize } = require("sequelize");
 
 // Helper function to format FeedType response
 const formatFeedTypeResponse = (feedType) => ({
@@ -11,12 +12,12 @@ const formatFeedTypeResponse = (feedType) => ({
   updated_by: feedType.Updater ? { id: feedType.Updater.id, name: feedType.Updater.name } : null,
   created_at: feedType.createdAt,
   updated_at: feedType.updatedAt,
+  deleted_at: feedType.deletedAt, // Opsional: tambahkan untuk debugging atau admin
 });
-
 
 exports.addFeedType = async (req, res) => {
   const { name } = req.body;
-  const userId = req.user.id; // dari middleware verifyToken
+  const userId = req.user.id; // Dari middleware verifyToken
 
   try {
     // Validasi input
@@ -28,7 +29,7 @@ exports.addFeedType = async (req, res) => {
     }
 
     // Cek apakah user valid
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -36,15 +37,15 @@ exports.addFeedType = async (req, res) => {
       });
     }
 
-    // DIRECT APPROACH: Set the values directly instead of relying on hooks
+    // Buat FeedType
     const feedType = await FeedType.create({
-      name: name,
+      name,
       user_id: userId,
       created_by: userId,
-      updated_by: userId
+      updated_by: userId,
     });
 
-    // Ambil data lengkap beserta nama user pembuat & updater
+    // Ambil data lengkap beserta nama user
     const feedTypeWithUsers = await FeedType.findByPk(feedType.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -62,10 +63,7 @@ exports.addFeedType = async (req, res) => {
     console.error("Error in addFeedType:", err);
 
     // Penanganan nama duplikat
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.original?.code === "ER_DUP_ENTRY"
-    ) {
+    if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
         message: `Jenis pakan dengan nama "${name}" sudah ada. Silakan gunakan nama yang berbeda.`,
@@ -92,18 +90,29 @@ exports.deleteFeedType = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Cari FeedType
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Jenis Pakan tidak ditemukan" });
+      return res.status(404).json({
+        success: false,
+        message: "Jenis pakan tidak ditemukan",
+      });
     }
 
-    await feedType.destroy();
-    res.status(200).json({ success: true, message: "Jenis Pakan berhasil di hapus" });
+    // Soft delete
+    await feedType.destroy(); // Tanpa force: true untuk soft delete
+
+    return res.status(200).json({
+      success: true,
+      message: "Jenis pakan berhasil dihapus",
+    });
   } catch (err) {
     console.error("Error in deleteFeedType:", err);
-    res.status(500).json({
+
+    // Penanganan error umum
+    return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan pada server.",
+      message: err.message || "Terjadi kesalahan pada server",
     });
   }
 };
@@ -114,28 +123,39 @@ exports.updateFeedType = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // Validasi input
     if (!name) {
-      return res.status(400).json({ success: false, message: "Nama harus di isi" });
+      return res.status(400).json({
+        success: false,
+        message: "Nama jenis pakan wajib diisi",
+      });
     }
 
+    // Cari FeedType
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Jenis pakan tidak ditemukan" });
+      return res.status(404).json({
+        success: false,
+        message: "Jenis pakan tidak ditemukan",
+      });
     }
 
-    // Validate user existence
-    const user = await User.findByPk(userId);
+    // Cek apakah user valid
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
-      return res.status(400).json({ success: false, message: `User ID ${userId} does not exist` });
+      return res.status(400).json({
+        success: false,
+        message: `User dengan ID ${userId} tidak ditemukan`,
+      });
     }
 
-    // Update FeedType - set updated_by directly instead of relying on hooks
-    await feedType.update({ 
-      name: name,
-      updated_by: userId 
+    // Update FeedType
+    await feedType.update({
+      name,
+      updated_by: userId,
     });
 
-    // Fetch the updated feed type with associated user names
+    // Ambil data lengkap beserta nama user
     const feedTypeWithUsers = await FeedType.findByPk(id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -144,31 +164,34 @@ exports.updateFeedType = async (req, res) => {
       ],
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Feed type updated successfully",
+      message: "Jenis pakan berhasil diperbarui",
       data: formatFeedTypeResponse(feedTypeWithUsers),
     });
   } catch (err) {
     console.error("Error in updateFeedType:", err);
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.original?.code === "ER_DUP_ENTRY"
-    ) {
+
+    // Penanganan nama duplikat
+    if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
-        message: `Jenis pakan dengan nama "${name}" sudah ada! Silakan masukkan nama yang berbeda.`,
+        message: `Jenis pakan dengan nama "${name}" sudah ada. Silakan gunakan nama yang berbeda.`,
       });
     }
+
+    // Penanganan foreign key error
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
-        message: "Invalid user ID provided",
+        message: "Relasi user tidak valid. Pastikan ID user benar.",
       });
     }
-    res.status(500).json({
+
+    // Error umum
+    return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan pada server.",
+      message: err.message || "Terjadi kesalahan pada server",
     });
   }
 };
@@ -186,18 +209,21 @@ exports.getFeedTypeById = async (req, res) => {
     });
 
     if (!feedType) {
-      return res.status(404).json({ success: false, message: "Jenis pakan tidak ditemukan" });
+      return res.status(404).json({
+        success: false,
+        message: "Jenis pakan tidak ditemukan",
+      });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: formatFeedTypeResponse(feedType),
     });
   } catch (err) {
     console.error("Error in getFeedTypeById:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan pada server.",
+      message: err.message || "Terjadi kesalahan pada server",
     });
   }
 };
@@ -214,15 +240,15 @@ exports.getAllFeedTypes = async (req, res) => {
 
     const formattedFeedTypes = feedTypes.map(formatFeedTypeResponse);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: formattedFeedTypes,
     });
   } catch (err) {
     console.error("Error in getAllFeedTypes:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan pada server.",
+      message: err.message || "Terjadi kesalahan pada server",
     });
   }
 };

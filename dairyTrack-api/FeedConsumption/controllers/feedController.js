@@ -21,6 +21,7 @@ const formatFeedResponse = (feed) => ({
   updated_by: feed.Updater ? { id: feed.Updater.id, name: feed.Updater.name } : null,
   created_at: feed.createdAt,
   updated_at: feed.updatedAt,
+  deleted_at: feed.deletedAt, // Opsional untuk debugging atau admin
   nutrisi_records: feed.FeedNutrisiRecords
     ? feed.FeedNutrisiRecords.map((record) => ({
         nutrisi_id: record.nutrisi_id,
@@ -50,69 +51,52 @@ const validateModels = () => {
 const createFeed = async (req, res) => {
   try {
     validateModels();
-
     const { typeId, name, unit, min_stock, price, nutrisiList } = req.body;
-    const userId = req.user?.id; // From verifyToken middleware
+    const userId = req.user?.id;
 
-    // Validate userId
     if (!userId) {
-      console.error("Error: userId is undefined or null");
       return res.status(401).json({
         success: false,
         message: "Autentikasi gagal. Silakan login kembali.",
       });
     }
 
-    // Validate input
-    if (!typeId || !name || !unit || min_stock === undefined || price === undefined) {
+    if (!name || !unit || min_stock === undefined || price === null) {
       return res.status(400).json({
         success: false,
-        message: "Harap lengkapi semua field wajib: typeId, name, unit, min_stock, dan price.",
+        message: "Harap lengkapi semua field wajib: nama, unit, stok minimum, dan harga.",
       });
     }
 
-    // Check if user exists
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: `User dengan ID ${userId} tidak ditemukan.`,
       });
     }
 
-    // Check for duplicate feed name (case-insensitive for MySQL)
     const existingFeed = await Feed.findOne({
       where: Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), name.trim().toLowerCase()),
     });
     if (existingFeed) {
       return res.status(400).json({
         success: false,
-        message: `Pakan dengan nama "${name}" sudah terdaftar. Gunakan nama lain.`,
+        message: `Pakan dengan nama "${name.trim()}" sudah ada. Silakan gunakan nama lain.`,
       });
     }
 
-    // Validate feed type
-    const feedType = await FeedType.findByPk(typeId);
-    if (!feedType) {
-      return res.status(404).json({
-        success: false,
-        message: "Jenis pakan tidak ditemukan. Pastikan typeId valid.",
-      });
+    let feedType = null;
+    if (typeId) {
+      feedType = await FeedType.findByPk(typeId);
+      if (!feedType) {
+        return res.status(404).json({
+          success: false,
+          message: "Jenis pakan tidak ditemukan.",
+        });
+      }
     }
 
-    // Log input data for debugging
-    console.log("Creating feed with data:", {
-      typeId,
-      name: name.trim(),
-      unit,
-      min_stock,
-      price,
-      user_id: userId,
-      created_by: userId,
-      updated_by: userId,
-    });
-
-    // Create feed with all fields
     const feed = await Feed.create({
       typeId,
       name: name.trim(),
@@ -124,9 +108,6 @@ const createFeed = async (req, res) => {
       updated_by: userId,
     });
 
-    console.log("Feed created successfully:", feed.toJSON());
-
-    // Handle nutrisiList if provided
     let nutrisiRecordsCreated = [];
     if (nutrisiList && Array.isArray(nutrisiList) && nutrisiList.length > 0) {
       const nutrisiIds = nutrisiList.map((n) => n.nutrisi_id);
@@ -135,7 +116,7 @@ const createFeed = async (req, res) => {
       });
 
       if (nutritions.length !== nutrisiList.length) {
-        return res.status(404).json({
+        return res.status(400).json({
           success: false,
           message: "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
         });
@@ -145,64 +126,47 @@ const createFeed = async (req, res) => {
         feed_id: feed.id,
         nutrisi_id: n.nutrisi_id,
         amount: n.amount || 0.0,
-        user_id: userId, // Add required user_id
-        created_by: userId, // Add required created_by
-        updated_by: userId, // Add required updated_by
+        user_id: userId,
+        created_by: userId,
+        updated_by: userId,
       }));
 
-      console.log("FeedNutrisi data to create:", feedNutrisiData);
-
       nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
-        validate: true, // Ensure validation is applied
+        validate: true,
       });
-
-      console.log("FeedNutrisi records created:", nutrisiRecordsCreated.map(r => r.toJSON()));
     }
 
-    // Fetch complete feed data with associations
-    let createdFeed;
-    try {
-      createdFeed = await Feed.findByPk(feed.id, {
-        include: [
-          { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
-          {
-            model: FeedNutrisi,
-            as: "FeedNutrisiRecords",
-            include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
-          },
-          { model: User, as: "User", attributes: ["id", "name"] },
-          { model: User, as: "Creator", attributes: ["id", "name"] },
-          { model: User, as: "Updater", attributes: ["id", "name"] },
-        ],
-      });
+    const createdFeed = await Feed.findByPk(feed.id, {
+      include: [
+        { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+        },
+        { model: User, as: "User", attributes: ["id", "name"] },
+        { model: User, as: "Creator", attributes: ["id", "name"] },
+        { model: User, as: "Updater", attributes: ["id", "name"] },
+      ],
+    });
 
-      if (!createdFeed) {
-        console.error("Error: Created feed not found in findByPk:", feed.id);
-        return res.status(404).json({
-          success: false,
-          message: "Pakan gagal ditemukan setelah pembuatan.",
-        });
-      }
-    } catch (findError) {
-      console.error("Error in findByPk after creation:", findError);
-      // Fallback to basic feed data if associations fail
-      createdFeed = feed;
+    if (!createdFeed) {
+      return res.status(404).json({
+        success: false,
+        message: "Pakan gagal ditemukan setelah pembuatan.",
+      });
     }
 
     return res.status(201).json({
       success: true,
-      message: `Pakan "${name}" berhasil ditambahkan${nutrisiRecordsCreated.length > 0 ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.` : "."}`,
+      message: `Pakan "${name.trim()}" berhasil ditambahkan${nutrisiRecordsCreated.length > 0 ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.` : "."}`,
       data: formatFeedResponse(createdFeed),
     });
   } catch (error) {
-    console.error("Error in createFeed:", error);
-    if (
-      error.name === "SequelizeUniqueConstraintError" ||
-      error.original?.code === "ER_DUP_ENTRY"
-    ) {
+    if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
-        message: `Pakan dengan nama "${req.body.name}" sudah terdaftar. Gunakan nama lain.`,
+        message: `Pakan dengan nama "${req.body.name}" sudah ada. Silakan gunakan nama lain.`,
       });
     }
     if (error.name === "SequelizeForeignKeyConstraintError") {
@@ -299,11 +263,9 @@ const updateFeed = async (req, res) => {
     validateModels();
     const { id } = req.params;
     const { typeId, name, unit, min_stock, price, nutrisiList } = req.body;
-    const userId = req.user?.id; // From verifyToken middleware
+    const userId = req.user?.id;
 
-    // Validate userId
     if (!userId) {
-      console.error("Error: userId is undefined or null");
       return res.status(401).json({
         success: false,
         message: "Autentikasi gagal. Silakan login kembali.",
@@ -318,16 +280,14 @@ const updateFeed = async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: `User dengan ID ${userId} tidak ditemukan.`,
       });
     }
 
-    // Check for duplicate feed name (case-insensitive), excluding current feed
     if (name && name.trim() !== feed.name) {
       const existingFeed = await Feed.findOne({
         where: {
@@ -340,34 +300,32 @@ const updateFeed = async (req, res) => {
       if (existingFeed) {
         return res.status(400).json({
           success: false,
-          message: `Pakan dengan nama "${name}" sudah terdaftar. Gunakan nama lain.`,
+          message: `Pakan dengan nama "${name.trim()}" sudah ada. Silakan gunakan nama lain.`,
         });
       }
     }
 
-    // Validate feed type if provided
-    if (typeId) {
-      const feedType = await FeedType.findByPk(typeId);
+    let feedType = null;
+    if (typeId && typeId !== feed.typeId) {
+      feedType = await FeedType.findByPk(typeId);
       if (!feedType) {
         return res.status(404).json({
           success: false,
-          message: "Jenis pakan tidak ditemukan. Pastikan typeId valid.",
+          message: "Jenis pakan tidak ditemukan.",
         });
       }
     }
 
-    // Update feed with all fields
     await feed.update({
       typeId: typeId || feed.typeId,
       name: name ? name.trim() : feed.name,
       unit: unit || feed.unit,
       min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
-      price: price !== undefined ? price : feed.price,
+      price: price !== null ? price : feed.price,
       user_id: userId,
       updated_by: userId,
     });
 
-    // Handle nutrisiList if provided
     let nutrisiRecordsCreated = [];
     if (nutrisiList && Array.isArray(nutrisiList) && nutrisiList.length > 0) {
       await FeedNutrisi.destroy({ where: { feed_id: id } });
@@ -378,7 +336,7 @@ const updateFeed = async (req, res) => {
       });
 
       if (nutritions.length !== nutrisiList.length) {
-        return res.status(404).json({
+        return res.status(400).json({
           success: false,
           message: "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
         });
@@ -388,46 +346,35 @@ const updateFeed = async (req, res) => {
         feed_id: id,
         nutrisi_id: n.nutrisi_id,
         amount: n.amount || 0.0,
-        user_id: userId, // Add required user_id
-        created_by: userId, // Add required created_by
-        updated_by: userId, // Add required updated_by
+        user_id: userId,
+        created_by: userId,
+        updated_by: userId,
       }));
-
-      console.log("FeedNutrisi data to update:", feedNutrisiData);
 
       nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
         validate: true,
       });
-
-      console.log("FeedNutrisi records updated:", nutrisiRecordsCreated.map(r => r.toJSON()));
     }
 
-    // Fetch updated feed with associations
-    let updatedFeed;
-    try {
-      updatedFeed = await Feed.findByPk(id, {
-        include: [
-          { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
-          {
-            model: FeedNutrisi,
-            as: "FeedNutrisiRecords",
-            include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
-          },
-          { model: User, as: "User", attributes: ["id", "name"] },
-          { model: User, as: "Creator", attributes: ["id", "name"] },
-          { model: User, as: "Updater", attributes: ["id", "name"] },
-        ],
-      });
+    const updatedFeed = await Feed.findByPk(id, {
+      include: [
+        { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
+        {
+          model: FeedNutrisi,
+          as: "FeedNutrisiRecords",
+          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+        },
+        { model: User, as: "User", attributes: ["id", "name"] },
+        { model: User, as: "Creator", attributes: ["id", "name"] },
+        { model: User, as: "Updater", attributes: ["id", "name"] },
+      ],
+    });
 
-      if (!updatedFeed) {
-        return res.status(404).json({
-          success: false,
-          message: "Pakan tidak ditemukan setelah pembaruan.",
-        });
-      }
-    } catch (findError) {
-      console.error("Error in findByPk after update:", findError);
-      updatedFeed = feed;
+    if (!updatedFeed) {
+      return res.status(404).json({
+        success: false,
+        message: "Pakan tidak ditemukan setelah pembaruan.",
+      });
     }
 
     return res.status(200).json({
@@ -436,14 +383,10 @@ const updateFeed = async (req, res) => {
       data: formatFeedResponse(updatedFeed),
     });
   } catch (error) {
-    console.error("Error in updateFeed:", error);
-    if (
-      error.name === "SequelizeUniqueConstraintError" ||
-      error.original?.code === "ER_DUP_ENTRY"
-    ) {
+    if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
-        message: `Pakan dengan nama "${req.body.name}" sudah terdaftar. Gunakan nama lain.`,
+        message: `Pakan dengan nama "${req.body.name}" sudah ada. Silakan gunakan nama lain.`,
       });
     }
     if (error.name === "SequelizeForeignKeyConstraintError") {
@@ -464,7 +407,6 @@ const updateFeed = async (req, res) => {
 
 const deleteFeed = async (req, res) => {
   try {
-    validateModels();
     const { id } = req.params;
 
     const feed = await Feed.findByPk(id);
@@ -476,12 +418,17 @@ const deleteFeed = async (req, res) => {
     }
 
     await feed.destroy();
+
     return res.status(200).json({
       success: true,
       message: "Pakan berhasil dihapus",
     });
   } catch (error) {
-    return handleError(res, error);
+    console.error("Error in deleteFeed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Terjadi kesalahan pada server.",
+    });
   }
 };
 

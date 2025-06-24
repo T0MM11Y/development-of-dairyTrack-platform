@@ -11,27 +11,26 @@ const Feed = sequelize.define(
     },
     typeId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: "feed_type",
         key: "id",
       },
-      onDelete: "CASCADE",
+      onDelete: "SET NULL",
       onUpdate: "CASCADE",
       field: "type_id",
       validate: {
-        notNull: { msg: "Feed type is required" },
-        isInt: { msg: "Feed type must be an integer" },
+        isInt: { msg: "Tipe pakan harus berupa angka" },
       },
     },
     name: {
       type: DataTypes.STRING(255),
       allowNull: false,
       unique: {
-        msg: "Feed name must be unique",
+        msg: "Nama pakan harus unik",
       },
       validate: {
-        notEmpty: { msg: "Feed name cannot be empty" },
+        notEmpty: { msg: "Nama pakan tidak boleh kosong" },
       },
     },
     min_stock: {
@@ -39,15 +38,15 @@ const Feed = sequelize.define(
       allowNull: false,
       defaultValue: 0,
       validate: {
-        isInt: { msg: "Minimum stock must be an integer" },
-        min: { args: [0], msg: "Minimum stock must be at least 0" },
+        isInt: { msg: "Stok minimum harus berupa angka" },
+        min: { args: [0], msg: "Stok minimum harus minimal 0" },
       },
     },
     unit: {
       type: DataTypes.STRING(20),
       allowNull: false,
       validate: {
-        notEmpty: { msg: "Unit cannot be empty" },
+        notEmpty: { msg: "Unit tidak boleh kosong" },
       },
     },
     price: {
@@ -55,8 +54,8 @@ const Feed = sequelize.define(
       allowNull: false,
       defaultValue: 0.0,
       validate: {
-        isDecimal: { msg: "Price must be a decimal number" },
-        min: { args: [0], msg: "Price must be at least 0" },
+        isDecimal: { msg: "Harga harus berupa angka desimal" },
+        min: { args: [0], msg: "Harga harus minimal 0" },
       },
     },
     user_id: {
@@ -101,10 +100,16 @@ const Feed = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "feed",
     timestamps: true,
+    paranoid: true,
   }
 );
 
