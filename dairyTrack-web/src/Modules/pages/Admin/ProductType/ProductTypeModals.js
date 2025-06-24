@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react"; // Add useState import
 import {
   Modal,
   Button,
@@ -8,6 +8,7 @@ import {
   Row,
   Card,
   Badge,
+  Spinner, // Ensure Spinner is imported
 } from "react-bootstrap";
 import CurrencyInput from "react-currency-input-field";
 import Swal from "sweetalert2";
@@ -38,6 +39,9 @@ const ProductTypeModals = ({
   handleAddProductType,
   handleEditProductType,
 }) => {
+  // Add loading state for form submissions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Handle file input change
   const handleFileChange = (e, isEdit = false) => {
     const file = e.target.files[0];
@@ -97,11 +101,35 @@ const ProductTypeModals = ({
       imagePreview: null,
     });
     setShowAddModal(false);
+    setIsSubmitting(false); // Reset loading state
   };
 
   const handleCloseEditModal = () => {
     setSelectedProductType(null);
     setShowEditModal(false);
+    setIsSubmitting(false); // Reset loading state
+  };
+
+  // Modified handleAddProductType to manage loading state
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true); // Set loading state to true
+    try {
+      await handleAddProductType(e);
+    } finally {
+      setIsSubmitting(false); // Reset loading state
+    }
+  };
+
+  // Modified handleEditProductType to manage loading state
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true); // Set loading state to true
+    try {
+      await handleEditProductType(e);
+    } finally {
+      setIsSubmitting(false); // Reset loading state
+    }
   };
 
   return (
@@ -118,7 +146,7 @@ const ProductTypeModals = ({
             <i className="fas fa-plus me-2" /> Add Product Type
           </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleAddProductType}>
+        <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
             <Row>
               <Col md={6}>
@@ -197,11 +225,29 @@ const ProductTypeModals = ({
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseAddModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseAddModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
-            <Button variant="primary" type="submit">
-              Save
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </Modal.Footer>
         </Form>
@@ -219,7 +265,7 @@ const ProductTypeModals = ({
             <i className="fas fa-edit me-2" /> Edit Product Type
           </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleEditProductType}>
+        <Form onSubmit={handleEditSubmit}>
           <Modal.Body>
             {selectedProductType && (
               <Row>
@@ -304,11 +350,29 @@ const ProductTypeModals = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseEditModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseEditModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
-            <Button variant="primary" type="submit">
-              Save Changes
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </Modal.Footer>
         </Form>

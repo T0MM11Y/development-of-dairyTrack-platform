@@ -132,8 +132,8 @@ Future<void> _loadData() async {
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text('Berhasil'),
-        content: Text('Data berhasil dihapus.'),
+        title: Text('Success'),
+        content: Text('Success delete data.'),
       ),
     );
 
@@ -150,7 +150,7 @@ Future<void> _loadData() async {
 Widget build(BuildContext context) {
   final paginated = _filteredChecks.skip((_currentPage - 1) * _pageSize).take(_pageSize).toList();
   final totalPages = (_filteredChecks.length / _pageSize).ceil();
-
+  
   return Container(
     decoration: const BoxDecoration(
       gradient: LinearGradient(
@@ -170,7 +170,7 @@ Widget build(BuildContext context) {
           ? Colors.blue[700]
           : Colors.blueGrey[800],
   title: const Text(
-    'Pemeriksaan Kesehatan',
+    'Health Check',
     style: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
@@ -191,7 +191,7 @@ Widget build(BuildContext context) {
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white,
-                      hintText: 'Cari nama sapi...',
+                      hintText: 'Search Cow Name...',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -208,7 +208,7 @@ Widget build(BuildContext context) {
                   child: paginated.isEmpty
                       ? const Center(
                           child: Text(
-                            'Tidak ada data pemeriksaan',
+                            'No health check data available',
                             style: TextStyle(fontSize: 16),
                           ),
                         )
@@ -224,13 +224,13 @@ Widget build(BuildContext context) {
                             String statusText;
                             if (status == 'healthy') {
                               statusColor = Colors.green;
-                              statusText = 'Sehat';
+                              statusText = 'Healthy';
                             } else if (status == 'handled') {
                               statusColor = Colors.blue;
-                              statusText = 'Sudah Ditangani';
+                              statusText = 'Handled';
                             } else {
                               statusColor = Colors.red;
-                              statusText = 'Belum Ditangani';
+                              statusText = 'Not Handled';
                             }
 
                             return Card(
@@ -268,13 +268,13 @@ Widget build(BuildContext context) {
                                       ],
                                     ),
                                     const SizedBox(height: 8),
-                                    Text('Tanggal Pemeriksaan: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(item['checkup_date']))}'),
+                                    Text('Health Check Date: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(item['checkup_date']))}'),
                                     const SizedBox(height: 4),
-                                    Text('Suhu: ${item['rectal_temperature']} °C'),
-                                    Text('Detak Jantung: ${item['heart_rate']} bpm'),
-                                    Text('Napas: ${item['respiration_rate']} bpm'),
-                                    Text('Ruminasi: ${item['rumination']} kontraksi'),
-                                    Text('Penanggung Jawab: ${item['checked_by']?['name'] ?? 'Tidak diketahui'}'),
+                                    Text('Rectal Temperature: ${item['rectal_temperature']} °C'),
+                                    Text('Heart Rate: ${item['heart_rate']} bpm'),
+                                    Text('Respiration Rate: ${item['respiration_rate']} bpm'),
+                                    Text('Rumination: ${item['rumination']} kontraksi'),
+                                    Text('Recorded By: ${item['checked_by']?['name'] ?? 'Uknown'}'),
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
@@ -286,12 +286,13 @@ Widget build(BuildContext context) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk mengedit data'),
+          title: const Text('Access Denied'),
+content: const Text('This role does not have permission to edit data'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -303,12 +304,13 @@ Widget build(BuildContext context) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Tidak Dapat Diedit'),
-          content: const Text('Data ini tidak dapat diedit'),
+        title: const Text('Cannot Be Edited'),
+content: const Text('This data cannot be edited'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -334,18 +336,19 @@ Widget build(BuildContext context) {
                                         const SizedBox(width: 8),
                                       ElevatedButton.icon(
   icon: const Icon(Icons.delete, size: 18),
-  label: const Text('Hapus'),
+  label: const Text('Delete'),
   onPressed: () async {
     if (_isAdmin || _isSupervisor) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menghapus data'),
+        title: const Text('Access Denied'),
+content: const Text('This role does not have permission to delete data'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -356,16 +359,16 @@ Widget build(BuildContext context) {
                                             final confirmed = await showDialog<bool>(
                                               context: context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text('Konfirmasi Hapus'),
-                                                content: const Text('Yakin ingin menghapus data ini?'),
+                                                title: const Text('Delete Confirmation'),
+                                                content: const Text('Are you sure you want to delete this data?'),
                                                 actions: [
                                                   TextButton(
                                                     onPressed: () => Navigator.pop(ctx, false),
-                                                    child: const Text('Batal'),
+                                                    child: const Text('Cancel'),
                                                   ),
                                                   ElevatedButton(
                                                     onPressed: () => Navigator.pop(ctx, true),
-                                                    child: const Text('Hapus'),
+                                                    child: const Text('Delete'),
                                                   ),
                                                 ],
                                               ),
@@ -397,7 +400,7 @@ Widget build(BuildContext context) {
                           icon: const Icon(Icons.arrow_back),
                           onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                         ),
-                        Text('Halaman $_currentPage dari $totalPages'),
+                        Text('Page $_currentPage of $totalPages'),
                         IconButton(
                           icon: const Icon(Icons.arrow_forward),
                           onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
@@ -408,7 +411,7 @@ Widget build(BuildContext context) {
               ],
             ),
      floatingActionButton: FloatingActionButton(
-  tooltip: 'Tambah Pemeriksaan',
+  tooltip: 'Add Data',
 backgroundColor: _isFarmer
       ? Colors.teal[400]
       : _isSupervisor
@@ -418,12 +421,13 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menambah data pemeriksaan.'),
+          title: const Text('Access Denied'),
+content: const Text('This role does not have permission to add health check data.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -432,14 +436,15 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Tidak Bisa Menambah Pemeriksaan'),
-          content: const Text(
-            'Tidak ada sapi yang tersedia untuk diperiksa. Semua sapi sudah memiliki pemeriksaan aktif.',
-          ),
+          title: const Text('Cannot Add Health Check'),
+content: const Text(
+  'No cows are available for health checks. All cows already have active checks.',
+),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),

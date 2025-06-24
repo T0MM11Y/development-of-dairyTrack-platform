@@ -194,17 +194,6 @@ const AdminHeader = ({ toggleSidebar, sidebarCollapsed }) => {
       // Set loading to false before showing success alert
       setLogoutLoading(false);
 
-      // Show success alert after logout is successful
-      await Swal.fire({
-        icon: "success",
-        title: "Logout Successful",
-        text: "You have been logged out successfully",
-        confirmButtonText: "OK",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: true,
-      });
-
       // Redirect after user clicks OK
       window.location.href = "/";
     } catch (error) {

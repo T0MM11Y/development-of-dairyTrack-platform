@@ -8,6 +8,7 @@ import {
   Row,
   Card,
   Badge,
+  Spinner, // Added Spinner import
 } from "react-bootstrap";
 import Swal from "sweetalert2";
 import PhoneInput from "react-phone-input-2";
@@ -32,6 +33,7 @@ const OrderModals = ({
   const [modalError, setModalError] = useState("");
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added isSubmitting state
 
   // Log availableProducts and selectedOrder for debugging
   useEffect(() => {
@@ -75,22 +77,19 @@ const OrderModals = ({
 
   // Validate and normalize phone number
   const validatePhoneNumber = (phone) => {
-    if (!phone) return true; // Phone number is optional
-    const cleanedPhone = phone.trim(); // Remove leading/trailing spaces
+    if (!phone) return { isValid: true, normalizedPhone: "" }; // Phone number is optional
+    const cleanedPhone = phone.trim();
     console.log("Validating phone number:", cleanedPhone);
 
-    // Remove any incorrect repeated +62 prefixes (e.g., +626262)
     let normalizedPhone = cleanedPhone;
     while (normalizedPhone.startsWith("+6262")) {
       normalizedPhone = `+62${normalizedPhone.slice(4)}`;
     }
 
-    // If it starts with "62" but not "+62", prepend "+"
     if (normalizedPhone.startsWith("62")) {
       normalizedPhone = `+${normalizedPhone}`;
     }
 
-    // Ensure it doesn't already have +62 before adding
     if (
       !normalizedPhone.startsWith("+62") &&
       !normalizedPhone.startsWith("+")
@@ -116,7 +115,6 @@ const OrderModals = ({
           ? ""
           : "Phone number must be in the format +62 followed by 9-12 digits."
       );
-      // Update state with normalized phone number
       setNewOrder((prev) => ({ ...prev, phone_number: normalizedPhone }));
     }
   };
@@ -124,7 +122,6 @@ const OrderModals = ({
   // Handle phone number change for add modal
   const handleAddPhoneChange = (value) => {
     console.log("PhoneInput value (add):", value);
-    // Avoid adding +62 if the value already starts with +62
     const { isValid, normalizedPhone } = validatePhoneNumber(value);
     setNewOrder((prev) => ({ ...prev, phone_number: normalizedPhone }));
     setPhoneError(
@@ -145,7 +142,6 @@ const OrderModals = ({
           ? ""
           : "Phone number must be in the format +62 followed by 9-12 digits."
       );
-      // Update state with normalized phone number
       setSelectedOrder((prev) => ({ ...prev, phone_number: normalizedPhone }));
     }
   };
@@ -153,7 +149,6 @@ const OrderModals = ({
   // Handle phone number change for edit modal
   const handleEditPhoneChange = (value) => {
     console.log("PhoneInput value (edit):", value);
-    // Avoid adding +62 if the value already starts with +62
     const { isValid, normalizedPhone } = validatePhoneNumber(value);
     setSelectedOrder((prev) => ({ ...prev, phone_number: normalizedPhone }));
     setPhoneError(
@@ -401,6 +396,7 @@ const OrderModals = ({
     setModalError("");
     setPhoneError("");
     setShowAddModal(false);
+    setIsSubmitting(false); // Reset loading state
   };
 
   const handleCloseEditModal = () => {
@@ -409,6 +405,7 @@ const OrderModals = ({
     setModalError("");
     setPhoneError("");
     setShowEditModal(false);
+    setIsSubmitting(false); // Reset loading state
   };
 
   // Format Rupiah
@@ -422,96 +419,106 @@ const OrderModals = ({
     }).format(number);
   };
 
-  // Handle submit for add order
-  const handleAddSubmit = (e) => {
+  // Modified handleAddSubmit to manage loading state
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    if (newOrder.order_items.length === 0) {
-      setModalError("Please add at least one order item.");
-      return;
-    }
+    setIsSubmitting(true); // Set loading state
+    try {
+      if (newOrder.order_items.length === 0) {
+        setModalError("Please add at least one order item.");
+        return;
+      }
 
-    const { isValid, normalizedPhone } = validatePhoneNumber(
-      newOrder.phone_number
-    );
-    if (newOrder.phone_number && !isValid) {
-      setPhoneError(
-        "Phone number must be in the format +62 followed by 9-12 digits."
+      const { isValid, normalizedPhone } = validatePhoneNumber(
+        newOrder.phone_number
       );
-      return;
+      if (newOrder.phone_number && !isValid) {
+        setPhoneError(
+          "Phone number must be in the format +62 followed by 9-12 digits."
+        );
+        return;
+      }
+
+      const orderData = {
+        customer_name: newOrder.customer_name,
+        email: newOrder.email || null,
+        phone_number: normalizedPhone || null,
+        location: newOrder.location,
+        status: newOrder.status,
+        payment_method: newOrder.payment_method || null,
+        shipping_cost: newOrder.shipping_cost
+          ? parseFloat(newOrder.shipping_cost)
+          : 0,
+        order_items: newOrder.order_items.map((item) => ({
+          product_type: item.product_type,
+          quantity: item.quantity,
+        })),
+        notes: newOrder.notes || null,
+      };
+
+      console.log("Submitting add order:", orderData);
+      await handleAddOrder(e, orderData);
+    } finally {
+      setIsSubmitting(false); // Reset loading state
     }
-
-    const orderData = {
-      customer_name: newOrder.customer_name,
-      email: newOrder.email || null,
-      phone_number: normalizedPhone || null,
-      location: newOrder.location,
-      status: newOrder.status,
-      payment_method: newOrder.payment_method || null,
-      shipping_cost: newOrder.shipping_cost
-        ? parseFloat(newOrder.shipping_cost)
-        : 0,
-      order_items: newOrder.order_items.map((item) => ({
-        product_type: item.product_type,
-        quantity: item.quantity,
-      })),
-      notes: newOrder.notes || null,
-    };
-
-    console.log("Submitting add order:", orderData);
-    handleAddOrder(e, orderData);
   };
 
-  // Handle submit for edit order
-  const handleEditSubmit = (e) => {
+  // Modified handleEditSubmit to manage loading state
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (selectedOrder.order_items.length === 0) {
-      setModalError("Please add at least one order item.");
-      return;
-    }
+    setIsSubmitting(true); // Set loading state
+    try {
+      if (selectedOrder.order_items.length === 0) {
+        setModalError("Please add at least one order item.");
+        return;
+      }
 
-    const { isValid, normalizedPhone } = validatePhoneNumber(
-      selectedOrder.phone_number
-    );
-    if (selectedOrder.phone_number && !isValid) {
-      setPhoneError(
-        "Phone number must be in the format +62 followed by 9-12 digits."
+      const { isValid, normalizedPhone } = validatePhoneNumber(
+        selectedOrder.phone_number
       );
-      return;
+      if (selectedOrder.phone_number && !isValid) {
+        setPhoneError(
+          "Phone number must be in the format +62 followed by 9-12 digits."
+        );
+        return;
+      }
+
+      const invalidItems = selectedOrder.order_items.filter((item) => {
+        const product = availableProducts.find(
+          (p) => p.product_type === item.product_type
+        );
+        return !product || product.total_quantity < item.quantity;
+      });
+
+      if (invalidItems.length > 0) {
+        setModalError(
+          "Some order items are invalid or have insufficient stock. Please remove or adjust."
+        );
+        return;
+      }
+
+      const orderData = {
+        customer_name: selectedOrder.customer_name,
+        email: selectedOrder.email || null,
+        phone_number: normalizedPhone || null,
+        location: selectedOrder.location,
+        status: selectedOrder.status,
+        payment_method: selectedOrder.payment_method || null,
+        shipping_cost: selectedOrder.shipping_cost
+          ? parseFloat(selectedOrder.shipping_cost)
+          : 0,
+        order_items: selectedOrder.order_items.map((item) => ({
+          product_type: item.product_type,
+          quantity: item.quantity,
+        })),
+        notes: selectedOrder.notes || null,
+      };
+
+      console.log("Submitting edit order:", orderData);
+      await handleEditOrder(e, orderData);
+    } finally {
+      setIsSubmitting(false); // Reset loading state
     }
-
-    const invalidItems = selectedOrder.order_items.filter((item) => {
-      const product = availableProducts.find(
-        (p) => p.product_type === item.product_type
-      );
-      return !product || product.total_quantity < item.quantity;
-    });
-
-    if (invalidItems.length > 0) {
-      setModalError(
-        "Some order items are invalid or have insufficient stock. Please remove or adjust."
-      );
-      return;
-    }
-
-    const orderData = {
-      customer_name: selectedOrder.customer_name,
-      email: selectedOrder.email || null,
-      phone_number: normalizedPhone || null,
-      location: selectedOrder.location,
-      status: selectedOrder.status,
-      payment_method: selectedOrder.payment_method || null,
-      shipping_cost: selectedOrder.shipping_cost
-        ? parseFloat(selectedOrder.shipping_cost)
-        : 0,
-      order_items: selectedOrder.order_items.map((item) => ({
-        product_type: item.product_type,
-        quantity: item.quantity,
-      })),
-      notes: selectedOrder.notes || null,
-    };
-
-    console.log("Submitting edit order:", orderData);
-    handleEditOrder(e, orderData);
   };
 
   return (
@@ -755,15 +762,33 @@ const OrderModals = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseAddModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseAddModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
             <Button
               variant="primary"
               type="submit"
-              disabled={isLoadingProducts || phoneError}
+              disabled={isSubmitting || isLoadingProducts || phoneError}
             >
-              Save
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </Modal.Footer>
         </Form>
@@ -1017,15 +1042,33 @@ const OrderModals = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseEditModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseEditModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
             <Button
               variant="primary"
               type="submit"
-              disabled={isLoadingProducts || phoneError}
+              disabled={isSubmitting || isLoadingProducts || phoneError}
             >
-              Save Changes
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </Modal.Footer>
         </Form>

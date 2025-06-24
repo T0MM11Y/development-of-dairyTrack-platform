@@ -110,7 +110,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat blog: $e';
+        _errorMessage = 'Failed to load blog: $e';
         _isLoading = false;
       });
     }
@@ -256,7 +256,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                                     color: AppColors.accent, size: 14),
                                 SizedBox(width: 6),
                                 Text(
-                                  "Blog & Artikel",
+                                  "Blogs and Articles",
                                   style: TextStyle(
                                     color: AppColors.accent,
                                     fontSize: 11,
@@ -270,7 +270,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                           SizedBox(height: 16),
                           // Main Title
                           Text(
-                            "Informasi & Berita\nTerkini TSTH²",
+                            "Latest Information & News\nTSTH²",
                             style: TextStyle(
                               color: AppColors.textOnPrimary,
                               fontSize: 24,
@@ -292,7 +292,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                           SizedBox(height: 12),
                           // Description
                           Text(
-                            "Temukan artikel terbaru seputar peternakan, teknologi, dan inovasi sapi perah",
+                            "Find the latest articles on dairy farming, technology and innovation.",
                             style: TextStyle(
                               color: AppColors.textOnPrimary.withOpacity(0.9),
                               fontSize: 13,
@@ -332,7 +332,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
       child: DropdownButtonFormField<String>(
         decoration: InputDecoration(
           border: InputBorder.none,
-          labelText: 'Filter berdasarkan Kategori',
+          labelText: 'Filter by Category',
           labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           prefixIcon:
               Icon(Icons.filter_list, color: AppColors.secondary, size: 20),
@@ -343,7 +343,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
         items: [
           DropdownMenuItem(
             value: null,
-            child: Text('Semua Kategori',
+            child: Text('All Categories',
                 style: TextStyle(fontWeight: FontWeight.w500)),
           ),
           ..._categories.map((category) => DropdownMenuItem(
@@ -537,7 +537,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Terakhir diperbarui: ${DateFormat('dd MMM yyyy').format(blog.updatedAt)}',
+                            'Last updated: ${DateFormat('dd MMM yyyy').format(blog.updatedAt)}',
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 12,
@@ -568,7 +568,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
           ),
           SizedBox(height: 20),
           Text(
-            "Memuat artikel...",
+            "Loading article...",
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
@@ -607,7 +607,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
             ),
             SizedBox(height: 16),
             Text(
-              'Ups! Terjadi Kesalahan',
+              'Oops! Something went wrong',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -628,7 +628,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
             ElevatedButton.icon(
               onPressed: _refreshData,
               icon: Icon(Icons.refresh),
-              label: Text('Coba Lagi'),
+              label: Text('Try again'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: AppColors.textOnDark,
@@ -672,7 +672,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
             ),
             SizedBox(height: 16),
             Text(
-              'Belum Ada Blog',
+              'No Blog Yet',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -682,8 +682,8 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
             SizedBox(height: 8),
             Text(
               _selectedCategoryId != null
-                  ? 'Tidak ada blog dalam kategori yang dipilih'
-                  : 'Belum ada blog yang tersedia saat ini',
+                  ? 'There are no blogs in the selected category'
+                  : 'There are no blogs available at this time',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
@@ -767,7 +767,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Gambar tidak dapat dimuat',
+                            'Image cannot be loaded',
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 12,
@@ -913,7 +913,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Baca Selengkapnya',
+                              'Read more',
                               style: TextStyle(
                                 color: AppColors.textOnDark,
                                 fontSize: 11,
@@ -961,7 +961,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Blog TSTH²',
+                  'Blogs TSTH²',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -969,7 +969,7 @@ class _BlogGuestsViewState extends State<BlogGuestsView>
                   ),
                 ),
                 Text(
-                  "Artikel & Berita",
+                  "Articles & News",
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textOnPrimary.withOpacity(0.8),

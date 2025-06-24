@@ -115,7 +115,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Batal'),
+                  child: const Text('Canceled'),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
@@ -139,7 +139,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
   Future<void> _editBlog(
       int id, String title, String content, File? image) async {
     final confirmed = await _showConfirmationDialog(
-      title: 'Konfirmasi Edit',
+      title: 'updated successfully',
       content: 'Apakah Anda yakin ingin mengubah blog "$title"?',
       confirmText: 'Edit',
       confirmColor: darkWarning,
@@ -167,7 +167,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
 
       if (response['success']) {
         _showSnackBar(
-          'Blog "$title" berhasil diperbarui',
+          'Blog "$title" updated successfully',
           icon: Icons.check_circle,
         );
 
@@ -180,14 +180,14 @@ class _BlogDetailViewState extends State<BlogDetailView> {
         Navigator.of(context).pop();
       } else {
         _showSnackBar(
-          'Gagal mengubah blog: ${response['message']}',
+          'Failed to change blog: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
       }
     } catch (e) {
       _showSnackBar(
-        'Gagal mengubah blog: $e',
+        'Failed to change blog: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -250,7 +250,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                         controller: editTitleController,
                         style: const TextStyle(color: darkText),
                         decoration: InputDecoration(
-                          labelText: 'Judul Blog',
+                          labelText: 'Blog Title',
                           labelStyle: const TextStyle(color: darkTextSecondary),
                           prefixIcon:
                               const Icon(Icons.title, color: darkWarning),
@@ -289,7 +289,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                             height: 1.5,
                           ),
                           decoration: InputDecoration(
-                            labelText: 'Konten Blog',
+                            labelText: 'Blog Content',
                             labelStyle:
                                 const TextStyle(color: darkTextSecondary),
                             prefixIcon: const Padding(
@@ -315,7 +315,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                             contentPadding: const EdgeInsets.all(16),
                             alignLabelWithHint: true,
                             hintText:
-                                'Tulis konten blog Anda di sini...\n\nAnda dapat menulis teks panjang dengan multiple paragraf.',
+                                'Tulis konten blog Anda di sini...\n\nYou can write long texts with multiple paragraphs.',
                             hintStyle: const TextStyle(
                               color: darkTextSecondary,
                               fontSize: 13,
@@ -388,7 +388,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                                 });
                               },
                               icon: const Icon(Icons.image),
-                              label: const Text('Pilih Gambar Baru'),
+                              label: const Text('Select New Image'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: darkWarning,
                                 foregroundColor: Colors.white,
@@ -414,7 +414,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                                         ),
                                         child: const Center(
                                           child: Text(
-                                            'Gambar tidak dapat dimuat',
+                                            'Image cannot be loaded',
                                             style: TextStyle(
                                               color: darkTextSecondary,
                                             ),
@@ -442,7 +442,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Batal',
+                  child: const Text('Cancel',
                       style: TextStyle(color: darkTextSecondary)),
                 ),
                 ElevatedButton(
@@ -461,13 +461,14 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                       );
                     } else {
                       _showSnackBar(
-                        'Mohon lengkapi semua field',
+                        'Please complete all fields',
                         backgroundColor: darkWarning,
                         icon: Icons.warning,
                       );
                     }
                   },
-                  child: const Text('Simpan'),
+                  child:
+                      const Text('Save', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -516,7 +517,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          widget.blog.title,
+          "Blog Details",
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -645,7 +646,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Dibuat',
+                              'Made',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: darkTextSecondary,
@@ -692,7 +693,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Terakhir diperbarui',
+                              'Last updated',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: darkTextSecondary,
@@ -752,7 +753,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Konten Artikel',
+                        'Article Content',
                         style: TextStyle(
                           color: darkAccent,
                           fontSize: 16,
@@ -817,7 +818,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Kategori Artikel',
+                          'Article Category',
                           style: TextStyle(
                             color: darkInfo,
                             fontSize: 16,
@@ -835,7 +836,7 @@ class _BlogDetailViewState extends State<BlogDetailView> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${widget.blog.categories!.length} kategori',
+                            '${widget.blog.categories!.length} category',
                             style: TextStyle(
                               color: darkInfo,
                               fontSize: 12,

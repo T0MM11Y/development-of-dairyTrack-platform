@@ -808,7 +808,7 @@ const Dashboard = () => {
                         {currentUser.role_id === 3
                           ? userManagedCows.length
                           : dashboardStats.totalCows}{" "}
-                        Sapi
+                        Cow
                       </small>
                     </motion.div>
 
@@ -824,7 +824,7 @@ const Dashboard = () => {
                     >
                       <div style={{ fontSize: "20px" }}>🥛</div>
                       <small style={{ fontSize: "11px", opacity: 0.9 }}>
-                        {todayStats.totalMilkToday}L Hari Ini
+                        {todayStats.totalMilkToday}L Today
                       </small>
                     </motion.div>
 
@@ -935,10 +935,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-bar me-2"></i>
-                    Statistik Sistem
+                    System Statistics
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Ringkasan data keseluruhan sistem
+                    Summary of overall system data
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1041,7 +1041,7 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
-                    Distribusi Fase Laktasi
+                    Distribution Lactation Phases
                   </h5>
                   <p style={styles.subheading} className="mb-0">
                     Composition of lactation phase of cows on farms{" "}
@@ -1079,7 +1079,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>
@@ -1094,10 +1096,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-map-marked-alt me-2"></i>
-                    Lokasi Peternakan DairyTrack
+                    DairyTrack Farm Location
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Temukan lokasi peternakan kami untuk kunjungan supervisi
+                    Find our farm locations for supervision visits
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1133,10 +1135,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
-                    Distribusi Fase Laktasi
+                    Distribution of Lactation Phases
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Komposisi fase laktasi sapi di seluruh peternakan
+                    Lactation phase composition of cows across farms
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1171,7 +1173,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>
@@ -1240,7 +1244,7 @@ const Dashboard = () => {
                         }}
                         formatter={(value, name) => [
                           `${value}L`,
-                          name === "volume" ? "Total Produksi" : name,
+                          name === "volume" ? "Total Production" : name,
                         ]}
                       />
                       <Area
@@ -1301,7 +1305,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>
@@ -1310,7 +1316,6 @@ const Dashboard = () => {
           </>
         )}
       </Row>
-      {/* Enhanced Cows List - Show for all roles but with different data */}
       {((currentUser.role_id === 3 && userManagedCows.length > 0) ||
         (currentUser.role_id !== 3 && allUsersWithCows.length > 0)) && (
         <motion.div
@@ -1334,530 +1339,552 @@ const Dashboard = () => {
             </h5>
 
             <div className="row g-3">
-              {(currentUser.role_id === 3
-                ? userManagedCows
-                : allUsersWithCows.flatMap((farmer) =>
-                    (farmer.cows || []).map((cow) => ({
-                      ...cow,
-                      farmerName: farmer.name || farmer.username,
-                      farmerId: farmer.id,
-                    }))
-                  )
-              ).map((cow, index) => {
-                // Use a unique key: for admin/supervisor, combine cow.id and farmerId; for farmer, just cow.id
-                const uniqueKey =
-                  currentUser.role_id === 3
-                    ? cow.id
-                    : `${cow.id}-${cow.farmerId || "nofarmer"}`;
+              {(() => {
+                // Process data to avoid duplicates
+                let processedCows = [];
 
-                const production =
-                  currentUser.role_id === 3
-                    ? cowMilkProduction[cow.id] || {
-                        totalVolume: 0,
-                        sessionsCount: 0,
-                        avgPerSession: 0,
-                        todayVolume: 0,
+                if (currentUser.role_id === 3) {
+                  // For farmers - use userManagedCows directly
+                  processedCows = userManagedCows;
+                } else {
+                  // For admin/supervisor - create unique list to avoid duplicates
+                  const uniqueCowsMap = new Map();
+
+                  allUsersWithCows.forEach((farmer) => {
+                    (farmer.cows || []).forEach((cow) => {
+                      // Use cow.id as unique identifier
+                      if (!uniqueCowsMap.has(cow.id)) {
+                        uniqueCowsMap.set(cow.id, {
+                          ...cow,
+                          farmerName: farmer.name || farmer.username,
+                          farmerId: farmer.id,
+                        });
                       }
-                    : // Calculate production for all cows (admin/supervisor view)
-                      (() => {
-                        const cowSessions = milkingSessions.filter(
-                          (session) => session.cow_id === cow.id
-                        );
-                        const today = getLocalDateString();
-                        const todaySessions = cowSessions.filter(
-                          (session) =>
-                            getSessionLocalDate(session.milking_time) === today
-                        );
+                    });
+                  });
 
-                        const totalVolume = cowSessions.reduce(
-                          (sum, session) =>
-                            sum + parseFloat(session.volume || 0),
-                          0
-                        );
-                        const todayVolume = todaySessions.reduce(
-                          (sum, session) =>
-                            sum + parseFloat(session.volume || 0),
-                          0
-                        );
-                        const avgPerSession =
-                          cowSessions.length > 0
-                            ? totalVolume / cowSessions.length
-                            : 0;
+                  processedCows = Array.from(uniqueCowsMap.values());
+                }
 
-                        return {
-                          totalVolume,
-                          sessionsCount: cowSessions.length,
-                          avgPerSession,
-                          todayVolume,
-                        };
-                      })();
+                return processedCows.map((cow, index) => {
+                  // Create truly unique key
+                  const uniqueKey =
+                    currentUser.role_id === 3
+                      ? `farmer-cow-${cow.id}`
+                      : `admin-cow-${cow.id}-farmer-${
+                          cow.farmerId || "unassigned"
+                        }`;
 
-                return (
-                  <div key={cow.id} className="col-md-6 col-lg-4">
-                    <motion.div
-                      className="floating-item"
-                      style={{
-                        position: "relative",
-                        background:
-                          "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                        borderRadius: "12px",
-                        padding: "15px",
-                        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
-                        border: "1px solid rgba(255, 255, 255, 0.9)",
-                        animationDelay: `${index * 0.2}s`,
-                      }}
-                      whileHover={{
-                        scale: 1.03,
-                        y: -5,
-                        boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
-                      }}
-                    >
-                      <div className="d-flex align-items-start">
-                        <div className="me-3" style={{ fontSize: "24px" }}>
-                          {/* Gender-specific emoji */}
-                          {cow.gender?.toLowerCase() === "female" ||
-                          cow.gender?.toLowerCase() === "betina"
-                            ? "🐄"
-                            : "🐂"}
-                        </div>
-                        <div className="flex-grow-1">
-                          <h6 className="fw-bold mb-1">{cow.name}</h6>
+                  const production =
+                    currentUser.role_id === 3
+                      ? cowMilkProduction[cow.id] || {
+                          totalVolume: 0,
+                          sessionsCount: 0,
+                          avgPerSession: 0,
+                          todayVolume: 0,
+                        }
+                      : // Calculate production for all cows (admin/supervisor view)
+                        (() => {
+                          const cowSessions = milkingSessions.filter(
+                            (session) => session.cow_id === cow.id
+                          );
+                          const today = getLocalDateString();
+                          const todaySessions = cowSessions.filter(
+                            (session) =>
+                              getSessionLocalDate(session.milking_time) ===
+                              today
+                          );
 
-                          {/* Show farmer name for admin/supervisor */}
-                          {currentUser.role_id !== 3 && cow.farmerName && (
-                            <div className="mb-2">
+                          const totalVolume = cowSessions.reduce(
+                            (sum, session) =>
+                              sum + parseFloat(session.volume || 0),
+                            0
+                          );
+                          const todayVolume = todaySessions.reduce(
+                            (sum, session) =>
+                              sum + parseFloat(session.volume || 0),
+                            0
+                          );
+                          const avgPerSession =
+                            cowSessions.length > 0
+                              ? totalVolume / cowSessions.length
+                              : 0;
+
+                          return {
+                            totalVolume,
+                            sessionsCount: cowSessions.length,
+                            avgPerSession,
+                            todayVolume,
+                          };
+                        })();
+
+                  return (
+                    <div key={uniqueKey} className="col-md-6 col-lg-4">
+                      <motion.div
+                        className="floating-item"
+                        style={{
+                          position: "relative",
+                          background:
+                            "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                          borderRadius: "12px",
+                          padding: "15px",
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
+                          border: "1px solid rgba(255, 255, 255, 0.9)",
+                          animationDelay: `${index * 0.2}s`,
+                        }}
+                        whileHover={{
+                          scale: 1.03,
+                          y: -5,
+                          boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
+                        }}
+                      >
+                        <div className="d-flex align-items-start">
+                          <div className="me-3" style={{ fontSize: "24px" }}>
+                            {/* Gender-specific emoji */}
+                            {cow.gender?.toLowerCase() === "female" ||
+                            cow.gender?.toLowerCase() === "female"
+                              ? "🐄"
+                              : "🐂"}
+                          </div>
+                          <div className="flex-grow-1">
+                            <h6 className="fw-bold mb-1">{cow.name}</h6>
+
+                            {/* Show farmer name for admin/supervisor */}
+                            {currentUser.role_id !== 3 && cow.farmerName && (
+                              <div className="mb-2">
+                                <Badge
+                                  bg="outline-primary"
+                                  text="dark"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  <i className="fas fa-user me-1"></i>
+                                  Farmer: {cow.farmerName}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Cow Basic Info */}
+                            <div className="d-flex flex-wrap gap-1 mb-2">
                               <Badge
                                 bg="outline-primary"
                                 text="dark"
                                 style={{ fontSize: "10px" }}
                               >
-                                <i className="fas fa-user me-1"></i>
-                                Farmer: {cow.farmerName}
+                                ID: {cow.id}
                               </Badge>
-                            </div>
-                          )}
-
-                          {/* Cow Basic Info */}
-                          <div className="d-flex flex-wrap gap-1 mb-2">
-                            <Badge
-                              bg="outline-primary"
-                              text="dark"
-                              style={{ fontSize: "10px" }}
-                            >
-                              ID: {cow.id}
-                            </Badge>
-                            <Badge
-                              bg="outline-secondary"
-                              text="dark"
-                              style={{ fontSize: "10px" }}
-                            >
-                              {cow.breed}
-                            </Badge>
-                            <Badge
-                              bg={
-                                cow.gender?.toLowerCase() === "female" ||
-                                cow.gender?.toLowerCase() === "betina"
-                                  ? "outline-info"
-                                  : "outline-warning"
-                              }
-                              text="dark"
-                              style={{ fontSize: "10px" }}
-                            >
-                              {cow.gender?.toLowerCase() === "female" ||
-                              cow.gender?.toLowerCase() === "betina"
-                                ? "♀ Betina"
-                                : "♂ Jantan"}
-                            </Badge>
-                            <motion.div whileHover={{ scale: 1.05 }}>
                               <Badge
-                                bg="outline-success"
+                                bg="outline-secondary"
                                 text="dark"
-                                style={{
-                                  fontSize: "10px",
-                                  transition: "all 0.2s ease",
-                                  cursor: "pointer",
-                                }}
-                                title={
-                                  cow.birth
-                                    ? `Lahir: ${new Date(
-                                        cow.birth
-                                      ).toLocaleDateString("id-ID")}`
-                                    : "Tanggal lahir tidak tersedia"
-                                }
+                                style={{ fontSize: "10px" }}
                               >
-                                <i
-                                  className="fas fa-birthday-cake me-1"
-                                  style={{ fontSize: "8px" }}
-                                ></i>
-                                {formatAge(cow.birth)}
+                                {cow.breed}
                               </Badge>
-                            </motion.div>
-                          </div>
-
-                          {/* Conditional Content Based on Gender */}
-                          {cow.gender?.toLowerCase() === "female" ||
-                          cow.gender?.toLowerCase() === "betina" ? (
-                            // Female Cow - Show Production Statistics
-                            <>
-                              {/* Production Statistics */}
-                              <div className="mb-2">
-                                <div className="row g-1">
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(76, 175, 80, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#2e7d32",
-                                        }}
-                                      >
-                                        {production.totalVolume.toFixed(1)}L
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#2e7d32",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Total Produksi
-                                      </small>
-                                    </motion.div>
-                                  </div>
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(33, 150, 243, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#1565c0",
-                                        }}
-                                      >
-                                        {production.todayVolume.toFixed(1)}L
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#1565c0",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Hari Ini
-                                      </small>
-                                    </motion.div>
-                                  </div>
-                                </div>
-
-                                <div className="row g-1 mt-1">
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(255, 152, 0, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#ef6c00",
-                                        }}
-                                      >
-                                        {production.avgPerSession.toFixed(1)}L
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#ef6c00",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Rata-rata/Sesi
-                                      </small>
-                                    </motion.div>
-                                  </div>
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(233, 30, 99, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#c2185b",
-                                        }}
-                                      >
-                                        {production.sessionsCount}
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#c2185b",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Total Sesi
-                                      </small>
-                                    </motion.div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Lactation Phase and Weight for Female */}
-                              <div className="d-flex justify-content-between align-items-center">
+                              <Badge
+                                bg={
+                                  cow.gender?.toLowerCase() === "female" ||
+                                  cow.gender?.toLowerCase() === "female"
+                                    ? "outline-info"
+                                    : "outline-warning"
+                                }
+                                text="dark"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {cow.gender?.toLowerCase() === "female" ||
+                                cow.gender?.toLowerCase() === "female"
+                                  ? "♀ female"
+                                  : "♂ Male"}
+                              </Badge>
+                              <motion.div whileHover={{ scale: 1.05 }}>
                                 <Badge
-                                  bg={
-                                    cow.lactation_phase === "Early"
-                                      ? "success"
-                                      : cow.lactation_phase === "Mid"
-                                      ? "warning"
-                                      : cow.lactation_phase === "Late"
-                                      ? "danger"
-                                      : "secondary"
+                                  bg="outline-success"
+                                  text="dark"
+                                  style={{
+                                    fontSize: "10px",
+                                    transition: "all 0.2s ease",
+                                    cursor: "pointer",
+                                  }}
+                                  title={
+                                    cow.birth
+                                      ? `Lahir: ${new Date(
+                                          cow.birth
+                                        ).toLocaleDateString("id-ID")}`
+                                      : "Tanggal lahir tidak tersedia"
                                   }
-                                  style={{ fontSize: "9px" }}
                                 >
-                                  {cow.lactation_phase || "N/A"}
+                                  <i
+                                    className="fas fa-birthday-cake me-1"
+                                    style={{ fontSize: "8px" }}
+                                  ></i>
+                                  {formatAge(cow.birth)}
                                 </Badge>
-                                <small className="text-muted">
-                                  {cow.weight ? `${cow.weight} kg` : "N/A"}
-                                </small>
-                              </div>
+                              </motion.div>
+                            </div>
 
-                              {/* Performance Indicator for Female */}
-                              <div className="mt-2">
-                                <div
-                                  className="d-flex align-items-center justify-content-center"
-                                  style={{
-                                    background:
-                                      production.avgPerSession >= 15
-                                        ? "linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
-                                        : production.avgPerSession >= 10
-                                        ? "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)"
-                                        : "linear-gradient(135deg, #f44336 0%, #ef5350 100%)",
-                                    borderRadius: "12px",
-                                    padding: "4px 8px",
-                                  }}
-                                >
-                                  <motion.span
-                                    animate={{ scale: [1, 1.1, 1] }}
-                                    transition={{
-                                      duration: 2,
-                                      repeat: Infinity,
-                                      ease: "easeInOut",
-                                    }}
-                                    style={{
-                                      fontSize: "10px",
-                                      color: "white",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    {production.avgPerSession >= 15
-                                      ? "🌟 High Production"
-                                      : production.avgPerSession >= 10
-                                      ? "⚡ Medium Production"
-                                      : "📈 Need Attention"}
-                                  </motion.span>
+                            {/* Conditional Content Based on Gender */}
+                            {cow.gender?.toLowerCase() === "female" ||
+                            cow.gender?.toLowerCase() === "female" ? (
+                              // Female Cow - Show Production Statistics
+                              <>
+                                {/* Production Statistics */}
+                                <div className="mb-2">
+                                  <div className="row g-1">
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(76, 175, 80, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#2e7d32",
+                                          }}
+                                        >
+                                          {production.totalVolume.toFixed(1)}L
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#2e7d32",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Total Production
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(33, 150, 243, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#1565c0",
+                                          }}
+                                        >
+                                          {production.todayVolume.toFixed(1)}L
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#1565c0",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Hari Ini
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                  </div>
+
+                                  <div className="row g-1 mt-1">
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(255, 152, 0, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#ef6c00",
+                                          }}
+                                        >
+                                          {production.avgPerSession.toFixed(1)}L
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#ef6c00",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Rata-rata/Sesi
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(233, 30, 99, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#c2185b",
+                                          }}
+                                        >
+                                          {production.sessionsCount}
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#c2185b",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Total Session
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </>
-                          ) : (
-                            // Male Cow - Show Non-Production Info
-                            <>
-                              {/* Male Cow Information */}
-                              <div className="mb-2">
-                                <motion.div
-                                  whileHover={{ scale: 1.02 }}
-                                  className="text-center p-3"
-                                  style={{
-                                    background:
-                                      "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
-                                    borderRadius: "12px",
-                                    border:
-                                      "1px solid rgba(158, 158, 158, 0.2)",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      fontSize: "24px",
-                                      marginBottom: "8px",
-                                    }}
+
+                                {/* Lactation Phase and Weight for Female */}
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <Badge
+                                    bg={
+                                      cow.lactation_phase === "Early"
+                                        ? "success"
+                                        : cow.lactation_phase === "Mid"
+                                        ? "warning"
+                                        : cow.lactation_phase === "Late"
+                                        ? "danger"
+                                        : "secondary"
+                                    }
+                                    style={{ fontSize: "9px" }}
                                   >
-                                    🚫🥛
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: "11px",
-                                      fontWeight: "bold",
-                                      color: "#757575",
-                                      marginBottom: "4px",
-                                    }}
-                                  >
-                                    Sapi Pejantan
-                                  </div>
-                                  <small
-                                    style={{
-                                      fontSize: "9px",
-                                      color: "#757575",
-                                      opacity: 0.8,
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    Tidak memproduksi susu
+                                    {cow.lactation_phase || "N/A"}
+                                  </Badge>
+                                  <small className="text-muted">
+                                    {cow.weight ? `${cow.weight} kg` : "N/A"}
                                   </small>
-                                </motion.div>
-                              </div>
-
-                              {/* Male Cow Additional Info */}
-                              <div className="mb-2">
-                                <div className="row g-1">
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(63, 81, 181, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#3f51b5",
-                                        }}
-                                      >
-                                        🐂
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#3f51b5",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Breeding Girolando
-                                      </small>
-                                    </motion.div>
-                                  </div>
-                                  <div className="col-6">
-                                    <motion.div
-                                      whileHover={{ scale: 1.02 }}
-                                      className="text-center p-2"
-                                      style={{
-                                        background:
-                                          "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)",
-                                        borderRadius: "8px",
-                                        border:
-                                          "1px solid rgba(156, 39, 176, 0.2)",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          fontSize: "12px",
-                                          fontWeight: "bold",
-                                          color: "#7b1fa2",
-                                        }}
-                                      >
-                                        💪
-                                      </div>
-                                      <small
-                                        style={{
-                                          fontSize: "9px",
-                                          color: "#7b1fa2",
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        Strong & Healthy
-                                      </small>
-                                    </motion.div>
-                                  </div>
                                 </div>
-                              </div>
 
-                              {/* Weight Info for Male */}
-                              <div className="d-flex justify-content-between align-items-center">
-                                <Badge bg="info" style={{ fontSize: "9px" }}>
-                                  <i className="fas fa-male me-1"></i>
-                                  Pejantan
-                                </Badge>
-                                <small className="text-muted">
-                                  {cow.weight ? `${cow.weight} kg` : "N/A"}
-                                </small>
-                              </div>
-
-                              {/* Role Indicator for Male */}
-                              <div className="mt-2">
-                                <div
-                                  className="d-flex align-items-center justify-content-center"
-                                  style={{
-                                    background:
-                                      "linear-gradient(135deg, #2196f3 0%, #64b5f6 100%)",
-                                    borderRadius: "12px",
-                                    padding: "4px 8px",
-                                  }}
-                                >
-                                  <motion.span
-                                    animate={{ scale: [1, 1.05, 1] }}
-                                    transition={{
-                                      duration: 3,
-                                      repeat: Infinity,
-                                      ease: "easeInOut",
-                                    }}
+                                {/* Performance Indicator for Female */}
+                                <div className="mt-2">
+                                  <div
+                                    className="d-flex align-items-center justify-content-center"
                                     style={{
-                                      fontSize: "10px",
-                                      color: "white",
-                                      fontWeight: "bold",
+                                      background:
+                                        production.avgPerSession >= 15
+                                          ? "linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
+                                          : production.avgPerSession >= 10
+                                          ? "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)"
+                                          : "linear-gradient(135deg, #f44336 0%, #ef5350 100%)",
+                                      borderRadius: "12px",
+                                      padding: "4px 8px",
                                     }}
                                   >
-                                    🐂 Pejantan
-                                  </motion.span>
+                                    <motion.span
+                                      animate={{ scale: [1, 1.1, 1] }}
+                                      transition={{
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                      }}
+                                      style={{
+                                        fontSize: "10px",
+                                        color: "white",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {production.avgPerSession >= 15
+                                        ? "🌟 High Production"
+                                        : production.avgPerSession >= 10
+                                        ? "⚡ Medium Production"
+                                        : "📈 Need Attention"}
+                                    </motion.span>
+                                  </div>
                                 </div>
-                              </div>
-                            </>
-                          )}
+                              </>
+                            ) : (
+                              // Male Cow - Show Non-Production Info
+                              <>
+                                {/* Male Cow Information */}
+                                <div className="mb-2">
+                                  <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    className="text-center p-3"
+                                    style={{
+                                      background:
+                                        "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
+                                      borderRadius: "12px",
+                                      border:
+                                        "1px solid rgba(158, 158, 158, 0.2)",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: "24px",
+                                        marginBottom: "8px",
+                                      }}
+                                    >
+                                      🚫🥛
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: "11px",
+                                        fontWeight: "bold",
+                                        color: "#757575",
+                                        marginBottom: "4px",
+                                      }}
+                                    >
+                                      Stud Cows
+                                    </div>
+                                    <small
+                                      style={{
+                                        fontSize: "9px",
+                                        color: "#757575",
+                                        opacity: 0.8,
+                                        lineHeight: 1.3,
+                                      }}
+                                    >
+                                      Does not produce milk
+                                    </small>
+                                  </motion.div>
+                                </div>
+
+                                {/* Male Cow Additional Info */}
+                                <div className="mb-2">
+                                  <div className="row g-1">
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(63, 81, 181, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#3f51b5",
+                                          }}
+                                        >
+                                          🐂
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#3f51b5",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Breeding Girolando
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                    <div className="col-6">
+                                      <motion.div
+                                        whileHover={{ scale: 1.02 }}
+                                        className="text-center p-2"
+                                        style={{
+                                          background:
+                                            "linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)",
+                                          borderRadius: "8px",
+                                          border:
+                                            "1px solid rgba(156, 39, 176, 0.2)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            color: "#7b1fa2",
+                                          }}
+                                        >
+                                          💪
+                                        </div>
+                                        <small
+                                          style={{
+                                            fontSize: "9px",
+                                            color: "#7b1fa2",
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          Strong & Healthy
+                                        </small>
+                                      </motion.div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Weight Info for Male */}
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <Badge bg="info" style={{ fontSize: "9px" }}>
+                                    <i className="fas fa-male me-1"></i>
+                                    Stud
+                                  </Badge>
+                                  <small className="text-muted">
+                                    {cow.weight ? `${cow.weight} kg` : "N/A"}
+                                  </small>
+                                </div>
+
+                                {/* Role Indicator for Male */}
+                                <div className="mt-2">
+                                  <div
+                                    className="d-flex align-items-center justify-content-center"
+                                    style={{
+                                      background:
+                                        "linear-gradient(135deg, #2196f3 0%, #64b5f6 100%)",
+                                      borderRadius: "12px",
+                                      padding: "4px 8px",
+                                    }}
+                                  >
+                                    <motion.span
+                                      animate={{ scale: [1, 1.05, 1] }}
+                                      transition={{
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                      }}
+                                      style={{
+                                        fontSize: "10px",
+                                        color: "white",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      🐂 Stud
+                                    </motion.span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                );
-              })}
+                      </motion.div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </motion.div>

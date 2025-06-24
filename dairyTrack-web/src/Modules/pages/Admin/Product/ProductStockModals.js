@@ -8,6 +8,7 @@ import {
   Row,
   Card,
   Badge,
+  Spinner,
 } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { getProductTypes } from "../../../controllers/productTypeController";
@@ -27,6 +28,7 @@ const ProductStockModals = ({
   handleEditProductStock,
 }) => {
   const [productTypes, setProductTypes] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch product types for dropdown
   useEffect(() => {
@@ -78,11 +80,35 @@ const ProductStockModals = ({
       created_by: newProductStock.created_by,
     });
     setShowAddModal(false);
+    setIsSubmitting(false);
   };
 
   const handleCloseEditModal = () => {
     setSelectedProductStock(null);
     setShowEditModal(false);
+    setIsSubmitting(false);
+  };
+
+  // Modified handleAddProductStock to manage loading state
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await handleAddProductStock(e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Modified handleEditProductStock to manage loading state
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await handleEditProductStock(e);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,7 +125,7 @@ const ProductStockModals = ({
             <i className="fas fa-plus me-2" /> Add Product Stock
           </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleAddProductStock}>
+        <Form onSubmit={handleAddSubmit}>
           <Modal.Body>
             <Row>
               <Col md={6}>
@@ -181,11 +207,29 @@ const ProductStockModals = ({
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseAddModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseAddModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
-            <Button variant="primary" type="submit">
-              Save
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </Modal.Footer>
         </Form>
@@ -203,7 +247,7 @@ const ProductStockModals = ({
             <i className="fas fa-edit me-2" /> Edit Product Stock
           </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleEditProductStock}>
+        <Form onSubmit={handleEditSubmit}>
           <Modal.Body>
             {selectedProductStock && (
               <Row>
@@ -287,11 +331,29 @@ const ProductStockModals = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseEditModal}>
+            <Button
+              variant="secondary"
+              onClick={handleCloseEditModal}
+              disabled={isSubmitting}
+            >
               Close
             </Button>
-            <Button variant="primary" type="submit">
-              Save Changes
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </Modal.Footer>
         </Form>

@@ -60,7 +60,7 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
         setState(() => _error = response['message']);
       }
     } catch (e) {
-      setState(() => _error = 'Gagal memuat data riwayat penyakit.');
+      setState(() => _error = 'Failed to load disease history.');
     } finally {
       setState(() => _loading = false);
     }
@@ -91,8 +91,8 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
           context: context,
           barrierDismissible: false,
           builder: (context) => const AlertDialog(
-            title: Text('Berhasil'),
-            content: Text('Data berhasil diperbarui.'),
+            title: Text('Success'),
+            content: Text('Succes update data.'),
           ),
         );
 
@@ -107,8 +107,8 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Gagal'),
-          content: Text(response['message'] ?? 'Gagal memperbarui data.'),
+          title: const Text('Failed'),
+          content: Text(response['message'] ?? 'Failed update data.'),
         ),
       );
 
@@ -120,8 +120,8 @@ class _EditDiseaseHistoryViewState extends State<EditDiseaseHistoryView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text('Kesalahan'),
-        content: Text('Terjadi kesalahan saat memperbarui.'),
+title: Text('Error'),
+content: Text('An error occurred while updating.'),
       ),
     );
 
@@ -140,7 +140,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
   title: const Text(
-    'Edit Riwayat Penyakit',
+    'Edit Disease History',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -158,7 +158,7 @@ Widget build(BuildContext context) {
         : Padding(
             padding: const EdgeInsets.all(16.0),
             child: _disease == null
-                ? Text(_error ?? 'Data tidak ditemukan')
+                ? Text(_error ?? 'Data not found')
                 : Form(
                     key: _formKey,
                     child: ListView(
@@ -186,25 +186,25 @@ Widget build(BuildContext context) {
                         TextFormField(
                           controller: _diseaseNameController,
                           decoration: InputDecoration(
-                            labelText: '🧬 Nama Penyakit',
+                            labelText: '🧬 Disease Name',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             filled: true,
                             fillColor: Colors.white,
                           ),
-                          validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _descriptionController,
                           decoration: InputDecoration(
-                            labelText: '📝 Deskripsi',
+                            labelText: '📝 Description',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             filled: true,
                             fillColor: Colors.white,
                           ),
                           minLines: 3,
                           maxLines: 5,
-                          validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                         ),
                         const SizedBox(height: 24),
                         SizedBox(
@@ -217,7 +217,7 @@ Widget build(BuildContext context) {
                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
                                 : const Icon(Icons.save),
-                            label: Text(_submitting ? 'Menyimpan...' : 'Perbarui Data'),
+                            label: Text(_submitting ? 'Saving...' : 'Update Data'),
                             onPressed: _submitting ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -256,7 +256,7 @@ Widget _checkupDetails(Map<String, dynamic> check) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('📋 Detail Pemeriksaan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('📋 Detail Health Check', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(10),
@@ -268,11 +268,11 @@ Widget _checkupDetails(Map<String, dynamic> check) {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('🌡️ Suhu: ${check['rectal_temperature']} °C'),
-              Text('❤️ Denyut Jantung: ${check['heart_rate']} bpm'),
-              Text('🫁 Pernapasan: ${check['respiration_rate']} bpm'),
-              Text('🐄 Ruminasi: ${check['rumination']} menit'),
-              Text('🕒 Tanggal: ${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.parse(check['checkup_date']).toLocal())} WIB'),
+              Text('🌡️ Rectal Temperature: ${check['rectal_temperature']} °C'),
+              Text('❤️ Heart Rate: ${check['heart_rate']} bpm'),
+              Text('🫁 Respiration Rate: ${check['respiration_rate']} bpm'),
+              Text('🐄 Rumination: ${check['rumination']} menit'),
+              Text('🕒 Date: ${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(DateTime.parse(check['checkup_date']).toLocal())} WIB'),
             ],
           ),
         ),
@@ -295,7 +295,7 @@ Widget _symptomDetails(Map<String, dynamic> symptom) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('🦠 Gejala', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('🦠 Symptom', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(10),
@@ -306,7 +306,7 @@ Widget _symptomDetails(Map<String, dynamic> symptom) {
           ),
           child: entries.isNotEmpty
               ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: entries)
-              : const Text('Tidak ada gejala abnormal dicatat.', style: TextStyle(fontStyle: FontStyle.italic)),
+              : const Text('No abnormal symptoms recorded.', style: TextStyle(fontStyle: FontStyle.italic)),
         ),
       ],
     ),

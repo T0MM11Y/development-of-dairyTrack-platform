@@ -266,10 +266,10 @@ def export_milking_sessions_pdf():
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         pdf.set_font("Arial", style="B", size=16)
-        pdf.cell(200, 10, txt="Laporan Data Milking Sessions", ln=True, align='C')
+        pdf.cell(200, 10, txt="Milking Sessions Report", ln=True, align='C')
         pdf.ln(5)
         pdf.set_font("Arial", size=10)
-        pdf.cell(200, 10, txt="Daftar sesi pemerahan sapi.", ln=True, align='C')
+        pdf.cell(200, 10, txt="Cattle milking session list.", ln=True, align='C')
         pdf.ln(10)
 
         pdf.set_fill_color(173, 216, 230)
@@ -287,14 +287,14 @@ def export_milking_sessions_pdf():
         for idx, session in enumerate(sessions, start=1):
             cow_info = f"{session.cow_id} - {session.cow.name}" if session.cow else str(session.cow_id)
             milker_info = f"{session.milker_id} - {session.milker.name}" if session.milker else str(session.milker_id)
-            # Tentukan sesi berdasarkan jam
+            # Determine session based on hour
             hour = session.milking_time.hour
             if hour < 12:
-                sesi = "Pagi"
+                sesi = "Morning"
             elif hour < 18:
-                sesi = "Siang"
+                sesi = "Afternoon"
             else:
-                sesi = "Sore"
+                sesi = "Evening"
             pdf.cell(10, 10, str(idx), border=1, align='C')
             pdf.cell(40, 10, cow_info, border=1)
             pdf.cell(40, 10, milker_info, border=1)
@@ -303,10 +303,20 @@ def export_milking_sessions_pdf():
             pdf.cell(45, 10, session.milking_time.strftime('%Y-%m-%d %H:%M'), border=1)
             pdf.ln()
 
+        # Metode yang lebih aman untuk menggunakan BytesIO
         buffer = BytesIO()
-        pdf.output(buffer)
+        
+        # Output PDF sebagai bytes dan tulis ke buffer
+        pdf_bytes = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_bytes)
         buffer.seek(0)
-        return send_file(buffer, as_attachment=True, download_name="milking_sessions.pdf", mimetype='application/pdf')
+        
+        return send_file(
+            buffer, 
+            as_attachment=True, 
+            download_name="milking_sessions.pdf", 
+            mimetype='application/pdf'
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -756,21 +766,22 @@ def export_daily_summaries_pdf():
                 pdf.cell(25, 10, str(round(total_all, 2)), border=1, align='R', fill=True)
 
         # Output PDF file
-        buffer = BytesIO()
-        pdf.output(buffer)
-        buffer.seek(0)
-        
-        # Generate filename
-        if is_male_cow:
-            filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
-        else:
-            filename = "daily_milk_production.pdf"
-            if start_date and end_date:
-                filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
-            elif cow_id:
-                filename = f"milk_production_cow_{cow_id}.pdf"
-        
-        return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+            buffer = BytesIO()
+            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            buffer.write(pdf_bytes)
+            buffer.seek(0)
+            
+            # Generate filename
+            if is_male_cow:
+                filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
+            else:
+                filename = "daily_milk_production.pdf"
+                if start_date and end_date:
+                    filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
+                elif cow_id:
+                    filename = f"milk_production_cow_{cow_id}.pdf"
+            
+            return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

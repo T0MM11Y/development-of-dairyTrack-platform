@@ -1740,7 +1740,7 @@ const ListMilking = () => {
         <Modal.Header closeButton={!isSubmitting} className="bg-light">
           <Modal.Title>
             <i className="fas fa-plus-circle me-2 text-primary"></i>
-            Tambah Sesi Pemerahan Baru
+            Add New Milking Session
             {isSubmitting && (
               <Spinner
                 animation="border"
@@ -1764,7 +1764,7 @@ const ListMilking = () => {
                     className="shadow-sm"
                     disabled={isSubmitting}
                   >
-                    <option value="">-- Pilih Sapi --</option>
+                    <option value="">-- Select Cow --</option>
                     {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                       .filter((cow) => cow.gender?.toLowerCase() === "female")
                       .map((cow) => (
@@ -1779,7 +1779,7 @@ const ListMilking = () => {
 
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Pemerah</Form.Label>
+                  <Form.Label>Milker</Form.Label>
                   {currentUser?.role_id === 1 ? (
                     // Admin bisa memilih milker dari daftar farmers yang mengelola cow yang dipilih
                     <Form.Select
@@ -1798,10 +1798,10 @@ const ListMilking = () => {
                     >
                       <option value="">
                         {!newSession.cow_id
-                          ? "-- Pilih Sapi Terlebih Dahulu --"
+                          ? "-- Choose the Cow First --"
                           : loadingFarmers
-                          ? "-- Memuat Peternak --"
-                          : "-- Pilih Pemerah --"}
+                          ? "-- Loading Breeders --"
+                          : "-- Select Blusher --"}
                       </option>
                       {availableFarmersForCow.map((farmer) => (
                         <option key={farmer.user_id} value={farmer.id}>
@@ -1939,7 +1939,7 @@ const ListMilking = () => {
                   {/* Date Input */}
                   <div className="mb-2">
                     <Form.Label className="form-label-sm text-muted">
-                      Tanggal:
+                      Date:
                     </Form.Label>
                     <Form.Control
                       type="date"
@@ -1961,7 +1961,7 @@ const ListMilking = () => {
                   {/* Time Input with Quick Buttons */}
                   <div>
                     <Form.Label className="form-label-sm text-muted">
-                      Waktu:
+                      Time:
                     </Form.Label>
                     <div className="d-flex gap-2 mb-2">
                       <Form.Control
@@ -1987,19 +1987,19 @@ const ListMilking = () => {
                       {[
                         {
                           time: "06:00",
-                          label: "Pagi (06:00)",
+                          label: "Morning (06:00)",
                           variant: "outline-warning",
                           icon: "fas fa-sun",
                         },
                         {
                           time: "14:00",
-                          label: "Siang (14:00)",
+                          label: "Afternoon (14:00)",
                           variant: "outline-info",
                           icon: "fas fa-cloud-sun",
                         },
                         {
                           time: "18:00",
-                          label: "Sore (18:00)",
+                          label: "Afternoon (18:00)",
                           variant: "outline-secondary",
                           icon: "fas fa-moon",
                         },
@@ -2030,7 +2030,7 @@ const ListMilking = () => {
                     <div className="mt-2 p-2 bg-light rounded">
                       <small className="text-muted">
                         <i className="fas fa-clock me-1"></i>
-                        Dipilih:{" "}
+                        Chosen:{" "}
                         {(() => {
                           const date = new Date(newSession.milking_time);
                           const options = {
@@ -2054,61 +2054,61 @@ const ListMilking = () => {
             <Form.Group className="mb-3">
               <Form.Label>
                 <i className="fas fa-sticky-note me-2 text-secondary"></i>
-                Catatan
+                Notes
               </Form.Label>
 
               {/* Quick Notes Pills */}
               <div className="mb-3">
                 <Form.Label className="form-label-sm text-muted mb-2">
-                  Catatan Cepat:
+                  Quick Note:
                 </Form.Label>
                 <div className="d-flex gap-1 flex-wrap">
                   {[
                     {
-                      text: "Sapi dalam kondisi sehat dan produktif",
-                      label: "Kondisi Sehat",
+                      text: "Cow is healthy and productive",
+                      label: "Healthy Condition",
                       variant: "outline-primary",
                       icon: "fas fa-heart-pulse",
                     },
                     {
-                      text: "Produksi susu normal sesuai target",
-                      label: "Produksi Normal",
+                      text: "Milk production is normal and meets the target",
+                      label: "Normal Production",
                       variant: "outline-success",
                       icon: "fas fa-check-circle",
                     },
                     {
-                      text: "Pemerahan berjalan lancar tanpa hambatan",
-                      label: "Pemerahan Lancar",
+                      text: "Milking process went smoothly without obstacles",
+                      label: "Smooth Milking",
                       variant: "outline-info",
                       icon: "fas fa-clock",
                     },
                     {
-                      text: "Perlu perhatian khusus pada sapi ini",
-                      label: "Perlu Perhatian",
+                      text: "This cow needs special attention",
+                      label: "Needs Attention",
                       variant: "outline-warning",
                       icon: "fas fa-exclamation-triangle",
                     },
                     {
-                      text: "Kualitas susu baik dan segar",
-                      label: "Kualitas Baik",
+                      text: "Milk quality is good and fresh",
+                      label: "Good Quality",
                       variant: "outline-secondary",
                       icon: "fas fa-thumbs-up",
                     },
                     {
-                      text: "Sapi tampak stress atau gelisah",
-                      label: "Sapi Stress",
+                      text: "Cow appears stressed or anxious",
+                      label: "Cow Stressed",
                       variant: "outline-dark",
                       icon: "fas fa-tired",
                     },
                     {
-                      text: "Volume produksi menurun dari biasanya",
-                      label: "Produksi Menurun",
+                      text: "Production volume is lower than usual",
+                      label: "Production Down",
                       variant: "outline-danger",
                       icon: "fas fa-arrow-down",
                     },
                     {
-                      text: "Peralatan pemerahan berfungsi dengan baik",
-                      label: "Peralatan OK",
+                      text: "Milking equipment is functioning properly",
+                      label: "Equipment OK",
                       variant: "outline-success",
                       icon: "fas fa-tools",
                     },
@@ -2165,7 +2165,7 @@ const ListMilking = () => {
               <Form.Control
                 as="textarea"
                 rows={4}
-                placeholder="Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas..."
+                placeholder="Enter notes about this milking session or use the quick notes option above..."
                 value={newSession.notes}
                 onChange={(e) =>
                   setNewSession({ ...newSession, notes: e.target.value })
@@ -2189,7 +2189,7 @@ const ListMilking = () => {
                 onClick={() => setShowAddModal(false)}
                 disabled={isSubmitting}
               >
-                Batal
+                Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
@@ -2202,10 +2202,10 @@ const ListMilking = () => {
                       aria-hidden="true"
                       className="me-2"
                     />
-                    Menambahkan...
+                    Add...
                   </>
                 ) : (
-                  "Tambah Sesi Pemerahan"
+                  "Add Milking Session"
                 )}
               </Button>
             </div>
@@ -2287,10 +2287,10 @@ const ListMilking = () => {
                       >
                         <option value="">
                           {!selectedSession.cow_id
-                            ? "-- Pilih Sapi Terlebih Dahulu --"
+                            ? "-- Choose the Cow First --"
                             : loadingFarmers
-                            ? "-- Memuat Peternak --"
-                            : "-- Pilih Pemerah --"}
+                            ? "-- Loading Breeders --"
+                            : "-- Select Blusher --"}
                         </option>
                         {availableFarmersForCow.map((farmer) => (
                           <option key={farmer.user_id} value={farmer.user_id}>
@@ -2339,7 +2339,7 @@ const ListMilking = () => {
                         step="0.1"
                         min="0"
                         max="50"
-                        placeholder="Masukkan volume susu dalam liter"
+                        placeholder="Enter the volume of milk in liters"
                         value={selectedSession.volume}
                         onChange={(e) =>
                           setSelectedSession({
@@ -2393,10 +2393,10 @@ const ListMilking = () => {
                           </strong>
                           {(() => {
                             const vol = parseFloat(selectedSession.volume || 0);
-                            if (vol < 3) return " (Volume Rendah)";
-                            if (vol <= 10) return " (Volume Normal)";
+                            if (vol < 3) return " (Low Volume)";
+                            if (vol <= 10) return " (Normal Volume)";
                             if (vol <= 20) return " (Volume Tinggi)";
-                            return " (Volume Sangat Tinggi)";
+                            return " (Very High Volume)";
                           })()}
                         </small>
                       </div>
@@ -2538,50 +2538,50 @@ const ListMilking = () => {
                   <div className="d-flex gap-1 flex-wrap">
                     {[
                       {
-                        text: "Sapi dalam kondisi sehat dan produktif",
-                        label: "Kondisi Sehat",
+                        text: "Cow is healthy and productive",
+                        label: "Healthy Condition",
                         variant: "outline-primary",
                         icon: "fas fa-heart-pulse",
                       },
                       {
-                        text: "Produksi susu normal sesuai target",
-                        label: "Produksi Normal",
+                        text: "Milk production is normal and meets the target",
+                        label: "Normal Production",
                         variant: "outline-success",
                         icon: "fas fa-check-circle",
                       },
                       {
-                        text: "Pemerahan berjalan lancar tanpa hambatan",
-                        label: "Pemerahan Lancar",
+                        text: "Milking process went smoothly without obstacles",
+                        label: "Smooth Milking",
                         variant: "outline-info",
                         icon: "fas fa-clock",
                       },
                       {
-                        text: "Perlu perhatian khusus pada sapi ini",
-                        label: "Perlu Perhatian",
+                        text: "This cow needs special attention",
+                        label: "Needs Attention",
                         variant: "outline-warning",
                         icon: "fas fa-exclamation-triangle",
                       },
                       {
-                        text: "Kualitas susu baik dan segar",
-                        label: "Kualitas Baik",
+                        text: "Milk quality is good and fresh",
+                        label: "Good Quality",
                         variant: "outline-secondary",
                         icon: "fas fa-thumbs-up",
                       },
                       {
-                        text: "Sapi tampak stress atau gelisah",
-                        label: "Sapi Stress",
+                        text: "Cow appears stressed or anxious",
+                        label: "Cow Stressed",
                         variant: "outline-dark",
                         icon: "fas fa-tired",
                       },
                       {
-                        text: "Volume produksi menurun dari biasanya",
-                        label: "Produksi Menurun",
+                        text: "Production volume is lower than usual",
+                        label: "Production Down",
                         variant: "outline-danger",
                         icon: "fas fa-arrow-down",
                       },
                       {
-                        text: "Peralatan pemerahan berfungsi dengan baik",
-                        label: "Peralatan OK",
+                        text: "Milking equipment is functioning properly",
+                        label: "Equipment OK",
                         variant: "outline-success",
                         icon: "fas fa-tools",
                       },
@@ -2637,7 +2637,7 @@ const ListMilking = () => {
                 <Form.Control
                   as="textarea"
                   rows={4}
-                  placeholder="Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas..."
+                  placeholder="Enter notes about this milking session or use the quick notes option above...."
                   value={selectedSession.notes || ""}
                   onChange={(e) =>
                     setSelectedSession({
@@ -2664,7 +2664,7 @@ const ListMilking = () => {
                   onClick={() => setShowEditModal(false)}
                   disabled={isSubmitting}
                 >
-                  Batal
+                  Cancel
                 </Button>
                 <Button variant="primary" type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
@@ -2680,7 +2680,7 @@ const ListMilking = () => {
                       Menyimpan...
                     </>
                   ) : (
-                    "Simpan Perubahan"
+                    "Save Changes"
                   )}
                 </Button>
               </div>

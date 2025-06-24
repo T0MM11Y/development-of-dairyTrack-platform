@@ -64,25 +64,25 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
     {
       'icon': Icons.show_chart,
       'value': '1000+',
-      'label': 'Liter Susu/Hari',
+      'label': 'Liters Milk/Day',
       'color': AppColors.primary,
     },
     {
       'icon': Icons.school,
       'value': '50+',
-      'label': 'Peternak Terlatih',
+      'label': 'Trained Farmers',
       'color': AppColors.secondary,
     },
     {
       'icon': Icons.biotech,
       'value': '10+',
-      'label': 'Riset Genetik',
+      'label': 'Genetic Research',
       'color': AppColors.accent,
     },
     {
       'icon': Icons.emoji_events,
       'value': '5+',
-      'label': 'Penghargaan Sapi',
+      'label': 'Cattle Awards',
       'color': AppColors.primary,
     },
   ];
@@ -90,9 +90,9 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
   final List<Map<String, dynamic>> featuresData = [
     {
       'icon': Icons.local_drink,
-      'title': 'Sapi Perah',
+      'title': 'Dairy Cattle',
       'description':
-          'Fokus pada produksi susu berkualitas tinggi melalui manajemen nutrisi, kesehatan, dan lingkungan kandang yang optimal.',
+          'Focus on high-quality milk production through optimal nutrition management, health, and barn environment.',
       'color': AppColors.secondary,
       'url': 'https://id.wikipedia.org/wiki/Sapi_perah',
     },
@@ -100,24 +100,24 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
       'icon': Icons.biotech,
       'title': 'Girolando',
       'description':
-          'Sapi Girolando adalah hasil persilangan antara sapi Gir dan Holstein, menggabungkan ketahanan tropis dengan produktivitas susu tinggi.',
+          'Girolando cattle are the result of crossbreeding between Gir and Holstein cattle, combining tropical resistance with high milk productivity.',
       'color': AppColors.primary,
       'url': 'https://en.wikipedia.org/wiki/Girolando',
     },
     {
       'icon': Icons.health_and_safety,
-      'title': 'Kesehatan & Nutrisi',
+      'title': 'Health & Nutrition',
       'description':
-          'TSTH² menerapkan standar kesehatan hewan dan nutrisi berbasis riset untuk memastikan kesejahteraan sapi.',
+          'TSTH² applies research-based animal health and nutrition standards to ensure cattle welfare.',
       'color': AppColors.accent,
       'url':
           'https://www.fao.org/dairy-production-products/animal-health-and-welfare/en/',
     },
     {
       'icon': Icons.eco,
-      'title': 'Lingkungan Hijau',
+      'title': 'Green Environment',
       'description':
-          'Komitmen pada keberlanjutan dengan menjaga keseimbangan ekosistem dan mendukung praktik peternakan ramah lingkungan.',
+          'Commitment to sustainability by maintaining ecosystem balance and supporting environmentally friendly farming practices.',
       'color': AppColors.success,
       'url': 'https://www.fao.org/sustainability/en/',
     },
@@ -126,31 +126,31 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
   final List<Map<String, dynamic>> girolandoFeatures = [
     {
       'icon': Icons.wb_sunny,
-      'title': 'Adaptabilitas Iklim',
-      'description': 'Toleransi panas dan kelembaban tinggi di iklim tropis',
+      'title': 'Climate Adaptability',
+      'description': 'Heat and high humidity tolerance in tropical climates',
     },
     {
       'icon': Icons.shield,
-      'title': 'Resistensi Penyakit',
-      'description': 'Ketahanan terhadap parasit dan penyakit tropis',
+      'title': 'Disease Resistance',
+      'description': 'Resistance to tropical parasites and diseases',
     },
     {
       'icon': Icons.opacity,
-      'title': 'Produksi Susu',
-      'description': 'Rata-rata 15-25 liter/hari dengan kadar lemak 4-5%',
+      'title': 'Milk Production',
+      'description': 'Average 15-25 liters/day with 4-5% fat content',
     },
     {
       'icon': Icons.calendar_month,
-      'title': 'Masa Laktasi',
-      'description': 'Periode laktasi 275-305 hari dengan persistensi baik',
+      'title': 'Lactation Period',
+      'description': 'Lactation period of 275-305 days with good persistency',
     },
   ];
 
   final List<String> missionItems = [
-    'Mengembangkan sistem pemeliharaan sapi berbasis teknologi dan data.',
-    'Melakukan riset nutrisi, kesehatan, dan genetika sapi untuk meningkatkan produktivitas.',
-    'Meningkatkan kapasitas peternak melalui pelatihan dan pendampingan.',
-    'Menjadi pusat kolaborasi nasional dan internasional di bidang peternakan sapi.',
+    'Develop cattle management systems based on technology and data.',
+    'Conduct research on nutrition, health, and cattle genetics to increase productivity.',
+    'Increase farmer capacity through training and mentoring.',
+    'Become a national and international collaboration center in cattle farming.',
   ];
 
   @override
@@ -209,7 +209,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Tidak dapat membuka link: $url'),
+                content: Text('Cannot open link: $url'),
                 backgroundColor: AppColors.error,
                 duration: Duration(seconds: 3),
               ),
@@ -221,7 +221,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error membuka link: ${e.toString()}'),
+            content: Text('Error opening link: ${e.toString()}'),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 3),
           ),
@@ -355,7 +355,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                                     SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        "Pusat Riset Peternakan Sapi",
+                                        "Cattle Research Center",
                                         style: TextStyle(
                                           color: AppColors.accent,
                                           fontSize: 11,
@@ -371,7 +371,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                               SizedBox(height: 20),
                               // Main Title
                               Text(
-                                "Seputar Sapi di\nTSTH²",
+                                "About Cattle at\nTSTH²",
                                 style: TextStyle(
                                   color: AppColors.textOnPrimary,
                                   fontSize: 28,
@@ -393,7 +393,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                               SizedBox(height: 16),
                               // Description
                               Text(
-                                "TSTH² tidak hanya fokus pada tanaman herbal dan hortikultura, tetapi juga menjadi pusat pengembangan dan riset sapi perah. Kami berkomitmen pada inovasi peternakan sapi yang berkelanjutan dan modern.",
+                                "TSTH² not only focuses on herbal plants and horticulture, but also serves as a center for dairy cattle development and research. We are committed to sustainable and modern cattle farming innovation.",
                                 style: TextStyle(
                                   color:
                                       AppColors.textOnPrimary.withOpacity(0.9),
@@ -406,9 +406,9 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                               // Features list
                               Column(
                                 children: [
-                                  "Riset Genetik",
-                                  "Teknologi Modern",
-                                  "Berkelanjutan"
+                                  "Genetic Research",
+                                  "Modern Technology",
+                                  "Sustainable"
                                 ]
                                     .asMap()
                                     .entries
@@ -575,7 +575,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Pelajari Lebih",
+                    "Learn More",
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   SizedBox(width: 8),
@@ -763,7 +763,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tentang TSTH²',
+                  'About TSTH²',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -771,7 +771,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                   ),
                 ),
                 Text(
-                  "Pusat Riset Sapi",
+                  "Cattle Research Center",
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textOnPrimary.withOpacity(0.8),
@@ -804,10 +804,10 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: _buildSectionHeader(
-                  badge: "TENTANG KAMI",
-                  title: "Pusat Riset & Inovasi\nPerternakan Sapi Terdepan",
+                  badge: "ABOUT US",
+                  title: "Leading Cattle Research &\nInnovation Center",
                   description:
-                      "TSTH² mengembangkan teknologi dan manajemen peternakan sapi berbasis data, nutrisi, dan kesehatan hewan untuk mendukung peternak lokal mencapai produktivitas optimal.",
+                      "TSTH² develops data-based cattle farming technology and management, nutrition, and animal health to support local farmers in achieving optimal productivity.",
                 ),
               ),
 
@@ -834,10 +834,10 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                 child: Column(
                   children: [
                     _buildSectionHeader(
-                      badge: "PENCAPAIAN KAMI",
-                      title: "Inovasi Peternakan\nSapi Modern",
+                      badge: "OUR ACHIEVEMENTS",
+                      title: "Modern Cattle\nFarming Innovation",
                       description:
-                          "Kami mengintegrasikan teknologi digital untuk monitoring sapi, pencatatan produksi susu, pertumbuhan, dan kesehatan.",
+                          "We integrate digital technology for cattle monitoring, milk production recording, growth tracking, and health management.",
                     ),
                     SizedBox(height: 32),
                     GridView.builder(
@@ -866,10 +866,10 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                 child: Column(
                   children: [
                     _buildSectionHeader(
-                      badge: "BREED UNGGULAN",
-                      title: "Pengembangan Breed\nGirolando",
+                      badge: "SUPERIOR BREED",
+                      title: "Girolando Breed\nDevelopment",
                       description:
-                          "Girolando dikembangkan pertama kali di Brasil dan sekarang menjadi salah satu breed sapi perah utama di daerah tropis.",
+                          "Girolando was first developed in Brazil and is now one of the main dairy cattle breeds in tropical regions.",
                     ),
                     SizedBox(height: 32),
                     Container(
@@ -913,7 +913,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                     ),
                     SizedBox(height: 24),
                     Text(
-                      "Karakteristik Breed Girolando",
+                      "Girolando Breed Characteristics",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -928,7 +928,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                     ),
                     SizedBox(height: 16),
                     Text(
-                      "Di TSTH², kami memelihara populasi Girolando dengan perbandingan genetik 5/8 Holstein dan 3/8 Gir yang telah terbukti optimal untuk kondisi iklim Indonesia.",
+                      "At TSTH², we maintain a Girolando population with a genetic ratio of 5/8 Holstein and 3/8 Gir that has proven optimal for Indonesian climate conditions.",
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.textSecondary,
@@ -958,7 +958,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                                 Icon(Icons.book, size: 20),
                                 SizedBox(width: 8),
                                 Text(
-                                  "Penelitian FAO",
+                                  "FAO Research",
                                   style: TextStyle(fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -1010,10 +1010,10 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                 child: Column(
                   children: [
                     _buildSectionHeader(
-                      badge: "KOMITMEN KAMI",
-                      title: "Visi & Misi\nPerternakan Sapi",
+                      badge: "OUR COMMITMENT",
+                      title: "Vision & Mission\nCattle Farming",
                       description:
-                          "Menjadi pusat unggulan riset, inovasi, dan pengembangan sapi di Indonesia.",
+                          "To become a center of excellence for research, innovation, and cattle development in Indonesia.",
                     ),
                     SizedBox(height: 32),
                     // Vision Card
@@ -1052,7 +1052,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                               ),
                               SizedBox(width: 16),
                               Text(
-                                "Visi",
+                                "Vision",
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -1063,7 +1063,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                           ),
                           SizedBox(height: 16),
                           Text(
-                            "Menjadi pusat riset dan inovasi peternakan sapi yang menghasilkan teknologi, produk untuk mendukung ketahanan pangan nasional. Kami berkomitmen untuk menjadi rujukan di tingkat nasional dan regional dalam pengembangan peternakan sapi yang berkelanjutan, efisien, dengan integrasi teknologi modern untuk kesejahteraan peternak dan kemandirian industri peternakan Indonesia.",
+                            "To become a center of cattle farming research and innovation that produces technology and products to support national food security. We are committed to being a reference at national and regional levels in developing sustainable, efficient cattle farming with modern technology integration for farmer welfare and the independence of Indonesia's livestock industry.",
                             style: TextStyle(
                               fontSize: 16,
                               color: AppColors.textPrimary,
@@ -1110,7 +1110,7 @@ class _AboutGuestsViewState extends State<AboutGuestsView>
                               ),
                               SizedBox(width: 16),
                               Text(
-                                "Misi",
+                                "Mission",
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,

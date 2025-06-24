@@ -47,7 +47,7 @@ useEffect(() => {
       const { success, cows } = await listCowsByUser(userData.user_id || userData.id);
       if (success) setUserManagedCows(cows || []);
     } catch (err) {
-      console.error("Gagal memuat sapi user:", err);
+console.error("Failed to load user's cows:", err);
     }
   };
 
@@ -58,13 +58,14 @@ const isAdmin = currentUser?.role_id === 1;
 const isSupervisor = currentUser?.role_id === 2;
 
 const disableIfAdminOrSupervisor = (isAdmin || isSupervisor)
-  ? {
-      disabled: true,
-      title: isAdmin
-        ? "Admin tidak dapat menambah pemeriksaan"
-        : "Supervisor tidak dapat menambah pemeriksaan",
-      style: { opacity: 0.5, cursor: "not-allowed" },
-    }
+  ?{
+  disabled: true,
+  title: isAdmin
+    ? "Admin cannot add health checks"
+    : "Supervisor cannot add health checks",
+  style: { opacity: 0.5, cursor: "not-allowed" },
+}
+
   : {};
 
 
@@ -95,7 +96,7 @@ const disableIfAdminOrSupervisor = (isAdmin || isSupervisor)
     setData(filteredHealthChecks || []);
     setHealthChecks(filteredHealthChecks || []);
   } catch (err) {
-    Swal.fire("Error", "Gagal memuat data.", "error");
+    Swal.fire("Error", "Failed to load data.", "error");
     setData([]);
     setHealthChecks([]);
   } finally {
@@ -107,10 +108,10 @@ const disableIfAdminOrSupervisor = (isAdmin || isSupervisor)
 
 
   const ListCowName = (cow) => {
-    if (!cow) return "Tidak diketahui";
-    if (typeof cow === "object") return cow.name || "Tidak diketahui";
+    if (!cow) return "Uknown";
+    if (typeof cow === "object") return cow.name || "Uknown";
     const found = cows.find((c) => String(c.id) === String(cow));
-    return found ? found.name : "Tidak diketahui";
+    return found ? found.name : "Uknown";
   };
 
   const handleDelete = async () => {
@@ -149,14 +150,14 @@ useEffect(() => {
   useEffect(() => {
     if (deleteId) {
       Swal.fire({
-        title: "Yakin ingin menghapus?",
-        text: "Data yang dihapus tidak dapat dikembalikan.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Ya, Hapus!",
-        cancelButtonText: "Batal",
+         title: "Are you sure you want to delete?",
+      text: "Deleted data cannot be recovered.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, Delete!",
+      cancelButtonText: "Cancel",
       }).then((result) => {
         if (result.isConfirmed) {
           handleDelete();
@@ -185,7 +186,7 @@ const availableCows = Array.isArray(rawCows)
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-grey py-3">
           <h4 className="mb-0 text-primary fw-bold">
-            <i className="fas fa-heartbeat me-2" /> Pemeriksaan Kesehatan
+            <i className="fas fa-heartbeat me-2" /> Health Checks
           </h4>
         </Card.Header>
 
@@ -193,7 +194,7 @@ const availableCows = Array.isArray(rawCows)
           <div className="d-flex justify-content-between mb-3">
             <InputGroup style={{ maxWidth: "300px" }}>
               <FormControl
-                placeholder="Cari nama sapi..."
+                placeholder="Search cow name..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -207,8 +208,8 @@ const availableCows = Array.isArray(rawCows)
     <Tooltip id="tooltip-disabled">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menambah pemeriksaan"
-            : "Supervisor tidak dapat menambah pemeriksaan")
+            ? "Admin cannot add health checks"
+            : "Supervisor cannot add health checks")
         : ""}
     </Tooltip>
   }
@@ -217,14 +218,15 @@ const availableCows = Array.isArray(rawCows)
     <Button
       variant="primary"
       onClick={() => {
-        if (availableCows.length === 0) {
-          Swal.fire({
-            icon: "warning",
-            title: "Tidak Bisa Menambah Pemeriksaan",
-            text: "Tidak ada sapi yang tersedia untuk pemeriksaan. Semua sapi sedang diperiksa atau belum siap.",
-          });
-          return;
-        }
+       if (availableCows.length === 0) {
+  Swal.fire({
+    icon: "warning",
+    title: "Cannot Add Health Check",
+    text: "No cows are available for examination. All cows are either being checked or not ready yet.",
+  });
+  return;
+}
+
 
         if (!isSupervisor && !isAdmin) {
           setModalType("create");
@@ -233,7 +235,7 @@ const availableCows = Array.isArray(rawCows)
       {...disableIfAdminOrSupervisor}
       style={{ pointerEvents: (isAdmin || isSupervisor) ? "none" : "auto" }}
     >
-      <i className="fas fa-plus me-2" /> Tambah
+      <i className="fas fa-plus me-2" /> Add Data
     </Button>
   </span>
 </OverlayTrigger>
@@ -244,32 +246,34 @@ const availableCows = Array.isArray(rawCows)
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="primary" />
-              <p className="mt-3 text-muted">Memuat data pemeriksaan...</p>
+              <p className="mt-3 text-muted">Loading health check data...</p>
             </div>
           ) : (
             <div className="table-responsive">
               <Table bordered hover className="align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th>#</th>
-                    <th>Tanggal</th>
-                    <th>Sapi</th>
-                    <th>Suhu</th>
-                    <th>Detak</th>
-                    <th>Napas</th>
-                    <th>Ruminasi</th>
-                    <th>Penanggung Jawab</th>
+  <th>#</th>
+  <th>Date</th>
+  <th>Cow</th>
+  <th>Temperature</th>
+  <th>Heart Rate</th>
+  <th>Respiration</th>
+  <th>Rumination</th>
+  <th>Recorded By</th>
+  
+  <th>Status</th>
+  <th>Actions</th>
+</tr>
 
-                    <th>Status</th>
-                    <th>Aksi</th>
-                  </tr>
                 </thead>
                 <tbody>
                   {paginatedData.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center text-muted">
-                        Tidak ada data ditemukan.
-                      </td>
+  No data found.
+</td>
+
                     </tr>
                   ) : (
                     paginatedData.map((item, idx) => (
@@ -278,21 +282,22 @@ const availableCows = Array.isArray(rawCows)
                         <td>{new Date(item.checkup_date).toLocaleDateString("id-ID")}</td>
                         <td>{ListCowName(item.cow)}</td>
                         <td>{item.rectal_temperature}°C</td>
-                        <td>{item.heart_rate} bpm</td>
-                        <td>{item.respiration_rate} bpm</td>
-                        <td>{item.rumination} kontraksi</td>
-<td>{item.checked_by?.name || "Tidak diketahui"}</td>
+                        <td>{item.heart_rate} bpm/minutes</td>
+                        <td>{item.respiration_rate} bpm/minutes</td>
+                        <td>{item.rumination} contraction/minutes</td>
+<td>{item.checked_by?.name || "uknown"}</td>
                         <td>
                           <Badge bg={
                             item.status === "healthy" ? "primary" :
                             item.status === "handled" ? "success" : "warning"
                           }>
                             {item.status === "healthy"
-                              ? "Sehat"
-                              : item.status === "handled"
-                              ? "Sudah ditangani"
-                              : "Belum ditangani"}
-                          </Badge>
+  ? "Healthy"
+  : item.status === "handled"
+  ? "Handled"
+  : "Not Handled"}
+</Badge>
+
                         </td>
                         <td>
                        <OverlayTrigger
@@ -301,9 +306,9 @@ const availableCows = Array.isArray(rawCows)
     <Tooltip id="tooltip-edit">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat mengedit data"
-            : "Supervisor tidak dapat mengedit data")
-        : "Edit"}
+           ? "Admin cannot edit data"
+        : "Supervisor cannot edit data")
+    : "Edit"}
     </Tooltip>
   }
 >
@@ -318,16 +323,18 @@ const availableCows = Array.isArray(rawCows)
         if (item.status === "healthy") {
           Swal.fire({
             icon: "info",
-            title: "Tidak Bisa Diedit",
-            text: "Data ini menunjukkan kondisi sehat dan tidak perlu diedit.",
-            confirmButtonText: "Mengerti",
+          title: "Cannot Be Edited",
+text: "This data indicates a healthy condition and does not need to be edited.",
+confirmButtonText: "Understood",
+
           });
         } else if (item.status === "handled") {
           Swal.fire({
             icon: "info",
-            title: "Tidak Bisa Diedit",
-            text: "Data ini sudah ditangani dan tidak bisa diedit.",
-            confirmButtonText: "Mengerti",
+           title: "Cannot Be Edited",
+text: "This data has already been handled and cannot be edited.",
+confirmButtonText: "Understood",
+
           });
         } else {
           setEditId(item.id);
@@ -351,9 +358,9 @@ const availableCows = Array.isArray(rawCows)
     <Tooltip id="tooltip-delete">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menghapus data"
-            : "Supervisor tidak dapat menghapus data")
-        : "Hapus"}
+          ? "Admin cannot delete data"
+        : "Supervisor cannot delete data")
+    : "Delete"}
     </Tooltip>
   }
 >
@@ -397,7 +404,7 @@ const availableCows = Array.isArray(rawCows)
                 Prev
               </Button>
               <span className="fw-semibold">
-                Halaman {currentPage} dari {Math.ceil(data.length / PAGE_SIZE)}
+                Page {currentPage} of {Math.ceil(data.length / PAGE_SIZE)}
               </span>
               <Button
                 variant="outline-primary"

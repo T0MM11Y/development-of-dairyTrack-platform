@@ -203,9 +203,10 @@ def export_cows_pdf():
             pdf.cell(50, 10, cow.lactation_phase or "-", border=1)
             pdf.ln()
 
-        # Simpan PDF ke buffer
+       # Simpan PDF ke buffer
         buffer = BytesIO()
-        pdf.output(buffer)
+        pdf_bytes = pdf.output(dest='S').encode('latin1')
+        buffer.write(pdf_bytes)
         buffer.seek(0)
 
         return send_file(buffer, as_attachment=True, download_name="cows.pdf", mimetype='application/pdf')

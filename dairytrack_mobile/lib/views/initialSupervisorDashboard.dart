@@ -948,7 +948,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Notifikasi Terbaru',
+                    'Latest Notifications',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -983,7 +983,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                     ).then((_) => _loadNotifications());
                   },
                   child: Text(
-                    'Lihat Semua',
+                    'See All',
                     style: TextStyle(
                       color: Colors.grey[800],
                       fontSize: 12,
@@ -1266,7 +1266,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Supervisor Dashboard - Kelola semua aspek peternakan dengan kontrol penuh',
+                    'Supervisor Dashboard - Manage all aspects of the farm with full control',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
@@ -1621,7 +1621,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                           Icon(Icons.pets, size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data sapi',
+                            'There is no data on cattle yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],
@@ -1890,7 +1890,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Grafik Aktivitas Harian',
+                    'Daily Activity Chart',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1902,7 +1902,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Visualisasi data peternakan hari ini',
+              'Todays livestock data visualization',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1924,7 +1924,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
     // Data untuk grafik
     final List<Map<String, dynamic>> chartData = [
       {
-        'label': 'Susu\nHari Ini',
+        'label': 'Milk\nToday',
         'value': dashboardStats['totalMilkToday'],
         'maxValue': 1000.0,
         'color': Colors.blue[600]!,
@@ -1940,7 +1940,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         'icon': Icons.article,
       },
       {
-        'label': 'Total\nGaleri',
+        'label': 'Total\nGallery',
         'value': dashboardStats['totalGalleries'],
         'maxValue': 100.0,
         'color': Colors.amber[700]!,
@@ -2115,7 +2115,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
             children: [
               _buildCompactLegendItem(
                 color: Colors.blue[600]!,
-                label: 'Produksi Susu',
+                label: 'Milk Production',
                 value:
                     '${dashboardStats['totalMilkToday'].toStringAsFixed(1)}L',
               ),
@@ -2132,13 +2132,13 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
             children: [
               _buildCompactLegendItem(
                 color: Colors.amber[700]!,
-                label: 'Foto Galeri',
+                label: 'Gallery Photos',
                 value: '${dashboardStats['totalGalleries']}',
               ),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Klik grafik untuk detail',
+                  'Click the graphic for details',
                   style: TextStyle(
                     fontSize: 9, // Font lebih kecil
                     color: Colors.grey[500],

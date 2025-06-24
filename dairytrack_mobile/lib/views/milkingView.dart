@@ -1072,7 +1072,7 @@ class _MilkingViewState extends State<MilkingView> {
     if (loading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Manajemen Pemerahan'),
+          title: Text('Milking Management'),
           backgroundColor: Color(0xFF3D90D7),
           foregroundColor: Colors.white,
         ),
@@ -1085,7 +1085,7 @@ class _MilkingViewState extends State<MilkingView> {
     if (error != null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Manajemen Pemerahan'),
+          title: Text('Milking Management'),
           backgroundColor: Color(0xFF3D90D7),
           foregroundColor: Colors.white,
         ),
@@ -1115,7 +1115,7 @@ class _MilkingViewState extends State<MilkingView> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Manajemen Pemerahan'),
+        title: Text('Milking Management'),
         backgroundColor: Color(0xFF3D90D7),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -1166,7 +1166,7 @@ class _MilkingViewState extends State<MilkingView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Statistik Pemerahan',
+                    'Milking Statistics',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -1178,7 +1178,7 @@ class _MilkingViewState extends State<MilkingView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildCompactStatCard(
-                        'Total Sesi',
+                        'Total Sessions',
                         milkStats['hasActiveFilters']
                             ? milkStats['totalSessions'].toString()
                             : milkStats['baseTotalSessions'].toString(),
@@ -1192,13 +1192,13 @@ class _MilkingViewState extends State<MilkingView> {
                         const Color.fromARGB(255, 127, 239, 90),
                       ),
                       _buildCompactStatCard(
-                        'Hari Ini',
+                        'Today',
                         '${milkStats['hasActiveFilters'] ? milkStats['todayVolume'] : milkStats['baseTodayVolume']} L',
                         Icons.today,
                         const Color.fromARGB(255, 30, 210, 255),
                       ),
                       _buildCompactStatCard(
-                        'Rata-rata',
+                        'Average',
                         '${milkStats['hasActiveFilters'] ? milkStats['avgVolumePerSession'] : milkStats['baseAvgVolumePerSession']} L',
                         Icons.trending_up,
                         const Color.fromARGB(255, 234, 152, 248),
@@ -1251,7 +1251,7 @@ class _MilkingViewState extends State<MilkingView> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           decoration: InputDecoration(
-                            labelText: 'Sapi',
+                            labelText: 'Cow',
                             labelStyle: TextStyle(fontSize: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1263,7 +1263,7 @@ class _MilkingViewState extends State<MilkingView> {
                           items: [
                             DropdownMenuItem(
                                 value: '',
-                                child: Text('Semua',
+                                child: Text('All',
                                     style: TextStyle(fontSize: 12))),
                             ...uniqueOptions['cows']!
                                 .map((cow) => DropdownMenuItem(
@@ -1283,7 +1283,7 @@ class _MilkingViewState extends State<MilkingView> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           decoration: InputDecoration(
-                            labelText: 'Pemerah',
+                            labelText: 'Milker',
                             labelStyle: TextStyle(fontSize: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1295,7 +1295,7 @@ class _MilkingViewState extends State<MilkingView> {
                           items: [
                             DropdownMenuItem(
                                 value: '',
-                                child: Text('Semua',
+                                child: Text('All',
                                     style: TextStyle(fontSize: 12))),
                             ...uniqueOptions['milkers']!
                                 .map((milker) => DropdownMenuItem(
@@ -1560,7 +1560,7 @@ class _MilkingViewState extends State<MilkingView> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      'Pemerah',
+                                      'Milker',
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.blueGrey[600],
@@ -1824,7 +1824,7 @@ class _MilkingViewState extends State<MilkingView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Detail Sesi Pemerahan',
+                            'Milking Session Details',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -2292,7 +2292,7 @@ class _MilkingViewState extends State<MilkingView> {
                 Icon(Icons.add_circle, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
-                  'Tambah Sesi Pemerahan',
+                  'Add Milking Session',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -2362,7 +2362,7 @@ class _MilkingViewState extends State<MilkingView> {
                     ],
                     validator: (value) {
                       if (value == null || value.isEmpty || value == '') {
-                        return 'Silakan pilih sapi terlebih dahulu';
+                        return 'Please select the cow first';
                       }
                       return null;
                     },
@@ -3021,7 +3021,7 @@ class _MilkingViewState extends State<MilkingView> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text('Batal'),
+                        : Text('Cancel'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -3047,7 +3047,7 @@ class _MilkingViewState extends State<MilkingView> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text('Simpan'),
+                        : Text('Save'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
                       foregroundColor: Colors.white,

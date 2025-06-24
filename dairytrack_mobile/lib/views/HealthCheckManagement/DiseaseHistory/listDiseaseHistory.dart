@@ -89,7 +89,7 @@ cowList = allCows.map((c) => c.toJson()).toList().cast<Map<String, dynamic>>();
 
     debugPrint("✅ Loaded DiseaseHistories: ${_diseaseHistories.length}");
   } catch (e, stack) {
-    debugPrint("❌ Gagal load data: $e\n$stack");
+    debugPrint("❌ Failed to load data: $e\n$stack");
     setState(() => _loading = false);
   }
 }
@@ -174,7 +174,7 @@ Widget build(BuildContext context) {
     backgroundColor: const Color(0xFFf5f7fa),
   appBar: AppBar(
     title: const Text(
-      'Riwayat Penyakit',
+      'Disease History',
       style: TextStyle(
         fontWeight: FontWeight.bold,
         color: Colors.white,
@@ -198,7 +198,7 @@ Widget build(BuildContext context) {
                 padding: const EdgeInsets.all(12),
                 child: TextField(
                   decoration: InputDecoration(
-                    labelText: 'Cari nama sapi...',
+                    labelText: 'Search Cow Name...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Colors.white,
@@ -214,7 +214,7 @@ Widget build(BuildContext context) {
               ),
               Expanded(
                 child: paginatedData.isEmpty
-                    ? const Center(child: Text('Tidak ada data riwayat penyakit'))
+                    ? const Center(child: Text('No disease history data available'))
                     : ListView.builder(
                         itemCount: paginatedData.length,
                         itemBuilder: (context, index) {
@@ -243,7 +243,7 @@ Widget build(BuildContext context) {
                           final createdAt = DateFormat("dd MMMM yyyy, HH:mm", "id_ID")
                                   .format(DateTime.parse(item['created_at']).toLocal()) +
                               ' WIB';
-final createdBy = item['created_by']?['name'] ?? 'Tidak diketahui';
+final createdBy = item['created_by']?['name'] ?? 'Uknown';
 
                           return Card(
                             color: Colors.white,
@@ -269,11 +269,11 @@ final createdBy = item['created_by']?['name'] ?? 'Tidak diketahui';
                                     ],
                                   ),
                                   const SizedBox(height: 6),
-                                  Text('🦠 Penyakit: $disease', style: const TextStyle(fontSize: 14)),
+                                  Text('🦠 Disease: $disease', style: const TextStyle(fontSize: 14)),
                                   const SizedBox(height: 4),
-                                  Text('🕒 Tanggal: $createdAt', style: const TextStyle(color: Colors.grey)),
+                                  Text('🕒 Date: $createdAt', style: const TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 4),
-Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
+Text('👤 Recorded By: $createdBy', style: TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 12),
                                   Wrap(
                                     spacing: 10,
@@ -281,7 +281,7 @@ Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
                                     children: [
                                       ElevatedButton.icon(
                                         icon: const Icon(Icons.visibility, size: 18),
-                                        label: const Text('Lihat'),
+                                        label: const Text('View'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.blueGrey,
                                           foregroundColor: Colors.white,
@@ -316,12 +316,13 @@ Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
+         title: const Text('Access Denied'),
+content: const Text('This role does not have permission to edit data.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -342,7 +343,7 @@ Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
 ),
                                           ElevatedButton.icon(
   icon: const Icon(Icons.delete, size: 18),
-  label: const Text('Hapus'),
+  label: const Text('Delete'),
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.redAccent,
     foregroundColor: Colors.white,
@@ -353,12 +354,13 @@ Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Data Tidak Bisa Dihapus'),
-        content: const Text('Data riwayat tidak dapat dihapus karena merupakan arsip medis.'),
+        title: const Text('Data Cannot Be Deleted'),
+content: const Text('History data cannot be deleted because it is a medical record.'),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -384,7 +386,7 @@ Text('👤 Penanggung Jawab: $createdBy', style: TextStyle(color: Colors.grey)),
                         icon: const Icon(Icons.arrow_back),
                         onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                       ),
-                      Text('Halaman $_currentPage dari $totalPages'),
+                      Text('Page $_currentPage of $totalPages'),
                       IconButton(
                         icon: const Icon(Icons.arrow_forward),
                         onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
@@ -399,19 +401,20 @@ backgroundColor: _isFarmer
       ? Colors.teal[400]
       : _isSupervisor
           ? Colors.blue[700]
-          : Colors.blueGrey[800],  tooltip: 'Tambah Riwayat Penyakit',
+          : Colors.blueGrey[800],  tooltip: 'Add Data',
   child: const Icon(Icons.add),
   onPressed: () {
     if (_isAdmin || _isSupervisor) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menambah riwayat penyakit.'),
+         title: const Text('Access Denied'),
+content: const Text('This role does not have permission to add disease history.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -429,12 +432,12 @@ backgroundColor: _isFarmer
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Tidak Ada Pemeriksaan Tersedia'),
-              content: const Text(
-                'Tidak ditemukan pemeriksaan yang dapat dipilih. Pastikan status bukan "handled" atau "healthy" dan sapi merupakan milik Anda.'
-              ),
+              title: const Text('No Available Health Checks'),
+content: const Text(
+  'No selectable health checks found. Make sure the status is not "handled" or "healthy", and the cow belongs to you.'
+),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
               ],
             ),
           );

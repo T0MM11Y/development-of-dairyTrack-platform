@@ -67,7 +67,7 @@ class _CreateDiseaseHistoryViewState extends State<CreateDiseaseHistoryView> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Gagal memuat data.';
+        _error = 'failed loading data.';
         _loading = false;
       });
     }
@@ -115,8 +115,8 @@ class _CreateDiseaseHistoryViewState extends State<CreateDiseaseHistoryView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Berhasil'),
-          content: Text(result['message'] ?? 'Data berhasil disimpan.'),
+          title: const Text('Success'),
+          content: Text(result['message'] ?? 'success save data.'),
         ),
       );
 
@@ -131,8 +131,8 @@ class _CreateDiseaseHistoryViewState extends State<CreateDiseaseHistoryView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Gagal'),
-        content: Text(result['message'] ?? 'Gagal menyimpan data.'),
+        title: const Text('failed'),
+        content: Text(result['message'] ?? 'failed save data.'),
       ),
     );
 
@@ -162,14 +162,14 @@ Widget build(BuildContext context) {
       (c) => c['id'].toString() == cowId.toString(),
       orElse: () => null,
     );
-    final label = cow != null ? '${cow['name']} (${cow['breed']})' : 'ID: $cowId (sapi tidak ditemukan)';
+    final label = cow != null ? '${cow['name']} (${cow['breed']})' : 'ID: $cowId (cow not found)';
     return DropdownMenuItem(value: hc['id'], child: Text(label));
   }).toList();
 
   return Scaffold(
    appBar: AppBar(
   title: const Text(
-    'Tambah Riwayat Penyakit',
+    'Add Data',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -198,7 +198,7 @@ Widget build(BuildContext context) {
 
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Pemeriksaan',
+                      labelText: 'Select Health Check',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
                       fillColor: Colors.grey.shade100,
@@ -206,13 +206,13 @@ Widget build(BuildContext context) {
                     value: _selectedHealthCheckId,
                     items: healthCheckItems,
                     onChanged: _onHealthCheckChanged,
-                    validator: (value) => value == null ? 'Wajib dipilih' : null,
+                    validator: (value) => value == null ? 'Required to select' : null,
                   ),
                   if (healthCheckItems.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
-                        'Tidak ada pemeriksaan yang tersedia atau tidak ada sapi yang terhubung.',
+                        'No health checks available or no cows are linked.',
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
@@ -220,11 +220,11 @@ Widget build(BuildContext context) {
                   const SizedBox(height: 20),
 
                   if (_selectedCheck != null && _selectedCheck!.isNotEmpty) ...[
-                    _sectionTitle('📋 Detail Pemeriksaan'),
-                    _infoTile('🌡️ Suhu Rektal', '${_selectedCheck?['rectal_temperature']} °C'),
-                    _infoTile('❤️ Denyut Jantung', '${_selectedCheck?['heart_rate']} bpm'),
-                    _infoTile('🫁 Laju Pernapasan', '${_selectedCheck?['respiration_rate']} bpm'),
-                    _infoTile('🐄 Ruminasi', '${_selectedCheck?['rumination']} menit'),
+                    _sectionTitle('📋 Detail Health Check'),
+                    _infoTile('🌡️ Rectal Temperature', '${_selectedCheck?['rectal_temperature']} °C'),
+                    _infoTile('❤️ Heart Rate', '${_selectedCheck?['heart_rate']} bpm'),
+                    _infoTile('🫁 Respiration', '${_selectedCheck?['respiration_rate']} bpm'),
+                    _infoTile('🐄 Rumination', '${_selectedCheck?['rumination']} menit'),
                     const SizedBox(height: 20),
 
                     _sectionTitle('🦠 Gejala'),
@@ -258,32 +258,32 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 20),
                   ],
 
-                  _sectionTitle('🧬 Nama Penyakit'),
+                  _sectionTitle('🧬 Disease Name'),
                   TextFormField(
                     controller: _diseaseNameController,
                     decoration: InputDecoration(
-                      labelText: 'Nama Penyakit',
+                      labelText: 'Disease Name',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
                       fillColor: Colors.grey.shade100,
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                    validator: (v) => v == null || v.isEmpty ? 'Required to select' : null,
                   ),
 
                   const SizedBox(height: 16),
 
-                  _sectionTitle('📝 Deskripsi'),
+                  _sectionTitle('📝 Description'),
                   TextFormField(
                     controller: _descriptionController,
                     minLines: 3,
                     maxLines: 5,
                     decoration: InputDecoration(
-                      labelText: 'Deskripsi',
+                      labelText: 'Description',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
                       fillColor: Colors.grey.shade100,
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                    validator: (v) => v == null || v.isEmpty ? 'Required to select' : null,
                   ),
 
                   const SizedBox(height: 30),
@@ -301,7 +301,7 @@ Widget build(BuildContext context) {
                               ),
                             )
                           : const Icon(Icons.save),
-                      label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                      label: Text(_submitting ? 'Saving...' : 'Save'),
                       onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),

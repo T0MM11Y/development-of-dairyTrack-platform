@@ -99,7 +99,7 @@ class _EditSymptomViewState extends State<EditSymptomView> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Gagal memuat data gejala';
+        _error = 'Failed to load data';
         _loading = false;
       });
     }
@@ -122,8 +122,8 @@ class _EditSymptomViewState extends State<EditSymptomView> {
           context: context,
           barrierDismissible: false,
           builder: (context) => const AlertDialog(
-            title: Text('Berhasil'),
-            content: Text('Data berhasil diperbarui.'),
+            title: Text('Success'),
+            content: Text('Success update data.'),
           ),
         );
 
@@ -139,8 +139,9 @@ class _EditSymptomViewState extends State<EditSymptomView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Gagal'),
-          content: Text(res['message'] ?? 'Gagal memperbarui data.'),
+          title: const Text('Failed'),
+content: Text(res['message'] ?? 'Failed to update data.'),
+
         ),
       );
 
@@ -152,8 +153,9 @@ class _EditSymptomViewState extends State<EditSymptomView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text('Kesalahan'),
-        content: Text('Terjadi kesalahan saat memperbarui data.'),
+       title: Text('Error'),
+content: Text('An error occurred while updating the data.'),
+
       ),
     );
 
@@ -171,7 +173,7 @@ Widget build(BuildContext context) {
     backgroundColor: const Color(0xFFf5f7fa),
     appBar: AppBar(
   title: const Text(
-    'Edit Gejala',
+    'Edit Symptom',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -212,7 +214,7 @@ Widget build(BuildContext context) {
                     if (!isKnownOption && rawValue.isNotEmpty)
                       DropdownMenuItem(
                         value: rawValue,
-                        child: Text('$rawValue (tidak sesuai daftar)', overflow: TextOverflow.ellipsis),
+                        child: Text('$rawValue (unlisted value)', overflow: TextOverflow.ellipsis),
                       ),
                     ...options.map((opt) => DropdownMenuItem(
                           value: opt,
@@ -257,7 +259,7 @@ Widget build(BuildContext context) {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.save),
-                    label: Text(_submitting ? 'Menyimpan...' : 'Perbarui Data'),
+                    label: Text(_submitting ? 'Saving...' : 'Update Data'),
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),

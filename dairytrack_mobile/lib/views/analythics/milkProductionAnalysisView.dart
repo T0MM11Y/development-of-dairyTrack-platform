@@ -182,7 +182,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           }
         }
       } else {
-        // Admin/Supervisor - get all cows with farmers
+        // Admin/Supervisor - get all cows with farmers and avoid duplicates
         final usersResult = await _cattleController.getUsersWithCows();
         print('Users with cows result: $usersResult'); // Debug
 
@@ -190,6 +190,9 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           final usersWithCows = usersResult['usersWithCows'];
           if (usersWithCows != null) {
             final usersList = _safeListConvert(usersWithCows);
+
+            // Use Map to track unique cows by ID to avoid duplicates
+            Map<dynamic, Map<String, dynamic>> uniqueCowsMap = {};
 
             for (final farmer in usersList) {
               final farmerData = _safeMapConvert(farmer);
@@ -199,16 +202,24 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                 final cowsList = _safeListConvert(cows);
                 for (final cow in cowsList) {
                   final cowData = _safeMapConvert(cow);
-                  cowsData.add({
-                    ...cowData,
-                    'farmerName': farmerData['name'] ??
-                        farmerData['username'] ??
-                        'Unknown',
-                    'farmerId': farmerData['id'],
-                  });
+                  final cowId = cowData['id'];
+
+                  // Only add if this cow ID hasn't been seen before
+                  if (cowId != null && !uniqueCowsMap.containsKey(cowId)) {
+                    uniqueCowsMap[cowId] = {
+                      ...cowData,
+                      'farmerName': farmerData['name'] ??
+                          farmerData['username'] ??
+                          'Unknown',
+                      'farmerId': farmerData['id'],
+                    };
+                  }
                 }
               }
             }
+
+            // Convert map values back to list
+            cowsData = uniqueCowsMap.values.toList();
           }
         }
       }
@@ -217,7 +228,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         _cows = cowsData;
       });
 
-      print('Loaded ${cowsData.length} cows'); // Debug
+      print('Loaded ${cowsData.length} unique cows'); // Debug
     } catch (e) {
       print('Error loading cows: $e');
       _showErrorDialog('Error', 'Failed to load cows: $e');
@@ -725,7 +736,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Analisis Produksi Susu Sapi',
+          'Analysis Milk Production',
           style: TextStyle(
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
@@ -819,8 +830,8 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
               Expanded(
                 child: Text(
                   _currentUser!['role'] == "Farmer"
-                      ? 'Sapi yang Anda Kelola'
-                      : 'Semua Sapi di Peternakan',
+                      ? 'The Cows You Manage'
+                      : 'All Cows on the Farm',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -832,7 +843,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           ),
           SizedBox(height: 8),
           Text(
-            'Klik pada kartu sapi untuk melihat analisis detail',
+            'Click on the cow card to see detailed analysis',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -850,8 +861,8 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                     SizedBox(height: 16),
                     Text(
                       _currentUser!['role'] == "Farmer"
-                          ? 'Belum ada sapi yang ditugaskan kepada Anda'
-                          : 'Belum ada data sapi',
+                          ? 'There are no cows assigned to you yet'
+                          : 'There is no data on cattle yet',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
@@ -1061,7 +1072,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                                   SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      'Dipilih untuk analisis',
+                                      'Selected for analysis',
                                       style: TextStyle(
                                         fontSize: 9,
                                         color: primaryColor,
@@ -1109,7 +1120,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Analisis Produksi Susu Sapi',
+                  'Analysis of Cows Milk Production',
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.w500,
@@ -1122,7 +1133,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           ),
           SizedBox(height: 8),
           Text(
-            'Analisis performa produksi susu per sapi dengan grafik dan statistik detail',
+            'Milk production performance analysis per cow with detailed graphs and statistics',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -1167,7 +1178,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Analisis untuk: ${selectedCowData['name']?.toString() ?? 'N/A'}',
+                  'Analysis for: ${selectedCowData['name']?.toString() ?? 'N/A'}',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -1190,7 +1201,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                   Icon(Icons.date_range, color: primaryColor, size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Periode: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
+                    'Period: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: primaryColor,
@@ -1240,7 +1251,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Informasi Pejantan',
+            'Stud Information',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -1254,7 +1265,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                 Text('🐂', style: TextStyle(fontSize: 64)),
                 SizedBox(height: 8),
                 Text(
-                  'Sapi Pejantan',
+                  'Stud Cows',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -1288,14 +1299,14 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.cake,
-            title: 'Umur',
+            title: 'Age',
             value: breedingInfo['age']?.toString() ?? 'N/A',
             color: successColor,
           ),
           SizedBox(height: 12),
           _buildInfoCard(
             icon: Icons.check_circle,
-            title: 'Kematangan',
+            title: 'Maturity',
             value: breedingInfo['maturityStatus']?.toString() ?? 'N/A',
             color: warningColor,
           ),
@@ -1328,7 +1339,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statistik Performa',
+            'Performance Statistics',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -1346,27 +1357,27 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             children: [
               _buildStatCard(
                 icon: Icons.water_drop,
-                title: 'Total Periode',
+                title: 'Total Period',
                 value: '${_cowPerformance!['rangeVolume']?.toString() ?? '0'}L',
                 color: primaryColor,
               ),
               _buildStatCard(
                 icon: Icons.trending_up,
-                title: 'Rata-rata/Sesi',
+                title: 'Average/Session',
                 value:
                     '${_cowPerformance!['avgPerSession']?.toString() ?? '0'}L',
                 color: successColor,
               ),
               _buildStatCard(
                 icon: Icons.event_available,
-                title: 'Sesi Periode',
+                title: 'Period Session',
                 value:
                     '${_cowPerformance!['rangeSessions']?.toString() ?? '0'}',
                 color: warningColor,
               ),
               _buildStatCard(
                 icon: Icons.arrow_upward,
-                title: 'Tertinggi',
+                title: 'Highest',
                 value:
                     '${_cowPerformance!['highestProduction']?.toString() ?? '0'}L',
                 color: Colors.green[600]!,
@@ -1389,7 +1400,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Terakhir Perah',
+                        'Last Milk',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.purple[600],
@@ -1527,7 +1538,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
               Icon(Icons.bar_chart, size: 48, color: Colors.grey[400]),
               SizedBox(height: 16),
               Text(
-                'Tidak ada data produksi',
+                'No production data available',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -1556,7 +1567,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Trend Produksi Harian',
+            'Daily Production Trend',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -1565,7 +1576,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           ),
           SizedBox(height: 8),
           Text(
-            'Volume produksi susu per hari dalam periode yang dipilih',
+            'Milk production volume per day in the selected period',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -1708,7 +1719,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Informasi Pembiakan',
+            'Breeding Information',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -1717,7 +1728,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           ),
           SizedBox(height: 8),
           Text(
-            'Informasi lengkap tentang sapi pejantan dan fungsinya',
+            'Complete information about bulls and their functions',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -1736,7 +1747,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                 Icon(Icons.male, size: 32, color: infoColor),
                 SizedBox(height: 8),
                 Text(
-                  'Sapi Pejantan',
+                  'Stud Cows',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1745,7 +1756,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Sapi ini adalah pejantan yang digunakan untuk pembiakan dan pemuliaan. Pejantan tidak menghasilkan susu, tetapi memiliki peran penting dalam reproduksi dan pengembangan genetik kawanan.',
+                  'This cow is a stud used for breeding and stocking. The stud does not produce milk, but has an important role in reproduction and genetic development of the herd.',
                   style: TextStyle(
                     fontSize: 12,
                     color: infoColor,
@@ -1766,26 +1777,26 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             children: [
               _buildBreedingCard(
                 icon: Icons.biotech,
-                title: 'Pemuliaan Genetik',
-                description: 'Menghasilkan keturunan dengan genetik unggul',
+                title: 'Genetic Breeding',
+                description: 'Produces offspring with superior genetics',
                 color: primaryColor,
               ),
               _buildBreedingCard(
                 icon: Icons.favorite,
-                title: 'Pembiakan',
-                description: 'Kawin dengan induk untuk menghasilkan anak',
+                title: 'Reproduction',
+                description: 'Mates with females to produce calves',
                 color: dangerColor,
               ),
               _buildBreedingCard(
                 icon: Icons.shield,
-                title: 'Keamanan Kawanan',
-                description: 'Melindungi kawanan dari ancaman predator',
+                title: 'Herd Security',
+                description: 'Protects the herd from predator threats',
                 color: successColor,
               ),
               _buildBreedingCard(
                 icon: Icons.trending_up,
-                title: 'Peningkatan Kualitas',
-                description: 'Meningkatkan kualitas keturunan kawanan',
+                title: 'Quality Improvement',
+                description: 'Improves the quality of herd offspring',
                 color: warningColor,
               ),
             ],
@@ -1850,7 +1861,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Pilih sapi dari kartu di atas untuk melihat analisis detail produksi susu atau informasi pembiakan',
+              'Select a cow from the card above to view detailed milk production analysis or breeding information.',
               style: TextStyle(
                 color: infoColor,
                 fontSize: 14,

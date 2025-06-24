@@ -130,7 +130,7 @@ def add_user():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
+        
 @user_bp.route('/export/pdf', methods=['GET'])
 def export_users_pdf():
     try:
@@ -175,9 +175,10 @@ def export_users_pdf():
             pdf.cell(40, 10, user.role_name, border=1)
             pdf.ln()
 
-        # Simpan PDF ke buffer
+        # Simpan PDF ke buffer (di luar loop)
         buffer = BytesIO()
-        pdf.output(buffer)
+        pdf_bytes = pdf.output(dest='S').encode('latin1')
+        buffer.write(pdf_bytes)
         buffer.seek(0)
 
         return send_file(buffer, as_attachment=True, download_name="users.pdf", mimetype='application/pdf')

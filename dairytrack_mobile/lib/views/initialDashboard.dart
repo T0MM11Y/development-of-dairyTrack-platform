@@ -394,7 +394,7 @@ class _InitialDashboardState extends State<InitialDashboard>
             children: [
               _buildFeatureCard(
                 icon: Icons.local_drink_outlined,
-                title: "Sapi Perah",
+                title: "Dairy cows",
                 description: "Premium quality milk production",
                 color: AppColors.primary,
               ),
@@ -406,13 +406,13 @@ class _InitialDashboardState extends State<InitialDashboard>
               ),
               _buildFeatureCard(
                 icon: Icons.health_and_safety_outlined,
-                title: "Kesehatan",
+                title: "Health",
                 description: "The best health & nutrition standards",
                 color: AppColors.accent,
               ),
               _buildFeatureCard(
                 icon: Icons.eco_outlined,
-                title: "Berkelanjutan",
+                title: "Sustainable",
                 description: "Eco-friendly farming",
                 color: AppColors.success,
               ),
@@ -442,10 +442,10 @@ class _InitialDashboardState extends State<InitialDashboard>
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildStatItem(
-                        "200+", "Populasi Sapi", Icons.pets_outlined),
+                        "200+", "Cattle Population", Icons.pets_outlined),
                     _buildStatItem(
-                        "1000+", "Liter/Hari", Icons.local_drink_outlined),
-                    _buildStatItem("50+", "Peternak", Icons.people_outline),
+                        "1000+", "Liters/Day", Icons.local_drink_outlined),
+                    _buildStatItem("50+", "Breeder", Icons.people_outline),
                   ],
                 ),
               ],
@@ -747,7 +747,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Galeri",
+                    "Gallery",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -756,7 +756,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   ),
                   SizedBox(height: 4),
                   Text(
-                    "Dokumentasi visual kegiatan",
+                    "Visual documentation of activities",
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -773,7 +773,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                 icon: Icon(Icons.arrow_forward,
                     size: 16, color: AppColors.secondary),
                 label: Text(
-                  "Lihat Semua",
+                  "See All",
                   style: TextStyle(
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w600,
@@ -784,13 +784,13 @@ class _InitialDashboardState extends State<InitialDashboard>
           ),
           SizedBox(height: 20),
           _isLoadingGalleries
-              ? _buildLoadingState("Memuat galeri...")
+              ? _buildLoadingState("Loading gallery...")
               : _galleryError.isNotEmpty
-                  ? _buildErrorState("Gagal memuat galeri", _galleryError,
+                  ? _buildErrorState("Failed to load gallery", _galleryError,
                       _loadGalleriesPreview)
                   : _galleries.isEmpty
                       ? _buildEmptyState(Icons.photo_library_outlined,
-                          "Belum ada galeri tersedia")
+                          "There are no galleries available yet")
                       : GridView.builder(
                           shrinkWrap: true,
                           physics: NeverScrollableScrollPhysics(),
@@ -948,7 +948,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: Text("Coba Lagi"),
+              child: Text("Try again"),
             ),
           ],
         ),
@@ -1044,7 +1044,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                         ),
                       ),
                       Text(
-                        "Pusat Riset Sapi",
+                        "Cattle Research Center",
                         style: TextStyle(
                           fontSize: 11,
                           color: AppColors.textOnPrimary.withOpacity(0.8),

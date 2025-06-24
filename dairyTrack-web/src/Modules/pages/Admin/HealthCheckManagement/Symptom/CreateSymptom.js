@@ -150,8 +150,9 @@ useEffect(() => {
       setCows(Array.isArray(cowData) ? cowData : cowData.cows || []);
       setSymptoms(symptomData);
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
-      setError("Gagal mengambil data pemeriksaan, sapi, atau gejala.");
+      console.error("Failed to fetch data:", err);
+setError("Failed to fetch health check, cow, or symptom data.");
+
     } finally {
       setLoading(false);
     }
@@ -178,20 +179,20 @@ useEffect(() => {
   
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Data gejala berhasil disimpan.",
+      title: "Success",
+      text: "Symptom data has been successfully saved.",
         timer: 1500,
         showConfirmButton: false,
       });
   
       if (onSaved) onSaved();
     } catch (err) {
-      setError("Gagal menyimpan data gejala: " + err.message);
+    setError("Failed to save symptom data: " + err.message);
   
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
-        text: "Terjadi kesalahan saat menyimpan data gejala.",
+        title: "Failed to Save",
+      text: "An error occurred while saving symptom data.",
       });
     } finally {
       setSubmitting(false);
@@ -210,7 +211,7 @@ useEffect(() => {
     <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
       <div className="modal-content">
         <div className="modal-header">
-          <h4 className="modal-title text-info fw-bold">Tambah Data Gejala</h4>
+          <h4 className="modal-title text-info fw-bold">Add Data Symptom</h4>
           <button
             className="btn-close"
             onClick={onClose}
@@ -220,12 +221,12 @@ useEffect(() => {
         <div className="modal-body">
           {error && <p className="text-danger text-center">{error}</p>}
           {loading ? (
-            <p className="text-center">Memuat daftar pemeriksaan...</p>
+<p className="text-center">Loading health check list...</p>
           ) : (
             <form onSubmit={handleSubmit}>
               {/* Pemeriksaan */}
               <div className="mb-3">
-                <label className="form-label fw-bold">Pemeriksaan</label>
+                <label className="form-label fw-bold">Health Check</label>
                 <select
                   name="health_check"
                   value={form.health_check}
@@ -233,20 +234,19 @@ useEffect(() => {
                   className="form-select"
                   required
                 >
-                  <option value="">-- Pilih Pemeriksaan --</option>
+                  <option value="">-- Select Health Check --</option>
                   {filteredHealthChecks.map((hc) => {
                     const cow = cows.find((c) => c.id === hc.cow || c.id === hc.cow?.id);
                     return (
                       <option key={hc.id} value={hc.id}>
-                        {cow ? `${cow.name}` : "Sapi tidak ditemukan"}
+                        {cow ? `${cow.name}` : "Cow not found"}
                       </option>
                     );
                   })}
                 </select>
                 {filteredHealthChecks.length === 0 && (
   <div className="text-warning mt-2">
-    Tidak ada data pemeriksaan yang tersedia. Mungkin semua pemeriksaan telah ditangani, 
-    sudah memiliki gejala, atau tidak termasuk dalam daftar sapi yang Anda kelola.
+   No health check data available. All checks may have been handled, already have symptoms, or do not belong to the cows you manage.
   </div>
 )}
               </div>
@@ -275,7 +275,7 @@ useEffect(() => {
                 ))}
               </div>
                <div className="mb-3">
-                <label className="form-label fw-bold">Diperiksa oleh</label>
+                <label className="form-label fw-bold">created_by</label>
                 <input
                   type="text"
                   className="form-control bg-light"
@@ -291,7 +291,7 @@ useEffect(() => {
                 className="btn btn-info w-100"
                 disabled={submitting}
               >
-                {submitting ? "Menyimpan..." : "Simpan"}
+                {submitting ? "Saving..." : "Save"}
               </button>
             </form>
           )}

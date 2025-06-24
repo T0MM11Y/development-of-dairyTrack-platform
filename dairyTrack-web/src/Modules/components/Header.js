@@ -216,9 +216,14 @@ const Header = () => {
       const result = await login(username, password);
 
       if (result.success) {
-        // Simpan data user ke localStorage
+        // Simpan data user dan token ke localStorage
         localStorage.setItem("user", JSON.stringify(result.data));
+        localStorage.setItem("token", result.token || result.data.token); // Simpan token
         console.log("User data saved to localStorage:", result.data);
+        console.log(
+          "Token saved to localStorage:",
+          result.token || result.data.token
+        );
 
         setErrorMessage("");
         setSuccessMessage("Login Successful! Redirecting...");
@@ -228,7 +233,22 @@ const Header = () => {
           setRedirecting(true); // Tampilkan loading overlay
 
           setTimeout(() => {
-            window.location.href = "/admin";
+            // Redirect berdasarkan role
+            const userRole = result.data.role_id;
+
+            if (userRole === 1) {
+              // Admin
+              window.location.href = "/admin";
+            } else if (userRole === 2) {
+              // Supervisor
+              window.location.href = "/supervisor";
+            } else if (userRole === 3) {
+              // Farmer
+              window.location.href = "/farmer";
+            } else {
+              // Role tidak dikenal, redirect ke home
+              window.location.href = "/";
+            }
           }, 1500); // Delay untuk menampilkan loading overlay
         }, 2000);
 
@@ -954,46 +974,57 @@ const Header = () => {
           height: 4px;
           background: ${theme.primary};
           border-radius: 50%;
-        }
-
-        /* Modal Styles */
+        } /* Modal Styles */
         .modal-backdrop {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2000;
-          padding: 1rem;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          background: rgba(0, 0, 0, 0.5) !important;
+          backdrop-filter: blur(8px) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          z-index: 2000 !important;
+          padding: 1rem !important;
+          box-sizing: border-box !important;
         }
 
         .modal-container {
-          width: 100%;
-          max-width: 450px;
-          max-height: 90vh;
-          overflow-y: auto;
+          width: 450px !important;
+          max-width: 450px !important;
+          min-width: 450px !important;
+          max-height: 90vh !important;
+          overflow-y: auto !important;
+          position: relative !important;
+          box-sizing: border-box !important;
         }
 
         .modal-card {
-          background: white;
-          border-radius: 24px;
-          overflow: hidden;
-          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-          position: relative;
-        }
-
-        /* Modal Header */
+          background: white !important;
+          border-radius: 24px !important;
+          overflow: hidden !important;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2) !important;
+          position: relative !important;
+          min-height: 500px !important;
+          max-height: none !important;
+          height: auto !important;
+          display: flex !important;
+          flex-direction: column !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        } /* Modal Header */
         .modal-header {
           background: ${theme.primaryGradient};
           color: white;
           padding: 2rem;
           position: relative;
           overflow: hidden;
+          min-height: 120px;
+          max-height: 120px;
+          flex-shrink: 0;
+          flex-grow: 0;
         }
 
         .modal-header::before {
@@ -1056,23 +1087,32 @@ const Header = () => {
           justify-content: center;
           font-size: 1rem;
           backdrop-filter: blur(10px);
-        }
-
-        /* Modal Body */
+        } /* Modal Body */
         .modal-body {
           padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          min-height: 380px;
+          max-height: none;
+          box-sizing: border-box;
         }
 
         .login-form {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
-
         .form-group {
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .form-label {
@@ -1085,6 +1125,8 @@ const Header = () => {
           position: relative;
           display: flex;
           align-items: center;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .input-icon {
@@ -1094,7 +1136,6 @@ const Header = () => {
           font-size: 1rem;
           z-index: 2;
         }
-
         .form-input {
           width: 100%;
           padding: 1rem 1rem 1rem 3rem;
@@ -1103,6 +1144,8 @@ const Header = () => {
           font-size: 1rem;
           transition: all 0.3s ease;
           background: white;
+          box-sizing: border-box;
+          min-height: 50px;
         }
 
         .form-input:focus {
@@ -1131,9 +1174,7 @@ const Header = () => {
         .password-toggle:hover {
           color: ${theme.primary};
           background: rgba(233, 163, 25, 0.1);
-        }
-
-        /* Messages */
+        } /* Messages */
         .message {
           display: flex;
           align-items: center;
@@ -1142,6 +1183,12 @@ const Header = () => {
           border-radius: 12px;
           font-size: 0.9rem;
           font-weight: 500;
+          min-height: 50px;
+          max-height: 50px;
+          height: 50px;
+          transition: all 0.3s ease;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .message.success {
@@ -1154,9 +1201,7 @@ const Header = () => {
           background: rgba(245, 101, 101, 0.1);
           color: #c53030;
           border: 1px solid rgba(245, 101, 101, 0.2);
-        }
-
-        /* Submit Button */
+        } /* Submit Button */
         .submit-btn {
           background: ${theme.primaryGradient};
           border: none;
@@ -1168,6 +1213,14 @@ const Header = () => {
           cursor: pointer;
           transition: all 0.3s ease;
           box-shadow: 0 8px 25px rgba(233, 163, 25, 0.3);
+          min-height: 56px;
+          max-height: 56px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .submit-btn:disabled {
@@ -1206,9 +1259,7 @@ const Header = () => {
           100% {
             transform: rotate(360deg);
           }
-        }
-
-        /* Security Notice */
+        } /* Security Notice */
         .security-notice {
           display: flex;
           align-items: center;
@@ -1217,6 +1268,11 @@ const Header = () => {
           font-size: 0.8rem;
           color: #718096;
           margin-top: 0.5rem;
+          height: 24px;
+          min-height: 24px;
+          max-height: 24px;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         /* NEW: Redirect Overlay Styles */
@@ -1319,24 +1375,55 @@ const Header = () => {
         /* Utility Classes */
         .modal-open {
           overflow: hidden;
-        }
-
-        /* Responsive Design */
+        } /* Responsive Design */
         @media (max-width: 576px) {
           .container {
             padding: 0 1rem;
           }
 
+          .modal-container {
+            min-width: 300px;
+            max-width: 350px;
+            width: 100%;
+          }
+
+          .modal-card {
+            min-height: 450px;
+            max-height: none;
+            height: auto;
+            width: 100%;
+          }
+
           .modal-body {
             padding: 1.5rem;
+            min-height: 330px;
+            max-height: none;
           }
 
           .modal-header {
             padding: 1.5rem;
+            min-height: 100px;
+            max-height: 100px;
           }
 
           .header-content {
             gap: 1rem;
+          }
+
+          .form-input {
+            min-height: 45px;
+          }
+
+          .submit-btn {
+            min-height: 50px;
+            max-height: 50px;
+            height: 50px;
+          }
+
+          .message {
+            min-height: 45px;
+            max-height: 45px;
+            height: 45px;
           }
 
           .redirect-content {
@@ -1365,6 +1452,52 @@ const Header = () => {
             width: 60px;
             height: 60px;
           }
+        }
+
+        /* Additional fixes for consistent sizing across all pages */
+        @media (min-width: 577px) and (max-width: 768px) {
+          .modal-container {
+            min-width: 400px;
+            max-width: 450px;
+            width: 100%;
+          }
+
+          .modal-card {
+            min-height: 500px;
+            max-height: none;
+            height: auto;
+            width: 100%;
+          }
+        }
+
+        @media (min-width: 769px) {
+          .modal-container {
+            min-width: 450px;
+            max-width: 450px;
+            width: 450px;
+          }
+
+          .modal-card {
+            min-height: 500px;
+            max-height: none;
+            height: auto;
+            width: 100%;
+          }
+        }
+
+        /* Force consistent modal sizing regardless of page context */
+        .modal-backdrop .modal-container {
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
+        }
+
+        .modal-backdrop .modal-card {
+          position: relative !important;
+          margin: 0 !important;
+          transform: none !important;
         }
       `}</style>
     </>

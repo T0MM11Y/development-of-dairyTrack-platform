@@ -101,39 +101,38 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   Future<void> _removeCategoryFromBlog(
       int blogId, int categoryId, String categoryName, String blogTitle) async {
     final confirmed = await _showConfirmationDialog(
-      title: 'Konfirmasi Hapus Kategori',
+      title: 'Confirm Remove Category',
       content:
-          'Apakah Anda yakin ingin menghapus kategori "$categoryName" dari blog "$blogTitle"?',
-      confirmText: 'Hapus',
+          'Are you sure you want to remove the category "$categoryName" from the blog "$blogTitle"?',
+      confirmText: 'Remove',
       confirmColor: darkError,
       icon: Icons.remove_circle,
     );
-
     if (!confirmed) return;
 
     try {
-      // Panggil API untuk remove category dari blog
+      // Call API to remove category from blog
       final response = await _blogCategoryController.removeCategoryFromBlog(
           blogId, categoryId);
       if (response['success']) {
         _showSnackBar(
-          'Kategori "$categoryName" berhasil dihapus dari blog',
+          'Category "$categoryName" was successfully removed from the blog',
           backgroundColor: darkWarning,
           icon: Icons.remove_circle,
         );
 
-        // Refresh data setelah berhasil remove kategori
+        // Refresh data after successfully removing the category
         await _refreshAllData();
       } else {
         _showSnackBar(
-          'Gagal menghapus kategori: ${response['message']}',
+          'Failed to remove category: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
       }
     } catch (e) {
       _showSnackBar(
-        'Gagal menghapus kategori: $e',
+        'Failed to remove category: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -339,20 +338,11 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _blogs = blogs;
         _isLoading = false;
       });
-      _showSnackBar(
-        'Blog berhasil dimuat (${blogs.length} blog)',
-        icon: Icons.refresh,
-      );
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to fetch blogs: $e';
         _isLoading = false;
       });
-      _showSnackBar(
-        'Gagal memuat blog: $e',
-        backgroundColor: darkError,
-        icon: Icons.error,
-      );
     }
   }
 
@@ -366,29 +356,15 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         setState(() {
           _categories = categories;
         });
-        _showSnackBar(
-          'Kategori berhasil dimuat (${categories.length} kategori)',
-          icon: Icons.category,
-        );
       } else {
         setState(() {
           _errorMessage = 'Failed to fetch categories: ${response['message']}';
         });
-        _showSnackBar(
-          'Gagal memuat kategori: ${response['message']}',
-          backgroundColor: darkError,
-          icon: Icons.error,
-        );
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to fetch categories: $e';
       });
-      _showSnackBar(
-        'Gagal memuat kategori: $e',
-        backgroundColor: darkError,
-        icon: Icons.error,
-      );
     }
   }
 
@@ -398,7 +374,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (response['success']) {
         Navigator.of(context).pop();
         _showSnackBar(
-          'Kategori "$name" berhasil ditambahkan',
+          'Category "$name" added successfully',
           icon: Icons.check_circle,
         );
         _categoryNameController.clear();
@@ -411,7 +387,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           _errorMessage = 'Failed to add category: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal menambah kategori: ${response['message']}',
+          'Failed to add category: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -421,7 +397,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _errorMessage = 'Failed to add category: $e';
       });
       _showSnackBar(
-        'Gagal menambah kategori: $e',
+        'Failed to add category: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -446,7 +422,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         Navigator.of(context).pop();
         Navigator.of(context).pop(); // Close category list dialog
         _showSnackBar(
-          'Kategori "$name" berhasil diperbarui',
+          'Kategori "$name" updated successfully',
           icon: Icons.check_circle,
         );
 
@@ -479,7 +455,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
     final confirmed = await _showConfirmationDialog(
       title: 'Konfirmasi Hapus',
       content:
-          'Apakah Anda yakin ingin menghapus kategori "${category.name}"? Tindakan ini tidak dapat dibatalkan.',
+          'Are you sure you want to delete the category? "${category.name}"? This action cannot be undone.',
       confirmText: 'Hapus',
       confirmColor: darkError,
       icon: Icons.delete_forever,
@@ -492,7 +468,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (response['success']) {
         Navigator.of(context).pop(); // Close category list dialog
         _showSnackBar(
-          'Kategori "${category.name}" berhasil dihapus',
+          'Category "${category.name}" deleted successfully',
           backgroundColor: darkError,
           icon: Icons.delete,
         );
@@ -504,7 +480,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           _errorMessage = 'Failed to delete category: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal menghapus kategori: ${response['message']}',
+          'Failed to delete category: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -528,7 +504,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (response['success']) {
         Navigator.of(context).pop();
         _showSnackBar(
-          'Kategori berhasil ditetapkan ke blog',
+          'Category successfully assigned to blog',
           icon: Icons.link,
         );
 
@@ -543,7 +519,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
               'Failed to assign category to blog: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal menetapkan kategori: ${response['message']}',
+          'Failed to set category: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -553,7 +529,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _errorMessage = 'Failed to assign category to blog: $e';
       });
       _showSnackBar(
-        'Gagal menetapkan kategori: $e',
+        'Failed to set category: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -571,7 +547,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (response['success']) {
         Navigator.of(context).pop();
         _showSnackBar(
-          'Blog "$title" berhasil ditambahkan',
+          'Blog "$title" added successfully',
           icon: Icons.check_circle,
         );
         _blogTitleController.clear();
@@ -587,7 +563,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           _errorMessage = 'Failed to add blog: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal menambah blog: ${response['message']}',
+          'Failed to add blog: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -597,7 +573,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _errorMessage = 'Failed to add blog: $e';
       });
       _showSnackBar(
-        'Gagal menambah blog: $e',
+        'Failed to add blog: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -607,8 +583,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
   Future<void> _editBlog(
       int id, String title, String content, File? image) async {
     final confirmed = await _showConfirmationDialog(
-      title: 'Konfirmasi Edit',
-      content: 'Apakah Anda yakin ingin mengubah blog "$title"?',
+      title: 'Confirm Edit',
+      content: 'Are you sure you want to change your blog? "$title"?',
       confirmText: 'Edit',
       confirmColor: darkWarning,
       icon: Icons.edit,
@@ -636,7 +612,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (response['success']) {
         Navigator.of(context).pop();
         _showSnackBar(
-          'Blog "$title" berhasil diperbarui',
+          'Blog "$title" updated successfully',
           icon: Icons.check_circle,
         );
 
@@ -647,7 +623,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           _errorMessage = 'Failed to edit blog: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal mengubah blog: ${response['message']}',
+          'Failed to change blog: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -657,7 +633,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _errorMessage = 'Failed to edit blog: $e';
       });
       _showSnackBar(
-        'Gagal mengubah blog: $e',
+        'Failed to change blog: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -669,7 +645,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
     final confirmed = await _showConfirmationDialog(
       title: 'Konfirmasi Hapus',
       content:
-          'Apakah Anda yakin ingin menghapus blog "${blog.title}"? Tindakan ini tidak dapat dibatalkan.',
+          'Apakah Anda yakin ingin menghapus blog "${blog.title}"? This action cannot be undone.',
       confirmText: 'Hapus',
       confirmColor: darkError,
       icon: Icons.delete_forever,
@@ -681,7 +657,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       final response = await _blogController.deleteBlog(id);
       if (response['success']) {
         _showSnackBar(
-          'Blog "${blog.title}" berhasil dihapus',
+          'Blog "${blog.title}" deleted successfully',
           backgroundColor: darkError,
           icon: Icons.delete,
         );
@@ -693,7 +669,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           _errorMessage = 'Failed to delete blog: ${response['message']}';
         });
         _showSnackBar(
-          'Gagal menghapus blog: ${response['message']}',
+          'Failed to delete blog: ${response['message']}',
           backgroundColor: darkError,
           icon: Icons.error,
         );
@@ -703,7 +679,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _errorMessage = 'Failed to delete blog: $e';
       });
       _showSnackBar(
-        'Gagal menghapus blog: $e',
+        'Failed to delete blog: $e',
         backgroundColor: darkError,
         icon: Icons.error,
       );
@@ -717,12 +693,12 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (pickedFile != null) {
         _blogImage = File(pickedFile.path);
         _showSnackBar(
-          'Gambar berhasil dipilih',
+          'Image selected successfully',
           icon: Icons.image,
         );
       } else {
         _showSnackBar(
-          'Tidak ada gambar yang dipilih',
+          'No images selected',
           backgroundColor: darkWarning,
           icon: Icons.warning,
         );
@@ -873,7 +849,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Tetapkan Kategori',
+                        'Set Category',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -916,7 +892,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Daftar Kategori',
+                        'Category List',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -959,7 +935,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Tambah Kategori',
+                        'Add Category',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -1002,7 +978,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Tambah Blog',
+                        'Add Blog',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -1067,7 +1043,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       child: DropdownButtonFormField<String>(
         decoration: const InputDecoration(
           border: InputBorder.none,
-          labelText: 'Filter berdasarkan Kategori',
+          labelText: 'Filter by Category',
           labelStyle: TextStyle(color: darkTextSecondary),
           prefixIcon: Icon(Icons.filter_list, color: darkAccent),
         ),
@@ -1078,7 +1054,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
           const DropdownMenuItem(
             value: null,
             child: Text(
-              'Semua Kategori',
+              'All Categories',
               style: TextStyle(color: darkText),
             ),
           ),
@@ -1327,7 +1303,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Dibuat: ${DateFormat('dd/MM/yyyy').format(blog.createdAt)}',
+                              'Made: ${DateFormat('dd/MM/yyyy').format(blog.createdAt)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: darkTextSecondary,
@@ -1345,7 +1321,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Diperbarui: ${DateFormat('dd/MM/yyyy').format(blog.updatedAt)}',
+                              'Updated: ${DateFormat('dd/MM/yyyy').format(blog.updatedAt)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: darkTextSecondary,
@@ -1434,7 +1410,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     ),
                     const SizedBox(width: 12),
                     const Text(
-                      'Tambah Blog Baru',
+                      'Add New Blog',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: darkText,
@@ -1451,7 +1427,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         controller: _blogTitleController,
                         style: const TextStyle(color: darkText),
                         decoration: const InputDecoration(
-                          labelText: 'Judul Blog',
+                          labelText: 'Blog Title',
                           prefixIcon: Icon(Icons.title, color: darkAccent),
                         ),
                       ),
@@ -1460,7 +1436,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         controller: _blogContentController,
                         style: const TextStyle(color: darkText),
                         decoration: const InputDecoration(
-                          labelText: 'Konten Blog',
+                          labelText: 'Blog Content',
                           prefixIcon:
                               Icon(Icons.description, color: darkAccent),
                         ),
@@ -1485,7 +1461,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                 setState(() {});
                               },
                               icon: const Icon(Icons.image),
-                              label: const Text('Pilih Gambar'),
+                              label: const Text('Select Image'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: darkAccent,
                                 foregroundColor: Colors.white,
@@ -1516,7 +1492,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            'Belum ada gambar dipilih',
+                                            'No images selected yet',
                                             style: TextStyle(
                                               color: darkTextSecondary,
                                               fontSize: 12,
@@ -1551,7 +1527,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         _blogImage = null;
                       });
                     },
-                    child: const Text('Batal'),
+                    child: const Text('Close'),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -1565,13 +1541,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         );
                       } else {
                         _showSnackBar(
-                          'Mohon lengkapi semua field dan pilih gambar',
+                          'Please complete all fields and select an image.',
                           backgroundColor: darkWarning,
                           icon: Icons.warning,
                         );
                       }
                     },
-                    child: const Text('Tambah'),
+                    child: const Text('Add'),
                   ),
                 ],
               );
@@ -1611,7 +1587,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  'Tambah Kategori Baru',
+                  'Add New Category',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: darkText,
@@ -1636,7 +1612,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   controller: _categoryDescriptionController,
                   style: const TextStyle(color: darkText),
                   decoration: const InputDecoration(
-                    labelText: 'Deskripsi Kategori',
+                    labelText: 'Category Description',
                     prefixIcon: Icon(Icons.description, color: darkInfo),
                   ),
                   maxLines: 3,
@@ -1662,7 +1638,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     );
                   } else {
                     _showSnackBar(
-                      'Mohon lengkapi semua field',
+                      'Please complete all fields',
                       backgroundColor: darkWarning,
                       icon: Icons.warning,
                     );
@@ -1705,7 +1681,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Daftar Kategori',
+                    'Category List',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: darkText,
@@ -1732,7 +1708,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Belum ada kategori',
+                            'There are no categories yet',
                             style: TextStyle(
                               color: darkTextSecondary,
                               fontSize: 16,
@@ -1828,7 +1804,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Deskripsi:',
+                                            'Description:',
                                             style: TextStyle(
                                               color: darkTextSecondary,
                                               fontSize: 12,
@@ -1921,7 +1897,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  'Hapus',
+                                                  'Delete',
                                                   style: TextStyle(
                                                     color: darkError,
                                                     fontSize: 12,
@@ -1970,7 +1946,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Total: ${_categories.length} kategori',
+                                'Total: ${_categories.length} category',
                                 style: TextStyle(
                                   color: darkInfo,
                                   fontSize: 12,
@@ -2065,7 +2041,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   controller: editDescriptionController,
                   style: const TextStyle(color: darkText),
                   decoration: const InputDecoration(
-                    labelText: 'Deskripsi Kategori',
+                    labelText: 'Category Description',
                     prefixIcon: Icon(Icons.description, color: darkWarning),
                   ),
                   maxLines: 3,
@@ -2095,13 +2071,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     Navigator.of(context).pop(); // Close edit dialog
                   } else {
                     _showSnackBar(
-                      'Mohon lengkapi semua field',
+                      'Please complete all fields',
                       backgroundColor: darkWarning,
                       icon: Icons.warning,
                     );
                   }
                 },
-                child: const Text('Simpan'),
+                child: const Text('Save'),
               ),
             ],
           ),
@@ -2160,7 +2136,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     const SizedBox(width: 12),
                     Expanded(
                       child: const Text(
-                        'Tetapkan Kategori ke Blog',
+                        'Assign Category to Blog',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: darkText,
@@ -2177,7 +2153,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     children: [
                       DropdownButtonFormField<Blog>(
                         decoration: const InputDecoration(
-                          labelText: 'Pilih Blog',
+                          labelText: 'Select Blogs',
                           prefixIcon: Icon(Icons.article, color: Colors.purple),
                         ),
                         dropdownColor: darkSurface,
@@ -2245,7 +2221,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                       color: darkInfo, size: 16),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Kategori yang sudah dimiliki:',
+                                    'Categories you already own:',
                                     style: TextStyle(
                                       color: darkInfo,
                                       fontSize: 12,
@@ -2291,7 +2267,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                       // Dropdown untuk kategori yang tersedia
                       DropdownButtonFormField<Category>(
                         decoration: const InputDecoration(
-                          labelText: 'Pilih Kategori',
+                          labelText: 'Select Category',
                           prefixIcon:
                               Icon(Icons.category, color: Colors.purple),
                         ),
@@ -2308,8 +2284,8 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                     width: double.infinity,
                                     child: Text(
                                       _selectedBlog == null
-                                          ? 'Pilih blog terlebih dahulu'
-                                          : 'Semua kategori sudah ditetapkan',
+                                          ? 'Choose a blog first'
+                                          : 'All categories have been defined',
                                       style: TextStyle(
                                         color: darkTextSecondary,
                                         fontStyle: FontStyle.italic,
@@ -2370,7 +2346,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         _selectedBlog = null;
                       });
                     },
-                    child: const Text('Batal'),
+                    child: const Text('Cancel'),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -2387,7 +2363,10 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             });
                           }
                         : null, // Disable button jika tidak ada kategori yang tersedia
-                    child: const Text('Tetapkan'),
+                    child: const Text(
+                      'Set',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               );
@@ -2456,7 +2435,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                           controller: editTitleController,
                           style: const TextStyle(color: darkText),
                           decoration: InputDecoration(
-                            labelText: 'Judul Blog',
+                            labelText: 'Blog Title',
                             labelStyle:
                                 const TextStyle(color: darkTextSecondary),
                             prefixIcon:
@@ -2496,7 +2475,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                               height: 1.5,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Konten Blog',
+                              labelText: 'Blog Content',
                               labelStyle:
                                   const TextStyle(color: darkTextSecondary),
                               prefixIcon: const Padding(
@@ -2524,7 +2503,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                               contentPadding: const EdgeInsets.all(16),
                               alignLabelWithHint: true,
                               hintText:
-                                  'Tulis konten blog Anda di sini...\n\nAnda dapat menulis teks panjang dengan multiple paragraf.',
+                                  'Write your Blog Content here...\n\nYou can write long texts with multiple paragraphs.',
                               hintStyle: const TextStyle(
                                 color: darkTextSecondary,
                                 fontSize: 13,
@@ -2555,7 +2534,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Karakter: ${editContentController.text.length}',
+                                'Character: ${editContentController.text.length}',
                                 style: const TextStyle(
                                   color: darkTextSecondary,
                                   fontSize: 12,
@@ -2589,14 +2568,14 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                     if (pickedFile != null) {
                                       editBlogImage = File(pickedFile.path);
                                       _showSnackBar(
-                                        'Gambar baru dipilih',
+                                        'A new image is selected',
                                         icon: Icons.image,
                                       );
                                     }
                                   });
                                 },
                                 icon: const Icon(Icons.image),
-                                label: const Text('Pilih Gambar Baru'),
+                                label: const Text('Select New Image'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: darkWarning,
                                   foregroundColor: Colors.white,
@@ -2622,7 +2601,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                           ),
                                           child: const Center(
                                             child: Text(
-                                              'Gambar tidak dapat dimuat',
+                                              'Image cannot be loaded',
                                               style: TextStyle(
                                                 color: darkTextSecondary,
                                               ),
@@ -2650,7 +2629,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Batal',
+                    child: const Text('Close',
                         style: TextStyle(color: darkTextSecondary)),
                   ),
                   ElevatedButton(
@@ -2670,13 +2649,13 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         );
                       } else {
                         _showSnackBar(
-                          'Mohon lengkapi semua field',
+                          'Please complete all fields',
                           backgroundColor: darkWarning,
                           icon: Icons.warning,
                         );
                       }
                     },
-                    child: const Text('Simpan'),
+                    child: const Text('Save'),
                   ),
                 ],
               );
