@@ -1,15 +1,20 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   Dropdown,
   Modal,
   Button,
   Badge,
-  Form,
   OverlayTrigger,
   Tooltip,
   FormControl,
-  Card,
   Spinner,
+  InputGroup,
 } from "react-bootstrap";
 import { useSocket } from "../../socket/socket";
 import { formatDistanceToNow } from "date-fns";
@@ -19,7 +24,7 @@ import {
 } from "../controllers/notificationController";
 import Swal from "sweetalert2";
 
-const NotificationDropdown = () => {
+const NotificationDropdown = React.memo(() => {
   const {
     notifications,
     unreadCount,
@@ -31,371 +36,315 @@ const NotificationDropdown = () => {
   // State management
   const [isOpen, setIsOpen] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
-  const [clearAllLoading, setClearAllLoading] = useState(false);
-  const [globalLoading, setGlobalLoading] = useState(false); // New global loading state
-  const [fontAwesomeLoaded, setFontAwesomeLoaded] = useState(false);
-
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [lastFetch, setLastFetch] = useState(0);
 
-  // Refs to prevent multiple calls
+  // Memoized user state
+  const currentUser = useMemo(() => {
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    return userData.user_id || userData.id
+      ? { ...userData, user_id: userData.user_id || userData.id }
+      : null;
+  }, []);
+
+  // Refs for optimization
   const fetchCooldownRef = useRef(false);
-  const initializedRef = useRef(false);
-
+  const lastFetchRef = useRef(0);
   const notificationsPerPage = 8;
-  const FETCH_COOLDOWN = 10000; // 10 seconds cooldown
+  const FETCH_COOLDOWN = 3000;
 
-  // Custom styles
-  const customStyles = {
-    bellIcon: {
-      color: unreadCount > 0 ? "#3D90D7" : "#adb5bd",
-      transition: "all 0.3s ease",
-      filter:
-        unreadCount > 0
-          ? "drop-shadow(0 0 8px rgba(61, 144, 215, 0.4))"
-          : "none",
-      animation: unreadCount > 0 ? "pulse 2s infinite" : "none",
-    },
-    dropdownMenu: {
-      minWidth: 360,
-      borderRadius: "12px",
-      border: "none",
-      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
-      background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-    },
-    notificationHeader: {
-      background: "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-      color: "white",
-      borderRadius: "12px 12px 0 0",
-      padding: "16px 20px",
-    },
-    notificationItem: {
-      borderRadius: "8px",
-      margin: "8px",
-      transition: "all 0.3s ease",
-      border: "1px solid rgba(0,0,0,0.05)",
-      background: "white",
-      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-    },
-    unreadItem: {
-      background: "linear-gradient(135deg, #e3f2fd 0%, #f8f9ff 100%)",
-      borderLeft: "4px solid #3D90D7",
-      boxShadow: "0 4px 12px rgba(61, 144, 215, 0.15)",
-    },
-    iconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    },
-    badge: {
-      background: "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)",
-      border: "2px solid white",
-      boxShadow: "0 2px 8px rgba(255, 71, 87, 0.3)",
-      animation: "bounce 1s infinite",
-    },
-    modalHeader: {
-      background: "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-      color: "white",
-      borderRadius: "12px 12px 0 0",
-    },
-    filterButton: {
-      borderRadius: "20px",
-      padding: "6px 16px",
-      transition: "all 0.3s ease",
-      border: "2px solid transparent",
-    },
-    activeFilter: {
-      background: "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-      color: "white",
-      boxShadow: "0 4px 12px rgba(61, 144, 215, 0.3)",
-    },
-    pagination: {
-      borderRadius: "8px",
-      background: "white",
-      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    },
-  };
-  // Check FontAwesome availability
-  useEffect(() => {
-    const checkFontAwesome = () => {
-      // Check if FontAwesome CSS is loaded
-      const fontAwesomeLinks = document.querySelectorAll(
-        'link[href*="font-awesome"]'
-      );
-      const hasFontAwesome =
-        fontAwesomeLinks.length > 0 ||
-        window.FontAwesome !== undefined ||
-        document.querySelector(".fa") !== null;
+  // Enhanced custom styles with modern design
+  const customStyles = useMemo(
+    () => ({
+      bellIcon: {
+        color: unreadCount > 0 ? "#4f46e5" : "#6b7280",
+        transition: "all 0.3s ease",
+        filter:
+          unreadCount > 0
+            ? "drop-shadow(0 0 8px rgba(79, 70, 229, 0.3))"
+            : "none",
+      },
+      dropdownMenu: {
+        minWidth: 450,
+        maxWidth: 550,
+        borderRadius: "16px",
+        border: "none",
+        boxShadow:
+          "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        background: "white",
+        overflow: "hidden",
+      },
+      notificationHeader: {
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        color: "white",
+        padding: "16px 20px",
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+      },
+      notificationItem: {
+        borderRadius: "12px",
+        margin: "8px 12px",
+        padding: "16px",
+        border: "1px solid #f1f5f9",
+        background: "white",
+        transition: "all 0.3s ease",
+        position: "relative",
+        overflow: "hidden",
+      },
+      notificationItemHover: {
+        transform: "translateY(-2px)",
+        boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+        borderColor: "#e2e8f0",
+      },
+      unreadItem: {
+        background: "linear-gradient(135deg, #f8faff 0%, #f1f5ff 100%)",
+        borderLeft: "4px solid #4f46e5",
+        boxShadow: "0 4px 12px rgba(79, 70, 229, 0.1)",
+      },
+      iconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: "12px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "18px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        position: "relative",
+      },
+      badge: {
+        background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)",
+        fontSize: "11px",
+        fontWeight: "600",
+        boxShadow: "0 2px 8px rgba(238, 90, 82, 0.3)",
+      },
+      modalHeader: {
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        color: "white",
+        borderBottom: "none",
+        padding: "24px 32px",
+      },
+      filterButton: {
+        borderRadius: "25px",
+        padding: "8px 20px",
+        fontWeight: "500",
+        transition: "all 0.3s ease",
+        border: "2px solid transparent",
+      },
+      searchInput: {
+        borderRadius: "1px",
+        border: "2px solid #e2e8f0",
+        padding: "12px 20px",
+        transition: "all 0.3s ease",
+        background: "#f8fafc",
+      },
+      paginationButton: {
+        borderRadius: "12px",
+        padding: "8px 16px",
+        fontWeight: "500",
+        transition: "all 0.3s ease",
+      },
+      clearAllButton: {
+        background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)",
+        border: "none",
+        borderRadius: "12px",
+        padding: "12px 24px",
+        fontWeight: "600",
+        color: "white",
+        transition: "all 0.3s ease",
+      },
+    }),
+    [unreadCount]
+  );
 
-      setFontAwesomeLoaded(hasFontAwesome);
-
-      if (!hasFontAwesome) {
-        console.warn("FontAwesome might not be loaded properly");
-        // Try to load FontAwesome if not present
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href =
-          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
-        document.head.appendChild(link);
-
-        link.onload = () => {
-          setFontAwesomeLoaded(true);
-          console.log("FontAwesome loaded successfully");
-        };
-      }
+  // Enhanced icon mapping with better visual hierarchy
+  const getNotificationIcon = useCallback((type) => {
+    const iconMap = {
+      production_decrease: "📉",
+      low_production: "📊",
+      production_increase: "📈",
+      high_production: "🚀",
+      health_check: "🏥",
+      follow_up: "✅",
+      milk_expiry: "⏰",
+      PROD_EXPIRED: "🚨",
+      milk_expired: "⚠️",
+      product_expired: "📅",
+      milk_warning: "⚡",
+      PRODUCT_LONG_EXPIRED: "🔴",
+      "Sisa Pakan Menipis": "🌾",
+      PRODUCT_STOCK: "📦",
+      ORDER: "🛍️",
+      reproduction: "🐄",
     };
-
-    // Check immediately and after a short delay
-    checkFontAwesome();
-    const timer = setTimeout(checkFontAwesome, 1000);
-
-    return () => clearTimeout(timer);
+    return iconMap[type] || "🔔";
   }, []);
 
-  // Add CSS animations
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+  const getNotificationIconColor = useCallback((type) => {
+    const colorMap = {
+      production_decrease: {
+        bg: "linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)",
+        text: "white",
+      },
+      low_production: {
+        bg: "linear-gradient(135deg, #ff8a80 0%, #ff7043 100%)",
+        text: "white",
+      },
+      production_increase: {
+        bg: "linear-gradient(135deg, #4caf50 0%, #43a047 100%)",
+        text: "white",
+      },
+      high_production: {
+        bg: "linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)",
+        text: "white",
+      },
+      health_check: {
+        bg: "linear-gradient(135deg, #2196f3 0%, #1976d2 100%)",
+        text: "white",
+      },
+      follow_up: {
+        bg: "linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)",
+        text: "white",
+      },
+      milk_expiry: {
+        bg: "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)",
+        text: "white",
+      },
+      PROD_EXPIRED: {
+        bg: "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
+        text: "white",
+      },
+      milk_expired: {
+        bg: "linear-gradient(135deg, #ff5722 0%, #e64a19 100%)",
+        text: "white",
+      },
+      product_expired: {
+        bg: "linear-gradient(135deg, #ff7043 0%, #ff5722 100%)",
+        text: "white",
+      },
+      milk_warning: {
+        bg: "linear-gradient(135deg, #ffeb3b 0%, #fbc02d 100%)",
+        text: "#333",
+      },
+      PRODUCT_LONG_EXPIRED: {
+        bg: "linear-gradient(135deg, #ffc107 0%, #ff8f00 100%)",
+        text: "#333",
+      },
+      "Sisa Pakan Menipis": {
+        bg: "linear-gradient(135deg, #8bc34a 0%, #689f38 100%)",
+        text: "white",
+      },
+      PRODUCT_STOCK: {
+        bg: "linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)",
+        text: "white",
+      },
+      ORDER: {
+        bg: "linear-gradient(135deg, #673ab7 0%, #512da8 100%)",
+        text: "white",
+      },
+      reproduction: {
+        bg: "linear-gradient(135deg, #e91e63 0%, #c2185b 100%)",
+        text: "white",
+      },
+    };
+    return (
+      colorMap[type] || {
+        bg: "linear-gradient(135deg, #9e9e9e 0%, #757575 100%)",
+        text: "white",
       }
-      @keyframes bounce {
-        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-        40% { transform: translateY(-3px); }
-        60% { transform: translateY(-2px); }
-      }
-      @keyframes slideIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .notification-item {
-        animation: slideIn 0.3s ease;
-      }
-      .notification-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
-      }
-      .filter-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    );
   }, []);
 
-  // Prevent page navigation during loading
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (globalLoading || clearAllLoading) {
-        e.preventDefault();
-        e.returnValue =
-          "Operation in progress. Are you sure you want to leave?";
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [globalLoading, clearAllLoading]);
-
-  // Request notification permission - ONE TIME ONLY
+  // Notification permission
   useEffect(() => {
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  // Initialize user - ONE TIME ONLY
-  useEffect(() => {
-    if (!initializedRef.current) {
-      // Pengecekan user data
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      if (!userData.user_id && !userData.id) {
-        // Redirect to login if no user data found
-        window.location.href = "/";
-        return;
-      }
-
-      const normalizedUser = {
-        ...userData,
-        user_id: userData.user_id || userData.id,
-      };
-
-      // Role-based URL validation
-      const currentPath = window.location.pathname.toLowerCase();
-      const userRole = normalizedUser.role_id;
-
-      // Check if URL contains role-specific paths that don't match user's role
-      if (currentPath.includes("/admin") && userRole !== 1) {
-        // User is not admin but trying to access admin routes
-        console.log(
-          "Unauthorized access to admin routes - redirecting to login"
-        );
-        window.location.href = "/";
-        return;
-      }
-
-      if (currentPath.includes("/supervisor") && userRole !== 2) {
-        // User is not supervisor but trying to access supervisor routes
-        console.log(
-          "Unauthorized access to supervisor routes - redirecting to login"
-        );
-        window.location.href = "/";
-        return;
-      }
-
-      if (currentPath.includes("/farmer") && userRole !== 3) {
-        // User is not farmer but trying to access farmer routes
-        console.log(
-          "Unauthorized access to farmer routes - redirecting to login"
-        );
-        window.location.href = "/";
-        return;
-      }
-
-      // Additional check for dashboard routes based on role
-      if (currentPath.includes("/dashboard")) {
-        const allowedRoles = [1, 2, 3]; // Admin, Supervisor, Farmer
-        if (!allowedRoles.includes(userRole)) {
-          console.log(
-            "Unauthorized access to dashboard - redirecting to login"
-          );
-          window.location.href = "/";
-          return;
-        }
-      }
-
-      setCurrentUser(normalizedUser);
-      console.log(
-        "Notification component initialized with user:",
-        normalizedUser,
-        "Current path:",
-        currentPath
-      );
-      initializedRef.current = true;
-    }
-  }, []);
-
-  // Initial fetch when user is available - WITH COOLDOWN
+  // Optimized initial fetch
   useEffect(() => {
     if (
       currentUser?.user_id &&
       fetchNotifications &&
-      !fetchCooldownRef.current &&
-      initializedRef.current
+      !fetchCooldownRef.current
     ) {
-      console.log("Initial notification fetch for user:", currentUser.user_id);
-      fetchCooldownRef.current = true;
-      setLastFetch(Date.now());
-
-      fetchNotifications().finally(() => {
-        setTimeout(() => {
-          fetchCooldownRef.current = false;
-        }, 5000);
-      });
+      const now = Date.now();
+      if (now - lastFetchRef.current > FETCH_COOLDOWN) {
+        fetchCooldownRef.current = true;
+        lastFetchRef.current = now;
+        fetchNotifications().finally(() => {
+          setTimeout(() => {
+            fetchCooldownRef.current = false;
+          }, 2000);
+        });
+      }
     }
   }, [currentUser?.user_id, fetchNotifications]);
 
-  // Handle delete notification with global loading
+  // Reset pagination when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm]);
+
+  // Enhanced delete notification with better UX
   const handleDeleteNotification = useCallback(
     async (notificationId) => {
       const userId = currentUser?.user_id || currentUser?.id;
-      if (!userId) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "You must be logged in to delete notifications",
-        });
-        return;
-      }
+      if (!userId) return;
 
-      try {
-        const result = await Swal.fire({
-          title: "Confirm Delete",
-          text: "Are you sure you want to delete this notification?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "Delete",
-          cancelButtonText: "Cancel",
-          allowOutsideClick: !globalLoading,
-          allowEscapeKey: !globalLoading,
-        });
+      const result = await Swal.fire({
+        title: "Delete Notification",
+        text: "Are you sure you want to delete this notification?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Yes, delete it",
+        cancelButtonText: "Cancel",
+        customClass: {
+          popup: "rounded-lg",
+          confirmButton: "rounded-lg",
+          cancelButton: "rounded-lg",
+        },
+      });
 
-        if (result.isConfirmed) {
-          setGlobalLoading(true);
-
-          // Show loading Swal
-          Swal.fire({
-            title: "Deleting Notification...",
-            text: "Please wait while we delete this notification",
-            icon: "info",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showConfirmButton: false,
-            didOpen: () => {
-              Swal.showLoading();
-            },
-          });
-
+      if (result.isConfirmed) {
+        setLoading(true);
+        try {
           const response = await deleteNotification(notificationId, userId);
-
           if (response.success) {
+            await fetchNotifications();
             Swal.fire({
               icon: "success",
-              title: "Success",
-              text: "Notification deleted successfully",
+              title: "Deleted Successfully!",
               timer: 1500,
               showConfirmButton: false,
-              allowOutsideClick: false,
-              allowEscapeKey: false,
-            });
-
-            if (!fetchCooldownRef.current) {
-              fetchCooldownRef.current = true;
-              await fetchNotifications().finally(() => {
-                setTimeout(() => {
-                  fetchCooldownRef.current = false;
-                }, 3000);
-              });
-            }
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: response.message || "Failed to delete notification",
+              customClass: {
+                popup: "rounded-lg",
+              },
             });
           }
+        } catch (error) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Failed to delete notification",
+            customClass: {
+              popup: "rounded-lg",
+            },
+          });
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error deleting notification:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "An error occurred while deleting the notification",
-        });
-      } finally {
-        setGlobalLoading(false);
       }
     },
-    [currentUser, fetchNotifications, globalLoading]
+    [currentUser, fetchNotifications]
   );
 
-  // Filter logic - STABLE CALLBACK
-  const applyFilters = useCallback(() => {
+  // Optimized filter logic
+  const filteredNotifications = useMemo(() => {
     let filtered = [...notifications];
     if (searchTerm.trim()) {
       filtered = filtered.filter((n) =>
@@ -408,425 +357,160 @@ const NotificationDropdown = () => {
     return filtered;
   }, [notifications, filter, searchTerm]);
 
-  // Update filtered notifications
-  useEffect(() => {
-    setFilteredNotifications(applyFilters());
-    setCurrentPage(1);
-  }, [notifications, filter, searchTerm]);
+  // Pagination calculations
+  const paginationData = useMemo(() => {
+    const indexOfLast = currentPage * notificationsPerPage;
+    const indexOfFirst = indexOfLast - notificationsPerPage;
+    const currentNotifications = filteredNotifications.slice(
+      indexOfFirst,
+      indexOfLast
+    );
+    const totalPages = Math.ceil(
+      filteredNotifications.length / notificationsPerPage
+    );
+    return { currentNotifications, totalPages };
+  }, [filteredNotifications, currentPage, notificationsPerPage]);
 
-  // Handle dropdown toggle with strict cooldown
+  // Enhanced dropdown toggle
   const handleToggle = useCallback(
     (open) => {
-      if (globalLoading) return; // Prevent toggle during loading
-
       setIsOpen(open);
-
-      if (open) {
+      if (open && !fetchCooldownRef.current) {
         const now = Date.now();
-        const timeSinceLastFetch = now - lastFetch;
-
-        if (
-          (!notifications.length || timeSinceLastFetch > FETCH_COOLDOWN) &&
-          !fetchCooldownRef.current
-        ) {
-          console.log("Fetching notifications on dropdown open");
+        if (now - lastFetchRef.current > FETCH_COOLDOWN) {
           fetchCooldownRef.current = true;
           setLoading(true);
-          setLastFetch(now);
-
+          lastFetchRef.current = now;
           fetchNotifications().finally(() => {
             setLoading(false);
             setTimeout(() => {
               fetchCooldownRef.current = false;
-            }, 3000);
+            }, 1000);
           });
-        } else {
-          console.log("Fetch skipped - cooldown active or recent fetch");
         }
       }
     },
-    [fetchNotifications, notifications.length, lastFetch, globalLoading]
-  ); // Updated notification utility functions to match Flutter version
-  const getNotificationIcon = useCallback(
-    (type) => {
-      console.log(
-        "Getting icon for type:",
-        type,
-        "FontAwesome loaded:",
-        fontAwesomeLoaded
-      ); // Debug log
-
-      // Use more basic FontAwesome icons that are more likely to be available
-      switch (type) {
-        case "production_decrease":
-        case "low_production":
-          return "fa fa-arrow-down";
-        case "production_increase":
-        case "high_production":
-          return "fa fa-arrow-up";
-        case "health_check":
-          return "fa fa-heart";
-        case "follow_up":
-          return "fa fa-check";
-        case "milk_expiry":
-        case "PROD_EXPIRED":
-          return "fa fa-warning";
-        case "milk_warning":
-        case "PRODUCT_LONG_EXPIRED":
-          return "fa fa-exclamation";
-        case "Sisa Pakan Menipis":
-          return "fa fa-leaf";
-        case "PRODUCT_STOCK":
-          return "fa fa-cube";
-        case "ORDER":
-          return "fa fa-shopping-cart";
-        case "reproduction":
-          return "fa fa-heart";
-        default:
-          console.log("Using default icon for unknown type:", type); // Debug log
-          return "fa fa-bell";
-      }
-    },
-    [fontAwesomeLoaded]
-  );
-
-  const getNotificationIconColor = useCallback((type) => {
-    switch (type) {
-      case "production_decrease":
-      case "low_production":
-        return {
-          bg: "linear-gradient(135deg, #E74C3C 0%, #C0392B 100%)",
-          text: "white",
-        };
-      case "production_increase":
-      case "high_production":
-        return {
-          bg: "linear-gradient(135deg, #27AE60 0%, #229954 100%)",
-          text: "white",
-        };
-      case "health_check":
-        return {
-          bg: "linear-gradient(135deg, #3498DB 0%, #2980B9 100%)",
-          text: "white",
-        };
-      case "follow_up":
-        return {
-          bg: "linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)",
-          text: "white",
-        };
-      case "milk_expiry":
-      case "PROD_EXPIRED":
-        return {
-          bg: "linear-gradient(135deg, #DC3545 0%, #C82333 100%)",
-          text: "white",
-        };
-      case "milk_warning":
-      case "PRODUCT_LONG_EXPIRED":
-        return {
-          bg: "linear-gradient(135deg, #F39C12 0%, #E67E22 100%)",
-          text: "white",
-        };
-      case "Sisa Pakan Menipis":
-        return {
-          bg: "linear-gradient(135deg, #E67E22 0%, #D68910 100%)",
-          text: "white",
-        };
-      case "PRODUCT_STOCK":
-        return {
-          bg: "linear-gradient(135deg, #17A2B8 0%, #138496 100%)",
-          text: "white",
-        };
-      case "ORDER":
-        return {
-          bg: "linear-gradient(135deg, #6F42C1 0%, #5A32A3 100%)",
-          text: "white",
-        };
-      case "reproduction":
-        return {
-          bg: "linear-gradient(135deg, #E91E63 0%, #C2185B 100%)",
-          text: "white",
-        };
-      default:
-        return {
-          bg: "linear-gradient(135deg, #6C757D 0%, #5A6268 100%)",
-          text: "white",
-        };
-    }
-  }, []);
-
-  // Icon component with fallback
-  const NotificationIcon = useCallback(
-    ({ type, style }) => {
-      const iconClass = getNotificationIcon(type);
-
-      // If FontAwesome is not loaded, show a simple fallback
-      if (!fontAwesomeLoaded) {
-        const fallbackMap = {
-          production_decrease: "↓",
-          low_production: "↓",
-          production_increase: "↑",
-          high_production: "↑",
-          health_check: "♥",
-          follow_up: "✓",
-          milk_expiry: "⚠",
-          PROD_EXPIRED: "⚠",
-          milk_warning: "!",
-          PRODUCT_LONG_EXPIRED: "!",
-          "Sisa Pakan Menipis": "🌱",
-          PRODUCT_STOCK: "📦",
-          ORDER: "🛒",
-          reproduction: "♥",
-        };
-
-        return (
-          <span style={{ ...style, fontSize: "18px", fontWeight: "bold" }}>
-            {fallbackMap[type] || "🔔"}
-          </span>
-        );
-      }
-
-      return <i className={iconClass} style={style}></i>;
-    },
-    [getNotificationIcon, fontAwesomeLoaded]
+    [fetchNotifications]
   );
 
   const handleMarkAsRead = useCallback(
     (id, e) => {
       if (e) e.preventDefault();
-      if (!globalLoading) markAsRead(id);
+      markAsRead(id);
     },
-    [markAsRead, globalLoading]
+    [markAsRead]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    if (!globalLoading) {
-      notifications.forEach((n) => {
-        if (!n.is_read) markAsRead(n.id);
-      });
-    }
-  }, [notifications, markAsRead, globalLoading]);
+    notifications.forEach((n) => {
+      if (!n.is_read) markAsRead(n.id);
+    });
+  }, [notifications, markAsRead]);
 
-  const formatTimeAgo = (dateString) => {
+  const formatTimeAgo = useCallback((dateString) => {
     try {
-      const utcDate = new Date(dateString);
-      const wibDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000);
-      return formatDistanceToNow(wibDate, { addSuffix: true });
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
     } catch {
-      return "Tanggal tidak valid";
+      return "Invalid date";
     }
-  };
+  }, []);
 
-  // Pagination
-  const indexOfLast = currentPage * notificationsPerPage;
-  const indexOfFirst = indexOfLast - notificationsPerPage;
-  const currentNotifications = filteredNotifications.slice(
-    indexOfFirst,
-    indexOfLast
-  );
-  const totalPages = Math.ceil(
-    filteredNotifications.length / notificationsPerPage
-  );
-
-  const paginate = useCallback(
-    (pageNumber) => {
-      if (!globalLoading) setCurrentPage(pageNumber);
-    },
-    [globalLoading]
-  );
-
-  // Enhanced Clear All function with global loading
+  // Enhanced Clear All function
   const handleClearAll = useCallback(async () => {
     const userId = currentUser?.user_id || currentUser?.id;
-    if (!userId) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "You must be logged in to clear notifications",
-      });
-      return;
-    }
+    if (!userId) return;
 
     const result = await Swal.fire({
-      title: "Clear All Notifications?",
-      text: "This action cannot be undone",
+      title: "Clear All Notifications",
+      text: "This action cannot be undone. Are you sure?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, clear them",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, clear all",
       cancelButtonText: "Cancel",
-      allowOutsideClick: !globalLoading,
-      allowEscapeKey: !globalLoading,
+      customClass: {
+        popup: "rounded-lg",
+        confirmButton: "rounded-lg",
+        cancelButton: "rounded-lg",
+      },
     });
 
     if (result.isConfirmed) {
-      setClearAllLoading(true);
-      setGlobalLoading(true);
-
+      setLoading(true);
       try {
-        // Show loading Swal
-        Swal.fire({
-          title: "Clearing Notifications...",
-          text: "Please wait while we clear all notifications",
-          icon: "info",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          showConfirmButton: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
-        });
-
         const response = await clearAllNotifications(userId);
-
         if (response?.success) {
           await fetchNotifications();
-
           Swal.fire({
             icon: "success",
-            title: "Success",
-            text: "All notifications cleared successfully",
-            timer: 1800,
+            title: "All notifications cleared!",
+            timer: 1500,
             showConfirmButton: false,
-            allowOutsideClick: false,
-            allowEscapeKey: false,
+            customClass: {
+              popup: "rounded-lg",
+            },
           });
-
-          // Close modal after success
-          setTimeout(() => {
-            setShowAllModal(false);
-          }, 1800);
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: response?.message || "Failed to clear notifications",
-          });
+          setShowAllModal(false);
         }
       } catch (error) {
-        console.error("Error clearing notifications:", error);
         Swal.fire({
           icon: "error",
-          title: "Error",
-          text: "An error occurred while clearing notifications",
+          title: "Oops...",
+          text: "Failed to clear notifications",
+          customClass: {
+            popup: "rounded-lg",
+          },
         });
       } finally {
-        setClearAllLoading(false);
-        setGlobalLoading(false);
+        setLoading(false);
       }
     }
-  }, [clearAllNotifications, fetchNotifications, currentUser, globalLoading]);
+  }, [clearAllNotifications, fetchNotifications, currentUser]);
+
   return (
     <>
-      {/* Global Loading Overlay */}
-      {globalLoading && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              padding: "30px",
-              borderRadius: "12px",
-              textAlign: "center",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
-            }}
-          >
-            <Spinner
-              animation="border"
-              style={{ color: "#3D90D7", width: "50px", height: "50px" }}
-            />
-            <div
-              className="mt-3"
-              style={{ fontSize: "16px", fontWeight: "500" }}
-            >
-              Processing...
-            </div>
-            <div className="text-muted small mt-1">
-              Please wait, do not close this page
-            </div>
-          </div>
-        </div>
-      )}
-
       <OverlayTrigger
         placement="bottom"
         overlay={
-          <Tooltip id="notification-tooltip" style={{ borderRadius: "8px" }}>
+          <Tooltip className="custom-tooltip">
             {unreadCount
               ? `${unreadCount} new notification${unreadCount > 1 ? "s" : ""}`
               : "No new notifications"}
           </Tooltip>
         }
       >
-        <Dropdown
-          onToggle={handleToggle}
-          show={isOpen && !globalLoading}
-          align="end"
-        >
+        <Dropdown onToggle={handleToggle} show={isOpen} align="end">
           <Dropdown.Toggle
             variant="link"
             className="nav-link p-0 text-dark position-relative"
-            id="notification-dropdown"
-            style={{
-              outline: "none",
-              boxShadow: "none",
-              opacity: globalLoading ? 0.6 : 1,
-            }}
-            disabled={globalLoading}
+            style={{ outline: "none", boxShadow: "none" }}
           >
             <i className="fas fa-bell fa-lg" style={customStyles.bellIcon}></i>
             {unreadCount > 0 && (
-              <span
-                className="position-absolute top-0 start-100 translate-middle badge rounded-pill"
-                style={{ ...customStyles.badge, fontSize: 10 }}
+              <Badge
+                pill
+                className="position-absolute top-0 start-100 translate-middle"
+                style={customStyles.badge}
               >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
             )}
           </Dropdown.Toggle>
 
           <Dropdown.Menu
-            className="dropdown-menu-end border-0 p-0"
+            className="border-0 p-0"
             style={customStyles.dropdownMenu}
           >
             <div style={customStyles.notificationHeader}>
               <div className="d-flex align-items-center justify-content-between">
-                <span
-                  className="fw-bold"
-                  style={{
-                    fontFamily: "Roboto, sans-serif",
-                    letterSpacing: "0.5px",
-                    fontSize: "16px",
-                  }}
-                >
-                  <i className="fas fa-bell me-2"></i>Notifications
-                </span>
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-bell me-3"></i>
+                  <span className="fw-bold fs-5">Notifications</span>
+                </div>
                 {unreadCount > 0 && (
-                  <Badge
-                    bg="light"
-                    text="dark"
-                    pill
-                    style={{
-                      fontSize: 11,
-                      background: "rgba(255, 255, 255, 0.2) !important",
-                      color: "white !important",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                    }}
-                  >
-                    {unreadCount}
+                  <Badge bg="light" text="dark" pill className="px-3 py-2">
+                    {unreadCount} new
                   </Badge>
                 )}
               </div>
@@ -834,189 +518,66 @@ const NotificationDropdown = () => {
 
             {loading ? (
               <div className="text-center p-4">
-                <Spinner
-                  animation="border"
-                  size="sm"
-                  style={{ color: "#3D90D7" }}
-                />
-                <div className="text-muted small mt-2">
+                <Spinner animation="border" variant="primary" />
+                <div className="text-muted mt-3 fw-medium">
                   Loading notifications...
                 </div>
               </div>
             ) : (
               <div
-                style={{
-                  maxHeight: 350,
-                  overflowY: "auto",
-                  padding: "8px",
-                  opacity: globalLoading ? 0.6 : 1,
-                  pointerEvents: globalLoading ? "none" : "auto",
-                }}
+                style={{ maxHeight: 450, overflowY: "auto", padding: "12px" }}
               >
                 {notifications.length === 0 ? (
-                  <div className="text-center text-muted py-4">
-                    <div
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-                        borderRadius: "50%",
-                        width: "60px",
-                        height: "60px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        margin: "0 auto 12px",
-                      }}
-                    >
-                      <i className="fas fa-bell-slash fa-lg text-muted"></i>
+                  <div className="text-center text-muted py-5">
+                    <div className="mb-3">
+                      <i
+                        className="fas fa-bell-slash"
+                        style={{ fontSize: "3rem", opacity: 0.3 }}
+                      ></i>
                     </div>
-                    <div style={{ fontWeight: "500" }}>No notifications</div>
-                    <div className="small text-muted">
-                      You're all caught up!
-                    </div>
+                    <div className="h5 text-muted">No notifications yet</div>
+                    <div className="small">You're all caught up!</div>
                   </div>
                 ) : (
-                  notifications.slice(0, 5).map((n) => {
-                    console.log("Rendering notification:", n); // Debug log
-                    const iconStyle = getNotificationIconColor(n.type);
-                    return (
-                      <div
+                  notifications
+                    .slice(0, 5)
+                    .map((n) => (
+                      <NotificationItem
                         key={n.id}
-                        className={`notification-item d-flex align-items-start p-3 ${
-                          !n.is_read ? "" : ""
-                        }`}
-                        style={{
-                          ...customStyles.notificationItem,
-                          ...(n.is_read ? {} : customStyles.unreadItem),
-                          cursor: globalLoading ? "not-allowed" : "pointer",
-                          opacity: globalLoading ? 0.6 : 1,
-                        }}
-                      >
-                        <div
-                          className="d-flex flex-grow-1 align-items-start"
-                          onClick={(e) =>
-                            !globalLoading && handleMarkAsRead(n.id, e)
-                          }
-                        >
-                          <div className="me-3">
-                            {" "}
-                            <div
-                              style={{
-                                ...customStyles.iconContainer,
-                                background: iconStyle.bg,
-                                color: iconStyle.text,
-                              }}
-                            >
-                              <NotificationIcon
-                                type={n.type}
-                                style={{ color: iconStyle.text }}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-grow-1">
-                            <div className="d-flex justify-content-between align-items-center mb-1">
-                              <span className="small text-muted fw-medium">
-                                {formatTimeAgo(n.created_at)}
-                              </span>
-                              {!n.is_read && (
-                                <Badge
-                                  style={{
-                                    background:
-                                      "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-                                    fontSize: 9,
-                                    padding: "4px 8px",
-                                  }}
-                                >
-                                  New
-                                </Badge>
-                              )}
-                            </div>
-                            <div
-                              className="small fw-medium"
-                              style={{ lineHeight: "1.4" }}
-                            >
-                              {n.message}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          className="ms-2 align-self-start"
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            transition: "all 0.3s ease",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNotification(n.id);
-                          }}
-                          disabled={globalLoading}
-                          onMouseEnter={(e) => {
-                            if (!globalLoading) {
-                              e.target.style.background =
-                                "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
-                              e.target.style.color = "white";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!globalLoading) {
-                              e.target.style.background = "";
-                              e.target.style.color = "";
-                            }
-                          }}
-                        >
-                          <i className="fas fa-trash-alt"></i>
-                        </Button>
-                      </div>
-                    );
-                  })
+                        notification={n}
+                        onMarkAsRead={handleMarkAsRead}
+                        onDelete={handleDeleteNotification}
+                        customStyles={customStyles}
+                        formatTimeAgo={formatTimeAgo}
+                        getNotificationIcon={getNotificationIcon}
+                        getNotificationIconColor={getNotificationIconColor}
+                      />
+                    ))
                 )}
               </div>
             )}
 
-            <div
-              className="px-3 py-3 border-top d-flex gap-2"
-              style={{
-                background: "rgba(61, 144, 215, 0.02)",
-                opacity: globalLoading ? 0.6 : 1,
-              }}
-            >
+            <div className="px-4 py-3 border-top bg-light d-flex gap-2">
               {unreadCount > 0 && (
                 <Button
                   variant="outline-primary"
                   size="sm"
-                  className="flex-grow-1"
-                  style={{
-                    borderRadius: "8px",
-                    borderColor: "#3D90D7",
-                    color: "#3D90D7",
-                    fontWeight: "500",
-                  }}
+                  className="flex-grow-1 rounded-pill fw-medium"
                   onClick={handleMarkAllAsRead}
-                  disabled={globalLoading}
                 >
-                  Mark all read
+                  <i className="fas fa-check-double me-2"></i>Mark all read
                 </Button>
               )}
               <Button
+                variant="primary"
                 size="sm"
-                className="flex-grow-1"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: "500",
-                }}
+                className="flex-grow-1 rounded-pill fw-medium"
                 onClick={() => {
                   setShowAllModal(true);
                   setIsOpen(false);
                 }}
-                disabled={globalLoading}
               >
-                View all
+                <i className="fas fa-expand-arrows-alt me-2"></i>View all
               </Button>
             </div>
           </Dropdown.Menu>
@@ -1026,372 +587,155 @@ const NotificationDropdown = () => {
       {/* Enhanced Modal */}
       <Modal
         show={showAllModal}
-        onHide={() => !globalLoading && setShowAllModal(false)}
-        size="lg"
+        onHide={() => setShowAllModal(false)}
+        size="xl"
         centered
-        style={{ backdropFilter: "blur(8px)" }}
-        backdrop={globalLoading ? "static" : true}
-        keyboard={!globalLoading}
+        className="notification-modal"
       >
-        <Modal.Header
-          closeButton={!globalLoading}
-          style={{
-            ...customStyles.modalHeader,
-            opacity: globalLoading ? 0.6 : 1,
-          }}
-        >
-          <Modal.Title
-            style={{
-              fontFamily: "Roboto, sans-serif",
-              letterSpacing: "0.5px",
-              fontSize: 20,
-              fontWeight: 700,
-            }}
-          >
-            <i className="fas fa-bell me-2"></i>All Notifications
-            {globalLoading && (
-              <Spinner
-                animation="border"
-                size="sm"
-                className="ms-2"
-                style={{ color: "white" }}
-              />
+        <Modal.Header closeButton style={customStyles.modalHeader}>
+          <Modal.Title className="d-flex align-items-center">
+            <i className="fas fa-bell me-3"></i>
+            <span>All Notifications</span>
+            {filteredNotifications.length > 0 && (
+              <Badge bg="light" text="dark" className="ms-3 px-3 py-2">
+                {filteredNotifications.length} total
+              </Badge>
             )}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body
-          style={{
-            padding: "24px",
-            background: "#f8f9fa",
-            opacity: globalLoading ? 0.6 : 1,
-            pointerEvents: globalLoading ? "none" : "auto",
-          }}
-        >
+
+        <Modal.Body style={{ padding: "32px" }}>
           {/* Enhanced Filter Section */}
-          <div className="d-flex flex-wrap mb-4 gap-2 align-items-center">
-            {["all", "unread"].map((filterType) => (
-              <Button
-                key={filterType}
-                className="filter-button"
-                style={{
-                  ...customStyles.filterButton,
-                  ...(filter === filterType
-                    ? customStyles.activeFilter
-                    : {
-                        background: "white",
-                        color: "#6c757d",
-                        border: "2px solid #e9ecef",
-                      }),
-                }}
-                size="sm"
-                onClick={() => setFilter(filterType)}
-                disabled={globalLoading}
-              >
-                {filterType === "all" && "All"}
-                {filterType === "unread" && "Unread"}
-              </Button>
-            ))}
-            <FormControl
-              size="sm"
-              placeholder="Search notifications..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                maxWidth: 200,
-                marginLeft: "auto",
-                borderRadius: "8px",
-                border: "2px solid #e9ecef",
-              }}
-              disabled={globalLoading}
-            />
+          <div className="row mb-4">
+            <div className="col-md-6">
+              <div className="d-flex gap-2">
+                {["all", "unread"].map((filterType) => (
+                  <Button
+                    key={filterType}
+                    variant={
+                      filter === filterType ? "primary" : "outline-secondary"
+                    }
+                    size="sm"
+                    style={customStyles.filterButton}
+                    onClick={() => setFilter(filterType)}
+                  >
+                    {filterType === "all" ? (
+                      <>
+                        <i className="fas fa-list me-2"></i>All
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-envelope me-2"></i>Unread
+                      </>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="col-md-6">
+              <InputGroup>
+                <InputGroup.Text
+                  style={{ background: "#f8fafc", border: "2px solid #e2e8f0" }}
+                >
+                  <i className="fas fa-search text-muted"></i>
+                </InputGroup.Text>
+                <FormControl
+                  placeholder="Search notifications..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={customStyles.searchInput}
+                />
+              </InputGroup>
+            </div>
           </div>
 
-          {currentNotifications.length === 0 ? (
+          {paginationData.currentNotifications.length === 0 ? (
             <div className="text-center text-muted py-5">
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-                  borderRadius: "50%",
-                  width: "80px",
-                  height: "80px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 16px",
-                }}
-              >
-                <i className="fas fa-bell-slash fa-2x text-muted"></i>
+              <div className="mb-4">
+                <i
+                  className="fas fa-search"
+                  style={{ fontSize: "4rem", opacity: 0.2 }}
+                ></i>
               </div>
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "500",
-                  marginBottom: "8px",
-                }}
-              >
-                No notifications found
+              <div className="h4 text-muted mb-2">No notifications found</div>
+              <div className="text-muted">
+                Try adjusting your search terms or filters
               </div>
-              <div className="text-muted">Try adjusting your filters</div>
             </div>
           ) : (
-            <div style={{ maxHeight: 400, overflowY: "auto" }}>
-              {currentNotifications.map((n) => {
-                console.log("Rendering modal notification:", n); // Debug log
-                const iconStyle = getNotificationIconColor(n.type);
-                return (
-                  <Card
-                    key={n.id}
-                    className="notification-item mb-3 border-0"
-                    style={{
-                      ...(!n.is_read
-                        ? {
-                            background:
-                              "linear-gradient(135deg, #e3f2fd 0%, #f8f9ff 100%)",
-                            borderLeft: "4px solid #3D90D7",
-                          }
-                        : {
-                            background: "white",
-                          }),
-                      borderRadius: "12px",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                      opacity: globalLoading ? 0.6 : 1,
-                    }}
-                  >
-                    <Card.Body className="py-3 px-4 d-flex align-items-center">
-                      {" "}
-                      <div
-                        style={{
-                          ...customStyles.iconContainer,
-                          background: iconStyle.bg,
-                          color: iconStyle.text,
-                          marginRight: "16px",
-                        }}
-                      >
-                        <NotificationIcon
-                          type={n.type}
-                          style={{ color: iconStyle.text }}
-                        />
-                      </div>
-                      <div className="flex-grow-1">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="small text-muted fw-medium">
-                            {formatTimeAgo(n.created_at)}
-                          </span>
-                          {!n.is_read ? (
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0"
-                              style={{
-                                fontSize: 13,
-                                color: "#3D90D7",
-                                textDecoration: "none",
-                                fontWeight: "500",
-                              }}
-                              onClick={() => markAsRead(n.id)}
-                              disabled={globalLoading}
-                            >
-                              Mark as read
-                            </Button>
-                          ) : (
-                            <span
-                              className="small"
-                              style={{
-                                color: "#28a745",
-                                fontWeight: "500",
-                                background: "rgba(40, 167, 69, 0.1)",
-                                padding: "2px 8px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              ✓ Read
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontWeight: "500", lineHeight: "1.4" }}>
-                          {n.message}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        className="ms-3"
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          transition: "all 0.3s ease",
-                        }}
-                        onClick={() => handleDeleteNotification(n.id)}
-                        disabled={globalLoading}
-                        onMouseEnter={(e) => {
-                          if (!globalLoading) {
-                            e.target.style.background =
-                              "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)";
-                            e.target.style.color = "white";
-                            e.target.style.transform = "scale(1.05)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!globalLoading) {
-                            e.target.style.background = "";
-                            e.target.style.color = "";
-                            e.target.style.transform = "scale(1)";
-                          }
-                        }}
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                );
-              })}
+            <div style={{ maxHeight: 600, overflowY: "auto" }}>
+              <div className="row">
+                {paginationData.currentNotifications.map((n) => (
+                  <div key={n.id} className="col-12 mb-3">
+                    <NotificationItem
+                      notification={n}
+                      onMarkAsRead={handleMarkAsRead}
+                      onDelete={handleDeleteNotification}
+                      customStyles={customStyles}
+                      formatTimeAgo={formatTimeAgo}
+                      getNotificationIcon={getNotificationIcon}
+                      getNotificationIconColor={getNotificationIconColor}
+                      isModal={true}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Enhanced Pagination */}
-          {totalPages > 1 && (
+          {paginationData.totalPages > 1 && (
             <div className="d-flex justify-content-center mt-4">
-              <nav>
-                <ul
-                  className="pagination pagination-sm mb-0"
-                  style={customStyles.pagination}
+              <div className="btn-group shadow-sm">
+                <Button
+                  variant="outline-primary"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  style={customStyles.paginationButton}
                 >
-                  <li
-                    className={`page-item ${
-                      currentPage === 1 || globalLoading ? "disabled" : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => paginate(1)}
-                      style={{ borderRadius: "8px 0 0 8px" }}
-                      disabled={globalLoading}
-                    >
-                      &laquo;
-                    </button>
-                  </li>
-                  <li
-                    className={`page-item ${
-                      currentPage === 1 || globalLoading ? "disabled" : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => paginate(currentPage - 1)}
-                      disabled={globalLoading}
-                    >
-                      &lsaquo;
-                    </button>
-                  </li>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <li
-                      key={i}
-                      className={`page-item ${
-                        currentPage === i + 1 ? "active" : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() => paginate(i + 1)}
-                        style={
-                          currentPage === i + 1
-                            ? {
-                                background:
-                                  "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-                                border: "none",
-                              }
-                            : {}
-                        }
-                        disabled={globalLoading}
-                      >
-                        {i + 1}
-                      </button>
-                    </li>
-                  ))}
-                  <li
-                    className={`page-item ${
-                      currentPage === totalPages || globalLoading
-                        ? "disabled"
-                        : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => paginate(currentPage + 1)}
-                      disabled={globalLoading}
-                    >
-                      &rsaquo;
-                    </button>
-                  </li>
-                  <li
-                    className={`page-item ${
-                      currentPage === totalPages || globalLoading
-                        ? "disabled"
-                        : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => paginate(totalPages)}
-                      style={{ borderRadius: "0 8px 8px 0" }}
-                      disabled={globalLoading}
-                    >
-                      &raquo;
-                    </button>
-                  </li>
-                </ul>
-              </nav>
+                  <i className="fas fa-chevron-left me-2"></i>Previous
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled
+                  style={customStyles.paginationButton}
+                >
+                  Page {currentPage} of {paginationData.totalPages}
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  disabled={currentPage === paginationData.totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  style={customStyles.paginationButton}
+                >
+                  Next<i className="fas fa-chevron-right ms-2"></i>
+                </Button>
+              </div>
             </div>
           )}
         </Modal.Body>
 
-        <Modal.Footer
-          className="d-flex justify-content-between"
-          style={{
-            background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-            borderRadius: "0 0 12px 12px",
-            opacity: globalLoading ? 0.6 : 1,
-          }}
-        >
+        <Modal.Footer className="d-flex justify-content-between px-4 py-3">
           <Button
-            variant="outline-danger"
+            style={customStyles.clearAllButton}
             onClick={handleClearAll}
-            style={{
-              borderRadius: "8px",
-              padding: "8px 20px",
-              fontWeight: "500",
-            }}
-            disabled={clearAllLoading || globalLoading}
+            disabled={loading}
           >
-            {clearAllLoading ? (
+            {loading ? (
               <>
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
-                  className="me-2"
-                />
+                <Spinner size="sm" className="me-2" />
                 Clearing...
               </>
             ) : (
               <>
-                <i className="fas fa-trash me-2"></i>Clear all
+                <i className="fas fa-trash-alt me-2"></i>Clear All
               </>
             )}
           </Button>
           <Button
+            variant="secondary"
             onClick={() => setShowAllModal(false)}
-            style={{
-              background: "linear-gradient(135deg, #3D90D7 0%, #2c5282 100%)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "8px 20px",
-              fontWeight: "500",
-            }}
-            disabled={clearAllLoading || globalLoading}
+            className="rounded-pill px-4"
           >
             <i className="fas fa-times me-2"></i>Close
           </Button>
@@ -1399,6 +743,201 @@ const NotificationDropdown = () => {
       </Modal>
     </>
   );
-};
+});
+
+// Enhanced NotificationItem component
+const NotificationItem = React.memo(
+  ({
+    notification,
+    onMarkAsRead,
+    onDelete,
+    customStyles,
+    formatTimeAgo,
+    getNotificationIcon,
+    getNotificationIconColor,
+    isModal = false,
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const iconStyle = getNotificationIconColor(notification.type);
+    const icon = getNotificationIcon(notification.type);
+
+    const handleMarkAsRead = useCallback(
+      (e) => {
+        if (e) e.preventDefault();
+        onMarkAsRead(notification.id, e);
+      },
+      [notification.id, onMarkAsRead]
+    );
+
+    const handleDelete = useCallback(
+      (e) => {
+        e.stopPropagation();
+        onDelete(notification.id);
+      },
+      [notification.id, onDelete]
+    );
+
+    if (isModal) {
+      return (
+        <div
+          className="d-flex align-items-start p-4 border rounded-3 position-relative overflow-hidden"
+          style={{
+            backgroundColor: notification.is_read ? "white" : "#f8faff",
+            borderLeft: notification.is_read ? "none" : "4px solid #4f46e5",
+            boxShadow: notification.is_read
+              ? "0 2px 8px rgba(0,0,0,0.05)"
+              : "0 4px 12px rgba(79, 70, 229, 0.1)",
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* Subtle background pattern for unread notifications */}
+          {!notification.is_read && (
+            <div
+              className="position-absolute top-0 end-0"
+              style={{
+                width: "100px",
+                height: "100px",
+                background:
+                  "radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, transparent 70%)",
+                borderRadius: "50%",
+                transform: "translate(30px, -30px)",
+              }}
+            />
+          )}
+
+          <div
+            style={{
+              ...customStyles.iconContainer,
+              background: iconStyle.bg,
+              color: iconStyle.text,
+              marginRight: "20px",
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </div>
+
+          <div className="flex-grow-1 position-relative">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <small className="text-muted fw-medium">
+                <i className="fas fa-clock me-1"></i>
+                {formatTimeAgo(notification.created_at)}
+              </small>
+              <div className="d-flex align-items-center gap-2">
+                {!notification.is_read && (
+                  <Badge bg="primary" className="px-2 py-1 rounded-pill">
+                    <i
+                      className="fas fa-circle me-1"
+                      style={{ fontSize: "6px" }}
+                    ></i>
+                    New
+                  </Badge>
+                )}
+                {!notification.is_read && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-1 text-primary text-decoration-none"
+                    onClick={handleMarkAsRead}
+                  >
+                    <i className="fas fa-check me-1"></i>Mark as read
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div
+              className="fw-medium mb-2"
+              style={{ lineHeight: "1.5", color: "#374151" }}
+            >
+              {notification.message}
+            </div>
+          </div>
+
+          <Button
+            variant="outline-danger"
+            size="sm"
+            className="ms-3 rounded-pill"
+            onClick={handleDelete}
+            style={{
+              opacity: isHovered ? 1 : 0.7,
+              transition: "all 0.3s ease",
+              padding: "8px 12px",
+            }}
+          >
+            <i className="fas fa-trash-alt"></i>
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="d-flex align-items-center position-relative"
+        style={{
+          ...customStyles.notificationItem,
+          ...(notification.is_read ? {} : customStyles.unreadItem),
+          ...(isHovered ? customStyles.notificationItemHover : {}),
+          cursor: "pointer",
+        }}
+        onClick={handleMarkAsRead}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div
+          style={{
+            ...customStyles.iconContainer,
+            background: iconStyle.bg,
+            color: iconStyle.text,
+            marginRight: "16px",
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </div>
+
+        <div className="flex-grow-1">
+          <div className="d-flex justify-content-between align-items-center mb-1">
+            <small className="text-muted fw-medium">
+              {formatTimeAgo(notification.created_at)}
+            </small>
+            {!notification.is_read && (
+              <Badge
+                bg="primary"
+                style={{ fontSize: "9px" }}
+                className="rounded-pill px-2"
+              >
+                New
+              </Badge>
+            )}
+          </div>
+          <div
+            className="fw-medium"
+            style={{ lineHeight: "1.4", fontSize: "14px" }}
+          >
+            {notification.message}
+          </div>
+        </div>
+
+        <Button
+          variant="outline-danger"
+          size="sm"
+          className="ms-2 rounded-circle"
+          style={{
+            padding: "6px 8px",
+            opacity: isHovered ? 1 : 0.6,
+            transition: "all 0.3s ease",
+            width: "32px",
+            height: "32px",
+          }}
+          onClick={handleDelete}
+        >
+          <i className="fas fa-times" style={{ fontSize: "12px" }}></i>
+        </Button>
+      </div>
+    );
+  }
+);
 
 export default NotificationDropdown;

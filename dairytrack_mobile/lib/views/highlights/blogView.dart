@@ -338,20 +338,11 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         _blogs = blogs;
         _isLoading = false;
       });
-      _showSnackBar(
-        'Blog berhasil dimuat (${blogs.length} blog)',
-        icon: Icons.refresh,
-      );
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to fetch blogs: $e';
         _isLoading = false;
       });
-      _showSnackBar(
-        'Gagal memuat blog: $e',
-        backgroundColor: darkError,
-        icon: Icons.error,
-      );
     }
   }
 
@@ -365,29 +356,15 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
         setState(() {
           _categories = categories;
         });
-        _showSnackBar(
-          'Kategori berhasil dimuat (${categories.length} kategori)',
-          icon: Icons.category,
-        );
       } else {
         setState(() {
           _errorMessage = 'Failed to fetch categories: ${response['message']}';
         });
-        _showSnackBar(
-          'Gagal memuat kategori: ${response['message']}',
-          backgroundColor: darkError,
-          icon: Icons.error,
-        );
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to fetch categories: $e';
       });
-      _showSnackBar(
-        'Gagal memuat kategori: $e',
-        backgroundColor: darkError,
-        icon: Icons.error,
-      );
     }
   }
 
@@ -716,7 +693,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
       if (pickedFile != null) {
         _blogImage = File(pickedFile.path);
         _showSnackBar(
-          'Gambar berhasil dipilih',
+          'Image selected successfully',
           icon: Icons.image,
         );
       } else {
@@ -1433,7 +1410,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     ),
                     const SizedBox(width: 12),
                     const Text(
-                      'Tambah Blog Baru',
+                      'Add New Blog',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: darkText,
@@ -1550,7 +1527,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         _blogImage = null;
                       });
                     },
-                    child: const Text('Batal'),
+                    child: const Text('Close'),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -1570,7 +1547,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                         );
                       }
                     },
-                    child: const Text('Tambah'),
+                    child: const Text('Add'),
                   ),
                 ],
               );
@@ -2557,7 +2534,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Karakter: ${editContentController.text.length}',
+                                'Character: ${editContentController.text.length}',
                                 style: const TextStyle(
                                   color: darkTextSecondary,
                                   fontSize: 12,
@@ -2598,7 +2575,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                                   });
                                 },
                                 icon: const Icon(Icons.image),
-                                label: const Text('Pilih Gambar Baru'),
+                                label: const Text('Select New Image'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: darkWarning,
                                   foregroundColor: Colors.white,
@@ -2652,7 +2629,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancelled',
+                    child: const Text('Close',
                         style: TextStyle(color: darkTextSecondary)),
                   ),
                   ElevatedButton(

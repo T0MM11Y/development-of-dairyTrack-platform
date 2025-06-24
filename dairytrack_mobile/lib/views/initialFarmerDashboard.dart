@@ -1298,7 +1298,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.teal[800],
@@ -1324,7 +1324,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text('Tutup'),
+                          child: Text('Close'),
                         ),
                       ],
                     ),
@@ -1361,7 +1361,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isUnread

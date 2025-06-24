@@ -542,15 +542,15 @@ class _NotificationWidgetState extends State<NotificationWidget>
 
   Widget _buildSearchBar() {
     return Container(
-      margin: EdgeInsets.fromLTRB(20, 16, 20, 8),
+      margin: EdgeInsets.fromLTRB(16, 12, 16, 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 1),
           ),
         ],
       ),
@@ -558,15 +558,15 @@ class _NotificationWidgetState extends State<NotificationWidget>
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Cari notifikasi...',
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
           prefixIcon: Container(
-            padding: EdgeInsets.all(12),
-            child: Icon(Icons.search_rounded, color: _primaryColor, size: 22),
+            padding: EdgeInsets.all(10),
+            child: Icon(Icons.search_rounded, color: _primaryColor, size: 18),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.clear_rounded,
-                      color: Colors.grey[400], size: 20),
+                      color: Colors.grey[400], size: 18),
                   onPressed: () {
                     _searchController.clear();
                     setState(() {
@@ -574,22 +574,23 @@ class _NotificationWidgetState extends State<NotificationWidget>
                       _applySearchFilter();
                     });
                   },
+                  padding: EdgeInsets.all(8),
                 )
               : null,
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: _primaryColor, width: 2),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: _primaryColor, width: 1.5),
           ),
         ),
         onChanged: (value) {
@@ -624,47 +625,48 @@ class _NotificationWidgetState extends State<NotificationWidget>
     return AppBar(
       elevation: 0,
       backgroundColor: _primaryColor,
-      toolbarHeight: 80,
+      toolbarHeight: 60,
       leading: Container(
-        margin: EdgeInsets.all(12),
+        margin: EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: IconButton(
           icon:
-              Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+              Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 18),
           onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
         ),
       ),
       title: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Stack(
               children: [
                 Icon(Icons.notifications_rounded,
-                    color: Colors.white, size: 24),
+                    color: Colors.white, size: 20),
                 if (unreadCount > 0)
                   Positioned(
-                    right: 0,
-                    top: 0,
+                    right: -2,
+                    top: -2,
                     child: Container(
-                      padding: EdgeInsets.all(4),
+                      padding: EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: Colors.red.shade400,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                      constraints: BoxConstraints(minWidth: 14, minHeight: 14),
                       child: Text(
                         unreadCount > 99 ? '99+' : unreadCount.toString(),
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
@@ -674,25 +676,26 @@ class _NotificationWidgetState extends State<NotificationWidget>
               ],
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Notifikasi',
+                  'Notifications',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 18,
                   ),
                 ),
                 if (unreadCount > 0)
                   Text(
-                    '$unreadCount belum dibaca',
+                    '$unreadCount unread',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
               ],
@@ -929,38 +932,38 @@ class _NotificationWidgetState extends State<NotificationWidget>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(24),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: _primaryColor.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 5,
+                    blurRadius: 15,
+                    spreadRadius: 3,
                   ),
                 ],
               ),
               child: CircularProgressIndicator(
                 color: _primaryColor,
-                strokeWidth: 3,
+                strokeWidth: 2.5,
               ),
             ),
-            SizedBox(height: 32),
+            SizedBox(height: 24),
             Text(
               'Memuat notifikasi...',
               style: TextStyle(
                 color: Colors.grey[700],
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 6),
             Text(
               'Mohon tunggu sebentar',
               style: TextStyle(
                 color: Colors.grey[500],
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ],
@@ -977,77 +980,77 @@ class _NotificationWidgetState extends State<NotificationWidget>
         child: ListView(
           physics: AlwaysScrollableScrollPhysics(),
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.12),
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(40),
+                    padding: EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          _primaryColor.withOpacity(0.1),
-                          _primaryColor.withOpacity(0.2),
+                          _primaryColor.withOpacity(0.08),
+                          _primaryColor.withOpacity(0.15),
                         ],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: _primaryColor.withOpacity(0.1),
-                          blurRadius: 30,
-                          spreadRadius: 10,
+                          color: _primaryColor.withOpacity(0.08),
+                          blurRadius: 20,
+                          spreadRadius: 5,
                         ),
                       ],
                     ),
                     child: Icon(
                       Icons.notifications_none_rounded,
-                      size: 80,
+                      size: 64,
                       color: _primaryColor.withOpacity(0.7),
                     ),
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: 32),
                   Text(
                     'Tidak ada notifikasi',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[800],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 12),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
+                    padding: EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
                       'Semua notifikasi akan muncul di sini.\nAnda akan mendapat pemberitahuan untuk hal-hal penting terkait peternakan Anda.',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         color: Colors.grey[600],
-                        height: 1.6,
+                        height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: () async {
                       _animationController.reset();
                       await _loadNotifications();
                     },
-                    icon: Icon(Icons.refresh_rounded, size: 22),
+                    icon: Icon(Icons.refresh_rounded, size: 18),
                     label: Text('Muat Ulang',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _primaryColor,
                       foregroundColor: Colors.white,
                       padding:
-                          EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      elevation: 4,
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
                     ),
                   ),
                 ],
@@ -1067,7 +1070,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
         child: _filteredNotifications.isEmpty
             ? _buildNoSearchResults()
             : ListView.builder(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: EdgeInsets.fromLTRB(16, 6, 16, 20),
                 itemCount: _filteredNotifications.length,
                 itemBuilder: (context, index) => _buildNotificationCard(index),
               ),
@@ -1078,29 +1081,29 @@ class _NotificationWidgetState extends State<NotificationWidget>
   Widget _buildNoSearchResults() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.only(top: 80),
+        padding: const EdgeInsets.only(top: 60),
         child: Column(
           children: [
             Icon(
               Icons.search_off_rounded,
-              size: 64,
+              size: 48,
               color: Colors.grey[400],
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Text(
               'Tidak ada notifikasi yang cocok',
               style: TextStyle(
                 color: Colors.grey[600],
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 6),
             Text(
               'Coba gunakan kata kunci yang berbeda',
               style: TextStyle(
                 color: Colors.grey[500],
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ],
@@ -1116,28 +1119,28 @@ class _NotificationWidgetState extends State<NotificationWidget>
     final color = _getNotificationColor(type);
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isUnread ? color.withOpacity(0.3) : Colors.grey[200]!,
-          width: isUnread ? 2 : 1,
+          width: isUnread ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isUnread
-                ? color.withOpacity(0.1)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: isUnread ? 12 : 8,
-            offset: Offset(0, 4),
+                ? color.withOpacity(0.08)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isUnread ? 8 : 6,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           onTap: () async {
             if (isUnread) {
               await _markAsRead(
@@ -1146,25 +1149,25 @@ class _NotificationWidgetState extends State<NotificationWidget>
             _showNotificationDetail(notification);
           },
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         _getNotificationIcon(type),
                         color: color,
-                        size: 24,
+                        size: 18,
                       ),
                     ),
-                    SizedBox(width: 16),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1178,15 +1181,15 @@ class _NotificationWidgetState extends State<NotificationWidget>
                                     fontWeight: isUnread
                                         ? FontWeight.bold
                                         : FontWeight.w600,
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     color: Colors.grey[800],
                                   ),
                                 ),
                               ),
                               if (isUnread)
                                 Container(
-                                  width: 10,
-                                  height: 10,
+                                  width: 8,
+                                  height: 8,
                                   decoration: BoxDecoration(
                                     color: color,
                                     shape: BoxShape.circle,
@@ -1194,16 +1197,16 @@ class _NotificationWidgetState extends State<NotificationWidget>
                                 ),
                             ],
                           ),
-                          SizedBox(height: 6),
+                          SizedBox(height: 4),
                           Row(
                             children: [
                               Icon(Icons.access_time_rounded,
-                                  size: 14, color: Colors.grey[500]),
-                              SizedBox(width: 4),
+                                  size: 12, color: Colors.grey[500]),
+                              SizedBox(width: 3),
                               Text(
                                 _getRelativeTime(notification['created_at']),
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: Colors.grey[500],
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1216,21 +1219,21 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     _buildNotificationMenu(notification, index),
                   ],
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 12),
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey[200]!),
                   ),
                   child: Text(
                     notification['message'] ?? '',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Colors.grey[700],
-                      height: 1.5,
+                      height: 1.4,
                     ),
                   ),
                 ),
@@ -1247,15 +1250,15 @@ class _NotificationWidgetState extends State<NotificationWidget>
 
     return PopupMenuButton<String>(
       icon: Container(
-        padding: EdgeInsets.all(4),
+        padding: EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(Icons.more_vert_rounded, color: Colors.grey[600], size: 18),
+        child: Icon(Icons.more_vert_rounded, color: Colors.grey[600], size: 16),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 6,
       onSelected: (value) async {
         switch (value) {
           case 'mark_read':
@@ -1280,17 +1283,18 @@ class _NotificationWidgetState extends State<NotificationWidget>
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(6),
+                  padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: _primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(Icons.mark_email_read_rounded,
-                      size: 16, color: _primaryColor),
+                      size: 14, color: _primaryColor),
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: 10),
                 Text('Tandai Dibaca',
-                    style: TextStyle(fontWeight: FontWeight.w500)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
               ],
             ),
           ),
@@ -1299,16 +1303,17 @@ class _NotificationWidgetState extends State<NotificationWidget>
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(6),
+                padding: EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Icon(Icons.info_outline_rounded,
-                    size: 16, color: Colors.blue),
+                    size: 14, color: Colors.blue),
               ),
-              SizedBox(width: 12),
-              Text('Detail', style: TextStyle(fontWeight: FontWeight.w500)),
+              SizedBox(width: 10),
+              Text('Detail',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             ],
           ),
         ),
@@ -1317,16 +1322,17 @@ class _NotificationWidgetState extends State<NotificationWidget>
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(6),
+                padding: EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Icon(Icons.delete_outline_rounded,
-                    size: 16, color: Colors.red),
+                    size: 14, color: Colors.red),
               ),
-              SizedBox(width: 12),
-              Text('Hapus', style: TextStyle(fontWeight: FontWeight.w500)),
+              SizedBox(width: 10),
+              Text('Hapus',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             ],
           ),
         ),
@@ -1353,30 +1359,30 @@ class _NotificationWidgetState extends State<NotificationWidget>
       color: Colors.black54,
       child: Center(
         child: Container(
-          margin: EdgeInsets.all(20),
-          padding: EdgeInsets.all(32),
+          margin: EdgeInsets.all(16),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: _primaryColor, strokeWidth: 3),
-              SizedBox(height: 24),
+              CircularProgressIndicator(color: _primaryColor, strokeWidth: 2.5),
+              SizedBox(height: 20),
               Text(
                 'Menghapus semua notifikasi...',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
                 ),
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 8),
               Text(
                 'Mohon tunggu, jangan tutup aplikasi',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
@@ -1396,20 +1402,20 @@ class _NotificationWidgetState extends State<NotificationWidget>
       context: context,
       barrierDismissible: true,
       builder: (context) => Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 10,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
         backgroundColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                spreadRadius: 5,
-                offset: Offset(0, 10),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 15,
+                spreadRadius: 3,
+                offset: Offset(0, 8),
               ),
             ],
           ),
@@ -1419,35 +1425,35 @@ class _NotificationWidgetState extends State<NotificationWidget>
             children: [
               // Header
               Container(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: _primaryColor,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
                   ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         _getNotificationIcon(type),
                         color: Colors.white,
-                        size: 24,
+                        size: 20,
                       ),
                     ),
-                    SizedBox(width: 16),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        notification['title'] ?? 'Notifikasi',
+                        notification['title'] ?? 'notification',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: 16,
                           color: Colors.white,
                         ),
                       ),
@@ -1457,51 +1463,51 @@ class _NotificationWidgetState extends State<NotificationWidget>
               ),
               // Content
               Container(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Message
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(20),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!),
                       ),
                       child: Text(
                         notification['message'] ?? '',
                         style: TextStyle(
-                          fontSize: 15,
-                          height: 1.6,
+                          fontSize: 14,
+                          height: 1.5,
                           color: Colors.grey[800],
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 16),
                     // Time info
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[200]!),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 4,
-                            height: 40,
+                            width: 3,
+                            height: 32,
                             decoration: BoxDecoration(
                               color: color,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
-                          SizedBox(width: 16),
-                          Icon(Icons.schedule_rounded,
-                              size: 20, color: Colors.grey[500]),
                           SizedBox(width: 12),
+                          Icon(Icons.schedule_rounded,
+                              size: 16, color: Colors.grey[500]),
+                          SizedBox(width: 8),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1509,16 +1515,16 @@ class _NotificationWidgetState extends State<NotificationWidget>
                                 Text(
                                   'Waktu Diterima',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.grey[600],
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                SizedBox(height: 2),
                                 Text(
                                   _formatDateTime(notification['created_at']),
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.grey[800],
                                   ),
@@ -1532,13 +1538,13 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     // Metadata if available
                     if (notification['metadata'] != null &&
                         notification['metadata'].toString().isNotEmpty) ...[
-                      SizedBox(height: 20),
+                      SizedBox(height: 16),
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.all(16),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: Column(
@@ -1547,33 +1553,33 @@ class _NotificationWidgetState extends State<NotificationWidget>
                             Row(
                               children: [
                                 Icon(Icons.code_rounded,
-                                    size: 16, color: Colors.grey[600]),
-                                SizedBox(width: 8),
+                                    size: 14, color: Colors.grey[600]),
+                                SizedBox(width: 6),
                                 Text(
                                   'Detail Tambahan',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.grey[700],
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 12),
+                            SizedBox(height: 8),
                             Text(
                               notification['metadata'].toString(),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.grey[700],
                                 fontFamily: 'monospace',
-                                height: 1.5,
+                                height: 1.4,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                    SizedBox(height: 32),
+                    SizedBox(height: 24),
                     // Close button
                     SizedBox(
                       width: double.infinity,
@@ -1582,15 +1588,15 @@ class _NotificationWidgetState extends State<NotificationWidget>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _primaryColor,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                              borderRadius: BorderRadius.circular(12)),
                           elevation: 2,
                         ),
                         child: Text(
                           'Tutup',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                              fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
