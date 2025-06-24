@@ -2919,7 +2919,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
             children: [
               _buildCompactLegendItem(
                 color: Colors.amber[700]!,
-                label: 'Foto Galeri',
+                label: 'Gallery Photos',
                 value: '${dashboardStats['totalGalleries']}',
               ),
               SizedBox(width: 12),

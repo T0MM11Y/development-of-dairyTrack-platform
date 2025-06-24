@@ -153,7 +153,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
         unreadCount = 0;
         _filteredNotifications = [];
       });
-      _showErrorSnackBar('Terjadi kesalahan saat memuat notifikasi');
+      _showErrorSnackBar('An error occurred while loading notifications');
       print('Error loading notifications: $e');
     }
   }
@@ -284,34 +284,62 @@ class _NotificationWidgetState extends State<NotificationWidget>
   // Get notification color based on type
   Color _getNotificationColor(String? type) {
     switch (type) {
+      case 'production_decrease':
       case 'low_production':
-        return Color(0xFFFF8C00);
+        return Color(0xFFE74C3C); // Red for low/decrease production
+      case 'production_increase':
       case 'high_production':
-        return Color(0xFF28A745);
+        return Color(0xFF27AE60); // Green for high/increase production
+      case 'health_check':
+        return Color(0xFF3498DB); // Blue for health
+      case 'follow_up':
+        return Color(0xFF9B59B6); // Purple for follow-up
       case 'milk_expiry':
-        return Color(0xFFDC3545);
+      case 'PROD_EXPIRED':
+        return Color(0xFFDC3545); // Dark red for expired
       case 'milk_warning':
-        return Color(0xFFFFC107);
-      case 'missing_milking':
-        return Color(0xFF007BFF);
+      case 'PRODUCT_LONG_EXPIRED':
+        return Color(0xFFF39C12); // Orange for warning
+      case 'Sisa Pakan Menipis':
+        return Color(0xFFE67E22); // Orange for feed warning
+      case 'PRODUCT_STOCK':
+        return Color(0xFF17A2B8); // Teal for stock
+      case 'ORDER':
+        return Color(0xFF6F42C1); // Indigo for order
+      case 'reproduction':
+        return Color(0xFFE91E63); // Pink for reproduction
       default:
-        return Color(0xFF6C757D);
+        return Color(0xFF6C757D); // Gray for default
     }
   }
 
   // Get notification icon based on type
   IconData _getNotificationIcon(String? type) {
     switch (type) {
+      case 'production_decrease':
       case 'low_production':
         return Icons.trending_down_rounded;
+      case 'production_increase':
       case 'high_production':
         return Icons.trending_up_rounded;
+      case 'health_check':
+        return Icons.health_and_safety_rounded;
+      case 'follow_up':
+        return Icons.follow_the_signs_rounded;
       case 'milk_expiry':
-        return Icons.warning_amber_rounded;
+      case 'PROD_EXPIRED':
+        return Icons.dangerous_rounded;
       case 'milk_warning':
-        return Icons.access_time_rounded;
-      case 'missing_milking':
-        return Icons.event_busy_rounded;
+      case 'PRODUCT_LONG_EXPIRED':
+        return Icons.warning_amber_rounded;
+      case 'Sisa Pakan Menipis':
+        return Icons.grass_rounded;
+      case 'PRODUCT_STOCK':
+        return Icons.inventory_rounded;
+      case 'ORDER':
+        return Icons.shopping_cart_rounded;
+      case 'reproduction':
+        return Icons.favorite_rounded;
       default:
         return Icons.notifications_rounded;
     }
@@ -676,8 +704,6 @@ class _NotificationWidgetState extends State<NotificationWidget>
     );
   }
 
-  // ...existing code...
-
   List<Widget> _buildAppBarActions() {
     List<Widget> actions = [];
 
@@ -867,8 +893,6 @@ class _NotificationWidgetState extends State<NotificationWidget>
 
     return actions;
   }
-
-  // ...existing code...
 
   Widget _buildBody() {
     return Stack(

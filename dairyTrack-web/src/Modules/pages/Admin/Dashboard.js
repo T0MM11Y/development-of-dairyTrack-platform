@@ -1079,7 +1079,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>

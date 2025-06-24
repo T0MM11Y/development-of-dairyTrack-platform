@@ -33,6 +33,7 @@ const NotificationDropdown = () => {
   const [showAllModal, setShowAllModal] = useState(false);
   const [clearAllLoading, setClearAllLoading] = useState(false);
   const [globalLoading, setGlobalLoading] = useState(false); // New global loading state
+  const [fontAwesomeLoaded, setFontAwesomeLoaded] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -123,6 +124,42 @@ const NotificationDropdown = () => {
       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
     },
   };
+  // Check FontAwesome availability
+  useEffect(() => {
+    const checkFontAwesome = () => {
+      // Check if FontAwesome CSS is loaded
+      const fontAwesomeLinks = document.querySelectorAll(
+        'link[href*="font-awesome"]'
+      );
+      const hasFontAwesome =
+        fontAwesomeLinks.length > 0 ||
+        window.FontAwesome !== undefined ||
+        document.querySelector(".fa") !== null;
+
+      setFontAwesomeLoaded(hasFontAwesome);
+
+      if (!hasFontAwesome) {
+        console.warn("FontAwesome might not be loaded properly");
+        // Try to load FontAwesome if not present
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href =
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
+        document.head.appendChild(link);
+
+        link.onload = () => {
+          setFontAwesomeLoaded(true);
+          console.log("FontAwesome loaded successfully");
+        };
+      }
+    };
+
+    // Check immediately and after a short delay
+    checkFontAwesome();
+    const timer = setTimeout(checkFontAwesome, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Add CSS animations
   useEffect(() => {
@@ -409,60 +446,149 @@ const NotificationDropdown = () => {
       }
     },
     [fetchNotifications, notifications.length, lastFetch, globalLoading]
-  );
+  ); // Updated notification utility functions to match Flutter version
+  const getNotificationIcon = useCallback(
+    (type) => {
+      console.log(
+        "Getting icon for type:",
+        type,
+        "FontAwesome loaded:",
+        fontAwesomeLoaded
+      ); // Debug log
 
-  // Notification utility functions
-  const getNotificationIcon = useCallback((type) => {
-    switch (type) {
-      case "milk_expiry":
-        return "fas fa-exclamation-triangle";
-      case "milk_warning":
-        return "fas fa-clock";
-      case "milk_used":
-        return "fas fa-check-circle";
-      case "low_production":
-        return "fas fa-arrow-down";
-      case "high_production":
-        return "fas fa-arrow-up";
-      default:
-        return "fas fa-bell";
-    }
-  }, []);
+      // Use more basic FontAwesome icons that are more likely to be available
+      switch (type) {
+        case "production_decrease":
+        case "low_production":
+          return "fa fa-arrow-down";
+        case "production_increase":
+        case "high_production":
+          return "fa fa-arrow-up";
+        case "health_check":
+          return "fa fa-heart";
+        case "follow_up":
+          return "fa fa-check";
+        case "milk_expiry":
+        case "PROD_EXPIRED":
+          return "fa fa-warning";
+        case "milk_warning":
+        case "PRODUCT_LONG_EXPIRED":
+          return "fa fa-exclamation";
+        case "Sisa Pakan Menipis":
+          return "fa fa-leaf";
+        case "PRODUCT_STOCK":
+          return "fa fa-cube";
+        case "ORDER":
+          return "fa fa-shopping-cart";
+        case "reproduction":
+          return "fa fa-heart";
+        default:
+          console.log("Using default icon for unknown type:", type); // Debug log
+          return "fa fa-bell";
+      }
+    },
+    [fontAwesomeLoaded]
+  );
 
   const getNotificationIconColor = useCallback((type) => {
     switch (type) {
-      case "milk_expiry":
+      case "production_decrease":
+      case "low_production":
         return {
-          bg: "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)",
+          bg: "linear-gradient(135deg, #E74C3C 0%, #C0392B 100%)",
+          text: "white",
+        };
+      case "production_increase":
+      case "high_production":
+        return {
+          bg: "linear-gradient(135deg, #27AE60 0%, #229954 100%)",
+          text: "white",
+        };
+      case "health_check":
+        return {
+          bg: "linear-gradient(135deg, #3498DB 0%, #2980B9 100%)",
+          text: "white",
+        };
+      case "follow_up":
+        return {
+          bg: "linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%)",
+          text: "white",
+        };
+      case "milk_expiry":
+      case "PROD_EXPIRED":
+        return {
+          bg: "linear-gradient(135deg, #DC3545 0%, #C82333 100%)",
           text: "white",
         };
       case "milk_warning":
+      case "PRODUCT_LONG_EXPIRED":
         return {
-          bg: "linear-gradient(135deg, #ffa502 0%, #ff6348 100%)",
+          bg: "linear-gradient(135deg, #F39C12 0%, #E67E22 100%)",
           text: "white",
         };
-      case "milk_used":
+      case "Sisa Pakan Menipis":
         return {
-          bg: "linear-gradient(135deg, #2ed573 0%, #1e90ff 100%)",
+          bg: "linear-gradient(135deg, #E67E22 0%, #D68910 100%)",
           text: "white",
         };
-      case "low_production":
+      case "PRODUCT_STOCK":
         return {
-          bg: "linear-gradient(135deg, #ff4757 0%, #ff3742 100%)",
+          bg: "linear-gradient(135deg, #17A2B8 0%, #138496 100%)",
           text: "white",
         };
-      case "high_production":
+      case "ORDER":
         return {
-          bg: "linear-gradient(135deg, #2ed573 0%, #17c0eb 100%)",
+          bg: "linear-gradient(135deg, #6F42C1 0%, #5A32A3 100%)",
+          text: "white",
+        };
+      case "reproduction":
+        return {
+          bg: "linear-gradient(135deg, #E91E63 0%, #C2185B 100%)",
           text: "white",
         };
       default:
         return {
-          bg: "linear-gradient(135deg, #747d8c 0%, #57606f 100%)",
+          bg: "linear-gradient(135deg, #6C757D 0%, #5A6268 100%)",
           text: "white",
         };
     }
   }, []);
+
+  // Icon component with fallback
+  const NotificationIcon = useCallback(
+    ({ type, style }) => {
+      const iconClass = getNotificationIcon(type);
+
+      // If FontAwesome is not loaded, show a simple fallback
+      if (!fontAwesomeLoaded) {
+        const fallbackMap = {
+          production_decrease: "↓",
+          low_production: "↓",
+          production_increase: "↑",
+          high_production: "↑",
+          health_check: "♥",
+          follow_up: "✓",
+          milk_expiry: "⚠",
+          PROD_EXPIRED: "⚠",
+          milk_warning: "!",
+          PRODUCT_LONG_EXPIRED: "!",
+          "Sisa Pakan Menipis": "🌱",
+          PRODUCT_STOCK: "📦",
+          ORDER: "🛒",
+          reproduction: "♥",
+        };
+
+        return (
+          <span style={{ ...style, fontSize: "18px", fontWeight: "bold" }}>
+            {fallbackMap[type] || "🔔"}
+          </span>
+        );
+      }
+
+      return <i className={iconClass} style={style}></i>;
+    },
+    [getNotificationIcon, fontAwesomeLoaded]
+  );
 
   const handleMarkAsRead = useCallback(
     (id, e) => {
@@ -590,7 +716,6 @@ const NotificationDropdown = () => {
       }
     }
   }, [clearAllNotifications, fetchNotifications, currentUser, globalLoading]);
-
   return (
     <>
       {/* Global Loading Overlay */}
@@ -752,6 +877,7 @@ const NotificationDropdown = () => {
                   </div>
                 ) : (
                   notifications.slice(0, 5).map((n) => {
+                    console.log("Rendering notification:", n); // Debug log
                     const iconStyle = getNotificationIconColor(n.type);
                     return (
                       <div
@@ -773,6 +899,7 @@ const NotificationDropdown = () => {
                           }
                         >
                           <div className="me-3">
+                            {" "}
                             <div
                               style={{
                                 ...customStyles.iconContainer,
@@ -780,9 +907,10 @@ const NotificationDropdown = () => {
                                 color: iconStyle.text,
                               }}
                             >
-                              <i
-                                className={`${getNotificationIcon(n.type)}`}
-                              ></i>
+                              <NotificationIcon
+                                type={n.type}
+                                style={{ color: iconStyle.text }}
+                              />
                             </div>
                           </div>
                           <div className="flex-grow-1">
@@ -1009,6 +1137,7 @@ const NotificationDropdown = () => {
           ) : (
             <div style={{ maxHeight: 400, overflowY: "auto" }}>
               {currentNotifications.map((n) => {
+                console.log("Rendering modal notification:", n); // Debug log
                 const iconStyle = getNotificationIconColor(n.type);
                 return (
                   <Card
@@ -1030,6 +1159,7 @@ const NotificationDropdown = () => {
                     }}
                   >
                     <Card.Body className="py-3 px-4 d-flex align-items-center">
+                      {" "}
                       <div
                         style={{
                           ...customStyles.iconContainer,
@@ -1038,7 +1168,10 @@ const NotificationDropdown = () => {
                           marginRight: "16px",
                         }}
                       >
-                        <i className={getNotificationIcon(n.type)}></i>
+                        <NotificationIcon
+                          type={n.type}
+                          style={{ color: iconStyle.text }}
+                        />
                       </div>
                       <div className="flex-grow-1">
                         <div className="d-flex justify-content-between align-items-center mb-2">
