@@ -136,7 +136,7 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = 'Gagal memuat data.';
+        _error = 'Failed to load data.';
       });
     }
   }
@@ -162,8 +162,8 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const AlertDialog(
-          title: Text('Berhasil'),
-          content: Text('Data berhasil disimpan.'),
+          title: Text('Success'),
+          content: Text('Succes save data.'),
         ),
       );
 
@@ -179,8 +179,8 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Gagal'),
-        content: Text(response['message'] ?? 'Gagal menyimpan data.'),
+        title: const Text('Failed'),
+        content: Text(response['message'] ?? 'Failed to save data.'),
       ),
     );
 
@@ -201,7 +201,7 @@ Widget build(BuildContext context) {
     resizeToAvoidBottomInset: true,
    appBar: AppBar(
   title: const Text(
-    'Tambah Gejala',
+    'Add Data',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -232,7 +232,7 @@ Widget build(BuildContext context) {
                             DropdownButtonFormField(
                               value: _form['health_check'],
                               decoration: InputDecoration(
-                                labelText: '🩺 Pemeriksaan',
+                                labelText: '🩺 Health Check',
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -246,14 +246,14 @@ Widget build(BuildContext context) {
                                 );
                               }).toList(),
                               onChanged: (val) => setState(() => _form['health_check'] = val),
-                              validator: (val) => val == null ? 'Wajib pilih' : null,
+                              validator: (val) => val == null ? 'Please select an option' : null,
                             ),
 
                             if (filteredHealthChecks.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.only(top: 8),
                                 child: Text(
-                                  '⚠️ Tidak ada pemeriksaan tersedia. Pastikan belum memiliki gejala dan butuh perhatian.',
+'⚠️ No available health checks. Please ensure the cow has no existing symptoms and requires attention.',
                                   style: TextStyle(color: Colors.red),
                                 ),
                               ),
@@ -305,7 +305,7 @@ Widget build(BuildContext context) {
                                         ),
                                       )
                                     : const Icon(Icons.save),
-                                label: Text(_submitting ? 'Menyimpan...' : 'Simpan'),
+                                label: Text(_submitting ? 'Saving...' : 'Save'),
                                 onPressed: _submitting ? null : _submit,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),

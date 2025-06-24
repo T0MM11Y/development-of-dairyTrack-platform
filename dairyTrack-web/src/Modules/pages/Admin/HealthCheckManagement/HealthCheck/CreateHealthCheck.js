@@ -64,8 +64,9 @@ const HealthCheckCreatePage = ({ cows, healthChecks, onClose, onSaved }) => {
       await createHealthCheck(form);
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Data pemeriksaan berhasil disimpan.",
+        title: "Success",
+text: "Health check data has been successfully saved.",
+
         timer: 1500,
         showConfirmButton: false,
       });
@@ -81,11 +82,11 @@ const HealthCheckCreatePage = ({ cows, healthChecks, onClose, onSaved }) => {
         checked_by: currentUser?.user_id || currentUser?.id || "",
       });
     } catch (err) {
-      let message = "Gagal menyimpan data pemeriksaan.";
+      let message = "Failed to save health check data.";
       setError(message);
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
+        title: "Failed to Save",
         text: message,
       });
     } finally {
@@ -119,7 +120,7 @@ const availableCows = Array.isArray(rawCows)
       <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
           <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Pemeriksaan</h4>
+            <h4 className="modal-title text-info fw-bold">Add Health Check</h4>
             <button className="btn-close" onClick={onClose} disabled={submitting}></button>
           </div>
           <div className="modal-body">
@@ -127,7 +128,7 @@ const availableCows = Array.isArray(rawCows)
 
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-  <label className="form-label fw-bold">Sapi</label>
+  <label className="form-label fw-bold">Cow</label>
 <select
   name="cow_id"
   value={form.cow_id}
@@ -135,7 +136,7 @@ const availableCows = Array.isArray(rawCows)
   className="form-select"
   required
 >
-  <option value="">-- Pilih Sapi --</option>
+  <option value="">-- Select Cow --</option>
   {availableCows.map((cow) => (
     <option key={cow.id} value={cow.id}>
       {cow.name}
@@ -148,8 +149,8 @@ const availableCows = Array.isArray(rawCows)
       rawCows.every((cow) =>
         healthChecks.some((h) => h?.cow?.id === cow.id && !["handled", "healthy"].includes((h.status || "").toLowerCase()))
       )
-        ? "Semua sapi saat ini sedang dalam pemeriksaan aktif (belum selesai)."
-        : "Semua sapi telah diperiksa dan saat ini belum tersedia untuk pemeriksaan baru."
+      ? "All cows are currently undergoing active (unfinished) health checks."
+: "All cows have been checked and are currently unavailable for new health checks."
     }
   </div>
 )}
@@ -159,7 +160,7 @@ const availableCows = Array.isArray(rawCows)
 
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Diperiksa oleh</label>
+                <label className="form-label fw-bold">Created By</label>
                 <input
                   type="text"
                   className="form-control bg-light"
@@ -171,7 +172,7 @@ const availableCows = Array.isArray(rawCows)
 
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Suhu Rektal (°C)</label>
+                  <label className="form-label fw-bold">Rectal Temperature (°C)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -183,7 +184,7 @@ const availableCows = Array.isArray(rawCows)
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Denyut Jantung</label>
+                  <label className="form-label fw-bold">Heart Rate (BPM/Minutes)</label>
                   <input
                     type="number"
                     name="heart_rate"
@@ -197,7 +198,7 @@ const availableCows = Array.isArray(rawCows)
 
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Laju Pernapasan</label>
+                  <label className="form-label fw-bold">Respiration Rate (BPM/Minutes)</label>
                   <input
                     type="number"
                     name="respiration_rate"
@@ -208,7 +209,7 @@ const availableCows = Array.isArray(rawCows)
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Ruminasi</label>
+                  <label className="form-label fw-bold">Rumination (contraction/minutes)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -226,7 +227,7 @@ const availableCows = Array.isArray(rawCows)
                 className="btn btn-info w-100"
                 disabled={submitting}
               >
-                {submitting ? "Menyimpan..." : "Simpan"}
+                {submitting ? "Saving..." : "Save"}
               </button>
             </form>
           </div>

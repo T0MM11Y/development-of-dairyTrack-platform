@@ -53,7 +53,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
       setCows(Array.isArray(cowData) ? cowData : Array.isArray(cowData?.cows) ? cowData.cows : []);
     } catch (err) {
       console.error(err);
-      setError("Gagal memuat data.");
+      setError("Failed to load data.");
     } finally {
       setLoading(false);
     }
@@ -94,20 +94,22 @@ const [userManagedCows, setUserManagedCows] = useState([]);
 
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Riwayat penyakit berhasil disimpan.",
+        title: "Success",
+text: "Disease history has been successfully saved.",
+
         timer: 1500,
         showConfirmButton: false,
       });
 
       if (onSaved) onSaved();
     } catch (err) {
-      setError("Gagal menyimpan data riwayat penyakit.");
+      setError("Failed to save disease history data.");
 
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
-        text: "Terjadi kesalahan saat menyimpan data riwayat penyakit.",
+       title: "Failed to Save",
+text: "An error occurred while saving the disease history data.",
+
       });
     } finally {
       setSubmitting(false);
@@ -134,18 +136,18 @@ const [userManagedCows, setUserManagedCows] = useState([]);
     <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
       <div className="modal-content">
         <div className="modal-header">
-          <h4 className="modal-title text-info fw-bold">Tambah Riwayat Penyakit</h4>
+          <h4 className="modal-title text-info fw-bold">Add Disease History</h4>
           <button className="btn-close" onClick={onClose} disabled={submitting}></button>
         </div>
         <div className="modal-body">
           {error && <p className="text-danger text-center">{error}</p>}
           {loading ? (
-            <p className="text-center">Memuat data...</p>
+            <p className="text-center">Loading  data...</p>
           ) : (
             <form onSubmit={handleSubmit}>
             {/* Pilih Pemeriksaan */}
 <div className="mb-3">
-  <label className="form-label fw-bold">Pilih Pemeriksaan</label>
+  <label className="form-label fw-bold">Select Health Check</label>
   <select
     name="health_check"
     value={form.health_check}
@@ -153,7 +155,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
     className="form-select"
     required
   >
-    <option value="">-- Pilih Pemeriksaan --</option>
+    <option value="">-- Select Health Check --</option>
 {Array.isArray(healthChecks) &&
   healthChecks
     .filter((check) => {
@@ -183,17 +185,18 @@ const [userManagedCows, setUserManagedCows] = useState([]);
     const isOwned = userManagedCows.some((cow) => cow.id === cowId);
     return status !== "handled" && status !== "healthy" && isOwned;
   }).length === 0 && (
-    <div className="text-warning mt-2">
-      Tidak ada pemeriksaan yang tersedia. Mungkin semua sudah ditangani, sudah sehat, 
-      atau tidak termasuk dalam daftar sapi yang Anda kelola.
-    </div>
+   <div className="text-warning mt-2">
+  No available health checks. They may have all been handled, marked as healthy, 
+  or are not part of the cows you manage.
+</div>
+
 )}
 
 </div>
 {/* Info Sapi */}
 {selectedCheck && (
   <div className="mb-3">
-    <label className="form-label fw-bold">Sapi</label>
+    <label className="form-label fw-bold">Cow</label>
     <input
       type="text"
       value={getCowInfo(selectedCheck)}
@@ -207,7 +210,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
               {selectedCheck && (
                 <>
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Suhu Rektal</label>
+                    <label className="form-label fw-bold">Rectal Temperature</label>
                     <input
                       type="text"
                       value={`${selectedCheck.rectal_temperature} °C`}
@@ -217,30 +220,30 @@ const [userManagedCows, setUserManagedCows] = useState([]);
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Denyut Jantung</label>
+                    <label className="form-label fw-bold">Heart Rate</label>
                     <input
                       type="text"
-                      value={`${selectedCheck.heart_rate} bpm`}
+                      value={`${selectedCheck.heart_rate} bpm/minutes`}
                       className="form-control"
                       readOnly
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Laju Pernapasan</label>
+                    <label className="form-label fw-bold">Respiration Rate</label>
                     <input
                       type="text"
-                      value={`${selectedCheck.respiration_rate} bpm`}
+                      value={`${selectedCheck.respiration_rate} bpm/minutes`}
                       className="form-control"
                       readOnly
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Ruminasi</label>
+                    <label className="form-label fw-bold">Rumination</label>
                     <input
                       type="text"
-                      value={`${selectedCheck.rumination} menit`}
+                      value={`${selectedCheck.rumination} minutes`}
                       className="form-control"
                       readOnly
                     />
@@ -251,7 +254,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
               {/* Info Gejala */}
               {selectedSymptom && (
                 <div className="mb-3">
-                  <label className="form-label fw-bold">Gejala</label>
+                  <label className="form-label fw-bold">Symptom</label>
                   <div className="p-2 bg-light rounded border small">
                     {Object.entries(selectedSymptom)
                       .filter(
@@ -273,13 +276,13 @@ const [userManagedCows, setUserManagedCows] = useState([]);
                     ).length ===
                       Object.entries(selectedSymptom).filter(
                         ([key]) => !["id", "health_check", "created_at"].includes(key)
-                      ).length && <div>Semua kondisi gejala normal</div>}
+                      ).length && <div>All symptom conditions are normal</div>}
                   </div>
                 </div>
               )}
               {/* Dibuat oleh */}
 <div className="mb-3">
-  <label className="form-label fw-bold">Dibuat oleh</label>
+  <label className="form-label fw-bold">Created by</label>
   <input
     type="text"
     className="form-control bg-light"
@@ -296,7 +299,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
 
               {/* Input Penyakit & Deskripsi */}
               <div className="mb-3">
-                <label className="form-label fw-bold">Nama Penyakit</label>
+                <label className="form-label fw-bold">Disease Name</label>
                 <input
                   type="text"
                   name="disease_name"
@@ -309,7 +312,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-bold">Deskripsi</label>
+                <label className="form-label fw-bold">Description</label>
                 <textarea
                   name="description"
                   value={form.description}
@@ -326,7 +329,7 @@ const [userManagedCows, setUserManagedCows] = useState([]);
                 className="btn btn-info w-100"
                 disabled={submitting || !form.health_check}
               >
-                {submitting ? "Menyimpan..." : "Simpan"}
+                {submitting ? "Saving..." : "Save"}
               </button>
             </form>
           )}

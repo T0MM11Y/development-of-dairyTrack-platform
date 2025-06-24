@@ -82,33 +82,48 @@ const DashboardKesehatanPage = () => {
       const sudahditangani = filteredHealth.filter(i => i.needs_attention && i.status === 'handled').length;
 
       const chartData = [];
-      if (sehat > 0) chartData.push({ name: "Sehat", value: sehat });
-      if (sakit > 0) chartData.push({ name: "Butuh Perhatian", value: sakit });
-      if (sudahditangani > 0) chartData.push({ name: "Sudah Ditangani", value: sudahditangani });
+      if (sehat > 0) chartData.push({ name: "Healthy", value: sehat });
+      if (sakit > 0) chartData.push({ name: "Needs Attention", value: sakit });
+      if (sudahditangani > 0) chartData.push({ name: "Handled", value: sudahditangani });
       setChartHealthData(chartData);
 
       if (isFilter) {
         const total = filteredHealth.length + filteredDisease.length + filteredSymptom.length + filteredRepro.length;
         await Swal.fire({
-          icon: total === 0 ? "info" : "success",
-          title: total === 0 ? "Tidak Ada Data" : "Filter Berhasil",
-          text: total === 0 ? "Tidak ditemukan data dalam rentang tanggal tersebut." : "Data berhasil difilter sesuai tanggal."
-        });
-      } else {
-        await Swal.fire({ icon: "success", title: "Data Dimuat", text: "Seluruh data kesehatan sapi berhasil dimuat." });
-      }
+    icon: total === 0 ? "info" : "success",
+    title: total === 0 ? "No Data Found" : "Filter Applied",
+    text: total === 0
+      ? "No data found within the selected date range."
+      : "Data successfully filtered by date."
+  });
 
-    } catch (err) {
-      console.error(err);
-      await Swal.fire({ icon: "error", title: "Gagal Mengambil Data", text: "Terjadi kesalahan saat mengambil data." });
-    } finally {
-      setLoading(false);
-    }
+     } else {
+  await Swal.fire({
+    icon: "success",
+    title: "Data Loaded",
+    text: "All cow health data has been successfully loaded."
+  });
+}
+
+   } catch (err) {
+  console.error(err);
+  await Swal.fire({
+    icon: "error",
+    title: "Failed to Fetch Data",
+    text: "An error occurred while retrieving the data."
+  });
+} finally {
+  setLoading(false);
+}
   };
 
   const handleFilter = () => {
     if (!startDate || !endDate) {
-      Swal.fire({ icon: "warning", title: "Tanggal Kosong", text: "Silakan isi Tanggal Mulai dan Tanggal Berakhir terlebih dahulu." });
+Swal.fire({
+  icon: "warning",
+  title: "Empty Date",
+  text: "Please fill in both Start Date and End Date first."
+});
       return;
     }
     fetchStats(true);
@@ -134,15 +149,15 @@ const DashboardKesehatanPage = () => {
 
   return (
     <div className="container py-4 px-3 bg-light rounded shadow-sm">
-      <h3 className="mb-4 text-center fw-bold text-primary">Dashboard Kesehatan Sapi</h3>
+      <h3 className="mb-4 text-center fw-bold text-primary">Cow Health Dashboard</h3>
       {/* Filter Tanggal */}
       <div className="row mb-4 p-3 border rounded bg-white shadow-sm">
         <div className="col-md-5">
-          <label className="form-label fw-semibold">Tanggal Mulai</label>
+          <label className="form-label fw-semibold">Start Date</label>
           <input type="date" className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </div>
         <div className="col-md-5">
-          <label className="form-label fw-semibold">Tanggal Berakhir</label>
+          <label className="form-label fw-semibold">End Date</label>
           <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
       <div className="col-12 col-md-2">
@@ -159,10 +174,10 @@ const DashboardKesehatanPage = () => {
       </div>
           <div className="row mb-4">
   {[
-    { title: "Pemeriksaan", value: summary.pemeriksaan, color: "info", icon: "bi-clipboard2-check" },
-    { title: "Gejala", value: summary.gejala, color: "primary", icon: "bi-emoji-dizzy" },
-    { title: "Riwayat Penyakit", value: summary.penyakit, color: "danger", icon: "bi-file-medical" },
-    { title: "Riwayat Reproduksi", value: summary.reproduksi, color: "warning", icon: "bi-gender-ambiguous" },
+    { title: "Health Checks", value: summary.pemeriksaan, color: "info", icon: "bi-clipboard2-check" },
+    { title: "Symptoms", value: summary.gejala, color: "primary", icon: "bi-emoji-dizzy" },
+    { title: "Disease History", value: summary.penyakit, color: "danger", icon: "bi-file-medical" },
+    { title: "Reproduction History", value: summary.reproduksi, color: "warning", icon: "bi-gender-ambiguous" },
   ].map((item, idx) => (
     <div className="col-md-6 col-xl-3 mb-4" key={idx}>
       <div className={`card text-white bg-${item.color} bg-opacity-75 border-0 shadow-sm rounded-4`}>
@@ -184,7 +199,7 @@ const DashboardKesehatanPage = () => {
       <div className="card-body">
         <h5 className="text-center text-dark mb-3">
           <i className="bi bi-virus2 me-2 text-danger"></i>
-          Statistik Penyakit Terkonfirmasi
+Confirmed Disease Statistics
         </h5>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartDiseaseData} margin={{ top: 10, right: 30, bottom: 50, left: 10 }}>
@@ -214,7 +229,7 @@ const DashboardKesehatanPage = () => {
       <div className="card-body">
         <h5 className="text-center text-dark mb-3">
           <i className="bi bi-heart-pulse-fill me-2 text-primary"></i>
-          Kondisi Kesehatan Ternak
+Livestock Health Condition
         </h5>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartHealthData} margin={{ top: 10, right: 30, bottom: 10, left: 10 }}>
@@ -242,16 +257,16 @@ const DashboardKesehatanPage = () => {
 {/* 🔬 Tabel Statistik Penyakit */}
 <section className="mb-5">
   <h5 className="mt-5 mb-3 fw-semibold text-secondary fs-5 d-flex align-items-center">
-    <i className="bi bi-activity text-danger me-2 fs-4"></i> Statistik Penyakit Terkonfirmasi
+    <i className="bi bi-activity text-danger me-2 fs-4"></i> Confirmed Disease Statistics
   </h5>
   <div className="table-responsive shadow-sm rounded-3 border bg-white">
     <table className="table table-bordered mb-0">
  <thead className="table-light">
   <tr className="text-center align-middle">
     <th style={{ width: "5%" }}>#</th>
-    <th>Nama Sapi</th>
-    <th>Nama Penyakit</th>
-    <th>Keterangan</th>
+    <th>Cow Name</th>
+<th>Disease Name</th>
+<th>Description</th>
   </tr>
 </thead>
 
@@ -269,7 +284,7 @@ const DashboardKesehatanPage = () => {
         ) : (
           <tr>
             <td colSpan="4" className="text-center text-muted py-3">
-              <i className="bi bi-info-circle me-1"></i> Tidak ada data penyakit ditemukan.
+              <i className="bi bi-info-circle me-1"></i> No disease data found.
             </td>
           </tr>
         )}
@@ -281,15 +296,15 @@ const DashboardKesehatanPage = () => {
         disabled={diseasePage === 1}
         onClick={() => setDiseasePage(diseasePage - 1)}
       >
-        <i className="bi bi-chevron-left"></i> Sebelumnya
+        <i className="bi bi-chevron-left"></i> Previous
       </button>
-      <span className="text-muted fw-semibold">Halaman {diseasePage}</span>
+      <span className="text-muted fw-semibold">Page  {diseasePage}</span>
       <button
         className="btn btn-outline-dark btn-sm d-flex align-items-center gap-2"
         disabled={diseasePage >= Math.ceil(tableDiseaseData.length / PAGE_SIZE)}
         onClick={() => setDiseasePage(diseasePage + 1)}
       >
-        Selanjutnya <i className="bi bi-chevron-right"></i>
+        Next  <i className="bi bi-chevron-right"></i>
       </button>
     </div>
   </div>
@@ -298,19 +313,19 @@ const DashboardKesehatanPage = () => {
 {/* ❤️‍🩹 Tabel Kesehatan Ternak */}
 <section>
   <h5 className="mt-5 mb-3 fw-semibold text-secondary fs-5 d-flex align-items-center">
-    <i className="bi bi-heart-pulse-fill text-primary me-2 fs-4"></i> Kondisi Kesehatan Sapi
+    <i className="bi bi-heart-pulse-fill text-primary me-2 fs-4"></i> Cow Health Condition
   </h5>
   <div className="table-responsive shadow-sm rounded-3 border bg-white">
     <table className="table table-bordered mb-0">
    <thead className="table-light">
   <tr className="text-center align-middle">
     <th style={{ width: "5%" }}>#</th>
-    <th>Nama Sapi</th>
-    <th>Suhu Rektal (°C)</th>
-    <th>Denyut Jantung</th>
-    <th>Laju Pernapasan</th>
-    <th>Ruminasi</th>
-    <th>Status</th>
+    <th>Cow Name</th>
+        <th>Rectal Temperature (°C)</th>
+        <th>Heart Rate</th>
+        <th>Respiration Rate</th>
+        <th>Rumination</th>
+        <th>Status</th>
   </tr>
 </thead>
 
@@ -331,7 +346,7 @@ const DashboardKesehatanPage = () => {
         ) : (
           <tr>
             <td colSpan="6" className="text-center text-muted py-3">
-              <i className="bi bi-info-circle me-1"></i> Tidak ada data pemeriksaan ditemukan.
+              <i className="bi bi-info-circle me-1"></i>  No health check data found.
             </td>
           </tr>
         )}
@@ -343,15 +358,15 @@ const DashboardKesehatanPage = () => {
         disabled={healthPage === 1}
         onClick={() => setHealthPage(healthPage - 1)}
       >
-        <i className="bi bi-chevron-left"></i> Sebelumnya
+        <i className="bi bi-chevron-left"></i> Previous
       </button>
-      <span className="text-muted fw-semibold">Halaman {healthPage}</span>
+      <span className="text-muted fw-semibold">Page {healthPage}</span>
       <button
         className="btn btn-outline-dark btn-sm d-flex align-items-center gap-2"
         disabled={healthPage >= Math.ceil(tableHealthData.length / PAGE_SIZE)}
         onClick={() => setHealthPage(healthPage + 1)}
       >
-        Selanjutnya <i className="bi bi-chevron-right"></i>
+        Next <i className="bi bi-chevron-right"></i>
       </button>
     </div>
   </div>

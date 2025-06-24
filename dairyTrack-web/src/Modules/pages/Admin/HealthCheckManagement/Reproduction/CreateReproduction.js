@@ -41,11 +41,11 @@ const [currentUser, setCurrentUser] = useState(null); // opsional
         setCows(cows);
       } else {
         setCows([]);
-        console.warn("⚠️ Tidak ada sapi yang dikelola user ini.");
+        console.warn("⚠️ No cows are managed by this user.");
       }
     }
   } catch (err) {
-    setError("Gagal memuat data sapi.");
+    setError("Failed to load cow data.");
     console.error("🐞 fetchCows error:", err);
   } finally {
     setLoading(false);
@@ -76,25 +76,25 @@ const [currentUser, setCurrentUser] = useState(null); // opsional
 
     // 🧠 Validasi logika
     if (prevCalvingDate >= calvingDate) {
-      setError("📌 Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
+  setError("📌 Previous calving date must be earlier than the current calving date.");
       setSubmitting(false);
       return;
     }
 
     if (inseminationDate <= calvingDate) {
-      setError("📌 Tanggal inseminasi harus setelah tanggal calving sekarang.");
+  setError("📌 Insemination date must be after the current calving date.");
       setSubmitting(false);
       return;
     }
 
     if (isNaN(totalIB) || totalIB < 1) {
-      setError("📌 Jumlah inseminasi harus lebih dari 0.");
+  setError("📌 Total inseminations must be greater than 0.");
       setSubmitting(false);
       return;
     }
 
     if (isNaN(successIB) || successIB < 1 || successIB > totalIB) {
-      setError("📌 Kehamilan berhasil harus 1 atau lebih dan tidak boleh melebihi jumlah inseminasi.");
+  setError("📌 Successful pregnancies must be at least 1 and cannot exceed the total number of inseminations.");
       setSubmitting(false);
       return;
     }
@@ -106,14 +106,14 @@ try {
     successful_pregnancy: parseInt(form.successful_pregnancy || 1),
   };
 
-  console.log("Payload reproduksi yang dikirim:", payload);
+console.log("Reproduction payload sent:", payload);
 
   // ✅ Kirim ke backend
   await createReproduction(payload);
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Data reproduksi berhasil disimpan.",
+       title: "Success",
+  text: "Reproduction data has been successfully saved.",
         timer: 1500,
         showConfirmButton: false,
       });
@@ -129,12 +129,12 @@ try {
         successful_pregnancy: "1",
       });
     } catch (err) {
-      setError("❌ Gagal menyimpan data reproduksi. Pastikan semua data valid.");
+  setError("❌ Failed to save reproduction data. Please ensure all data is valid.");
   
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
-        text: "Terjadi kesalahan saat menyimpan data reproduksi.",
+     title: "Failed to Save",
+    text: "An error occurred while saving reproduction data.",
       });
     } finally {
       setSubmitting(false);
@@ -146,18 +146,18 @@ try {
     <div className="modal-dialog modal-lg">
       <div className="modal-content">
         <div className="modal-header">
-          <h4 className="modal-title text-info fw-bold">Tambah Data Reproduksi</h4>
+          <h4 className="modal-title text-info fw-bold">Add Data</h4>
           <button className="btn-close" onClick={onClose} disabled={submitting}></button>
         </div>
         <div className="modal-body">
           {error && <div className="alert alert-danger text-center">{error}</div>}
           {loading ? (
-            <p className="text-center">Memuat data sapi...</p>
+            <p className="text-center">Loading cow data...</p>
           ) : (
             <form onSubmit={handleSubmit}>
               {/* Sapi */}
               <div className="mb-3">
-                <label className="form-label fw-bold">Pilih Sapi</label>
+                <label className="form-label fw-bold">Select Cow</label>
 <select
   name="cow"
   value={form.cow}
@@ -166,7 +166,7 @@ try {
   required
   disabled={submitting}
 >
-  <option value="">-- Pilih Sapi --</option>
+  <option value="">-- Select Cow --</option>
   {Array.isArray(cows) &&
     cows
       .filter((cow) => cow.gender?.toLowerCase() === "female") // ✅ hanya betina
@@ -179,7 +179,7 @@ try {
  {/* ⚠️ Tampilkan peringatan jika tidak ada sapi betina */}
   {Array.isArray(cows) && cows.filter((cow) => cow.gender?.toLowerCase() === "female").length === 0 && (
     <div className="text-danger mt-2">
-      Tidak ada sapi betina yang tersedia. Silakan cek data sapi Anda.
+No female cows available. Please check your cow data.
     </div>
   )}
               </div>  
@@ -187,7 +187,7 @@ try {
               {/* Tanggal-tanggal */}
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Calving Sekarang</label>
+                  <label className="form-label fw-bold">Current Calving Date</label>
                   <input
                     type="date"
                     name="calving_date"
@@ -199,7 +199,7 @@ try {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Calving Sebelumnya</label>
+                  <label className="form-label fw-bold">Previous Calving Date</label>
                   <input
                     type="date"
                     name="previous_calving_date"
@@ -215,7 +215,7 @@ try {
               {/* Inseminasi */}
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tanggal Inseminasi</label>
+    <label className="form-label fw-bold">Insemination Date</label>
                   <input
                     type="date"
                     name="insemination_date"
@@ -227,7 +227,7 @@ try {
                   />
                 </div>
                 <div className="col-md-3 mb-3">
-                  <label className="form-label fw-bold">Jumlah Inseminasi</label>
+    <label className="form-label fw-bold">Total Inseminations</label>
                   <input
                     type="number"
                     name="total_insemination"
@@ -242,7 +242,7 @@ try {
               </div>
 
               <button type="submit" className="btn btn-info w-100" disabled={submitting}>
-                {submitting ? "Menyimpan..." : "Simpan"}
+                {submitting ? "Saving..." : "Save"}
               </button>
             </form>
           )}

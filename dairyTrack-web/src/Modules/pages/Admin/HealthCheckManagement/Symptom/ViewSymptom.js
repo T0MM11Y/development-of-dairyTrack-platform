@@ -58,7 +58,7 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
           <div className="modal-header bg-info bg-opacity-10 border-bottom-0">
             <h5 className="modal-title text-info fw-semibold d-flex align-items-center">
               <i className="bi bi-activity me-2"></i>
-              Detail Gejala Pemeriksaan
+              Health Check Symptom Details
             </h5>
             <button className="btn-close" onClick={onClose}></button>
           </div>
@@ -67,15 +67,15 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
             {loading ? (
               <div className="text-center py-4">
                 <Spinner animation="border" variant="info" />
-                <p className="mt-2 text-muted">Memuat data...</p>
+                <p className="mt-2 text-muted">Loading Data...</p>
               </div>
             ) : (
               <div className="table-responsive">
                 <table className="table table-bordered align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "40%" }}>Bagian</th>
-                      <th>Kondisi</th>
+                      <th style={{ width: "40%" }}>Body Part</th>
+                      <th>Condition</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -93,7 +93,7 @@ const SymptomViewPage = ({ symptomId, onClose }) => {
           <div className="modal-footer border-top-0">
             <button className="btn btn-outline-secondary" onClick={onClose}>
               <i className="bi bi-x-circle me-1"></i>
-              Tutup
+              Close
             </button>
           </div>
         </div>

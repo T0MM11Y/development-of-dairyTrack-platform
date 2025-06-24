@@ -40,7 +40,7 @@ const isSupervisor = currentUser?.role_id === 2;
   const getCowName = (id) => {
     const cowArray = Array.isArray(cows) ? cows : [];
     const cow = cowArray.find((c) => c.id === id || c.id === id?.id);
-    return cow ? `${cow.name} (${cow.breed})` : "Tidak diketahui";
+    return cow ? `${cow.name} (${cow.breed})` : "Unknown";
   };
 
   const filteredData = data.filter((item) => {
@@ -78,8 +78,8 @@ const isSupervisor = currentUser?.role_id === 2;
       setData(filtered);
       setError("");
     } catch (err) {
-      console.error("❌ Gagal mengambil data:", err.message);
-      setError("Gagal mengambil data. Pastikan server API aktif.");
+    console.error("❌ Failed to fetch data:", err.message);
+  setError("Failed to fetch data. Please make sure the API server is running.");
     } finally {
       setLoading(false);
     }
@@ -92,16 +92,16 @@ const isSupervisor = currentUser?.role_id === 2;
       await fetchData();
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Data reproduksi berhasil dihapus.",
+        title: "Success",
+      text: "Reproduction data has been successfully deleted.",
         timer: 1500,
         showConfirmButton: false,
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "Gagal Menghapus",
-        text: "Terjadi kesalahan saat menghapus data.",
+       title: "Failed to Delete",
+      text: "An error occurred while deleting the data.",
       });
     }
   };
@@ -116,7 +116,7 @@ const isSupervisor = currentUser?.role_id === 2;
         const { success, cows } = await listCowsByUser(userData.user_id || userData.id);
         if (success) setUserManagedCows(cows || []);
       } catch (err) {
-        console.error("Gagal mengambil sapi user:", err);
+console.error("Failed to fetch user's cows:", err);
       }
     };
 
@@ -141,7 +141,7 @@ const isSupervisor = currentUser?.role_id === 2;
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-grey py-3">
           <h4 className="mb-0 text-primary fw-bold">
-            <i className="fas fa-baby me-2" /> Data Reproduksi
+            <i className="fas fa-baby me-2" /> Reproduction Data
           </h4>
         </Card.Header>
 
@@ -150,7 +150,7 @@ const isSupervisor = currentUser?.role_id === 2;
           <div className="d-flex justify-content-between mb-3">
             <InputGroup style={{ maxWidth: "300px" }}>
               <FormControl
-                placeholder="Cari nama sapi..."
+placeholder="Search cow name..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -165,9 +165,9 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-tambah-reproduksi">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menambahkan data reproduksi"
-            : "Supervisor tidak dapat menambahkan data reproduksi")
-        : "Tambah Reproduksi"}
+           ? "Admin cannot add reproduction data"
+        : "Supervisor cannot add reproduction data")
+    : "Add Reproduction"}
     </Tooltip>
   }
 >
@@ -186,8 +186,9 @@ const isSupervisor = currentUser?.role_id === 2;
         if (!femaleCows || femaleCows.length === 0) {
           Swal.fire({
             icon: "warning",
-            title: "Tidak Ada Sapi Betina",
-            text: "Tidak dapat menambahkan reproduksi karena tidak ada sapi betina yang tersedia.",
+            title: "No Female Cows Available",
+text: "Cannot add reproduction data because no female cows are available.",
+
           });
           return;
         }
@@ -200,7 +201,7 @@ const isSupervisor = currentUser?.role_id === 2;
       }}
     >
       <i className="fas fa-plus me-2" />
-      Tambah Reproduksi
+      Add Data
     </Button>
   </span>
 </OverlayTrigger>
@@ -212,10 +213,10 @@ const isSupervisor = currentUser?.role_id === 2;
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="info" />
-              <p className="mt-3 text-muted">Memuat data reproduksi...</p>
+    <p className="mt-3 text-muted">Loading reproduction data...</p>
             </div>
           ) : filteredData.length === 0 ? (
-            <p className="text-muted">Belum ada data reproduksi.</p>
+    <p className="mt-3 text-muted">Loading reproduction data...</p>
           ) : (
             <>
               <div className="table-responsive">
@@ -223,13 +224,13 @@ const isSupervisor = currentUser?.role_id === 2;
                   <thead className="table-light">
                     <tr>
                       <th>#</th>
-                      <th>Nama Sapi</th>
-                      <th>Calving Interval</th>
-                      <th>Service Period</th>
-                      <th>Conception Rate</th>
-                      <th>Tanggal Dicatat</th>
-                      <th>Penanggung Jawab</th>
-                      <th>Aksi</th>
+                      <th>Cow Name</th>
+            <th>Calving Interval</th>
+            <th>Service Period</th>
+            <th>Conception Rate</th>
+            <th>Recorded Date</th>
+            <th>Recorded By</th>
+            <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -249,7 +250,7 @@ const isSupervisor = currentUser?.role_id === 2;
                               })
                             : "-"}
                         </td>
-                          <td>{item.created_by?.name || "Tidak diketahui"}</td>   
+                          <td>{item.created_by?.name || "Uknown"}</td>   
 
                         <td>
                           <OverlayTrigger
@@ -258,9 +259,9 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-edit-reproduksi">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat mengedit data reproduksi"
-            : "Supervisor tidak dapat mengedit data reproduksi")
-        : "Edit Data Reproduksi"}
+           ? "Admin cannot edit reproduction data"
+        : "Supervisor cannot edit reproduction data")
+    : "Edit Reproduction Data"}
     </Tooltip>
   }
 >
@@ -292,9 +293,9 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-hapus-reproduksi">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menghapus data reproduksi"
-            : "Supervisor tidak dapat menghapus data reproduksi")
-        : "Data reproduksi tidak dapat dihapus karena merupakan arsip medis"}
+           ? "Admin cannot delete reproduction data"
+        : "Supervisor cannot delete reproduction data")
+    : "Reproduction data cannot be deleted because it is a medical record"}
     </Tooltip>
   }
 >
@@ -306,9 +307,10 @@ const isSupervisor = currentUser?.role_id === 2;
         // ❌ Blok semua role
         Swal.fire({
           icon: "info",
-          title: "Data Tidak Bisa Dihapus",
-          text: "Data ini merupakan arsip reproduksi dan tidak dapat dihapus.",
-          confirmButtonText: "Mengerti",
+         title: "Data Cannot Be Deleted",
+text: "This data is part of the reproduction record and cannot be deleted.",
+confirmButtonText: "Understood",
+
         });
       }}
       disabled
@@ -341,7 +343,7 @@ const isSupervisor = currentUser?.role_id === 2;
                     Prev
                   </Button>
                   <span className="fw-semibold">
-                    Halaman {currentPage} dari {totalPages}
+                    Page {currentPage} of {totalPages}
                   </span>
                   <Button
                     variant="outline-primary"

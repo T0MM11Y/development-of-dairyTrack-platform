@@ -105,8 +105,9 @@ const isSupervisor = currentUser?.role_id === 2;
         setData(filteredHistories || []);
         setError("");
       } catch (err) {
-        console.error("Gagal memuat data:", err.message);
-        setError("Gagal memuat data. Pastikan server API berjalan.");
+        console.error("Failed to load data:", err.message);
+        setError("Failed to load data. Please make sure the API server is running."
+);
       } finally {
         setLoading(false);
       }
@@ -151,16 +152,16 @@ const isSupervisor = currentUser?.role_id === 2;
       setDeleteId(null);
       Swal.fire({
         icon: "success",
-        title: "Berhasil",
-        text: "Riwayat penyakit berhasil dihapus.",
+        title: "Success",
+        text: "Disease history has been successfully deleted.",
         timer: 1500,
         showConfirmButton: false,
       });
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "Gagal Menghapus",
-        text: "Terjadi kesalahan saat menghapus data.",
+       title: "Failed to Delete",
+text: "An error occurred while deleting the data.",
       });
     } finally {
       setSubmitting(false);
@@ -173,7 +174,7 @@ const isSupervisor = currentUser?.role_id === 2;
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-grey py-3">
           <h4 className="mb-0 text-primary fw-bold">
-            <i className="fas fa-notes-medical me-2" /> Riwayat Penyakit
+            <i className="fas fa-notes-medical me-2" /> Disease History
           </h4>
         </Card.Header>
 
@@ -182,7 +183,7 @@ const isSupervisor = currentUser?.role_id === 2;
           <div className="d-flex justify-content-between mb-3">
             <InputGroup style={{ maxWidth: "300px" }}>
               <FormControl
-                placeholder="Cari nama sapi..."
+                placeholder="Search cow name..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -196,9 +197,9 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-tambah-riwayat">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menambahkan riwayat penyakit"
-            : "Supervisor tidak dapat menambahkan riwayat penyakit")
-        : "Tambah Riwayat"}
+            ? "Admin cannot add disease history"
+            : "Supervisor cannot add disease history")
+        : "Add Data"}
     </Tooltip>
   }
 >
@@ -219,8 +220,8 @@ const isSupervisor = currentUser?.role_id === 2;
         if (noAvailableCheck) {
           Swal.fire({
             icon: "warning",
-            title: "Tidak Bisa Menambahkan Riwayat Penyakit",
-            text: "Tidak ada pemeriksaan yang tersedia. Semua pemeriksaan mungkin telah ditangani, sehat, atau bukan milik sapi Anda.",
+           title: "Cannot Add Disease History",
+text: "No available health checks. All checks might have been handled, marked healthy, or do not belong to your cows.",
           });
           return;
         }
@@ -233,7 +234,7 @@ const isSupervisor = currentUser?.role_id === 2;
       }}
     >
       <i className="fas fa-plus me-2" />
-      Tambah Riwayat
+      Add Data
     </Button>
   </span>
 </OverlayTrigger>
@@ -244,12 +245,12 @@ const isSupervisor = currentUser?.role_id === 2;
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="info" />
-              <p className="mt-2 text-muted">Memuat data riwayat penyakit...</p>
+              <p className="mt-2 text-muted">Loading disease history data...</p>
             </div>
           ) : error ? (
             <div className="alert alert-danger">{error}</div>
           ) : filteredData.length === 0 ? (
-            <p className="text-muted">Tidak ada data riwayat penyakit.</p>
+            <p className="text-muted">No disease history data.</p>
           ) : (
             <>
               <div className="table-responsive">
@@ -257,12 +258,13 @@ const isSupervisor = currentUser?.role_id === 2;
                   <thead className="table-light">
                     <tr>
                       <th>#</th>
-                      <th>Tanggal</th>
-                      <th>Sapi</th>
-                      <th>Penyakit</th>
-                      <th>Penanggung Jawab</th>
-                      <th>Status</th>
-                      <th>Aksi</th>
+                     <th>Date</th>
+<th>Cow Name</th>
+<th>Disease</th>
+<th>Recorded By</th>
+<th>Status</th>
+<th>Actions</th>
+
                     </tr>
                   </thead>
                   <tbody>
@@ -282,14 +284,14 @@ const isSupervisor = currentUser?.role_id === 2;
   <td>{item.created_by?.name || "Tidak diketahui"}</td>   
                           <td>
                             {check?.status === "handled" ? (
-                              <Badge bg="success">Sudah Ditangani</Badge>
+                              <Badge bg="success">Handled</Badge>
                             ) : (
-                              <Badge bg="warning" text="dark">Belum Ditangani</Badge>
+                              <Badge bg="warning" text="dark">Not Handled</Badge>
                             )}
                           </td>
                           <td>
                             {/* Aksi: Lihat, Edit, Hapus */}
-                            <OverlayTrigger overlay={<Tooltip>Lihat Detail</Tooltip>}>
+                            <OverlayTrigger overlay={<Tooltip>View Details</Tooltip>}>
                               <Button
                                 variant="outline-info"
                                 size="sm"
@@ -309,8 +311,8 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-edit">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat mengedit data"
-            : "Supervisor tidak dapat mengedit data")
+            ? "Admin cannot edit data"
+            : "Supervisor cannot edit data")
         : "Edit"}
     </Tooltip>
   }
@@ -342,9 +344,9 @@ const isSupervisor = currentUser?.role_id === 2;
     <Tooltip id="tooltip-hapus-riwayat">
       {(isAdmin || isSupervisor)
         ? (isAdmin
-            ? "Admin tidak dapat menghapus riwayat penyakit"
-            : "Supervisor tidak dapat menghapus riwayat penyakit")
-        : "Data riwayat tidak dapat dihapus karena merupakan arsip medis"}
+            ? "Admin cannot delete disease history"
+            : "Supervisor cannot delete disease history")
+        : "Disease history data cannot be deleted because it is a medical record"}
     </Tooltip>
   }
 >
@@ -356,9 +358,10 @@ const isSupervisor = currentUser?.role_id === 2;
         // Tidak akan pernah dijalankan karena tombol disabled
         Swal.fire({
           icon: "info",
-          title: "Data Tidak Bisa Dihapus",
-          text: "Data ini merupakan arsip medis dan tidak dapat dihapus.",
-          confirmButtonText: "Mengerti",
+         title: "Data Cannot Be Deleted",
+text: "This data is a medical record and cannot be deleted.",
+confirmButtonText: "Understood",
+
         });
       }}
       disabled
@@ -393,7 +396,7 @@ const isSupervisor = currentUser?.role_id === 2;
                   >
                     Prev
                   </Button>
-                  <span className="fw-semibold">Halaman {currentPage} dari {totalPages}</span>
+                  <span className="fw-semibold">Page  {currentPage} of {totalPages}</span>
                   <Button
                     variant="outline-primary"
                     size="sm"

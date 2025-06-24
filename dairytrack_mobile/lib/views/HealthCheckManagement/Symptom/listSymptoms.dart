@@ -127,11 +127,12 @@ class _SymptomListViewState extends State<SymptomListView> {
  Future<void> exportSymptomToExcel(BuildContext context) async {
   final excel = Excel.createExcel();
   final sheet = excel['Laporan_Gejala_Sapi'];
-  final headers = [
-    'Nama Sapi', 'Suhu Rektal', 'Denyut Jantung', 'Laju Pernapasan', 'Ruminasi',
-    'Kondisi Mata', 'Kondisi Mulut', 'Kondisi Hidung', 'Kondisi Anus', 'Kondisi Kaki',
-    'Kondisi Kulit', 'Perilaku', 'Berat Badan', 'Kondisi Kelamin'
-  ];
+ final headers = [
+  'Cow Name', 'Rectal Temperature', 'Heart Rate', 'Respiration Rate', 'Rumination',
+  'Eye Condition', 'Mouth Condition', 'Nose Condition', 'Anus Condition', 'Leg Condition',
+  'Skin Condition', 'Behavior', 'Body Weight', 'Genital Condition'
+];
+
 
   sheet.appendRow(headers);
 
@@ -195,15 +196,15 @@ class _SymptomListViewState extends State<SymptomListView> {
   // 🚀 Simpan dan buka file
   try {
     final dir = await getDownloadsDirectory();
-    final file = File('${dir!.path}/Laporan_Gejala_Sapi.xlsx')
+    final file = File('${dir!.path}/Cow_Symptoms_Report.xlsx')
       ..createSync(recursive: true)
       ..writeAsBytesSync(excel.encode()!);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text("Laporan_Gejala_Sapi.xlsx siap diunduh"),
+      content: const Text("Cow_Symptoms_Report.xlsx is ready for download"),
         action: SnackBarAction(
-          label: 'Buka',
+          label: 'Open',
           onPressed: () {
             OpenFile.open(file.path);
           },
@@ -212,7 +213,7 @@ class _SymptomListViewState extends State<SymptomListView> {
     );
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Gagal menyimpan file: $e")),
+    SnackBar(content: Text("Failed to save file: $e")),
     );
   }
 }
@@ -220,11 +221,12 @@ class _SymptomListViewState extends State<SymptomListView> {
 Future<void> exportSymptomToPdf(BuildContext context) async {
  final pdf = pw.Document(); // Tidak perlu parameter apapun
 
-  final headers = [
-    'Nama Sapi', 'Suhu Rektal', 'Denyut Jantung', 'Laju Pernapasan', 'Ruminasi',
-    'Kondisi Mata', 'Kondisi Mulut', 'Kondisi Hidung', 'Kondisi Anus', 'Kondisi Kaki',
-    'Kondisi Kulit', 'Perilaku', 'Berat Badan', 'Kondisi Kelamin'
-  ];
+ final headers = [
+  'Cow Name', 'Rectal Temperature', 'Heart Rate', 'Respiration Rate', 'Rumination',
+  'Eye Condition', 'Mouth Condition', 'Nose Condition', 'Anus Condition', 'Leg Condition',
+  'Skin Condition', 'Behavior', 'Body Weight', 'Genital Condition'
+];
+
 
   final dataRows = _symptoms.map((s) {
     final hc = _healthChecks.firstWhere((h) => h['id'] == s['health_check'], orElse: () => {});
@@ -254,7 +256,7 @@ Future<void> exportSymptomToPdf(BuildContext context) async {
     pageFormat: PdfPageFormat.a4.landscape,
     build: (_) => [
       pw.Text(
-        'Laporan Data Gejala Sapi',
+        'Cow Symptom Report ',
         style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
       ),
       pw.SizedBox(height: 12),
@@ -299,14 +301,14 @@ Future<void> exportSymptomToPdf(BuildContext context) async {
 
   try {
     final dir = await getDownloadsDirectory();
-    final file = File('${dir!.path}/Laporan_Gejala_Sapi.pdf')
+final file = File('${dir!.path}/Symptom_Report_Cow.pdf')
       ..createSync(recursive: true)
       ..writeAsBytesSync(await pdf.save());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text("Laporan_Gejala_Sapi.pdf siap diunduh"),
+content: const Text("The Cow Symptoms Report (PDF) is ready to download"),
         action: SnackBarAction(
-          label: 'Buka',
+          label: 'Open',
           onPressed: () {
             OpenFile.open(file.path);
           },
@@ -314,7 +316,7 @@ Future<void> exportSymptomToPdf(BuildContext context) async {
       ),
     );
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menyimpan file PDF: $e")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error occurred while saving PDF file: $e")));
   }
 }
 
@@ -332,7 +334,7 @@ Widget build(BuildContext context) {
           ? Colors.blue[700]
           : Colors.blueGrey[800],
   title: const Text(
-    'Gejala Pemeriksaan',
+    'Health Check Symptoms',
     style: TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 20,
@@ -344,7 +346,7 @@ Widget build(BuildContext context) {
 
     
     floatingActionButton: FloatingActionButton(
-  tooltip: 'Tambah Gejala',
+  tooltip: 'Add Data',
 backgroundColor: _isFarmer
       ? Colors.teal[400]
       : _isSupervisor
@@ -355,12 +357,13 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menambah gejala.'),
+          title: const Text('Access Denied'),
+content: const Text('This role does not have permission to add symptoms.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('close'),
             ),
           ],
         ),
@@ -381,12 +384,12 @@ backgroundColor: _isFarmer
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Tidak Bisa Menambah Gejala'),
-          content: const Text('Tidak ada pemeriksaan yang tersedia untuk ditambahkan gejala.'),
+          title: const Text('Unable to Add Symptoms'),
+content: const Text('There are no health checks available for adding symptoms.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -411,7 +414,7 @@ backgroundColor: _isFarmer
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    labelText: 'Cari nama sapi...',
+                    labelText: 'Search cow name...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -446,7 +449,7 @@ Padding(
 
               Expanded(
                 child: _filteredSymptoms.isEmpty
-                    ? const Center(child: Text('Tidak ada data gejala'))
+                    ? const Center(child: Text('No symptom data available'))
                     : ListView.builder(
                         itemCount: _filteredSymptoms.length,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -461,13 +464,13 @@ Padding(
                           String statusText;
                           if (status == 'healthy') {
                             statusColor = Colors.green;
-                            statusText = 'Sehat';
+                            statusText = 'Healthy';
                           } else if (status == 'handled') {
                             statusColor = Colors.blue;
-                            statusText = 'Sudah Ditangani';
+                            statusText = 'Handled';
                           } else {
                             statusColor = Colors.red;
-                            statusText = 'Belum Ditangani';
+                            statusText = 'Not Handled';
                           }
 
                           return Card(
@@ -483,7 +486,7 @@ Padding(
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          cow['name'] ?? 'Sapi Tidak Ditemukan',
+                                          cow['name'] ?? 'Cow not found',
                                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
@@ -502,17 +505,17 @@ Padding(
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Tanggal Pemeriksaan: ${formatToWIB(item['created_at'])}',
+                                    'Date Created: ${formatToWIB(item['created_at'])}',
                                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                                   ),
                                   Text(
-  'Penanggung Jawab: ${item['created_by']?['name'] ?? 'Tidak diketahui'}',
+  'Recorded By: ${item['created_by']?['name'] ?? 'Uknown'}',
   style: TextStyle(fontSize: 13, color: Colors.grey),
 ),
                                   if ((item['description'] ?? '').toString().isNotEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 6),
-                                      child: Text('Gejala: ${item['description']}',
+                                      child: Text('Symptom: ${item['description']}',
                                           style: const TextStyle(fontSize: 14)),
                                     ),
                                   const SizedBox(height: 12),
@@ -520,7 +523,7 @@ Padding(
                                     children: [
                                      ElevatedButton.icon(
   icon: const Icon(Icons.visibility, size: 18),
-  label: const Text('Lihat'),
+  label: const Text('View'),
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.blueGrey,
     foregroundColor: Colors.white,
@@ -550,56 +553,59 @@ const SizedBox(width: 8),
     padding: const EdgeInsets.symmetric(horizontal: 12),
   ),
  onPressed: () async {
-  if (_isAdmin || _isSupervisor) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Akses Ditolak'),
-        content: const Text('Role ini tidak memiliki izin untuk mengedit data.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
-    return;
-  }
+ if (_isAdmin || _isSupervisor) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Access Denied'),
+      content: const Text('This role does not have permission to edit data.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+  return;
+}
 
-  if (hc['status'] == 'handled') {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tidak Bisa Diedit'),
-        content: const Text('Pemeriksaan ini sudah ditangani dan tidak dapat diedit.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Mengerti'),
-          ),
-        ],
-      ),
-    );
-    return;
-  }
+
+ if (hc['status'] == 'handled') {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Cannot Be Edited'),
+      content: const Text('This health check has already been handled and cannot be edited.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Understood'),
+        ),
+      ],
+    ),
+  );
+  return;
+}
+
 
   if (hc['status'] == 'healthy') {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tidak Bisa Diedit'),
-        content: const Text('Sapi ini sudah dinyatakan sehat dan datanya tidak dapat diedit.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Mengerti'),
-          ),
-        ],
-      ),
-    );
-    return;
-  }
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Cannot Be Edited'),
+      content: const Text('This cow has been declared healthy and its data cannot be edited.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Understood'),
+        ),
+      ],
+    ),
+  );
+  return;
+}
+
 
   final result = await Navigator.push(
     context,
@@ -619,7 +625,7 @@ const SizedBox(width: 8),
 
                                      ElevatedButton.icon(
   icon: const Icon(Icons.delete, size: 18),
-  label: const Text('Hapus'),
+  label: const Text('Delete'),
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.redAccent,
     foregroundColor: Colors.white,
@@ -630,12 +636,13 @@ const SizedBox(width: 8),
        showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Akses Ditolak'),
-          content: const Text('Role ini tidak memiliki izin untuk menghapus data.'),
+          title: const Text('Access Denied'),
+content: const Text('This role does not have permission to delete the data.'),
+
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -646,16 +653,17 @@ const SizedBox(width: 8),
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Konfirmasi Hapus'),
-        content: const Text('Yakin ingin menghapus data ini?'),
+       title: const Text('Delete Confirmation'),
+content: const Text('Are you sure you want to delete this data?'),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -668,8 +676,8 @@ const SizedBox(width: 8),
           context: context,
           barrierDismissible: false,
           builder: (context) => const AlertDialog(
-            title: Text('Berhasil'),
-            content: Text('Data gejala berhasil dihapus.'),
+            title: Text('Success'),
+            content: Text('Success delete data.'),
           ),
         );
 
@@ -683,8 +691,8 @@ const SizedBox(width: 8),
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('Gagal'),
-            content: Text(res['message'] ?? 'Gagal menghapus data.'),
+            title: const Text('Failed'),
+            content: Text(res['message'] ?? 'Failed to delete data.'),
           ),
         );
 
@@ -714,7 +722,7 @@ const SizedBox(width: 8),
                       icon: const Icon(Icons.arrow_back),
                       onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
                     ),
-                    Text('Halaman $_currentPage'),
+                    Text('Page $_currentPage'),
                     IconButton(
                       icon: const Icon(Icons.arrow_forward),
                       onPressed: _filteredSymptoms.length == _pageSize

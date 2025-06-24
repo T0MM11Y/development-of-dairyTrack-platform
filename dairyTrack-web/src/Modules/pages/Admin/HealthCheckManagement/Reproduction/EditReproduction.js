@@ -42,7 +42,7 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
 
       const cowId = typeof reproduction.cow === "object" ? reproduction.cow.id : reproduction.cow;
       const cow = cows.find((c) => c.id === cowId);
-      setCowName(cow ? `${cow.name} (${cow.breed})` : "Data sapi tidak ditemukan");
+setCowName(cow ? `${cow.name} (${cow.breed})` : "Cow data not found");
 
       setForm((prev) => ({
         ...prev,
@@ -54,8 +54,8 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
         successful_pregnancy: "1", // default 1
       }));
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
-      setError("Gagal memuat data reproduksi.");
+      console.error("Failed to fetch data:", err);
+  setError("Failed to load reproduction data.");
     } finally {
       setLoading(false);
     }
@@ -84,19 +84,19 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
     const totalIB = parseInt(form.total_insemination);
 
     if (tglPrev >= tglCalving) {
-      setError("📌 Tanggal calving sebelumnya harus lebih awal dari calving sekarang.");
+  setError("📌 Previous calving date must be earlier than the current calving date.");
       setSubmitting(false);
       return;
     }
 
     if (tglIB <= tglCalving) {
-      setError("📌 Tanggal inseminasi harus setelah tanggal calving sekarang.");
+  setError("📌 Insemination date must be after the current calving date.");
       setSubmitting(false);
       return;
     }
 
     if (isNaN(totalIB) || totalIB < 1) {
-      setError("📌 Jumlah inseminasi harus lebih dari 0.");
+  setError("📌 Total inseminations must be greater than 0.");
       setSubmitting(false);
       return;
     }
@@ -115,19 +115,19 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
 });
       Swal.fire({
         icon: "success",
-        title: "Berhasil!",
-        text: "Data reproduksi berhasil diperbarui.",
+        title: "Success!",
+  text: "Reproduction data has been successfully updated.",
         timer: 1500,
         showConfirmButton: false,
       });
       if (onSaved) onSaved();
     } catch (err) {
-      setError("❌ Gagal menyimpan perubahan. Silakan coba lagi.");
+  setError("❌ Failed to save changes. Please try again.");
   
       Swal.fire({
         icon: "error",
-        title: "Gagal!",
-        text: "Terjadi kesalahan saat memperbarui data.",
+         title: "Failed!",
+    text: "An error occurred while updating the data.",
       });
     } finally {
       setSubmitting(false);
@@ -140,7 +140,7 @@ const ReproductionEditPage = ({ reproductionId, onClose, onSaved }) => {
         <div className="modal-dialog modal-lg">
           <div className="modal-content p-4 text-center">
             <div className="spinner-border text-info" role="status" />
-            <p className="mt-2">Memuat data reproduksi...</p>
+<p className="mt-2">Loading reproduction data...</p>
 
           </div>
         </div>
@@ -156,7 +156,7 @@ return (
     <div className="modal-dialog modal-lg">
       <div className="modal-content">
         <div className="modal-header">
-          <h4 className="modal-title text-info fw-bold">Edit Data Reproduksi</h4>
+<h4 className="modal-title text-info fw-bold">Edit Reproduction Data</h4>
           <button className="btn-close" onClick={onClose} disabled={submitting}></button>
         </div>
         <div className="modal-body">
@@ -164,14 +164,14 @@ return (
           <form onSubmit={handleSubmit}>
             {/* Info Sapi */}
             <div className="mb-3">
-              <label className="form-label fw-bold">Sapi</label>
+              <label className="form-label fw-bold">Cow</label>
               <input type="text" className="form-control" value={cowName} readOnly disabled />
             </div>
 
             {/* Tanggal Calving */}
             <div className="row">
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-bold">Tanggal Calving Sekarang</label>
+<label className="form-label fw-bold">Current Calving Date</label>
                 <input
                   type="date"
                   name="calving_date"
@@ -183,7 +183,7 @@ return (
                 />
               </div>
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-bold">Tanggal Calving Sebelumnya</label>
+<label className="form-label fw-bold">Previous Calving Date</label>
                 <input
                   type="date"
                   name="previous_calving_date"
@@ -199,7 +199,7 @@ return (
             {/* Inseminasi */}
             <div className="row">
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-bold">Tanggal Inseminasi</label>
+<label className="form-label fw-bold">Insemination Date</label>
                 <input
                   type="date"
                   name="insemination_date"
@@ -211,7 +211,7 @@ return (
                 />
               </div>
               <div className="col-md-6 mb-3">
-                <label className="form-label fw-bold">Jumlah Inseminasi</label>
+<label className="form-label fw-bold">Total Inseminations</label>
                 <input
                   type="number"
                   name="total_insemination"
@@ -226,7 +226,7 @@ return (
             </div>
 
             <button type="submit" className="btn btn-info w-100" disabled={submitting}>
-              {submitting ? "Memperbarui..." : "Perbarui Data"}
+              {submitting ? "Updating..." : "Update Data"}
             </button>
           </form>
         </div>

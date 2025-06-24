@@ -48,7 +48,7 @@ class _ViewDiseaseHistoryViewState extends State<ViewDiseaseHistoryView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Detail Riwayat Penyakit',
+          'Detail Disease History',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -72,27 +72,27 @@ class _ViewDiseaseHistoryViewState extends State<ViewDiseaseHistoryView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _sectionCard(
-                    title: '🐄 Informasi Sapi',
+                    title: '🐄 Cow Information',
                     children: [
                       _infoTile(
-                        'Nama Sapi',
+                        'Cow Name',
                         widget.cow != null
                             ? '${widget.cow!['name']} (${widget.cow!['breed']})'
-                            : 'Sapi tidak ditemukan',
+                            : 'Cow not found',
                       ),
                     ],
                   ),
                   _sectionCard(
-                    title: '📋 Detail Pemeriksaan',
+                    title: '📋 Health Check Details',
                     children: widget.check.isEmpty
-                        ? [const Text('Data pemeriksaan tidak tersedia.')]
+                        ? [const Text('Health check data not available.')]
                         : [
-                            _infoTile('🌡️ Suhu Rektal', '${widget.check['rectal_temperature']} °C'),
-                            _infoTile('❤️ Denyut Jantung', '${widget.check['heart_rate']} bpm'),
-                            _infoTile('🫁 Pernapasan', '${widget.check['respiration_rate']} bpm'),
-                            _infoTile('🐄 Ruminasi', '${widget.check['rumination']} menit'),
+                            _infoTile('🌡️ Rectal Temperature', '${widget.check['rectal_temperature']} °C'),
+                            _infoTile('❤️ Heart Rate', '${widget.check['heart_rate']} bpm'),
+                            _infoTile('🫁 Respiration', '${widget.check['respiration_rate']} bpm'),
+                            _infoTile('🐄 Rumination', '${widget.check['rumination']} menit'),
                             _infoTile(
-                              '🕒 Tanggal Periksa',
+                              '🕒 Checkup Date',
                               DateFormat('dd MMM yyyy, HH:mm', 'id_ID')
                                       .format(DateTime.parse(widget.check['checkup_date']).toLocal()) +
                                   ' WIB',
@@ -100,7 +100,7 @@ class _ViewDiseaseHistoryViewState extends State<ViewDiseaseHistoryView> {
                           ],
                   ),
                   _sectionCard(
-                    title: '🦠 Gejala',
+                    title: '🦠 Symptom',
                     children: widget.symptom.entries
                         .where((entry) =>
                             !['id', 'health_check', 'created_at', 'created_by', 'edited_by']
@@ -116,18 +116,18 @@ class _ViewDiseaseHistoryViewState extends State<ViewDiseaseHistoryView> {
                         widget.symptom.entries.every(
                             (e) => e.value.toString().toLowerCase() == 'normal'),
                         const Text(
-                          'Tidak ada gejala dicatat.',
+                          'No symptoms recorded.',
                           style: TextStyle(fontStyle: FontStyle.italic),
                         ),
                       ),
                   ),
                   _sectionCard(
-                    title: '📝 Deskripsi',
+                    title: '📝 Description',
                     children: [
                       Text(
                         widget.history['description']?.toString().trim().isNotEmpty == true
                             ? widget.history['description']
-                            : 'Tidak ada deskripsi.',
+                            : 'No description available.',
                         style: const TextStyle(fontSize: 14),
                       ),
                     ],

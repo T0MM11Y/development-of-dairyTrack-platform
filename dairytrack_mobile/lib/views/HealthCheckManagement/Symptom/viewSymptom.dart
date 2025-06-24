@@ -61,7 +61,7 @@ class _SymptomViewPageState extends State<SymptomViewPage> {
       });
     } catch (e) {
       setState(() {
-        _error = '❌ Gagal memuat data gejala.';
+        _error = '❌ Failed to load data.';
         _loading = false;
       });
     }
@@ -90,7 +90,7 @@ class _SymptomViewPageState extends State<SymptomViewPage> {
         elevation: 0,
         backgroundColor: backgroundColor,
         title: const Text(
-          'Detail Gejala',
+          'Symptom Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -101,7 +101,7 @@ class _SymptomViewPageState extends State<SymptomViewPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
-            tooltip: 'Tutup',
+            tooltip: 'Close',
             onPressed: widget.onClose,
           ),
         ],
