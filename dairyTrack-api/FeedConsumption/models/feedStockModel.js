@@ -75,10 +75,16 @@ const FeedStock = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "feed_stock",
     timestamps: true,
+    paranoid: true, // Aktifkan soft delete
     hooks: {
       beforeCreate: async (feedStock, options) => {
         console.log("beforeCreate hook triggered", { feedStock: feedStock.toJSON(), options });

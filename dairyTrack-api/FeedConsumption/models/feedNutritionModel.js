@@ -21,12 +21,12 @@ const FeedNutrisi = sequelize.define(
     },
     nutrisi_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: "nutritions",
         key: "id",
       },
-      onDelete: "CASCADE",
+      onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
     amount: {
@@ -34,8 +34,8 @@ const FeedNutrisi = sequelize.define(
       allowNull: false,
       defaultValue: 0.0,
       validate: {
-        isDecimal: { msg: "Amount must be a decimal number" },
-        min: { args: [0], msg: "Amount must be at least 0" },
+        isDecimal: { msg: "Jumlah harus berupa angka desimal" },
+        min: { args: [0], msg: "Jumlah harus minimal 0" },
       },
     },
     user_id: {
@@ -80,10 +80,16 @@ const FeedNutrisi = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "feed_nutrisi",
     timestamps: true,
+    paranoid: true,
     indexes: [
       {
         unique: true,

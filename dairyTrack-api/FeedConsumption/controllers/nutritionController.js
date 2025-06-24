@@ -12,14 +12,14 @@ const formatNutrisiResponse = (nutrisi) => ({
   updated_by: nutrisi.Updater ? { id: nutrisi.Updater.id, name: nutrisi.Updater.name } : null,
   created_at: nutrisi.createdAt,
   updated_at: nutrisi.updatedAt,
+  deleted_at: nutrisi.deletedAt, // Opsional untuk debugging atau admin
 });
 
 exports.addNutrisi = async (req, res) => {
   const { name, unit } = req.body;
-  const userId = req.user.id; // From verifyToken middleware
+  const userId = req.user.id;
 
   try {
-    // Validate input
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -33,16 +33,14 @@ exports.addNutrisi = async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: `User dengan ID ${userId} tidak ditemukan`,
       });
     }
 
-    // Create Nutrisi with direct field assignment
     const nutrisi = await Nutrisi.create({
       name,
       unit,
@@ -51,7 +49,6 @@ exports.addNutrisi = async (req, res) => {
       updated_by: userId,
     });
 
-    // Fetch complete data with associated users
     const nutrisiWithUsers = await Nutrisi.findByPk(nutrisi.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -68,18 +65,13 @@ exports.addNutrisi = async (req, res) => {
   } catch (err) {
     console.error("Error in addNutrisi:", err);
 
-    // Handle duplicate name
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.original?.code === "ER_DUP_ENTRY"
-    ) {
+    if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
         message: `Nutrisi dengan nama "${name}" sudah ada. Silakan gunakan nama yang berbeda.`,
       });
     }
 
-    // Handle foreign key error
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
@@ -87,7 +79,6 @@ exports.addNutrisi = async (req, res) => {
       });
     }
 
-    // General error
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
@@ -101,7 +92,6 @@ exports.updateNutrisi = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Validate input
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -115,7 +105,6 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // Check if nutrisi exists
     const nutrisi = await Nutrisi.findByPk(id);
     if (!nutrisi) {
       return res.status(404).json({
@@ -124,23 +113,20 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // Validate user existence
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: `User dengan ID ${userId} tidak ditemukan`,
       });
     }
 
-    // Update Nutrisi with direct field assignment
     await nutrisi.update({
       name,
       unit,
       updated_by: userId,
     });
 
-    // Fetch updated nutrisi with associated users
     const nutrisiWithUsers = await Nutrisi.findByPk(id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -157,18 +143,13 @@ exports.updateNutrisi = async (req, res) => {
   } catch (err) {
     console.error("Error in updateNutrisi:", err);
 
-    // Handle duplicate name
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.original?.code === "ER_DUP_ENTRY"
-    ) {
+    if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
         message: `Nutrisi dengan nama "${name}" sudah ada. Silakan gunakan nama yang berbeda.`,
       });
     }
 
-    // Handle foreign key error
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
@@ -176,7 +157,6 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // General error
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
@@ -197,6 +177,7 @@ exports.deleteNutrisi = async (req, res) => {
     }
 
     await nutrisi.destroy();
+
     return res.status(200).json({
       success: true,
       message: "Nutrisi berhasil dihapus",
@@ -205,7 +186,7 @@ exports.deleteNutrisi = async (req, res) => {
     console.error("Error in deleteNutrisi:", err);
     return res.status(500).json({
       success: false,
-      message: "Terjadi kesalahan pada server",
+      message: err.message || "Terjadi kesalahan pada server",
     });
   }
 };

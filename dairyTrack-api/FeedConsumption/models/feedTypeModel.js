@@ -16,12 +16,12 @@ const FeedType = sequelize.define(
     },
     user_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: "users",
         key: "id",
       },
-      onDelete: "RESTRICT",
+      onDelete: "SET NULL",
       onUpdate: "CASCADE",
     },
     created_by: {
@@ -54,11 +54,16 @@ const FeedType = sequelize.define(
       allowNull: false,
       field: "updated_at",
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "deleted_at",
+    },
   },
   {
     tableName: "feed_type",
     timestamps: true,
-    // Removing hooks since we're setting values directly in the controller
+    paranoid: true,
   }
 );
 
