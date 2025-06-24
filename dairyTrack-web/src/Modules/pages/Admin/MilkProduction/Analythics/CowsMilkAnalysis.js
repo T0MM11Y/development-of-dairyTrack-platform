@@ -356,9 +356,7 @@ const CowsMilkAnalysis = () => {
         if (!user) {
           throw new Error("User not authenticated");
         }
-        setCurrentUser(user);
-
-        // Load cows based on user role
+        setCurrentUser(user); // Load cows based on user role
         let cowsData = [];
         if (user.role_id === 3) {
           // Farmer - get only managed cows
@@ -366,6 +364,7 @@ const CowsMilkAnalysis = () => {
           if (result.success) {
             cowsData = result.cows || [];
           }
+          setCows(cowsData);
         } else {
           // Admin/Supervisor - get all cows with farmers
           const usersResult = await getUsersWithCows();
@@ -377,10 +376,15 @@ const CowsMilkAnalysis = () => {
                 farmerId: farmer.id,
               }))
             );
+
+            // Remove duplicate cows based on cow ID
+            const uniqueCows = cowsData.reduce((acc, cow) => {
+              if (!acc.some((c) => c.id === cow.id)) acc.push(cow);
+              return acc;
+            }, []);
+            setCows(uniqueCows);
           }
         }
-
-        setCows(cowsData);
 
         // Load all milking sessions
         const sessionsResult = await getMilkingSessions();
@@ -456,14 +460,14 @@ const CowsMilkAnalysis = () => {
         dailyData: [],
         lastMilking: "Bulls are not milked",
         breedingInfo: {
-          status: "Aktif untuk pembiakan",
+          status: "Active for breeding",
           age: formatAge(selectedCow.birth),
           maturityStatus:
             selectedCow && calculateAge(selectedCow.birth)
               ? calculateAge(selectedCow.birth).years * 12 +
                   calculateAge(selectedCow.birth).months >=
                 18
-                ? "Dewasa - siap kawin"
+                ? "Adult - ready to mate"
                 : "Young - not ready to marry"
               : "N/A",
         },
@@ -617,7 +621,7 @@ const CowsMilkAnalysis = () => {
                       <Col md={6}>
                         <Form.Group>
                           <Form.Label className="small fw-bold">
-                            Tanggal Mulai
+                            Start Date
                           </Form.Label>
                           <Form.Control
                             type="date"
@@ -634,7 +638,7 @@ const CowsMilkAnalysis = () => {
                       <Col md={6}>
                         <Form.Group>
                           <Form.Label className="small fw-bold">
-                            Tanggal Akhir
+                            End Date
                           </Form.Label>
                           <Form.Control
                             type="date"
@@ -653,15 +657,22 @@ const CowsMilkAnalysis = () => {
                 </Col>
                 <Col md={4} className="text-end">
                   <div className="d-flex gap-2 justify-content-end">
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={handleExportPDF}
-                      disabled={!selectedCow}
-                    >
-                      <i className="fas fa-file-pdf me-1"></i>
-                      PDF
-                    </Button>
+                    {/* Hide PDF button if selected cow is male (bull) */}
+                    {!(
+                      selectedCow &&
+                      selectedCow.gender &&
+                      selectedCow.gender.toLowerCase() === "male"
+                    ) && (
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={handleExportPDF}
+                        disabled={!selectedCow}
+                      >
+                        <i className="fas fa-file-pdf me-1"></i>
+                        PDF
+                      </Button>
+                    )}
                     <Button
                       variant="outline-success"
                       size="sm"
@@ -693,8 +704,8 @@ const CowsMilkAnalysis = () => {
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
                     {cowPerformance.isMale
-                      ? "Informasi Pejantan"
-                      : "Statistik Performa"}
+                      ? "Stud Information"
+                      : "Performance Statistics"}
                   </h5>
                 </Card.Header>
                 <Card.Body>
@@ -778,7 +789,7 @@ const CowsMilkAnalysis = () => {
                               ></i>
                               <div>
                                 <strong className="text-warning">
-                                  Kematangan:
+                                  Maturity:
                                 </strong>
                                 <br />
                                 <span className="text-warning">
@@ -805,11 +816,11 @@ const CowsMilkAnalysis = () => {
                               ></i>
                               <div>
                                 <strong style={{ color: "#7b1fa2" }}>
-                                  Fungsi:
+                                  Function:
                                 </strong>
                                 <br />
                                 <span style={{ color: "#7b1fa2" }}>
-                                  Pembiakan & Pemuliaan
+                                  Breeding & Cultivation
                                 </span>
                               </div>
                             </div>
@@ -842,7 +853,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.rangeVolume}L
                           </h4>
                           <small style={{ color: "#1565c0", opacity: 0.8 }}>
-                            Total Periode
+                            Total Period
                           </small>
                         </div>
                       </Col>
@@ -868,7 +879,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.avgPerSession}L
                           </h4>
                           <small style={{ color: "#2e7d32", opacity: 0.8 }}>
-                            Rata-rata/Sesi
+                            Average/Session
                           </small>
                         </div>
                       </Col>
@@ -894,7 +905,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.rangeSessions}
                           </h4>
                           <small style={{ color: "#ef6c00", opacity: 0.8 }}>
-                            Sesi Periode
+                            Period Session
                           </small>
                         </div>
                       </Col>
@@ -921,7 +932,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.lastMilking}
                           </h6>
                           <small style={{ color: "#7b1fa2", opacity: 0.8 }}>
-                            Terakhir Perah
+                            Last Milk
                           </small>
                         </div>
                       </Col>
@@ -950,7 +961,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.highestProduction}L
                           </h6>
                           <small style={{ color: "#2e7d32", opacity: 0.8 }}>
-                            Tertinggi
+                            Highest
                           </small>
                         </div>
                       </Col>
@@ -977,7 +988,7 @@ const CowsMilkAnalysis = () => {
                             {cowPerformance.lowestProduction}L
                           </h6>
                           <small style={{ color: "#c62828", opacity: 0.8 }}>
-                            Terendah
+                            Lowest
                           </small>
                         </div>
                       </Col>
@@ -1000,13 +1011,13 @@ const CowsMilkAnalysis = () => {
                       } me-2`}
                     ></i>
                     {cowPerformance.isMale
-                      ? "Informasi Pembiakan"
-                      : "Trend Produksi Harian"}
+                      ? "Breeding Information"
+                      : "Daily Production Trend"}
                   </h5>
                   <p style={styles.subheading} className="mb-0">
                     {cowPerformance.isMale
-                      ? "Informasi lengkap tentang sapi pejantan dan fungsinya"
-                      : "Volume produksi susu per hari dalam periode yang dipilih"}
+                      ? "Complete information about bulls and their functions"
+                      : "Milk production volume per day in the selected period"}
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1018,13 +1029,13 @@ const CowsMilkAnalysis = () => {
                           <Alert variant="info" className="mb-4">
                             <h5 className="alert-heading">
                               <i className="fas fa-male me-2"></i>
-                              Sapi Pejantan
+                              Stud Cows
                             </h5>
                             <p className="mb-0">
-                              Sapi ini adalah pejantan yang digunakan untuk
-                              pembiakan dan pemuliaan. Pejantan tidak
-                              menghasilkan susu, tetapi memiliki peran penting
-                              dalam reproduksi dan pengembangan genetik kawanan.
+                              This cow is a stud used for breeding and stocking.
+                              The stud does not produce milk, but plays an
+                              important role in reproduction and genetic
+                              development of the herd.
                             </p>
                           </Alert>
 
@@ -1039,9 +1050,9 @@ const CowsMilkAnalysis = () => {
                                     className="fas fa-dna text-primary mb-3"
                                     style={{ fontSize: "2rem" }}
                                   ></i>
-                                  <h6 className="fw-bold">Pemuliaan Genetik</h6>
+                                  <h6 className="fw-bold">Genetic Breeding</h6>
                                   <p className="small text-muted mb-0">
-                                    Menghasilkan keturunan dengan genetik unggul
+                                    Produce offspring with superior genetics
                                   </p>
                                 </Card.Body>
                               </Card>
@@ -1056,9 +1067,9 @@ const CowsMilkAnalysis = () => {
                                     className="fas fa-heart text-danger mb-3"
                                     style={{ fontSize: "2rem" }}
                                   ></i>
-                                  <h6 className="fw-bold">Pembiakan</h6>
+                                  <h6 className="fw-bold">Breeding</h6>
                                   <p className="small text-muted mb-0">
-                                    Kawin dengan induk untuk menghasilkan anak
+                                    Mating with parents to produce offspring
                                   </p>
                                 </Card.Body>
                               </Card>
@@ -1073,9 +1084,10 @@ const CowsMilkAnalysis = () => {
                                     className="fas fa-shield-alt text-success mb-3"
                                     style={{ fontSize: "2rem" }}
                                   ></i>
-                                  <h6 className="fw-bold">Keamanan Kawanan</h6>
+                                  <h6 className="fw-bold">Herd Security</h6>
                                   <p className="small text-muted mb-0">
-                                    Melindungi kawanan dari ancaman predator
+                                    Protecting the herd from the threat of
+                                    predators
                                   </p>
                                 </Card.Body>
                               </Card>
@@ -1091,10 +1103,10 @@ const CowsMilkAnalysis = () => {
                                     style={{ fontSize: "2rem" }}
                                   ></i>
                                   <h6 className="fw-bold">
-                                    Peningkatan Kualitas
+                                    Quality Improvement
                                   </h6>
                                   <p className="small text-muted mb-0">
-                                    Meningkatkan kualitas keturunan kawanan
+                                    Improve the quality of the flock's offspring
                                   </p>
                                 </Card.Body>
                               </Card>

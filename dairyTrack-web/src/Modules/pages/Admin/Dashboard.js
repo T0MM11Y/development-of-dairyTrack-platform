@@ -808,7 +808,7 @@ const Dashboard = () => {
                         {currentUser.role_id === 3
                           ? userManagedCows.length
                           : dashboardStats.totalCows}{" "}
-                        Sapi
+                        Cow
                       </small>
                     </motion.div>
 
@@ -824,7 +824,7 @@ const Dashboard = () => {
                     >
                       <div style={{ fontSize: "20px" }}>🥛</div>
                       <small style={{ fontSize: "11px", opacity: 0.9 }}>
-                        {todayStats.totalMilkToday}L Hari Ini
+                        {todayStats.totalMilkToday}L Today
                       </small>
                     </motion.div>
 
@@ -1094,10 +1094,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-map-marked-alt me-2"></i>
-                    Lokasi Peternakan DairyTrack
+                    DairyTrack Farm Location
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Temukan lokasi peternakan kami untuk kunjungan supervisi
+                    Find our farm locations for supervision visits
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1133,10 +1133,10 @@ const Dashboard = () => {
                 <Card.Header className="bg-white border-bottom-0 pb-0">
                   <h5 style={styles.heading}>
                     <i className="fas fa-chart-pie me-2"></i>
-                    Distribusi Fase Laktasi
+                    Distribution of Lactation Phases
                   </h5>
                   <p style={styles.subheading} className="mb-0">
-                    Komposisi fase laktasi sapi di seluruh peternakan
+                    Lactation phase composition of cows across farms
                   </p>
                 </Card.Header>
                 <Card.Body>
@@ -1171,7 +1171,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>
@@ -1240,7 +1242,7 @@ const Dashboard = () => {
                         }}
                         formatter={(value, name) => [
                           `${value}L`,
-                          name === "volume" ? "Total Produksi" : name,
+                          name === "volume" ? "Total Production" : name,
                         ]}
                       />
                       <Area
@@ -1301,7 +1303,9 @@ const Dashboard = () => {
                         className="fas fa-cow text-muted"
                         style={{ fontSize: "48px" }}
                       ></i>
-                      <p className="text-muted mt-3">Belum ada data sapi</p>
+                      <p className="text-muted mt-3">
+                        There is no data on cattle yet
+                      </p>
                     </div>
                   )}
                 </Card.Body>
@@ -1436,7 +1440,7 @@ const Dashboard = () => {
                           <div className="me-3" style={{ fontSize: "24px" }}>
                             {/* Gender-specific emoji */}
                             {cow.gender?.toLowerCase() === "female" ||
-                            cow.gender?.toLowerCase() === "betina"
+                            cow.gender?.toLowerCase() === "female"
                               ? "🐄"
                               : "🐂"}
                           </div>
@@ -1476,7 +1480,7 @@ const Dashboard = () => {
                               <Badge
                                 bg={
                                   cow.gender?.toLowerCase() === "female" ||
-                                  cow.gender?.toLowerCase() === "betina"
+                                  cow.gender?.toLowerCase() === "female"
                                     ? "outline-info"
                                     : "outline-warning"
                                 }
@@ -1484,9 +1488,9 @@ const Dashboard = () => {
                                 style={{ fontSize: "10px" }}
                               >
                                 {cow.gender?.toLowerCase() === "female" ||
-                                cow.gender?.toLowerCase() === "betina"
-                                  ? "♀ Betina"
-                                  : "♂ Jantan"}
+                                cow.gender?.toLowerCase() === "female"
+                                  ? "♀ female"
+                                  : "♂ Male"}
                               </Badge>
                               <motion.div whileHover={{ scale: 1.05 }}>
                                 <Badge
@@ -1516,7 +1520,7 @@ const Dashboard = () => {
 
                             {/* Conditional Content Based on Gender */}
                             {cow.gender?.toLowerCase() === "female" ||
-                            cow.gender?.toLowerCase() === "betina" ? (
+                            cow.gender?.toLowerCase() === "female" ? (
                               // Female Cow - Show Production Statistics
                               <>
                                 {/* Production Statistics */}
@@ -1550,7 +1554,7 @@ const Dashboard = () => {
                                             opacity: 0.8,
                                           }}
                                         >
-                                          Total Produksi
+                                          Total Production
                                         </small>
                                       </motion.div>
                                     </div>
@@ -1649,7 +1653,7 @@ const Dashboard = () => {
                                             opacity: 0.8,
                                           }}
                                         >
-                                          Total Sesi
+                                          Total Session
                                         </small>
                                       </motion.div>
                                     </div>
@@ -1746,7 +1750,7 @@ const Dashboard = () => {
                                         marginBottom: "4px",
                                       }}
                                     >
-                                      Sapi Pejantan
+                                      Stud Cows
                                     </div>
                                     <small
                                       style={{
@@ -1756,7 +1760,7 @@ const Dashboard = () => {
                                         lineHeight: 1.3,
                                       }}
                                     >
-                                      Tidak memproduksi susu
+                                      Does not produce milk
                                     </small>
                                   </motion.div>
                                 </div>
@@ -1835,7 +1839,7 @@ const Dashboard = () => {
                                 <div className="d-flex justify-content-between align-items-center">
                                   <Badge bg="info" style={{ fontSize: "9px" }}>
                                     <i className="fas fa-male me-1"></i>
-                                    Pejantan
+                                    Stud
                                   </Badge>
                                   <small className="text-muted">
                                     {cow.weight ? `${cow.weight} kg` : "N/A"}
@@ -1866,7 +1870,7 @@ const Dashboard = () => {
                                         fontWeight: "bold",
                                       }}
                                     >
-                                      🐂 Pejantan
+                                      🐂 Stud
                                     </motion.span>
                                   </div>
                                 </div>

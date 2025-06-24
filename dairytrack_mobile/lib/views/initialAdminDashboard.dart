@@ -2408,7 +2408,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           Icon(Icons.pets, size: 48, color: Colors.grey[400]),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada data sapi',
+                            'There is no data on cattle yet',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                         ],

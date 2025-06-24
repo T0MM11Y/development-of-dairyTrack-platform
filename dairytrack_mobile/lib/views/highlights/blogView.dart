@@ -2386,7 +2386,10 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                             });
                           }
                         : null, // Disable button jika tidak ada kategori yang tersedia
-                    child: const Text('Set'),
+                    child: const Text(
+                      'Set',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               );

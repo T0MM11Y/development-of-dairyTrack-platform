@@ -766,21 +766,22 @@ def export_daily_summaries_pdf():
                 pdf.cell(25, 10, str(round(total_all, 2)), border=1, align='R', fill=True)
 
         # Output PDF file
-        buffer = BytesIO()
-        pdf.output(buffer)
-        buffer.seek(0)
-        
-        # Generate filename
-        if is_male_cow:
-            filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
-        else:
-            filename = "daily_milk_production.pdf"
-            if start_date and end_date:
-                filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
-            elif cow_id:
-                filename = f"milk_production_cow_{cow_id}.pdf"
-        
-        return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+            buffer = BytesIO()
+            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            buffer.write(pdf_bytes)
+            buffer.seek(0)
+            
+            # Generate filename
+            if is_male_cow:
+                filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
+            else:
+                filename = "daily_milk_production.pdf"
+                if start_date and end_date:
+                    filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
+                elif cow_id:
+                    filename = f"milk_production_cow_{cow_id}.pdf"
+            
+            return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

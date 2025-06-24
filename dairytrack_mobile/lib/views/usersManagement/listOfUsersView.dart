@@ -31,6 +31,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
   Color get _primaryColor => _userRole == 'Supervisor'
       ? Colors.deepOrange[400]!
       : Colors.blueGrey[800]!;
+
   Color get _primaryLightColor =>
       _userRole == 'Supervisor' ? Colors.orange[300]! : Colors.blueGrey[300]!;
   Color get _primaryDarkColor =>
@@ -147,14 +148,14 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text(
               "Cancel",
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Colors.white70),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               "Delete",
-              style: TextStyle(color: _primaryColor),
+              style: TextStyle(color: Colors.redAccent),
             ),
           ),
         ],
@@ -201,14 +202,14 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                 onPressed: () => Navigator.of(context).pop(null),
                 child: const Text(
                   "Cancel",
-                  style: TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(inputText),
                 child: Text(
                   "Verify",
-                  style: TextStyle(color: _primaryColor),
+                  style: TextStyle(color: Colors.redAccent),
                 ),
               ),
             ],
@@ -826,7 +827,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                             value:
                                 _selectedRole.isNotEmpty ? _selectedRole : null,
                             hint: Text('Select Role',
-                                style: TextStyle(color: Colors.white54)),
+                                style: TextStyle(
+                                    color: const Color.fromARGB(
+                                        236, 255, 253, 253))),
                             items: [
                               DropdownMenuItem(
                                 child: Text('All Roles',
@@ -871,7 +874,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                     });
                                   },
                                   child: Text('Clear Filters',
-                                      style: TextStyle(color: _primaryColor)),
+                                      style: TextStyle(color: Colors.white)),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(color: _primaryColor),
                                     padding: EdgeInsets.symmetric(
@@ -927,7 +930,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                   backgroundColor: Colors.grey[900],
                   title: Row(
                     children: [
-                      Icon(Icons.download, color: _primaryColor),
+                      Icon(Icons.download, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
                         "Export Data",
@@ -1007,13 +1010,13 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                         },
                                         child: Text("Open File",
                                             style: TextStyle(
-                                                color: _primaryColor)),
+                                                color: Colors.greenAccent)),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
                                         child: Text("Close",
-                                            style:
-                                                TextStyle(color: Colors.white)),
+                                            style: TextStyle(
+                                                color: Colors.grey[300])),
                                       ),
                                     ],
                                   ),
@@ -1105,13 +1108,13 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                         },
                                         child: Text("Open File",
                                             style: TextStyle(
-                                                color: _primaryColor)),
+                                                color: Colors.greenAccent)),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
                                         child: Text("Close",
                                             style:
-                                                TextStyle(color: Colors.white)),
+                                                TextStyle(color: Colors.grey)),
                                       ),
                                     ],
                                   ),
@@ -1144,7 +1147,7 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         "Cancel",
-                        style: TextStyle(color: _primaryColor),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
@@ -1294,7 +1297,9 @@ class _ListOfUsersViewState extends State<ListOfUsersView> {
                                             SizedBox(height: 8),
                                             ElevatedButton.icon(
                                               icon: Icon(Icons.clear),
-                                              label: Text('Clear Filters'),
+                                              label: Text('Clear Filters',
+                                                  style: TextStyle(
+                                                      color: Colors.white)),
                                               onPressed: () {
                                                 setState(() {
                                                   _searchQuery = '';

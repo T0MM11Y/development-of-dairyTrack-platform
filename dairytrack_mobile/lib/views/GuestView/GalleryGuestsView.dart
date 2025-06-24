@@ -194,7 +194,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                                     color: AppColors.accent, size: 14),
                                 SizedBox(width: 6),
                                 Text(
-                                  "Galeri & Dokumentasi",
+                                  "Gallery & Documentation",
                                   style: TextStyle(
                                     color: AppColors.accent,
                                     fontSize: 11,
@@ -208,7 +208,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                           SizedBox(height: 16),
                           // Main Title
                           Text(
-                            "Galeri Visual\nTSTH²",
+                            "Visual Gallery\nTSTH²",
                             style: TextStyle(
                               color: AppColors.textOnPrimary,
                               fontSize: 24,
@@ -230,7 +230,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                           SizedBox(height: 12),
                           // Description
                           Text(
-                            "Dokumentasi visual kegiatan peternakan dan perkembangan sapi",
+                            "Visual documentation of cattle farming activities and development",
                             style: TextStyle(
                               color: AppColors.textOnPrimary.withOpacity(0.9),
                               fontSize: 13,
@@ -326,7 +326,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                                   ),
                                   SizedBox(height: 16),
                                   Text(
-                                    'Gambar tidak dapat dimuat',
+                                    'Image cannot be loaded',
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 16,
@@ -363,7 +363,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    'Dibuat: ${DateFormat('dd MMMM yyyy').format(gallery.createdAt)}',
+                                    'Made: ${DateFormat('dd MMMM yyyy').format(gallery.createdAt)}',
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 14,
@@ -382,7 +382,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                                     ),
                                     SizedBox(width: 4),
                                     Text(
-                                      'Diperbarui: ${DateFormat('dd MMMM yyyy').format(gallery.updatedAt)}',
+                                      'Updated: ${DateFormat('dd MMMM yyyy').format(gallery.updatedAt)}',
                                       style: TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 14,
@@ -438,7 +438,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
           ),
           SizedBox(height: 20),
           Text(
-            "Memuat galeri...",
+            "Loading gallery...",
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 16,
@@ -484,7 +484,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Ups! Terjadi Kesalahan',
+                    'Oops! Something went wrong',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -560,7 +560,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Belum Ada Galeri',
+                    'No gallery yet',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -569,7 +569,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Belum ada galeri yang tersedia saat ini',
+                    'There are no galleries available at this time',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
@@ -674,7 +674,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 8),
                               child: Text(
-                                'Gambar tidak dapat dimuat',
+                                'Image cannot be loaded',
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 11,
@@ -707,7 +707,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                           ),
                           SizedBox(width: 4),
                           Text(
-                            'Lihat',
+                            'Look',
                             style: TextStyle(
                               color: AppColors.textOnDark,
                               fontSize: 10,
@@ -786,7 +786,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                           ),
                           SizedBox(width: 4),
                           Text(
-                            'Ketuk untuk melihat',
+                            'Tap to view',
                             style: TextStyle(
                               color: AppColors.secondary,
                               fontSize: 9,
@@ -827,7 +827,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Galeri TSTH²',
+                  'Gallery TSTH²',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -835,7 +835,7 @@ class _GalleryGuestsViewState extends State<GalleryGuestsView>
                   ),
                 ),
                 Text(
-                  "Dokumentasi Visual",
+                  "Visual Documentation",
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.textOnPrimary.withOpacity(0.8),

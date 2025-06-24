@@ -1256,7 +1256,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                     ).then((_) => _loadNotifications());
                   },
                   child: Text(
-                    'Lihat Semua',
+                    'See All',
                     style: TextStyle(
                       color: Colors.green[700],
                       fontSize: 12,
