@@ -216,7 +216,7 @@ text: "Cannot add reproduction data because no female cows are available.",
     <p className="mt-3 text-muted">Loading reproduction data...</p>
             </div>
           ) : filteredData.length === 0 ? (
-    <p className="mt-3 text-muted">Loading reproduction data...</p>
+  <p className="text-muted">No reproduction data.</p> // ✅ ini yang benar
           ) : (
             <>
               <div className="table-responsive">
