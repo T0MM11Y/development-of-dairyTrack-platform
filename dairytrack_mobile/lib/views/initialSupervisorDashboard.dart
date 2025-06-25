@@ -425,7 +425,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                 contentMedia),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
-            _buildFabGroup('Cattle Health', Icons.medical_services, Colors.red,
+            _buildFabGroup('Health Check Management', Icons.medical_services, Colors.red,
                 cattleHealth),
             _buildFabGroup('Milking & Analysis', Icons.local_drink, Colors.blue,
                 milkingAnalysis),
