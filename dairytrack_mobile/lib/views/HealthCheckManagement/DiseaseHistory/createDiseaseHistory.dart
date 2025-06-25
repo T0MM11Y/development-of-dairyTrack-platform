@@ -253,7 +253,7 @@ Widget build(BuildContext context) {
                             .toList(),
                       )
                     else
-                      const Text('Tidak ada gejala abnormal ditemukan.',
+                      const Text('No abnormal symptoms found.',
                           style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 20),
                   ],

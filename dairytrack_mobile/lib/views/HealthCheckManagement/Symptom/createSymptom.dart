@@ -46,59 +46,59 @@ class _CreateSymptomViewState extends State<CreateSymptomView> {
   final Map<String, List<String>> selectOptions = {
     'eye_condition': [
       "Normal",
-      "Mata merah",
-      "Mata tidak cemerlang dan atau tidak bersih",
-      "Terdapat kotoran atau lendir pada mata",
+  "Red eyes",
+  "Eyes look dull or not clear",
+  "Eyes have dirt or mucus"
     ],
     'mouth_condition': [
       "Normal",
-      "Mulut berbusa",
-      "Mulut mengeluarkan lendir",
-      "Mulut terdapat kotoran (terutama di sudut mulut)",
-      "Warna bibir pucat",
-      "Mulut berbau tidak enak",
-      "Terdapat luka di mulut",
+  "Foamy mouth",
+  "Mouth has mucus",
+  "Dirt in the mouth (especially at the corners)",
+  "Pale lips",
+  "Bad mouth odor",
+  "Wounds in the mouth"
     ],
     'nose_condition': [
       "Normal",
-      "Hidung mengeluarkan ingus",
-      "Hidung mengeluarkan darah",
-      "Di sekitar lubang hidung terdapat kotoran",
+  "Runny nose",
+  "Nosebleed",
+  "Dirt around the nostrils"
     ],
     'anus_condition': [
       "Normal",
-      "Kotoran terlalu keras atau terlalu cair",
-      "Kotoran terdapat bercak darah",
+  "Stool is too hard or too watery (diarrhea)",
+  "Stool has blood spots"
     ],
     'leg_condition': [
       "Normal",
-      "Kaki bengkak",
-      "Kaki terdapat luka",
-      "Luka pada kuku kaki",
+  "Swollen leg",
+  "Wound on the leg",
+  "Injury on the hoof"
     ],
     'skin_condition': [
       "Normal",
-      "Kulit tidak bersih (tidak cemerlang)",
-      "Terdapat benjolan atau bentol",
-      "Terdapat luka pada kulit",
-      "Terdapat banyak kutu",
+  "Skin looks dirty or dull",
+  "Lumps or bumps on the skin",
+  "Wound on the skin",
+  "Many lice on the skin"
     ],
     'behavior': [
       "Normal",
-      "Nafsu makan berkurang",
-      "Memisahkan diri dari kawanannya",
-      "Sering dalam posisi duduk/tidur",
+  "Reduced appetite, different from other cows",
+  "Separates from the herd",
+  "Often lying down or sitting"
     ],
     'weight_condition': [
       "Normal",
-      "Penurunan bobot dibanding sebelumnya",
-      "Tulang terlihat (ADG menurun)",
+  "Weight loss compared to before",
+  "Bones are visible due to decreasing weight gain (ADG)"
     ],
     'reproductive_condition': [
       "Normal",
-      "Kelamin sulit mengeluarkan urine",
-      "Kelamin berlendir",
-      "Kelamin berdarah",
+  "Difficulty urinating",
+  "Mucus from the genitals",
+  "Bleeding from the genitals"
     ],
   };
 

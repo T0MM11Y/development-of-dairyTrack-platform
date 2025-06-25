@@ -238,11 +238,11 @@ class Reproduction(models.Model):
     def is_alert_needed(self):
         alerts = []
         if self.calving_interval is not None and self.calving_interval > 425:
-            alerts.append("Calving interval terlalu panjang (>14 bulan)")
+            alerts.append("Calving interval is too long (>14 months)")
         if self.service_period is not None and self.service_period > 90:
-            alerts.append("Service period melewati batas (>90 hari)")
+            alerts.append("Service period exceeds the limit (>90 days)")
         if self.conception_rate is not None and self.conception_rate < 50:
-            alerts.append("Tingkat konsepsi rendah (<50%)")
+            alerts.append("Conception rate is low (<50%)")
         return alerts
 
 class Notification(models.Model):

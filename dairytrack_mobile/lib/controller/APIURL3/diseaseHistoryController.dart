@@ -51,17 +51,17 @@ class DiseaseHistoryController {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           'success': true,
-          'message': result['message'] ?? 'Riwayat penyakit berhasil ditambahkan',
+          'message': result['message'] ?? 'Disease history added successfully',
           'data': result,
         };
       } else {
         return {
           'success': false,
-          'message': result['message'] ?? 'Gagal menambahkan riwayat penyakit',
+          'message': result['message'] ?? 'Failed to add disease history',
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Terjadi kesalahan: $e'};
+      return {'success': false, 'message': 'An error occurred: $e'};
     }
   }
 

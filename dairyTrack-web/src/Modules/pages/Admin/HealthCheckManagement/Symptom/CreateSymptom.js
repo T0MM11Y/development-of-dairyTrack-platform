@@ -73,61 +73,65 @@ const filteredHealthChecks = useMemo(() => {
 
   const selectOptions = {
     eye_condition: [
-      "Normal",
-      "Mata merah",
-      "Mata tidak cemerlang dan atau tidak bersih",
-      "Terdapat kotoran atau lendir pada mata",
-    ],
-    mouth_condition: [
-      "Normal",
-      "Mulut berbusa",
-      "Mulut mengeluarkan lendir",
-      "Mulut terdapat kotoran (terutama di sudut mulut)",
-      "Warna bibir pucat",
-      "Mulut berbau tidak enak",
-      "Terdapat luka di mulut",
-    ],
+  "Normal",
+  "Red eyes",
+  "Eyes look dull or not clear",
+  "Eyes have dirt or mucus"
+],
+  mouth_condition: [
+  "Normal",
+  "Foamy mouth",
+  "Mouth has mucus",
+  "Dirt in the mouth (especially at the corners)",
+  "Pale lips",
+  "Bad mouth odor",
+  "Wounds in the mouth"
+],
     nose_condition: [
-      "Normal",
-      "Hidung mengeluarkan ingus",
-      "Hidung mengeluarkan darah",
-      "Di sekitar lubang hidung terdapat kotoran",
-    ],
-    anus_condition: [
-      "Normal",
-      "Kotoran terlihat terlalu keras atau terlalu cair (mencret)",
-      "Kotoran terdapat bercak darah",
-    ],
+  "Normal",
+  "Runny nose",
+  "Nosebleed",
+  "Dirt around the nostrils"
+],
+   anus_condition: [
+  "Normal",
+  "Stool is too hard or too watery (diarrhea)",
+  "Stool has blood spots"
+],
     leg_condition: [
-      "Normal",
-      "Kaki bengkak",
-      "Kaki terdapat luka",
-      "Luka pada kuku kaki",
-    ],
-    skin_condition: [
-      "Normal",
-      "Kulit terlihat tidak bersih (cemerlang)",
-      "Terdapat benjolan atau bentol-bentol",
-      "Terdapat luka pada kulit",
-      "Terdapat banyak kutu",
-    ],
-    behavior: [
-      "Normal",
-      "Nafsu makan berkurang, beda dari sapi lain",
-      "Memisahkan diri dari kawanannya",
-      "Seringkali dalam posisi duduk/tidur",
-    ],
-    weight_condition: [
-      "Normal",
-      "Terjadi penurunan bobot dibandingkan sebelumnya",
-      "Terlihat tulang karena ADG semakin menurun",
-    ],
-    reproductive_condition: [
-      "Normal",
-      "Kelamin sulit mengeluarkan urine",
-      "Kelamin berlendir",
-      "Kelamin berdarah",
-    ],
+  "Normal",
+  "Swollen leg",
+  "Wound on the leg",
+  "Injury on the hoof"
+],
+
+skin_condition: [
+  "Normal",
+  "Skin looks dirty or dull",
+  "Lumps or bumps on the skin",
+  "Wound on the skin",
+  "Many lice on the skin"
+],
+
+behavior: [
+  "Normal",
+  "Reduced appetite, different from other cows",
+  "Separates from the herd",
+  "Often lying down or sitting"
+],
+
+weight_condition: [
+  "Normal",
+  "Weight loss compared to before",
+  "Bones are visible due to decreasing weight gain (ADG)"
+],
+
+reproductive_condition: [
+  "Normal",
+  "Difficulty urinating",
+  "Mucus from the genitals",
+  "Bleeding from the genitals"
+],
   };
 useEffect(() => {
   const fetchData = async () => {
