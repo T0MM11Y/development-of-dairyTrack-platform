@@ -20,13 +20,12 @@ class CowSimpleSerializer(serializers.ModelSerializer):
 class HealthCheckCreateSerializer(serializers.ModelSerializer):
     cow_id = serializers.PrimaryKeyRelatedField(queryset=Cow.objects.all(), source="cow")
     checked_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
 
     class Meta:
         model = HealthCheck
         fields = [
             'cow_id', 'rectal_temperature', 'heart_rate', 'respiration_rate',
-            'rumination', 'checked_by', 'edited_by'
+            'rumination', 'checked_by'
         ]
 
 
@@ -75,8 +74,22 @@ class SymptomReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Symptom
-        fields = '__all__'
-
+        fields = [
+            'id',
+            'health_check',
+            'created_by',
+            'edited_by',
+            'eye_condition',
+            'mouth_condition',
+            'nose_condition',
+            'anus_condition',
+            'leg_condition',
+            'skin_condition',
+            'behavior',
+            'weight_condition',
+            'reproductive_condition',
+            'created_at',
+        ]
 
 # Write: untuk POST/PUT
 class SymptomWriteSerializer(serializers.ModelSerializer):
@@ -97,6 +110,7 @@ class SymptomWriteSerializer(serializers.ModelSerializer):
             "edited_by",
         ]
 class SymptomCreateSerializer(serializers.ModelSerializer):
+    health_check = serializers.PrimaryKeyRelatedField(queryset=HealthCheck.objects.all())
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
 
     class Meta:
@@ -121,6 +135,7 @@ class DiseaseHistoryListSerializer(serializers.ModelSerializer):
     health_check = HealthCheckListSerializer()
     symptom = SymptomWriteSerializer()
     created_by = UserSimpleSerializer(read_only=True)
+    edited_by = UserSimpleSerializer(read_only=True)
 
 
     class Meta:
@@ -134,6 +149,7 @@ class DiseaseHistoryListSerializer(serializers.ModelSerializer):
             'treatment_done',
             'created_at',
             'created_by',
+            'edited_by'
         ]
 class DiseaseHistoryCreateSerializer(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
@@ -169,6 +185,7 @@ class ReproductionListSerializer(serializers.ModelSerializer):
     cow = CowSimpleSerializer()
     alerts = serializers.SerializerMethodField()
     created_by = UserSimpleSerializer(read_only=True)
+    edited_by = UserSimpleSerializer(read_only=True)
 
 
     class Meta:
@@ -187,79 +204,50 @@ class ReproductionListSerializer(serializers.ModelSerializer):
             'recorded_at',
             'alerts',
             'created_by',
+            'edited_by'
         ]
 
     def get_alerts(self, obj):
         return obj.is_alert_needed() if hasattr(obj, "is_alert_needed") else None
 
 
-class ReproductionCreateUpdateSerializer(serializers.ModelSerializer):
+class ReproductionCreateSerializer(serializers.ModelSerializer):
     total_insemination = serializers.IntegerField(write_only=True, required=True)
     successful_pregnancy = serializers.IntegerField(write_only=True, required=False)
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
 
     class Meta:
         model = Reproduction
         fields = [
             "cow",
-            "calving_interval",
-            "service_period",
-            "conception_rate",
             "calving_date",
             "previous_calving_date",
             "insemination_date",
             "total_insemination",
             "successful_pregnancy",
             "created_by",
-            "edited_by",
         ]
 
     def create(self, validated_data):
         return self._save(validated_data)
 
-    def update(self, instance, validated_data):
-        return self._save(validated_data, instance)
-
     def _save(self, validated_data, instance=None):
         created_by = validated_data.get("created_by", None)
-        edited_by = validated_data.get("edited_by", None)
 
-        print("=== DEBUG BACKEND ===")
-        print("validated_data (awal):", validated_data)
-        print("created_by:", created_by)
-        print("edited_by:", edited_by)
-
-        # Pop field yang wajib dihitung
         calving_date = validated_data.pop("calving_date")
         previous_calving_date = validated_data.pop("previous_calving_date")
         insemination_date = validated_data.pop("insemination_date")
         total_insemination = validated_data.pop("total_insemination")
         successful_pregnancy = validated_data.pop("successful_pregnancy", 1)
 
-        # Hitung metrik
         conception_rate = round((successful_pregnancy / total_insemination) * 100, 2)
         calving_interval = (calving_date - previous_calving_date).days
         service_period = (insemination_date - calving_date).days
 
-    # Buat atau update instance
-        if instance is None:
-            instance = Reproduction()
-            print("Membuat instance baru...")
-            if created_by:
-                print("➡️ Menetapkan created_by:", created_by)
-                instance.created_by = created_by
-            else:
-                print("❌ created_by TIDAK DITEMUKAN")
-        else:
-            print("Update instance...")
-            if edited_by:
-                print("➡️ Menetapkan edited_by:", edited_by)
-                instance.edited_by = edited_by
-            else:
-                print("❌ edited_by TIDAK DITEMUKAN")
+        instance = Reproduction()
+        if created_by:
+            instance.created_by = created_by
 
-        # Set field lainnya
         instance.cow = validated_data.get("cow")
         instance.calving_date = calving_date
         instance.previous_calving_date = previous_calving_date
@@ -271,10 +259,55 @@ class ReproductionCreateUpdateSerializer(serializers.ModelSerializer):
         instance.conception_rate = conception_rate
 
         instance.save()
-        print("✅ Instance berhasil disimpan:", instance)
-
         return instance
 
+class ReproductionUpdateSerializer(serializers.ModelSerializer):
+    successful_pregnancy = serializers.IntegerField(write_only=True, required=False)
+    edited_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+
+    class Meta:
+        model = Reproduction
+        fields = [
+            "cow",
+            "calving_date",
+            "previous_calving_date",
+            "insemination_date",
+            "total_insemination",
+            "successful_pregnancy",
+            "edited_by",
+        ]
+
+    def update(self, instance, validated_data):
+        return self._save(validated_data, instance)
+
+    def _save(self, validated_data, instance):
+        edited_by = validated_data.get("edited_by", None)
+
+        calving_date = validated_data.pop("calving_date")
+        previous_calving_date = validated_data.pop("previous_calving_date")
+        insemination_date = validated_data.pop("insemination_date")
+        total_insemination = validated_data.pop("total_insemination", instance.total_insemination)
+        successful_pregnancy = validated_data.pop("successful_pregnancy", instance.successful_pregnancy or 1)
+
+        conception_rate = round((successful_pregnancy / total_insemination) * 100, 2)
+        calving_interval = (calving_date - previous_calving_date).days
+        service_period = (insemination_date - calving_date).days
+
+        if edited_by:
+            instance.edited_by = edited_by
+
+        instance.cow = validated_data.get("cow", instance.cow)
+        instance.calving_date = calving_date
+        instance.previous_calving_date = previous_calving_date
+        instance.insemination_date = insemination_date
+        instance.total_insemination = total_insemination
+        instance.successful_pregnancy = successful_pregnancy
+        instance.calving_interval = calving_interval
+        instance.service_period = service_period
+        instance.conception_rate = conception_rate
+
+        instance.save()
+        return instance
 
     
 

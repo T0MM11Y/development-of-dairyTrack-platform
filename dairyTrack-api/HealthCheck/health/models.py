@@ -105,7 +105,11 @@ class HealthCheck(models.Model):
         db_table = "health_check"
 
 class Symptom(models.Model):
-    health_check = models.OneToOneField("HealthCheck", on_delete=models.CASCADE, related_name="symptom")
+    health_check = models.ForeignKey(
+        "HealthCheck",
+        on_delete=models.CASCADE,
+        related_name="symptoms"
+    )
     created_by = models.ForeignKey(
         "User",
         on_delete=models.SET_NULL,
@@ -115,14 +119,13 @@ class Symptom(models.Model):
         help_text="User yang mencatat gejala"
     )
     edited_by = models.ForeignKey(
-    "User",
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True,
-    related_name="edited_symptoms",
-    help_text="User yang terakhir mengedit data gejala"
-)
-
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="edited_symptoms",
+        help_text="User yang terakhir mengedit data gejala"
+    )
 
     eye_condition = models.CharField(max_length=50, null=True, blank=True)
     mouth_condition = models.CharField(max_length=50, null=True, blank=True)
@@ -141,6 +144,7 @@ class Symptom(models.Model):
 
     class Meta:
         db_table = "symptom"
+
         
 class DiseaseHistory(models.Model):
     health_check = models.ForeignKey(
