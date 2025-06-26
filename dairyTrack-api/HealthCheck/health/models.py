@@ -127,15 +127,15 @@ class Symptom(models.Model):
         help_text="User yang terakhir mengedit data gejala"
     )
 
-    eye_condition = models.CharField(max_length=50, null=True, blank=True)
-    mouth_condition = models.CharField(max_length=50, null=True, blank=True)
-    nose_condition = models.CharField(max_length=50, null=True, blank=True)
-    anus_condition = models.CharField(max_length=60, null=True, blank=True)
-    leg_condition = models.CharField(max_length=50, null=True, blank=True)
-    skin_condition = models.CharField(max_length=50, null=True, blank=True)
-    behavior = models.CharField(max_length=50, null=True, blank=True)
-    weight_condition = models.CharField(max_length=50, null=True, blank=True)
-    reproductive_condition = models.CharField(max_length=50, null=True, blank=True)
+    eye_condition = models.CharField(max_length=100, null=True, blank=True)
+    mouth_condition = models.CharField(max_length=100, null=True, blank=True)
+    nose_condition = models.CharField(max_length=100, null=True, blank=True)
+    anus_condition = models.CharField(max_length=100, null=True, blank=True)
+    leg_condition = models.CharField(max_length=100, null=True, blank=True)
+    skin_condition = models.CharField(max_length=100, null=True, blank=True)
+    behavior = models.CharField(max_length=100, null=True, blank=True)
+    weight_condition = models.CharField(max_length=100, null=True, blank=True)
+    reproductive_condition = models.CharField(max_length=100, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -183,7 +183,7 @@ class DiseaseHistory(models.Model):
 
     @property
     def symptom(self):
-        return self.health_check.symptom if hasattr(self.health_check, "symptom") else None
+        return self.health_check.symptoms.first() if hasattr(self.health_check, "symptoms") else None
 
     def __str__(self):
         return f"{self.disease_name} - {self.health_check.cow.name}"
