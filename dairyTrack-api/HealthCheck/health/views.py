@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from .models import Reproduction
 from .serializers import (
     ReproductionListSerializer,
-    ReproductionCreateUpdateSerializer
+    ReproductionCreateSerializer,
+    ReproductionUpdateSerializer
 )
 
 
@@ -77,7 +78,7 @@ class ReproductionListCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return ReproductionCreateUpdateSerializer
+                    return ReproductionCreateSerializer
         return ReproductionListSerializer
 
 
@@ -87,7 +88,7 @@ class ReproductionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
-            return ReproductionCreateUpdateSerializer
+            return  ReproductionUpdateSerializer
         return ReproductionListSerializer
 
 class NotificationListView(generics.ListAPIView):

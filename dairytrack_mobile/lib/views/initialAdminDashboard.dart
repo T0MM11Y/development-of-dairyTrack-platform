@@ -187,7 +187,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Medical Examination', // Fixed capitalization
+          label: 'health-checks', // Fixed capitalization
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
@@ -241,7 +241,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         ),
         NavigationItem(
           icon: Icons.medical_services,
-          label: 'Health Examination', // Changed from 'Pemeriksaan Kesehatan'
+          label: 'health-checks', // Changed from 'Pemeriksaan Kesehatan'
           route: 'health-checks',
           widget: () => HealthCheckListView(),
         ),
@@ -276,18 +276,19 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'feed-schedule',
           widget: () => DailyFeedView(),
         ),
+         NavigationItem(
+          icon: Icons.monitor_heart,
+          label: 'Health Dashboard', // Changed from 'HealthDashboard'
+          route: 'health-dashboard',
+          widget: () => HealthDashboardView(),
+        ),
         NavigationItem(
           icon: Icons.checklist,
           label: 'Daily Feed Item', // Changed from 'Feed Item Harian'
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
-        NavigationItem(
-          icon: Icons.monitor_heart,
-          label: 'Health Dashboard', // Changed from 'HealthDashboard'
-          route: 'health-dashboard',
-          widget: () => HealthDashboardView(),
-        ),
+       
       ];
 
   @override
@@ -458,7 +459,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 Colors.deepPurple, productsSales),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
-            _buildFabGroup('Cattle Health', Icons.medical_services, Colors.red,
+            _buildFabGroup('Health Check Management', Icons.medical_services, Colors.red,
                 cattleHealth),
             _buildFabGroup('Content Management', Icons.library_books,
                 Colors.amber, contentManagement),

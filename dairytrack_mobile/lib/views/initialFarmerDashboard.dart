@@ -517,7 +517,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'Health Management',
+                        'Health Check Management',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -527,14 +527,14 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                     ),
                     const SizedBox(width: 8),
                     FloatingActionButton(
-                      heroTag: "health_management",
+                      heroTag: "Health Check Management",
                       backgroundColor: Colors.red[600],
                       foregroundColor: Colors.white,
                       elevation: 6,
                       mini: true,
                       onPressed: () {
                         _toggleFab();
-                        _showMenuDialog('Health Management', healthManagement);
+                        _showMenuDialog('Health Check Management', healthManagement);
                       },
                       child: const Icon(Icons.health_and_safety, size: 20),
                     ),

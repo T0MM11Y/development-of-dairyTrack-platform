@@ -182,7 +182,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
       });
 
       await _notificationService.cancelNotification(notificationId);
-      _showSuccessSnackBar('Notifications marked as read');
+      _showSuccessSnackBar('Notification marked as read');
     } else {
       _showErrorSnackBar(result['message']);
     }
@@ -206,7 +206,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
         });
 
         await _notificationService.cancelAllNotifications();
-        _showSuccessSnackBar('All notifications are marked as read');
+        _showSuccessSnackBar('All notifications marked as read');
       } else {
         _showErrorSnackBar(result['message']);
       }
@@ -219,10 +219,10 @@ class _NotificationWidgetState extends State<NotificationWidget>
 
   Future<void> _clearAllNotifications() async {
     final bool? confirmed = await _showConfirmationDialog(
-      title: 'Clear All Notifications',
+      title: 'Delete All Notifications',
       content:
-          'Are you sure you want to delete all notifications? This action cannot be undone..',
-      confirmText: 'Remove all',
+          'Are you sure you want to delete all notifications? This action cannot be undone.',
+      confirmText: 'Delete All',
       isDestructive: true,
     );
 
@@ -242,8 +242,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
           });
 
           await _notificationService.cancelAllNotifications();
-          _showSuccessSnackBar(
-              'All notifications have been successfully deleted');
+          _showSuccessSnackBar('All notifications deleted successfully');
         } else {
           _showErrorSnackBar(result['message']);
         }
@@ -273,12 +272,12 @@ class _NotificationWidgetState extends State<NotificationWidget>
         });
 
         await _notificationService.cancelNotification(notificationId);
-        _showSuccessSnackBar('Notification successfully deleted');
+        _showSuccessSnackBar('Notification deleted successfully');
       } else {
         _showErrorSnackBar(result['message']);
       }
     } catch (e) {
-      _showErrorSnackBar('An error occurred while deleting notifications');
+      _showErrorSnackBar('An error occurred while deleting the notification');
       print('Error deleting notification: $e');
     }
   }
@@ -770,7 +769,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     ),
                     SizedBox(width: 12),
                     Text(
-                      _isMarkingAllRead ? 'Processing...' : 'Mark All Read',
+                      _isMarkingAllRead ? 'Processing...' : 'Mark All as Read',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -792,7 +791,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     ),
                     SizedBox(width: 12),
                     Text(
-                      _isClearingAll ? 'Delete...' : 'Remove all',
+                      _isClearingAll ? 'Deleting...' : 'Delete All',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -833,7 +832,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-                      _isClearingAll ? 'Delete...' : 'Delete',
+                      _isClearingAll ? 'Deleting...' : 'Delete',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -878,7 +877,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-                      _isMarkingAllRead ? 'Process...' : 'Mark',
+                      _isMarkingAllRead ? 'Processing...' : 'Mark',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -951,7 +950,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 24),
             Text(
-              'Loading notification...',
+              'Loading notifications...',
               style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 15,
@@ -1024,7 +1023,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      'All notifications will appear here.\nYou will be notified for important things related to your farm..',
+                      'All notifications will appear here.\nYou will receive alerts about important matters related to your farm.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -1100,7 +1099,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 6),
             Text(
-              'Try using different keywords',
+              'Try using a different keyword',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 13,
@@ -1331,7 +1330,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     size: 14, color: Colors.red),
               ),
               SizedBox(width: 10),
-              Text('Hapus',
+              Text('Delete',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             ],
           ),
@@ -1342,9 +1341,9 @@ class _NotificationWidgetState extends State<NotificationWidget>
 
   void _showDeleteConfirmation(int notificationId, int index) async {
     final bool? confirmed = await _showConfirmationDialog(
-      title: 'Clear Notifications',
+      title: 'Delete Notification',
       content:
-          'Are you sure you want to delete this notification? This action cannot be undone..',
+          'Are you sure you want to delete this notification? This action cannot be undone.',
       confirmText: 'Delete',
       isDestructive: true,
     );
@@ -1371,7 +1370,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
               CircularProgressIndicator(color: _primaryColor, strokeWidth: 2.5),
               SizedBox(height: 20),
               Text(
-                'Clears all notifications...',
+                'Deleting all notifications...',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1380,7 +1379,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
               ),
               SizedBox(height: 8),
               Text(
-                'Please wait, do not close the application',
+                'Please wait, do not close the app',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],
@@ -1513,7 +1512,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Time Received',
+                                  'Received Time',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -1594,7 +1593,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           elevation: 2,
                         ),
                         child: Text(
-                          'Tutup',
+                          'Close',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w600),
                         ),

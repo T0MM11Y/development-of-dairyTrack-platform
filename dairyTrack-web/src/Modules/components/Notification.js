@@ -409,8 +409,9 @@ const NotificationDropdown = React.memo(() => {
 
   const formatTimeAgo = useCallback((dateString) => {
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch {
+const utcDate = new Date(dateString);
+    const wibDate = new Date(utcDate.getTime() + 7 * 60 * 60 * 1000); // Geser +7 jam
+    return formatDistanceToNow(wibDate, { addSuffix: true });    } catch {
       return "Invalid date";
     }
   }, []);

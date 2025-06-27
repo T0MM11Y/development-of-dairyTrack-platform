@@ -105,7 +105,11 @@ class HealthCheck(models.Model):
         db_table = "health_check"
 
 class Symptom(models.Model):
-    health_check = models.OneToOneField("HealthCheck", on_delete=models.CASCADE, related_name="symptom")
+    health_check = models.ForeignKey(
+        "HealthCheck",
+        on_delete=models.CASCADE,
+        related_name="symptoms"
+    )
     created_by = models.ForeignKey(
         "User",
         on_delete=models.SET_NULL,
@@ -115,24 +119,23 @@ class Symptom(models.Model):
         help_text="User yang mencatat gejala"
     )
     edited_by = models.ForeignKey(
-    "User",
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True,
-    related_name="edited_symptoms",
-    help_text="User yang terakhir mengedit data gejala"
-)
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="edited_symptoms",
+        help_text="User yang terakhir mengedit data gejala"
+    )
 
-
-    eye_condition = models.CharField(max_length=50, null=True, blank=True)
-    mouth_condition = models.CharField(max_length=50, null=True, blank=True)
-    nose_condition = models.CharField(max_length=50, null=True, blank=True)
-    anus_condition = models.CharField(max_length=60, null=True, blank=True)
-    leg_condition = models.CharField(max_length=50, null=True, blank=True)
-    skin_condition = models.CharField(max_length=50, null=True, blank=True)
-    behavior = models.CharField(max_length=50, null=True, blank=True)
-    weight_condition = models.CharField(max_length=50, null=True, blank=True)
-    reproductive_condition = models.CharField(max_length=50, null=True, blank=True)
+    eye_condition = models.CharField(max_length=100, null=True, blank=True)
+    mouth_condition = models.CharField(max_length=100, null=True, blank=True)
+    nose_condition = models.CharField(max_length=100, null=True, blank=True)
+    anus_condition = models.CharField(max_length=100, null=True, blank=True)
+    leg_condition = models.CharField(max_length=100, null=True, blank=True)
+    skin_condition = models.CharField(max_length=100, null=True, blank=True)
+    behavior = models.CharField(max_length=100, null=True, blank=True)
+    weight_condition = models.CharField(max_length=100, null=True, blank=True)
+    reproductive_condition = models.CharField(max_length=100, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -141,6 +144,7 @@ class Symptom(models.Model):
 
     class Meta:
         db_table = "symptom"
+
         
 class DiseaseHistory(models.Model):
     health_check = models.ForeignKey(
@@ -179,7 +183,7 @@ class DiseaseHistory(models.Model):
 
     @property
     def symptom(self):
-        return self.health_check.symptom if hasattr(self.health_check, "symptom") else None
+        return self.health_check.symptoms.first() if hasattr(self.health_check, "symptoms") else None
 
     def __str__(self):
         return f"{self.disease_name} - {self.health_check.cow.name}"
@@ -234,11 +238,11 @@ class Reproduction(models.Model):
     def is_alert_needed(self):
         alerts = []
         if self.calving_interval is not None and self.calving_interval > 425:
-            alerts.append("Calving interval terlalu panjang (>14 bulan)")
+            alerts.append("Calving interval is too long (>14 months)")
         if self.service_period is not None and self.service_period > 90:
-            alerts.append("Service period melewati batas (>90 hari)")
+            alerts.append("Service period exceeds the limit (>90 days)")
         if self.conception_rate is not None and self.conception_rate < 50:
-            alerts.append("Tingkat konsepsi rendah (<50%)")
+            alerts.append("Conception rate is low (<50%)")
         return alerts
 
 class Notification(models.Model):
