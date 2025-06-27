@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'tthsanbe_t5th',
+        'NAME': 'tthsanbe_k3l11',
         'USER': 'tthsanbe_TA',
         'PASSWORD': 'Cy2U0x1JJRFY',
         'HOST': '178.248.73.218',

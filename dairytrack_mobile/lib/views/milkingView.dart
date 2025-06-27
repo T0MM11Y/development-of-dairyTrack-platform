@@ -709,7 +709,7 @@ class _MilkingViewState extends State<MilkingView> {
         isActionLoading = false;
         isModalActionLoading = false;
       });
-      _showErrorDialog('Silakan pilih pemerah');
+      _showErrorDialog('Silakan Select Blusher');
       return;
     }
 
@@ -2318,7 +2318,7 @@ class _MilkingViewState extends State<MilkingView> {
                   // Cow selection
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Sapi *',
+                      labelText: 'Select Cow *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.pets),
@@ -2331,7 +2331,7 @@ class _MilkingViewState extends State<MilkingView> {
                     items: [
                       DropdownMenuItem(
                           value: '',
-                          child: Text('-- Pilih Sapi --',
+                          child: Text('-- Select Cow --',
                               style: TextStyle(color: Colors.grey[600]))),
                       ...(currentUser?['role_id'] == 1
                               ? cowList
@@ -2395,7 +2395,7 @@ class _MilkingViewState extends State<MilkingView> {
                                   key: ValueKey(
                                       'milker_dropdown_${newSession['cow_id']}_${farmers.length}_$isLoading'),
                                   decoration: InputDecoration(
-                                    labelText: 'Pilih Pemerah *',
+                                    labelText: 'Select Blusher *',
                                     border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8)),
                                     prefixIcon: Icon(Icons.person),
@@ -2420,12 +2420,12 @@ class _MilkingViewState extends State<MilkingView> {
                                         value: '',
                                         child: Text(
                                             !isCowSelected
-                                                ? '-- Pilih Sapi Terlebih Dahulu --'
+                                                ? '-- Select Cow First --'
                                                 : isLoading
-                                                    ? '-- Memuat Pemerah... --'
+                                                    ? '-- Loading the Milker... --'
                                                     : farmers.isEmpty
-                                                        ? '-- Tidak Ada Pemerah Tersedia --'
-                                                        : '-- Pilih Pemerah --',
+                                                        ? '-- No Milker Available --'
+                                                        : '-- Select Blusher --',
                                             style: TextStyle(
                                                 color: Colors.grey[600]))),
                                     if (isCowSelected && !isLoading)
@@ -2455,18 +2455,18 @@ class _MilkingViewState extends State<MilkingView> {
                                   ],
                                   validator: (value) {
                                     if (!isCowSelected) {
-                                      return 'Pilih sapi terlebih dahulu';
+                                      return 'Select Cow first';
                                     }
                                     if (isLoading) {
-                                      return 'Menunggu data pemerah dimuat...';
+                                      return 'Waiting for milking data to load...';
                                     }
                                     if (farmers.isEmpty) {
-                                      return 'Tidak ada pemerah tersedia untuk sapi ini';
+                                      return 'No Milker Available for this cow';
                                     }
                                     if (value == null ||
                                         value.isEmpty ||
                                         value == '') {
-                                      return 'Silakan pilih pemerah';
+                                      return 'Please Select Blusher';
                                     }
                                     return null;
                                   },
@@ -2484,10 +2484,10 @@ class _MilkingViewState extends State<MilkingView> {
                                       : null,
                                   disabledHint: Text(
                                       !isCowSelected
-                                          ? 'Pilih sapi terlebih dahulu'
+                                          ? 'Select Cow first'
                                           : isLoading
-                                              ? 'Memuat data pemerah...'
-                                              : 'Tidak ada pemerah tersedia',
+                                              ? 'Loading milking data...'
+                                              : 'No Milker Available',
                                       style:
                                           TextStyle(color: Colors.grey[500])),
                                 ),
@@ -2517,7 +2517,7 @@ class _MilkingViewState extends State<MilkingView> {
                                         ),
                                         SizedBox(width: 8),
                                         Text(
-                                          'Memuat data pemerah untuk sapi yang dipilih...',
+                                          'Loading milking data for selected cows...',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.blue[800],
@@ -2548,7 +2548,7 @@ class _MilkingViewState extends State<MilkingView> {
                                         SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                                            'There are no milkers available for this cow. Make sure the cow has been distributed to a milker..',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.red[800],
@@ -2582,7 +2582,7 @@ class _MilkingViewState extends State<MilkingView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Pemerah',
+                                  'Milker',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
@@ -2590,7 +2590,7 @@ class _MilkingViewState extends State<MilkingView> {
                                   ),
                                 ),
                                 Text(
-                                  '${currentUser?['name'] ?? currentUser?['username'] ?? 'Nama tidak tersedia'} (ID: ${currentUser?['id'] ?? currentUser?['user_id'] ?? 'ID tidak tersedia'})',
+                                  '${currentUser?['name'] ?? currentUser?['username'] ?? 'Name not available'} (ID: ${currentUser?['id'] ?? currentUser?['user_id'] ?? 'ID not available'})',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey[800],
@@ -2629,7 +2629,7 @@ class _MilkingViewState extends State<MilkingView> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Memuat data pemerah untuk sapi yang dipilih...',
+                            'Loading milker data for selected cows...',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.blue[800],
@@ -2661,7 +2661,7 @@ class _MilkingViewState extends State<MilkingView> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Beberapa sapi tidak memiliki nama yang valid dan tidak ditampilkan dalam daftar',
+                              'Some cows do not have valid names and are not shown in the list.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.orange[800],
@@ -2692,7 +2692,7 @@ class _MilkingViewState extends State<MilkingView> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                              'There are no milkers available for this cow. Make sure the cow has been distributed to a milker..',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.red[800],
@@ -2723,12 +2723,12 @@ class _MilkingViewState extends State<MilkingView> {
                             TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
                           if (value?.isEmpty == true)
-                            return 'Masukkan volume susu';
+                            return 'Enter the volume of milk';
                           final volume = double.tryParse(value!);
                           if (volume == null || volume <= 0)
-                            return 'Volume harus berupa angka positif';
+                            return 'Volume must be a positive number';
                           if (volume > 100)
-                            return 'Volume terlalu besar (maksimal 100L)';
+                            return 'Volume too large (maximum 100L)';
                           return null;
                         },
                         onChanged: (value) => setState(() {
@@ -2739,7 +2739,7 @@ class _MilkingViewState extends State<MilkingView> {
 
                       // Quick volume buttons
                       Text(
-                        'Volume Cepat:',
+                        'Fast Volume:',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -2786,7 +2786,7 @@ class _MilkingViewState extends State<MilkingView> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Volume terpilih: ${double.tryParse(newSession['volume']) != null ? double.parse(newSession['volume']).toStringAsFixed(1) : '0.0'} Liter ${_getVolumeCategory(newSession['volume'])}',
+                            'Selected volume: ${double.tryParse(newSession['volume']) != null ? double.parse(newSession['volume']).toStringAsFixed(1) : '0.0'} Liter ${_getVolumeCategory(newSession['volume'])}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[700],
@@ -2801,7 +2801,7 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _dateController,
                     decoration: InputDecoration(
-                      labelText: 'Tanggal Pemerahan *',
+                      labelText: 'Milking Date *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.calendar_today),
@@ -2809,8 +2809,7 @@ class _MilkingViewState extends State<MilkingView> {
                     ),
                     readOnly: true,
                     validator: (value) {
-                      if (value?.isEmpty == true)
-                        return 'Pilih tanggal pemerahan';
+                      if (value?.isEmpty == true) return 'Select milking date';
                       return null;
                     },
                     onTap: () async {
@@ -2837,7 +2836,7 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _timeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Pemerahan *',
+                      labelText: 'Milking Time *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.access_time),
@@ -2872,7 +2871,7 @@ class _MilkingViewState extends State<MilkingView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Waktu Cepat:',
+                        'Milking Time:',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -2901,7 +2900,7 @@ class _MilkingViewState extends State<MilkingView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Catatan (Opsional)',
+                        'Notes (Optional)',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -2924,22 +2923,22 @@ class _MilkingViewState extends State<MilkingView> {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          _buildQuickNoteButton('Kondisi Sehat', Icons.favorite,
-                              Colors.red, false),
-                          _buildQuickNoteButton('Produksi Normal',
+                          _buildQuickNoteButton('Healthy Condition',
+                              Icons.favorite, Colors.red, false),
+                          _buildQuickNoteButton('Normal Production',
                               Icons.check_circle, Colors.green, false),
-                          _buildQuickNoteButton('Pemerahan Lancar',
+                          _buildQuickNoteButton('Smooth Milking',
                               Icons.schedule, Colors.blue, false),
-                          _buildQuickNoteButton('Perlu Perhatian',
+                          _buildQuickNoteButton('Needs Attention',
                               Icons.warning, Colors.orange, false),
-                          _buildQuickNoteButton('Kualitas Baik', Icons.thumb_up,
+                          _buildQuickNoteButton('Good Quality', Icons.thumb_up,
                               Colors.purple, false),
-                          _buildQuickNoteButton('Sapi Stress',
+                          _buildQuickNoteButton('Stressed Cow',
                               Icons.sentiment_dissatisfied, Colors.grey, false),
-                          _buildQuickNoteButton('Produksi Menurun',
+                          _buildQuickNoteButton('Production Decreased',
                               Icons.trending_down, Colors.red, false),
                           _buildQuickNoteButton(
-                              'Peralatan OK', Icons.build, Colors.green, false),
+                              'Equipment OK', Icons.build, Colors.green, false),
                         ],
                       ),
 
@@ -2953,7 +2952,7 @@ class _MilkingViewState extends State<MilkingView> {
                               newSession['notes'] = '';
                             }),
                             icon: Icon(Icons.clear, size: 16),
-                            label: Text('Hapus Semua Catatan'),
+                            label: Text('Delete All Notes'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red[700],
                               side: BorderSide(color: Colors.red[300]!),
@@ -2969,9 +2968,9 @@ class _MilkingViewState extends State<MilkingView> {
                       TextFormField(
                         controller: _notesController,
                         decoration: InputDecoration(
-                          labelText: 'Catatan Detail',
+                          labelText: 'Detailed Notes',
                           hintText:
-                              'Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas...',
+                              'Enter notes about this milking session or use the quick notes option above....',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8)),
                           prefixIcon: Icon(Icons.note),
@@ -3127,7 +3126,7 @@ class _MilkingViewState extends State<MilkingView> {
                 Icon(Icons.edit, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
-                  'Edit Sesi Pemerahan',
+                  'Edit Milking Session',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -3153,7 +3152,7 @@ class _MilkingViewState extends State<MilkingView> {
                   // Cow selection
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
-                      labelText: 'Pilih Sapi *',
+                      labelText: 'Select Cow *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.pets),
@@ -3163,7 +3162,7 @@ class _MilkingViewState extends State<MilkingView> {
                     items: [
                       DropdownMenuItem(
                           value: '',
-                          child: Text('-- Pilih Sapi --',
+                          child: Text('-- Select Cow --',
                               style: TextStyle(color: Colors.grey[600]))),
                       ...uniqueCowMap.values
                           .where((cow) =>
@@ -3181,7 +3180,7 @@ class _MilkingViewState extends State<MilkingView> {
                     ],
                     validator: (value) {
                       if (value == null || value.isEmpty || value == '') {
-                        return 'Silakan pilih sapi';
+                        return 'Please Select Cow';
                       }
                       return null;
                     },
@@ -3221,7 +3220,7 @@ class _MilkingViewState extends State<MilkingView> {
                               key: ValueKey(
                                   'milker_dropdown_edit_${selectedSession!['cow_id']}_${farmers.length}_$isLoading'),
                               decoration: InputDecoration(
-                                labelText: 'Pilih Pemerah *',
+                                labelText: 'Select Blusher *',
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8)),
                                 prefixIcon: Icon(Icons.person),
@@ -3237,12 +3236,12 @@ class _MilkingViewState extends State<MilkingView> {
                                     value: '',
                                     child: Text(
                                         !isCowSelected
-                                            ? '-- Pilih Sapi Terlebih Dahulu --'
+                                            ? '-- Select Cow First --'
                                             : isLoading
-                                                ? '-- Memuat Pemerah... --'
+                                                ? '-- Loading the Milker... --'
                                                 : farmers.isEmpty
-                                                    ? '-- Tidak Ada Pemerah Tersedia --'
-                                                    : '-- Pilih Pemerah --',
+                                                    ? '-- No Milker Available --'
+                                                    : '-- Select Blusher --',
                                         style: TextStyle(
                                             color: Colors.grey[600]))),
                                 if (isCowSelected && !isLoading)
@@ -3270,18 +3269,18 @@ class _MilkingViewState extends State<MilkingView> {
                               ],
                               validator: (value) {
                                 if (!isCowSelected) {
-                                  return 'Pilih sapi terlebih dahulu';
+                                  return 'Select Cow first';
                                 }
                                 if (isLoading) {
-                                  return 'Menunggu data pemerah dimuat...';
+                                  return 'Waiting for milking data to load...';
                                 }
                                 if (farmers.isEmpty) {
-                                  return 'Tidak ada pemerah tersedia untuk sapi ini';
+                                  return 'No Milker Available for this cow';
                                 }
                                 if (value == null ||
                                     value.isEmpty ||
                                     value == '') {
-                                  return 'Silakan pilih pemerah';
+                                  return 'Please Select Blusher';
                                 }
                                 return null;
                               },
@@ -3297,10 +3296,10 @@ class _MilkingViewState extends State<MilkingView> {
                                   : null,
                               disabledHint: Text(
                                   !isCowSelected
-                                      ? 'Pilih sapi terlebih dahulu'
+                                      ? 'Select Cow first'
                                       : isLoading
                                           ? 'Memuat data pemerah...'
-                                          : 'Tidak ada pemerah tersedia',
+                                          : 'No Milker Available',
                                   style: TextStyle(color: Colors.grey[500])),
                             );
                           },
@@ -3324,7 +3323,7 @@ class _MilkingViewState extends State<MilkingView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Pemerah',
+                                  'Milker',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
@@ -3372,7 +3371,7 @@ class _MilkingViewState extends State<MilkingView> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Memuat data pemerah untuk sapi yang dipilih...',
+                            'Loading milker data for selected cows...',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.blue[800],
@@ -3403,7 +3402,7 @@ class _MilkingViewState extends State<MilkingView> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Beberapa data sapi atau pemerah tidak memiliki nama yang valid',
+                              'Some cow or milker data do not have valid names.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.orange[800],
@@ -3434,7 +3433,7 @@ class _MilkingViewState extends State<MilkingView> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Tidak ada pemerah yang tersedia untuk sapi ini. Pastikan sapi sudah didistribusikan ke pemerah.',
+                              'There are no milkers available for this cow. Make sure the cow has been distributed to a milker..',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.red[800],
@@ -3465,12 +3464,12 @@ class _MilkingViewState extends State<MilkingView> {
                             TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
                           if (value?.isEmpty == true)
-                            return 'Masukkan volume susu';
+                            return 'Enter the volume of milk';
                           final volume = double.tryParse(value!);
                           if (volume == null || volume <= 0)
-                            return 'Volume harus berupa angka positif';
+                            return 'Volume must be a positive number';
                           if (volume > 100)
-                            return 'Volume terlalu besar (maksimal 100L)';
+                            return 'Volume is too large (maximum 100L))';
                           return null;
                         },
                         onChanged: (value) => setState(() {
@@ -3481,7 +3480,7 @@ class _MilkingViewState extends State<MilkingView> {
 
                       // Quick volume buttons
                       Text(
-                        'Volume Cepat:',
+                        'Fast Volume:',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -3528,7 +3527,7 @@ class _MilkingViewState extends State<MilkingView> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Volume terpilih: ${double.tryParse(selectedSession!['volume'].toString()) != null ? double.parse(selectedSession!['volume'].toString()).toStringAsFixed(1) : '0.0'} Liter ${_getVolumeCategory(selectedSession!['volume'].toString())}',
+                            'Selected volume: ${double.tryParse(selectedSession!['volume'].toString()) != null ? double.parse(selectedSession!['volume'].toString()).toStringAsFixed(1) : '0.0'} Liter ${_getVolumeCategory(selectedSession!['volume'].toString())}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[700],
@@ -3543,7 +3542,7 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _editDateController,
                     decoration: InputDecoration(
-                      labelText: 'Tanggal Pemerahan *',
+                      labelText: 'Milking Date *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.calendar_today),
@@ -3551,8 +3550,7 @@ class _MilkingViewState extends State<MilkingView> {
                     ),
                     readOnly: true,
                     validator: (value) {
-                      if (value?.isEmpty == true)
-                        return 'Pilih tanggal pemerahan';
+                      if (value?.isEmpty == true) return 'Select milking date';
                       return null;
                     },
                     onTap: () async {
@@ -3579,7 +3577,7 @@ class _MilkingViewState extends State<MilkingView> {
                   TextFormField(
                     controller: _editTimeController,
                     decoration: InputDecoration(
-                      labelText: 'Waktu Pemerahan *',
+                      labelText: 'Milking Time *',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       prefixIcon: Icon(Icons.access_time),
@@ -3587,8 +3585,7 @@ class _MilkingViewState extends State<MilkingView> {
                     ),
                     readOnly: true,
                     validator: (value) {
-                      if (value?.isEmpty == true)
-                        return 'Pilih waktu pemerahan';
+                      if (value?.isEmpty == true) return 'Select milking time';
                       return null;
                     },
                     onTap: () async {
@@ -3618,7 +3615,7 @@ class _MilkingViewState extends State<MilkingView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Waktu Cepat:',
+                        'Milking Time:',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -3650,7 +3647,7 @@ class _MilkingViewState extends State<MilkingView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Catatan (Opsional)',
+                        'Notes (Optional)',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -3661,7 +3658,7 @@ class _MilkingViewState extends State<MilkingView> {
 
                       // Quick notes buttons
                       Text(
-                        'Catatan Cepat:',
+                        'Quick Note:',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -3703,7 +3700,7 @@ class _MilkingViewState extends State<MilkingView> {
                               selectedSession!['notes'] = '';
                             }),
                             icon: Icon(Icons.clear, size: 16),
-                            label: Text('Hapus Semua Catatan'),
+                            label: Text('Delete All Notes'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red[700],
                               side: BorderSide(color: Colors.red[300]!),
@@ -3721,7 +3718,7 @@ class _MilkingViewState extends State<MilkingView> {
                         decoration: InputDecoration(
                           labelText: 'Catatan Detail',
                           hintText:
-                              'Masukkan catatan tentang sesi pemerahan ini atau gunakan pilihan catatan cepat di atas...',
+                              'Enter notes about this milking session or use the quick notes option above....',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8)),
                           prefixIcon: Icon(Icons.note),
@@ -3739,7 +3736,7 @@ class _MilkingViewState extends State<MilkingView> {
                         Container(
                           margin: EdgeInsets.only(top: 4),
                           child: Text(
-                            'Karakter: ${selectedSession!['notes']?.toString().length ?? 0}/500',
+                            'Character: ${selectedSession!['notes']?.toString().length ?? 0}/500',
                             style: TextStyle(
                               fontSize: 12,
                               color: (selectedSession!['notes']
@@ -3777,7 +3774,7 @@ class _MilkingViewState extends State<MilkingView> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text('Batal'),
+                        : Text('Cancel'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -3803,7 +3800,7 @@ class _MilkingViewState extends State<MilkingView> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text('Perbarui'),
+                        : Text('Save Changes'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange[700],
                       foregroundColor: Colors.white,
@@ -3871,10 +3868,10 @@ class _MilkingViewState extends State<MilkingView> {
   // Get volume category helper
   String _getVolumeCategory(String volumeStr) {
     final volume = double.tryParse(volumeStr) ?? 0.0;
-    if (volume < 3) return '(Volume Rendah)';
-    if (volume <= 10) return '(Volume Normal)';
-    if (volume <= 20) return '(Volume Tinggi)';
-    return '(Volume Sangat Tinggi)';
+    if (volume < 3) return '(Low Volume)';
+    if (volume <= 10) return '(Normal Volume)';
+    if (volume <= 20) return '(High Volume)';
+    return '(Very High Volume)';
   }
 
   // Build quick time button

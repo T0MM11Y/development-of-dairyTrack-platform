@@ -6,6 +6,7 @@ import 'package:dairytrack_mobile/views/GuestView/GalleryGuestsView.dart';
 import 'package:dairytrack_mobile/views/highlights/blogView.dart';
 import 'package:dairytrack_mobile/views/highlights/galleryView.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'loginView.dart';
 import '../controller/APIURL1/loginController.dart';
@@ -63,6 +64,7 @@ class _InitialDashboardState extends State<InitialDashboard>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _animationController;
+  DateTime? _lastBackPressed;
 
   // Controllers for fetching data
   final BlogManagementController _blogController = BlogManagementController();
@@ -341,7 +343,7 @@ class _InitialDashboardState extends State<InitialDashboard>
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
-                  "TENTANG KAMI",
+                  "ABOUT US",
                   style: TextStyle(
                     color: AppColors.secondary,
                     fontSize: 10,
@@ -1012,187 +1014,224 @@ class _InitialDashboardState extends State<InitialDashboard>
     }
   }
 
+  // ...existing code...
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: _currentIndex == 1 || _currentIndex == 2 || _currentIndex == 3
-          ? null
-          : AppBar(
-              automaticallyImplyLeading: false, // This removes the back arrow
-              title: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.textOnPrimary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.pets,
-                        color: AppColors.textOnPrimary, size: 20),
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    // Tambahkan GlobalKey untuk Scaffold agar bisa mengatur posisi snackbar
+    final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+        GlobalKey<ScaffoldMessengerState>();
+
+    return ScaffoldMessenger(
+      key: _scaffoldMessengerKey,
+      child: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) async {
+          if (didPop) return;
+
+          // Double back to exit logic
+          final now = DateTime.now();
+          if (_lastBackPressed == null ||
+              now.difference(_lastBackPressed!) > Duration(seconds: 2)) {
+            _lastBackPressed = now;
+            _scaffoldMessengerKey.currentState?.clearSnackBars();
+            _scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text('Press back again to exit'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.fixed,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+            );
+          } else {
+            // Exit the app
+            SystemNavigator.pop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: _currentIndex == 1 || _currentIndex == 2 || _currentIndex == 3
+              ? null
+              : AppBar(
+                  automaticallyImplyLeading: false,
+                  title: Row(
                     children: [
-                      Text(
-                        "TSTH² DairyTrack",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textOnPrimary,
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.textOnPrimary.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: Icon(Icons.pets,
+                            color: AppColors.textOnPrimary, size: 20),
                       ),
-                      Text(
-                        "Cattle Research Center",
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textOnPrimary.withOpacity(0.8),
-                        ),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "TSTH² DairyTrack",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textOnPrimary,
+                            ),
+                          ),
+                          Text(
+                            "Cattle Research Center",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textOnPrimary.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              backgroundColor: AppColors.primary,
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.textOnPrimary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
+                  backgroundColor: AppColors.primary,
+                  elevation: 0,
+                  actions: [
+                    IconButton(
+                      icon: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.textOnPrimary.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.refresh,
+                            color: AppColors.textOnPrimary, size: 18),
+                      ),
+                      onPressed: () async {
+                        await Future.wait([
+                          _loadBlogsPreview(),
+                          _loadGalleriesPreview(),
+                        ]);
+                      },
                     ),
-                    child: Icon(Icons.refresh,
-                        color: AppColors.textOnPrimary, size: 18),
-                  ),
-                  onPressed: () async {
-                    await Future.wait([
-                      _loadBlogsPreview(),
-                      _loadGalleriesPreview(),
-                    ]);
-                  },
+                    SizedBox(width: 8),
+                  ],
                 ),
-                SizedBox(width: 8),
+          body: _buildContentSection(),
+          floatingActionButton: _currentIndex == 0 ||
+                  _currentIndex == 1 ||
+                  _currentIndex == 2 ||
+                  _currentIndex == 3
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginView()),
+                    );
+                  },
+                  backgroundColor: AppColors.accent,
+                  elevation: 4,
+                  child:
+                      Icon(Icons.login, color: AppColors.textOnDark, size: 24),
+                )
+              : null,
+          bottomNavigationBar: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                top: BorderSide(color: AppColors.paleGray, width: 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.darkGray.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: Offset(0, -2),
+                ),
               ],
             ),
-      body: _buildContentSection(),
-      floatingActionButton: _currentIndex == 0 ||
-              _currentIndex == 1 ||
-              _currentIndex == 2 ||
-              _currentIndex == 3
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginView()),
-                );
+            child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
               },
-              backgroundColor: AppColors.accent,
-              elevation: 4,
-              child: Icon(Icons.login, color: AppColors.textOnDark, size: 24),
-            )
-          : null,
-      // Compact Bottom Navigation Bar
-      bottomNavigationBar: Container(
-        height: 60, // Reduced height from default ~80
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            top: BorderSide(color: AppColors.paleGray, width: 1),
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: AppColors.textTertiary,
+              selectedFontSize: 10,
+              unselectedFontSize: 9,
+              iconSize: 20,
+              items: [
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 0
+                          ? AppColors.primary.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _currentIndex == 0 ? Icons.home : Icons.home_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  label: 'Home page',
+                ),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 1
+                          ? AppColors.primary.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _currentIndex == 1 ? Icons.info : Icons.info_outline,
+                      size: 20,
+                    ),
+                  ),
+                  label: 'About',
+                ),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 2
+                          ? AppColors.primary.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _currentIndex == 2
+                          ? Icons.article
+                          : Icons.article_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  label: 'Blogs',
+                ),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 3
+                          ? AppColors.primary.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _currentIndex == 3
+                          ? Icons.photo_library
+                          : Icons.photo_library_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  label: 'Gallery',
+                ),
+              ],
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.darkGray.withOpacity(0.08),
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.textTertiary,
-          selectedFontSize: 10, // Reduced font size
-          unselectedFontSize: 9, // Reduced font size
-          iconSize: 20, // Reduced icon size
-          items: [
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: _currentIndex == 0
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _currentIndex == 0 ? Icons.home : Icons.home_outlined,
-                  size: 20,
-                ),
-              ),
-              label: 'Home page',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: _currentIndex == 1
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _currentIndex == 1 ? Icons.info : Icons.info_outline,
-                  size: 20,
-                ),
-              ),
-              label: 'About',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: _currentIndex == 2
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _currentIndex == 2 ? Icons.article : Icons.article_outlined,
-                  size: 20,
-                ),
-              ),
-              label: 'Blogs',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: _currentIndex == 3
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _currentIndex == 3
-                      ? Icons.photo_library
-                      : Icons.photo_library_outlined,
-                  size: 20,
-                ),
-              ),
-              label: 'Gallery',
-            ),
-          ],
         ),
       ),
     );

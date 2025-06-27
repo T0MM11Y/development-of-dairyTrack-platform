@@ -1,3 +1,10 @@
 /dairyTrack-web/node_modules
 dairyTrack-api/Selling/whatsapp_errors.log
 *.log
+dairyTrack-api/FeedConsumption/.env
+dairyTrack-api/HealthCheck/cattle_health/settings.py
+dairyTrack-api/HealthCheck/cattle_health/__pycache__/settings.cpython-313.pyc
+dairyTrack-api/MilkProduction/config.py
+dairyTrack-api/MilkProduction/__pycache__/config.cpython-313.pyc
+dairyTrack-api/Selling/sales_and_finance/settings.py
+dairyTrack-api/Selling/sales_and_finance/__pycache__/settings.cpython-313.pyc

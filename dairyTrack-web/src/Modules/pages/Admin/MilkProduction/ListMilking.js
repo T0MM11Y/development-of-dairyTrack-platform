@@ -1756,7 +1756,7 @@ const ListMilking = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Sapi</Form.Label>
+                  <Form.Label>Cow</Form.Label>
                   <Form.Select
                     value={newSession.cow_id}
                     onChange={(e) => handleCowSelectionInAdd(e.target.value)}
@@ -1827,15 +1827,15 @@ const ListMilking = () => {
                       />
                       <Form.Text className="text-muted">
                         <i className="fas fa-info-circle me-1"></i>
-                        Anda otomatis diatur sebagai pemerah untuk sesi ini
+                        You are automatically set as the milker for this
+                        session.
                       </Form.Text>
                     </>
                   )}
                   {currentUser?.role_id === 1 && !newSession.cow_id && (
                     <Form.Text className="text-muted">
                       <i className="fas fa-info-circle me-1"></i>
-                      Silakan pilih sapi terlebih dahulu untuk melihat peternak
-                      yang tersedia
+                      Please select a cow first to see the available breeders.
                     </Form.Text>
                   )}
                   {currentUser?.role_id === 1 &&
@@ -1844,8 +1844,7 @@ const ListMilking = () => {
                     !loadingFarmers && (
                       <Form.Text className="text-warning">
                         <i className="fas fa-exclamation-triangle me-1"></i>
-                        Tidak ada peternak yang ditugaskan untuk mengelola sapi
-                        ini
+                        There are no farmers assigned to manage these cattle.
                       </Form.Text>
                     )}
                 </Form.Group>
@@ -1867,7 +1866,7 @@ const ListMilking = () => {
                       step="0.1"
                       min="0"
                       max="50"
-                      placeholder="Masukkan volume susu dalam liter"
+                      placeholder="Enter the volume of milk in liters"
                       value={newSession.volume}
                       onChange={(e) =>
                         setNewSession({ ...newSession, volume: e.target.value })
@@ -1881,7 +1880,7 @@ const ListMilking = () => {
                   {/* Quick Volume Buttons */}
                   <div className="mb-2">
                     <Form.Label className="form-label-sm text-muted">
-                      Volume Cepat:
+                      Fast Volume:
                     </Form.Label>
                     <div className="d-flex gap-1 flex-wrap">
                       {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map(
@@ -1913,16 +1912,16 @@ const ListMilking = () => {
                     <div className="mt-2 p-2 bg-light rounded">
                       <small className="text-muted">
                         <i className="fas fa-info-circle me-1"></i>
-                        Volume terpilih:{" "}
+                        Selected volume:{" "}
                         <strong>
                           {parseFloat(newSession.volume || 0).toFixed(1)} Liter
                         </strong>
                         {(() => {
                           const vol = parseFloat(newSession.volume || 0);
-                          if (vol < 3) return " (Volume Rendah)";
-                          if (vol <= 10) return " (Volume Normal)";
-                          if (vol <= 20) return " (Volume Tinggi)";
-                          return " (Volume Sangat Tinggi)";
+                          if (vol < 3) return " (Low Volume)";
+                          if (vol <= 10) return " (Normal Volume)";
+                          if (vol <= 20) return " (High Volume)";
+                          return " (Very High Volume)";
                         })()}
                       </small>
                     </div>
@@ -1933,7 +1932,7 @@ const ListMilking = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>
                     <i className="fas fa-calendar-alt me-2 text-primary"></i>
-                    Waktu Pemerahan
+                    Milking Time
                   </Form.Label>
 
                   {/* Date Input */}
@@ -2249,7 +2248,7 @@ const ListMilking = () => {
                       className="shadow-sm"
                       disabled={isSubmitting}
                     >
-                      <option value="">-- Pilih Sapi --</option>
+                      <option value="">-- Select Cow --</option>
                       {(currentUser?.role_id === 1 ? cowList : userManagedCows)
                         .filter((cow) => cow.gender?.toLowerCase() === "female")
                         .map((cow) => (
@@ -2316,7 +2315,7 @@ const ListMilking = () => {
                         />
                         <Form.Text className="text-muted">
                           <i className="fas fa-info-circle me-1"></i>
-                          Pemerah tidak dapat diubah untuk sesi Anda sendiri
+                          Blushing cannot be changed for your own session
                         </Form.Text>
                       </>
                     )}
@@ -2355,7 +2354,7 @@ const ListMilking = () => {
 
                     <div className="mb-2">
                       <Form.Label className="form-label-sm text-muted">
-                        Volume Cepat:
+                        Fast Volume:
                       </Form.Label>
                       <div className="d-flex gap-1 flex-wrap">
                         {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map(
@@ -2386,7 +2385,7 @@ const ListMilking = () => {
                       <div className="mt-2 p-2 bg-light rounded">
                         <small className="text-muted">
                           <i className="fas fa-info-circle me-1"></i>
-                          Volume terpilih:{" "}
+                          Selected volume:{" "}
                           <strong>
                             {parseFloat(selectedSession.volume || 0).toFixed(1)}{" "}
                             Liter
@@ -2407,12 +2406,12 @@ const ListMilking = () => {
                   <Form.Group className="mb-3">
                     <Form.Label>
                       <i className="fas fa-calendar-alt me-2 text-primary"></i>
-                      Waktu Pemerahan
+                      Milking Time
                     </Form.Label>
 
                     <div className="mb-2">
                       <Form.Label className="form-label-sm text-muted">
-                        Tanggal:
+                        Date:
                       </Form.Label>
                       <Form.Control
                         type="date"
@@ -2434,7 +2433,7 @@ const ListMilking = () => {
 
                     <div>
                       <Form.Label className="form-label-sm text-muted">
-                        Waktu:
+                        Time:
                       </Form.Label>
                       <div className="d-flex gap-2 mb-2">
                         <Form.Control
@@ -2504,7 +2503,7 @@ const ListMilking = () => {
                       <div className="mt-2 p-2 bg-light rounded">
                         <small className="text-muted">
                           <i className="fas fa-clock me-1"></i>
-                          Dipilih:{" "}
+                          Chosen:{" "}
                           {(() => {
                             const date = new Date(selectedSession.milking_time);
                             const options = {
@@ -2528,12 +2527,12 @@ const ListMilking = () => {
               <Form.Group className="mb-3">
                 <Form.Label>
                   <i className="fas fa-sticky-note me-2 text-secondary"></i>
-                  Catatan
+                  Notes
                 </Form.Label>
 
                 <div className="mb-3">
                   <Form.Label className="form-label-sm text-muted mb-2">
-                    Catatan Cepat:
+                    Quick Note:
                   </Form.Label>
                   <div className="d-flex gap-1 flex-wrap">
                     {[
@@ -2628,7 +2627,7 @@ const ListMilking = () => {
                         disabled={isSubmitting}
                       >
                         <i className="fas fa-trash me-1"></i>
-                        Hapus Semua Catatan
+                        Delete All Notes
                       </Button>
                     </div>
                   )}
@@ -2652,7 +2651,7 @@ const ListMilking = () => {
                 {selectedSession.notes && (
                   <Form.Text className="text-muted">
                     <i className="fas fa-info-circle me-1"></i>
-                    Karakter: {selectedSession.notes.length}
+                    Character: {selectedSession.notes.length}
                   </Form.Text>
                 )}
               </Form.Group>
@@ -2677,7 +2676,7 @@ const ListMilking = () => {
                         aria-hidden="true"
                         className="me-2"
                       />
-                      Menyimpan...
+                      Keep...
                     </>
                   ) : (
                     "Save Changes"

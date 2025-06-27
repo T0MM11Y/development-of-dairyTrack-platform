@@ -6,6 +6,7 @@ import 'package:dairytrack_mobile/views/initialSupervisorDashboard.dart'
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controller/APIURL1/loginController.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import '../routes/route.dart';
 import 'dart:async';
 
@@ -99,13 +100,13 @@ enum UserRole {
   String get redirectMessage {
     switch (this) {
       case UserRole.admin:
-        return "Mengarahkan ke Admin Dashboard";
+        return "Redirecting to Admin Dashboard";
       case UserRole.farmer:
-        return "Mengarahkan ke Farmer Dashboard";
+        return "Redirecting to Farmer Dashboard";
       case UserRole.supervisor:
-        return "Mengarahkan ke Supervisor Dashboard";
+        return "Redirecting to Supervisor Dashboard";
       case UserRole.unknown:
-        return "Mengarahkan ke Dashboard";
+        return "Redirecting to Dashboard";
     }
   }
 }
@@ -271,17 +272,17 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
 
   String? _validateInput(String username, String password) {
     if (username.isEmpty || password.isEmpty) {
-      return "Username dan password tidak boleh kosong.";
+      return "Username and password cannot be empty.";
     }
-    if (username.length < 3) return "Username minimal 3 karakter.";
-    if (password.length < 6) return "Password minimal 6 karakter.";
+    if (username.length < 3) return "Username must be at least 3 characters.";
+    if (password.length < 6) return "Password must be at least 6 characters.";
     return null;
   }
 
   Future<void> _handleLogin() async {
     if (_securityManager.isLocked) {
-      _showRetroAlert("Login Terkunci",
-          "Terlalu banyak percobaan gagal. Silakan tunggu ${_securityManager.lockDuration} detik.",
+      _showRetroAlert("Login Locked",
+          "Too many failed attempts. Please wait ${_securityManager.lockDuration} seconds.",
           isError: true);
       return;
     }
@@ -305,7 +306,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showRetroAlert("Error", "Terjadi kesalahan jaringan. Silakan coba lagi.",
+      _showRetroAlert("Error", "A network error occurred. Please try again..",
           isError: true);
     }
   }
@@ -345,8 +346,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
 
   void _handleFailedLogin(Map<String, dynamic> response) {
     _securityManager.incrementFailedAttempts();
-    _showRetroAlert(
-        "Login Gagal", response['message'] ?? "Username atau password salah.",
+    _showRetroAlert("Login Failed",
+        response['message'] ?? "Incorrect username or password.",
         isError: true);
 
     if (_securityManager.isLocked) {
@@ -594,7 +595,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Mohon tunggu sebentar...",
+                    "Please wait a moment...",
                     style: TextStyle(
                       fontSize: 14,
                       color: RetroAppColors.textOnDark.withOpacity(0.9),
@@ -828,7 +829,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                           color: RetroAppColors.textOnDark, size: 18),
                       SizedBox(width: 8),
                       Text(
-                        "LOGIN BERHASIL!",
+                        "LOGIN SUCCESSFUL!",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -1141,10 +1142,19 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               width: 1,
                             ),
                           ),
+                          // ...existing code...
                           child: TextButton(
                             onPressed: _isRedirecting
                                 ? null
-                                : () => Navigator.pop(context),
+                                : () {
+                                    // Ganti Navigator.pop(context) menjadi pushReplacement ke InitialDashboard
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            InitialDashboard(),
+                                      ),
+                                    );
+                                  },
                             style: TextButton.styleFrom(
                               foregroundColor: RetroAppColors.textOnPrimary,
                               padding: const EdgeInsets.symmetric(
@@ -1169,6 +1179,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
+                          // ...existing code...
                         ),
                       ],
                     ),

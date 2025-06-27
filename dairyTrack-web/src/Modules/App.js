@@ -90,60 +90,6 @@ import SalesOrder from "./pages/Admin/Order/ListOrder";
 import Finance from "./pages/Admin/Finance/Finance";
 import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
 
-// URL_DISPLAY_MAP for beautifying URLs
-const URL_DISPLAY_MAP = {
-  "/about": "/about-us",
-  "/contact": "/get-in-touch",
-  "/blog": "/insights",
-  "/gallery": "/showcase",
-  "/products": "/marketplace",
-  "/orders": "/my-orders",
-  // Dashboard routes mapping (will be prefixed with role)
-  "/dashboard": "/dashboard",
-  "/list-users": "/dashboard/user-management",
-  "/add-users": "/dashboard/create-user",
-  "/edit-user": "/dashboard/edit-user",
-  "/reset-password": "/dashboard/reset-credentials",
-  "/cattle-distribution": "/dashboard/livestock-distribution",
-  "/list-cows": "/dashboard/cattle-inventory",
-  "/add-cow": "/dashboard/register-cattle",
-  "/edit-cow": "/dashboard/update-cattle",
-  "/list-of-gallery": "/dashboard/media-gallery",
-  "/list-of-blog": "/dashboard/content-management",
-  "/list-milking": "/dashboard/milk-production",
-  "/cows-milk-analytics": "/dashboard/milk-analytics",
-  "/milk-expiry-check": "/dashboard/quality-control",
-  "/list-health-checks": "/dashboard/health-monitoring",
-  "/add-health-check": "/dashboard/record-health",
-  "/edit-health-check": "/dashboard/update-health",
-  "/list-symptoms": "/dashboard/symptom-tracker",
-  "/add-symptom": "/dashboard/log-symptom",
-  "/edit-symptom": "/dashboard/modify-symptom",
-  "/list-disease-history": "/dashboard/medical-records",
-  "/add-disease-history": "/dashboard/add-medical-record",
-  "/edit-disease-history": "/dashboard/update-medical-record",
-  "/list-reproduction": "/dashboard/breeding-management",
-  "/add-reproduction": "/dashboard/record-breeding",
-  "/edit-reproduction": "/dashboard/update-breeding",
-  "/health-dashboard": "/dashboard/wellness-overview",
-  "/list-feedType": "/dashboard/feed-catalog",
-  "/edit-feedType": "/dashboard/modify-feed-type",
-  "/list-nutrition": "/dashboard/nutrition-guide",
-  "/list-feed": "/dashboard/feed-inventory",
-  "/edit-feed": "/dashboard/update-feed",
-  "/list-stock": "/dashboard/stock-management",
-  "/list-schedule": "/dashboard/feeding-schedule",
-  "/list-feedItem": "/dashboard/feed-items",
-  "/daily-feed-usage": "/dashboard/consumption-analytics",
-  "/daily-nutrition": "/dashboard/nutrition-tracking",
-  "/product-type": "/dashboard/product-categories",
-  "/product": "/dashboard/inventory-hub",
-  "/product-history": "/dashboard/sales-history",
-  "/sales": "/dashboard/order-management",
-  "/finance": "/dashboard/financial-overview",
-  "/finance-record": "/dashboard/transaction-logs",
-};
-
 // Role-based route mapping
 const ROLE_ROUTE_MAP = {
   1: "admin", // Admin
@@ -185,7 +131,7 @@ const ROLE_PERMISSIONS = {
   },
 };
 
-// Updated VALID_ROUTES to include role-based paths
+// Valid routes for validation
 const VALID_ROUTES = [
   "/",
   "/about",
@@ -201,19 +147,7 @@ const VALID_ROUTES = [
   "/supervisor/*",
   "/farmer",
   "/farmer/*",
-  ...Object.keys(URL_DISPLAY_MAP),
 ];
-
-// Utility Functions
-const createReverseUrlMap = (urlMap) => {
-  const reverseMap = {};
-  Object.entries(urlMap).forEach(([key, value]) => {
-    reverseMap[value] = key;
-  });
-  return reverseMap;
-};
-
-const REVERSE_URL_DISPLAY_MAP = createReverseUrlMap(URL_DISPLAY_MAP);
 
 // Global state untuk user data
 let globalCurrentUser = null;
@@ -269,39 +203,6 @@ const hasPermission = (feature) => {
   const userRole = getUserRole();
   if (!userRole || !ROLE_PERMISSIONS[userRole]) return false;
   return ROLE_PERMISSIONS[userRole][feature];
-};
-
-// Updated getDisplayUrl function
-const getDisplayUrl = (currentPath) => {
-  const userRole = getUserRole();
-  const rolePrefix = getRolePrefix(userRole);
-
-  console.log("getDisplayUrl Debug:", {
-    currentPath,
-    userRole,
-    rolePrefix,
-  });
-
-  // Handle role-based dashboard routes
-  if (currentPath.startsWith(`/${rolePrefix}/`)) {
-    // Extract the path without role prefix
-    const pathWithoutRole = currentPath.replace(`/${rolePrefix}`, "");
-
-    // Check if it's a mapped route
-    if (URL_DISPLAY_MAP[pathWithoutRole]) {
-      const displayUrl = URL_DISPLAY_MAP[pathWithoutRole];
-      return `/${rolePrefix}${displayUrl}`;
-    }
-
-    return currentPath;
-  }
-
-  // Handle public routes
-  if (URL_DISPLAY_MAP[currentPath]) {
-    return URL_DISPLAY_MAP[currentPath];
-  }
-
-  return currentPath;
 };
 
 // Updated route validation
@@ -364,25 +265,87 @@ const authService = {
 
 // Enhanced Invalid URL Handler Component
 const InvalidUrlHandler = () => {
-  // Return empty page for invalid URLs
-  return null;
+  const userRole = getUserRole();
+  const rolePrefix = getRolePrefix(userRole);
+
+  // Tentukan dashboardPath sesuai role user
+  let dashboardPath = "/";
+  if (rolePrefix) {
+    dashboardPath = `/${rolePrefix}`;
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "500px",
+          padding: "40px",
+          border: "1px solid #e0e0e0",
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+        }}
+      >
+        <h2 style={{ color: "#d32f2f", marginBottom: "16px" }}>
+          404 - Halaman Tidak Ditemukan
+        </h2>
+        <p style={{ color: "#666", marginBottom: "24px", lineHeight: "1.5" }}>
+          URL yang Anda akses tidak valid atau tidak tersedia untuk role Anda.
+        </p>
+        <p style={{ color: "#888", fontSize: "14px", marginBottom: "32px" }}>
+          Role Anda: <strong>{rolePrefix || "Guest"}</strong>
+        </p>
+        <button
+          style={{
+            padding: "12px 32px",
+            fontSize: "16px",
+            background: "#1976d2",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            transition: "background-color 0.3s",
+            fontWeight: "500",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#1565c0")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#1976d2")}
+          onClick={() => {
+            console.log(`Redirecting to dashboard: ${dashboardPath}`);
+            window.location.href = dashboardPath;
+          }}
+        >
+          {rolePrefix
+            ? `Kembali ke Dashboard ${
+                rolePrefix.charAt(0).toUpperCase() + rolePrefix.slice(1)
+              }`
+            : "Kembali ke Beranda"}
+        </button>
+      </div>
+    </div>
+  );
 };
 
-// User Initializer Component - Enhanced to trigger URL update
+// User Initializer Component
 const UserInitializer = () => {
   const initializedRef = useRef(false);
-  const location = useLocation();
-  const [userReady, setUserReady] = useState(false);
 
   // Initialize user - ONE TIME ONLY
   useEffect(() => {
     if (!initializedRef.current) {
-      // Pengecekan user data - sama seperti di Notification.js
+      // Pengecekan user data
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
       if (!userData.user_id && !userData.id) {
         // Redirect to login if no user data found
         console.log("No user data found - App.js initialization");
-        setUserReady(true);
         return;
       }
 
@@ -391,7 +354,7 @@ const UserInitializer = () => {
         user_id: userData.user_id || userData.id,
       };
 
-      // Role-based URL validation - sama seperti di Notification.js
+      // Role-based URL validation
       const currentPath = window.location.pathname.toLowerCase();
       const userRole = normalizedUser.role_id;
 
@@ -399,8 +362,11 @@ const UserInitializer = () => {
       if (currentPath.includes("/admin") && userRole !== 1) {
         // User is not admin but trying to access admin routes
         console.log(
-          "Unauthorized access to admin routes - redirecting to login"
+          "Unauthorized access to admin routes - logging out and redirecting"
         );
+        // Auto logout
+        authService.clearUserData();
+        logout();
         window.location.href = "/";
         return;
       }
@@ -408,8 +374,11 @@ const UserInitializer = () => {
       if (currentPath.includes("/supervisor") && userRole !== 2) {
         // User is not supervisor but trying to access supervisor routes
         console.log(
-          "Unauthorized access to supervisor routes - redirecting to login"
+          "Unauthorized access to supervisor routes - logging out and redirecting"
         );
+        // Auto logout
+        authService.clearUserData();
+        logout();
         window.location.href = "/";
         return;
       }
@@ -417,8 +386,11 @@ const UserInitializer = () => {
       if (currentPath.includes("/farmer") && userRole !== 3) {
         // User is not farmer but trying to access farmer routes
         console.log(
-          "Unauthorized access to farmer routes - redirecting to login"
+          "Unauthorized access to farmer routes - logging out and redirecting"
         );
+        // Auto logout
+        authService.clearUserData();
+        logout();
         window.location.href = "/";
         return;
       }
@@ -428,8 +400,11 @@ const UserInitializer = () => {
         const allowedRoles = [1, 2, 3]; // Admin, Supervisor, Farmer
         if (!allowedRoles.includes(userRole)) {
           console.log(
-            "Unauthorized access to dashboard - redirecting to login"
+            "Unauthorized access to dashboard - logging out and redirecting"
           );
+          // Auto logout
+          authService.clearUserData();
+          logout();
           window.location.href = "/";
           return;
         }
@@ -445,110 +420,8 @@ const UserInitializer = () => {
       );
 
       initializedRef.current = true;
-      setUserReady(true);
     }
   }, []);
-
-  // Trigger URL update after user initialization
-  useEffect(() => {
-    if (userReady && globalCurrentUser) {
-      // Small delay to ensure user data is properly set
-      const timer = setTimeout(() => {
-        const newDisplayUrl = getDisplayUrl(location.pathname);
-        console.log("UserInitializer: Checking URL update", {
-          currentPath: location.pathname,
-          newDisplayUrl,
-          currentWindowUrl: window.location.pathname,
-        });
-
-        if (
-          newDisplayUrl !== location.pathname &&
-          newDisplayUrl !== window.location.pathname
-        ) {
-          console.log(
-            "UserInitializer: Updating URL from",
-            window.location.pathname,
-            "to",
-            newDisplayUrl
-          );
-          window.history.replaceState(null, "", newDisplayUrl);
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [userReady, location.pathname]);
-
-  return null;
-};
-
-// URL Display Handler Component - Fixed version
-const URLDisplayHandler = () => {
-  const location = useLocation();
-  const history = useHistory();
-
-  useLayoutEffect(() => {
-    const currentPath = location.pathname;
-
-    if (!isValidRoute(currentPath)) {
-      return; // Let the catch-all route handle invalid URLs
-    }
-
-    // Only proceed if user is initialized
-    if (globalCurrentUser || !authService.isAuthenticated()) {
-      const displayUrl = getDisplayUrl(currentPath);
-
-      console.log("URLDisplayHandler: Processing", {
-        currentPath,
-        displayUrl,
-        windowPath: window.location.pathname,
-        userRole: getUserRole(),
-      });
-
-      // Force update URL if display URL is different and user is authenticated
-      if (
-        displayUrl !== currentPath &&
-        displayUrl !== window.location.pathname
-      ) {
-        console.log("URLDisplayHandler: Updating URL to", displayUrl);
-        // Use replaceState to change URL without triggering navigation
-        window.history.replaceState(null, "", displayUrl);
-      }
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      const currentDisplayUrl = window.location.pathname;
-      let actualPath = REVERSE_URL_DISPLAY_MAP[currentDisplayUrl];
-
-      // Handle role-prefixed URLs
-      if (!actualPath) {
-        const userRole = getUserRole();
-        const rolePrefix = getRolePrefix(userRole);
-
-        if (
-          rolePrefix &&
-          currentDisplayUrl.startsWith(`/${rolePrefix}/dashboard`)
-        ) {
-          // Remove role prefix and try to find the actual path
-          const urlWithoutRolePrefix = currentDisplayUrl.replace(
-            `/${rolePrefix}`,
-            ""
-          );
-          actualPath = REVERSE_URL_DISPLAY_MAP[urlWithoutRolePrefix];
-        }
-      }
-
-      if (actualPath && actualPath !== location.pathname) {
-        // Prevent infinite loop by checking if we're already navigating
-        history.replace(actualPath);
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [history, location.pathname]);
 
   return null;
 };
@@ -622,7 +495,6 @@ const PublicRoute = ({ children, restricted = false, ...rest }) => {
 // Role-Based Route Configuration
 const RouteConfig = () => {
   const userRole = getUserRole();
-  const rolePrefix = getRolePrefix(userRole);
 
   return (
     <Switch>
@@ -1375,7 +1247,6 @@ function App() {
     <Router>
       <SocketProvider>
         <UserInitializer />
-        <URLDisplayHandler />
         <div className="App">
           <RouteConfig />
         </div>
