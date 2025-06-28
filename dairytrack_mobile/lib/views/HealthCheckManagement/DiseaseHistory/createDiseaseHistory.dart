@@ -227,7 +227,7 @@ Widget build(BuildContext context) {
                     _infoTile('🐄 Rumination', '${_selectedCheck?['rumination']} menit'),
                     const SizedBox(height: 20),
 
-                    _sectionTitle('🦠 Gejala'),
+                    _sectionTitle('🦠 Symptom'),
                     if (_selectedSymptom != null &&
                         _selectedSymptom!.entries.where((e) {
                           final key = e.key;
@@ -253,7 +253,7 @@ Widget build(BuildContext context) {
                             .toList(),
                       )
                     else
-                      const Text('Tidak ada gejala abnormal ditemukan.',
+                      const Text('No abnormal symptoms found.',
                           style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 20),
                   ],

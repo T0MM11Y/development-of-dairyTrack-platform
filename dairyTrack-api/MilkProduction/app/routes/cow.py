@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.models.cows import Cow
 from app.database.database import db
 from fpdf import FPDF
+from app.models.daily_milk_summary import DailyMilkSummary  # Add this line
 from flask import send_file
 from io import BytesIO
 import pandas as pd
@@ -141,23 +142,70 @@ def update_cow(cow_id):
 @cow_bp.route('/delete/<int:cow_id>', methods=['DELETE'])
 def delete_cow(cow_id):
     """
-    Menghapus data sapi berdasarkan ID.
+    Menghapus data sapi berdasarkan ID, sekaligus menghapus data produksi susu & milking_sessions terkait (paksa hapus).
     """
     try:
+        print("="*50)
+        print(f"[DEBUG] [DELETE COW] Mulai proses hapus sapi dengan ID: {cow_id}")
+
         cow = Cow.query.get(cow_id)
         if not cow:
+            print(f"[DEBUG] [DELETE COW] Sapi dengan ID {cow_id} TIDAK DITEMUKAN di database.")
+            print("="*50)
             return jsonify({"error": "Cow not found"}), 404
 
-        db.session.delete(cow)
-        db.session.commit()
+        print(f"[DEBUG] [DELETE COW] Sapi ditemukan: {cow.name} (ID: {cow.id})")
 
-        return jsonify({"message": "Cow deleted successfully"}), 200
+        # Import text for SQL statements
+        from sqlalchemy import text
+
+        # Disable foreign key checks temporarily
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+        
+        # Hapus semua data milking_sessions terkait
+        from app.models.milking_sessions import MilkingSession
+        milking_sessions = MilkingSession.query.filter_by(cow_id=cow_id).all()
+        print(f"[DEBUG] [DELETE COW] Jumlah milking_sessions terkait sapi ID {cow_id}: {len(milking_sessions)}")
+        for session in milking_sessions:
+            db.session.delete(session)
+        if milking_sessions:
+            print(f"[DEBUG] [DELETE COW] Semua milking_sessions terkait telah dihapus.")
+
+        # Hapus semua data produksi susu terkait
+        related_records = DailyMilkSummary.query.filter_by(cow_id=cow_id).all()
+        print(f"[DEBUG] [DELETE COW] Jumlah data produksi susu terkait sapi ID {cow_id}: {len(related_records)}")
+        for record in related_records:
+            db.session.delete(record)
+        if related_records:
+            print(f"[DEBUG] [DELETE COW] Semua data produksi susu terkait telah dihapus.")
+
+        # Force delete related feed schedules using raw SQL
+        db.session.execute(text("DELETE FROM daily_feed_schedule WHERE cow_id = :cow_id"), {"cow_id": cow_id})
+        print(f"[DEBUG] [DELETE COW] Semua daily_feed_schedule terkait telah dihapus dengan paksa.")
+
+        # Hapus data sapi
+        db.session.delete(cow)
+        
+        # Re-enable foreign key checks
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+        
+        db.session.commit()
+        print(f"[DEBUG] [DELETE COW] Sapi ID {cow_id} beserta data terkait berhasil dihapus dari database.")
+        print("="*50)
+
+        return jsonify({"message": "Cow and all related records deleted successfully"}), 200
 
     except Exception as e:
         db.session.rollback()
+        # Re-enable foreign key checks in case of error
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+            db.session.commit()
+        except:
+            pass
+        print(f"[ERROR] [DELETE COW] Terjadi error saat menghapus sapi ID {cow_id}: {e}")
+        print("="*50)
         return jsonify({"error": str(e)}), 500
-
-
 
 @cow_bp.route('/export/pdf', methods=['GET'])
 def export_cows_pdf():

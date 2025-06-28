@@ -33,19 +33,19 @@ def check_and_update_health_status(sender, instance, created, **kwargs):
 
     if rectal_temp < 38.0 or rectal_temp > 39.3:
         abnormal = True
-        messages.append("Suhu tubuh abnormal.")
+        messages.append("Abnormal body temperature.")
 
     if heart_rate < 60 or heart_rate > 80:
         abnormal = True
-        messages.append("Detak jantung tidak normal.")
+        messages.append("Abnormal heartbeat.")
 
     if respiration_rate < 20 or respiration_rate > 40:
         abnormal = True
-        messages.append("Laju pernapasan tidak normal.")
+        messages.append("Abnormal breathing rate.")
 
     if rumination < 1.0 or rumination > 3.0:
         abnormal = True
-        messages.append("Rumenasi berada di luar batas normal.")
+        messages.append("Rumenation is outside normal limits.")
 
     new_status = 'healthy' if not abnormal else 'pending'
     new_needs_attention = abnormal
@@ -63,7 +63,7 @@ def check_and_update_health_status(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-message=f"Pemeriksaan kesehatan sapi {instance.cow.name} mendeteksi: " + " ".join(messages),
+message = f"Cow health check for {instance.cow.name} detected: " + " ".join(messages),
                 type="health_check",
                 created_at=now()
             )
@@ -81,7 +81,7 @@ def send_followup_reminder(health_check_id, attempt=1, max_attempts=10):
         Notification.objects.create(
             cow=refreshed.cow,
             user=user,
-            message=f"[#{attempt}] Segera periksa kesehatan sapi {refreshed.cow.name}! Pemeriksaan belum ditangani.",
+            message=f"[#{attempt}] Please check the health of cow {refreshed.cow.name}immediately! The examination has not been handled yet.",
             type="follow_up",
             created_at=now()
         )

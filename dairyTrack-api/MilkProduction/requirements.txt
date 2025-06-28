@@ -15,6 +15,7 @@ pytz==2023.3
 # Socket.IO untuk real-time notifications
 Flask-SocketIO==5.3.4
 python-socketio==5.8.0
+eventlet==0.33.3
 
 # Database connector
 PyMySQL==1.0.3

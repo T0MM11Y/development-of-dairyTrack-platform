@@ -182,7 +182,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
       });
 
       await _notificationService.cancelNotification(notificationId);
-      _showSuccessSnackBar('Notifikasi ditandai sebagai dibaca');
+_showSuccessSnackBar('Notification marked as read');
     } else {
       _showErrorSnackBar(result['message']);
     }
@@ -206,7 +206,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
         });
 
         await _notificationService.cancelAllNotifications();
-        _showSuccessSnackBar('Semua notifikasi ditandai sebagai dibaca');
+_showSuccessSnackBar('All notifications marked as read');
       } else {
         _showErrorSnackBar(result['message']);
       }
@@ -218,13 +218,13 @@ class _NotificationWidgetState extends State<NotificationWidget>
   }
 
   Future<void> _clearAllNotifications() async {
-    final bool? confirmed = await _showConfirmationDialog(
-      title: 'Hapus Semua Notifikasi',
-      content:
-          'Apakah Anda yakin ingin menghapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.',
-      confirmText: 'Hapus Semua',
-      isDestructive: true,
-    );
+  final bool? confirmed = await _showConfirmationDialog(
+    title: 'Delete All Notifications',
+    content:
+        'Are you sure you want to delete all notifications? This action cannot be undone.',
+    confirmText: 'Delete All',
+    isDestructive: true,
+  );
 
     if (confirmed == true) {
       setState(() {
@@ -242,12 +242,12 @@ class _NotificationWidgetState extends State<NotificationWidget>
           });
 
           await _notificationService.cancelAllNotifications();
-          _showSuccessSnackBar('Semua notifikasi berhasil dihapus');
+_showSuccessSnackBar('All notifications deleted successfully');
         } else {
           _showErrorSnackBar(result['message']);
         }
       } catch (e) {
-        _showErrorSnackBar('Terjadi kesalahan saat menghapus semua notifikasi');
+_showErrorSnackBar('An error occurred while deleting all notifications');
         print('Error clearing all notifications: $e');
       } finally {
         setState(() {
@@ -271,12 +271,12 @@ class _NotificationWidgetState extends State<NotificationWidget>
         });
 
         await _notificationService.cancelNotification(notificationId);
-        _showSuccessSnackBar('Notifikasi berhasil dihapus');
+_showSuccessSnackBar('Notification deleted successfully');
       } else {
         _showErrorSnackBar(result['message']);
       }
     } catch (e) {
-      _showErrorSnackBar('Terjadi kesalahan saat menghapus notifikasi');
+_showErrorSnackBar('An error occurred while deleting the notification');
       print('Error deleting notification: $e');
     }
   }
@@ -557,7 +557,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Cari notifikasi...',
+hintText: 'Search notifications...',
           hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
           prefixIcon: Container(
             padding: EdgeInsets.all(10),
@@ -769,8 +769,8 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     SizedBox(width: 12),
                     Text(
                       _isMarkingAllRead
-                          ? 'Memproses...'
-                          : 'Tandai Semua Dibaca',
+                         ? 'Processing...'
+: 'Mark All as Read',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -792,7 +792,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     ),
                     SizedBox(width: 12),
                     Text(
-                      _isClearingAll ? 'Menghapus...' : 'Hapus Semua',
+_isClearingAll ? 'Deleting...' : 'Delete All',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -833,7 +833,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-                      _isClearingAll ? 'Hapus...' : 'Hapus',
+_isClearingAll ? 'Deleting...' : 'Delete',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -878,7 +878,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-                      _isMarkingAllRead ? 'Proses...' : 'Tandai',
+_isMarkingAllRead ? 'Processing...' : 'Mark',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -951,7 +951,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 24),
             Text(
-              'Memuat notifikasi...',
+'Loading notifications...',
               style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 15,
@@ -960,7 +960,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 6),
             Text(
-              'Mohon tunggu sebentar',
+'Please wait a moment',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 13,
@@ -1013,7 +1013,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                   ),
                   SizedBox(height: 32),
                   Text(
-                    'Tidak ada notifikasi',
+'No notifications',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1024,7 +1024,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-                      'Semua notifikasi akan muncul di sini.\nAnda akan mendapat pemberitahuan untuk hal-hal penting terkait peternakan Anda.',
+'All notifications will appear here.\nYou will receive alerts about important matters related to your farm.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -1091,7 +1091,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 12),
             Text(
-              'Tidak ada notifikasi yang cocok',
+'No matching notifications',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 15,
@@ -1100,7 +1100,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
             ),
             SizedBox(height: 6),
             Text(
-              'Coba gunakan kata kunci yang berbeda',
+'Try using a different keyword',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 13,
@@ -1331,7 +1331,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                     size: 14, color: Colors.red),
               ),
               SizedBox(width: 10),
-              Text('Hapus',
+              Text('Delete',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             ],
           ),
@@ -1340,14 +1340,14 @@ class _NotificationWidgetState extends State<NotificationWidget>
     );
   }
 
-  void _showDeleteConfirmation(int notificationId, int index) async {
-    final bool? confirmed = await _showConfirmationDialog(
-      title: 'Hapus Notifikasi',
-      content:
-          'Apakah Anda yakin ingin menghapus notifikasi ini? Tindakan ini tidak dapat dibatalkan.',
-      confirmText: 'Hapus',
-      isDestructive: true,
-    );
+ void _showDeleteConfirmation(int notificationId, int index) async {
+  final bool? confirmed = await _showConfirmationDialog(
+    title: 'Delete Notification',
+    content:
+        'Are you sure you want to delete this notification? This action cannot be undone.',
+    confirmText: 'Delete',
+    isDestructive: true,
+  );
 
     if (confirmed == true) {
       _deleteNotification(notificationId, index);
@@ -1371,7 +1371,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
               CircularProgressIndicator(color: _primaryColor, strokeWidth: 2.5),
               SizedBox(height: 20),
               Text(
-                'Menghapus semua notifikasi...',
+'Deleting all notifications...',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1380,7 +1380,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
               ),
               SizedBox(height: 8),
               Text(
-                'Mohon tunggu, jangan tutup aplikasi',
+'Please wait, do not close the app',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],
@@ -1513,7 +1513,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Waktu Diterima',
+'Received Time',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -1556,7 +1556,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                                     size: 14, color: Colors.grey[600]),
                                 SizedBox(width: 6),
                                 Text(
-                                  'Detail Tambahan',
+'Additional Details',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -1594,7 +1594,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
                           elevation: 2,
                         ),
                         child: Text(
-                          'Tutup',
+                          'Close',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w600),
                         ),
