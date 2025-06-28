@@ -2,20 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/productStock.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockProvider.dart';
 import 'package:intl/intl.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart';
 
-class StockCard extends StatelessWidget {
+class StockCard extends StatefulWidget {
   final Stock stock;
   final StockProvider provider;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const StockCard({
     Key? key,
     required this.stock,
     required this.provider,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   }) : super(key: key);
+
+  @override
+  _StockCardState createState() => _StockCardState();
+}
+
+class _StockCardState extends State<StockCard> {
+  int? _userRoleId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  Future<void> _fetchUserRole() async {
+    try {
+      final userData = await AuthUtils.getUser();
+      setState(() {
+        _userRoleId = userData['role_id'] ?? 0;
+      });
+    } catch (e) {
+      // Handle error silently
+    }
+  }
 
   Widget _buildStatusBadge(String status) {
     Color color;
@@ -23,15 +48,15 @@ class StockCard extends StatelessWidget {
     switch (status) {
       case 'available':
         color = Colors.green;
-        displayStatus = 'Tersedia';
+        displayStatus = 'Available';
         break;
       case 'expired':
         color = Colors.red;
-        displayStatus = 'Kedaluwarsa';
+        displayStatus = 'Expired';
         break;
       case 'contamination':
         color = Colors.orange;
-        displayStatus = 'Terkontaminasi';
+        displayStatus = 'Contaminated';
         break;
       default:
         color = Colors.grey;
@@ -104,6 +129,8 @@ class StockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSupervisor = _userRoleId == 2;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Card(
@@ -121,7 +148,7 @@ class StockCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      stock.productTypeDetail.productName,
+                      widget.stock.productTypeDetail.productName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -130,46 +157,48 @@ class StockCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        onEdit();
-                      } else if (value == 'delete') {
-                        onDelete();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, color: Colors.blue[600]),
-                            const SizedBox(width: 8),
-                            const Text('Edit'),
-                          ],
+                  if (!isSupervisor)
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          widget.onEdit?.call();
+                        } else if (value == 'delete') {
+                          widget.onDelete?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, color: Colors.blue[600]),
+                              const SizedBox(width: 8),
+                              const Text('Edit'),
+                            ],
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        enabled: provider.deletingId != stock.id,
-                        child: Row(
-                          children: [
-                            provider.deletingId == stock.id
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : Icon(Icons.delete, color: Colors.red[600]),
-                            const SizedBox(width: 8),
-                            const Text('Delete'),
-                          ],
+                        PopupMenuItem(
+                          value: 'delete',
+                          enabled:
+                              widget.provider.deletingId != widget.stock.id,
+                          child: Row(
+                            children: [
+                              widget.provider.deletingId == widget.stock.id
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : Icon(Icons.delete, color: Colors.red[600]),
+                              const SizedBox(width: 8),
+                              const Text('Delete'),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  _buildStatusBadge(stock.status),
+                      ],
+                    ),
+                  _buildStatusBadge(widget.stock.status),
                 ],
               ),
               const SizedBox(height: 12),
@@ -180,10 +209,10 @@ class StockCard extends StatelessWidget {
                     width: 100,
                     height: 100,
                     child: Center(
-                      child: stock.productTypeDetail.image != null &&
-                              stock.productTypeDetail.image!.isNotEmpty
+                      child: widget.stock.productTypeDetail.image != null &&
+                              widget.stock.productTypeDetail.image!.isNotEmpty
                           ? Image.network(
-                              stock.productTypeDetail.image!,
+                              widget.stock.productTypeDetail.image!,
                               fit: BoxFit.cover,
                               loadingBuilder:
                                   (context, child, loadingProgress) {
@@ -212,23 +241,24 @@ class StockCard extends StatelessWidget {
                       children: [
                         _buildInfoRow(
                           icon: Icons.water_drop,
-                          label: 'Stok Tersedia',
+                          label: 'Available Stock',
                           value:
-                              '${stock.quantity}/${stock.initialQuantity} ${stock.productTypeDetail.unit}',
+                              '${widget.stock.quantity}/${widget.stock.initialQuantity} ${widget.stock.productTypeDetail.unit}',
                         ),
                         const SizedBox(height: 8),
                         _buildInfoRow(
                           icon: Icons.calendar_today,
-                          label: 'Tanggal Produksi',
-                          value: DateFormat('dd MMM yyyy')
-                              .format(stock.productionAt ?? stock.expiryAt),
+                          label: 'Production Date',
+                          value: DateFormat('dd MMM yyyy').format(
+                              widget.stock.productionAt ??
+                                  widget.stock.expiryAt),
                         ),
                         const SizedBox(height: 8),
                         _buildInfoRow(
                           icon: Icons.event_busy,
-                          label: 'Tanggal Kedaluwarsa',
-                          value:
-                              DateFormat('dd MMM yyyy').format(stock.expiryAt),
+                          label: 'Expiry Date',
+                          value: DateFormat('dd MMM yyyy')
+                              .format(widget.stock.expiryAt),
                         ),
                       ],
                     ),

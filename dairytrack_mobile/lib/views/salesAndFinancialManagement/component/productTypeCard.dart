@@ -1,15 +1,13 @@
-import 'package:dairytrack_mobile/views/GuestView/GalleryGuestsView.dart';
 import 'package:flutter/material.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/productType.dart';
+import 'package:dairytrack_mobile/views/GuestView/GalleryGuestsView.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productTypeProvider.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/infoRow.dart';
-import 'package:dairytrack_mobile/views/initialAdminDashboard.dart';
 
 class ProductTypeCard extends StatelessWidget {
   final ProdukType productType;
   final ProductTypeProvider provider;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit; // Nullable to handle disabled state
+  final VoidCallback? onDelete; // Nullable to handle disabled state
 
   const ProductTypeCard({
     Key? key,
@@ -21,11 +19,15 @@ class ProductTypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDeleting = provider.deletingId == productType.id;
+
     return Card(
-      elevation: 4,
+      elevation: 4.0, // Fixed: Use double value for elevation
       shadowColor: Colors.black.withOpacity(0.1),
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ), // Fixed: Corrected to RoundedRectangleBorder
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         childrenPadding: EdgeInsets.zero,
@@ -112,7 +114,7 @@ class ProductTypeCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               productType.productDescription.length > 50
-                  ? '${productType.productDescription.substring(0, 50)}...'
+                  ? 'Rp.{productType.productDescription.substring(0, 50)}...'
                   : productType.productDescription,
               style: TextStyle(
                 color: Colors.grey[600],
@@ -134,7 +136,7 @@ class ProductTypeCard extends StatelessWidget {
                     border: Border.all(color: Colors.green[200]!),
                   ),
                   child: Text(
-                    'Rp ${_formatPrice(productType.price)}',
+                    '\Rp${_formatPrice(productType.price)}', // Using USD
                     style: TextStyle(
                       color: Colors.green[700],
                       fontSize: 12,
@@ -252,7 +254,7 @@ class ProductTypeCard extends StatelessWidget {
                             ),
                       const SizedBox(height: 16),
                       Text(
-                        'DETAIL PRODUK',
+                        'Product Details',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -276,28 +278,28 @@ class ProductTypeCard extends StatelessWidget {
                     children: [
                       _buildDetailRow(
                         Icons.shopping_bag_outlined,
-                        'Nama Produk',
+                        'Product Name',
                         productType.productName,
                         Colors.blue,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
                         Icons.description_outlined,
-                        'Deskripsi',
+                        'Description',
                         productType.productDescription,
                         Colors.orange,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
                         Icons.attach_money_outlined,
-                        'Harga',
-                        'Rp ${_formatPrice(productType.price)}',
+                        'Price',
+                        '\Rp${_formatPrice(productType.price)}',
                         Colors.green,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
                         Icons.straighten_outlined,
-                        'Satuan',
+                        'Unit',
                         productType.unit,
                         Colors.purple,
                       ),
@@ -330,52 +332,66 @@ class ProductTypeCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          ElevatedButton.icon(
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            label: const Text(
-                              "Edit",
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.white),
-                            ),
-                            onPressed: onEdit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.info,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          Tooltip(
+                            message: onEdit == null
+                                ? 'Supervisors cannot edit product types'
+                                : 'Edit Product Type',
+                            child: ElevatedButton.icon(
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: Colors.white,
                               ),
-                              elevation: 0,
+                              label: const Text(
+                                'Edit',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.white),
+                              ),
+                              onPressed: onEdit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: onEdit == null
+                                    ? Colors.grey[400]
+                                    : AppColors.info,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            label: const Text(
-                              "Delete",
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.white),
-                            ),
-                            onPressed: onDelete,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.error,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          Tooltip(
+                            message: onDelete == null
+                                ? 'Supervisors cannot delete product types'
+                                : 'Delete Product Type',
+                            child: ElevatedButton.icon(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: Colors.white,
                               ),
-                              elevation: 0,
+                              label: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.white),
+                              ),
+                              onPressed: isDeleting ? null : onDelete,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: onDelete == null
+                                    ? Colors.grey[400]
+                                    : AppColors.error,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
                             ),
                           ),
-                          if (provider.deletingId == productType.id)
+                          if (isDeleting)
                             const Padding(
                               padding: EdgeInsets.only(left: 12),
                               child: SizedBox(
@@ -451,24 +467,14 @@ class ProductTypeCard extends StatelessWidget {
     if (price == null) return '0';
 
     // Convert to string and remove any existing formatting
-    String priceStr = price.toString().replaceAll(RegExp(r'[^\d]'), '');
+    String priceStr = price.toString().replaceAll(RegExp(r'[^\d.]'), '');
 
     if (priceStr.isEmpty) return '0';
 
-    // Convert to integer for formatting
-    int priceInt = int.tryParse(priceStr) ?? 0;
+    // Convert to double for formatting
+    double priceDouble = double.tryParse(priceStr) ?? 0;
 
-    // Format with thousand separators
-    String formatted = '';
-    String reversed = priceInt.toString().split('').reversed.join('');
-
-    for (int i = 0; i < reversed.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        formatted = '.' + formatted;
-      }
-      formatted = reversed[i] + formatted;
-    }
-
-    return formatted;
+    // Format with two decimal places
+    return priceDouble.toStringAsFixed(2);
   }
 }

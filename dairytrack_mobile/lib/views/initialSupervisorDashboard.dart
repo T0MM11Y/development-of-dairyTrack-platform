@@ -5,10 +5,6 @@ import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.da
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -49,6 +45,11 @@ import '../widgets/notifications.dart';
 
 // Sales & Financial
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/listProductType.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/salesTransaction/salesTrasactionView.dart';
 
 class InitialSupervisorDashboard extends StatefulWidget {
   @override
@@ -252,6 +253,42 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
+        NavigationItem(
+          icon: Icons.category, // Represents product types or categories
+          label: 'Product Type',
+          route: '/productType', // Standardized route with leading slash
+          widget: () => ListProductTypes(), // Keep as provided
+        ),
+        NavigationItem(
+          icon: Icons.inventory_2, // Represents stock or inventory
+          label: 'Product Stock',
+          route: '/productStock',
+          widget: () => ListProductStock(), // Assumed widget for stock
+        ),
+        NavigationItem(
+          icon: Icons.history, // Represents historical data
+          label: 'Product History',
+          route: '/productHistory',
+          widget: () => ProductStockHistoryView(), // Assumed widget for history
+        ),
+        NavigationItem(
+          icon: Icons.point_of_sale, // Represents sales transactions
+          label: 'Sales',
+          route: '/order',
+          widget: () => ListOrderView(), // Assumed widget for sales
+        ),
+        NavigationItem(
+          icon: Icons.receipt_long, // Represents sales transactions
+          label: 'Sales Transactions',
+          route: '/salesTransactions',
+          widget: () => SalesTransactionView(), // Assumed widget for sales
+        ),
+        NavigationItem(
+          icon: Icons.account_balance, // Represents financial data
+          label: 'Finance',
+          route: '/finance',
+          widget: () => FinanceView(),
+        ),
       ];
 
   @override
@@ -412,6 +449,15 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
       navigationItems[18],
       navigationItems[19]
     ];
+
+    final productsSales = [
+      navigationItems[20],
+      navigationItems[21],
+      navigationItems[22],
+      navigationItems[23],
+      navigationItems[24],
+      navigationItems[25]
+    ];
     final contentMedia = [navigationItems[7], navigationItems[8]];
 
     return Positioned(
@@ -421,6 +467,8 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_isFabExpanded) ...[
+            _buildFabGroup('Products & Sales', Icons.storefront,
+                Colors.deepPurple, productsSales),
             _buildFabGroup('Content & Media', Icons.library_books, Colors.teal,
                 contentMedia),
             _buildFabGroup(

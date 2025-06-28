@@ -83,7 +83,7 @@ class _ListOrderViewState extends State<ListOrderView> {
           backgroundColor: Colors.grey[50],
           appBar: AppBar(
             title: const Text(
-              'Data Order',
+              'Order Management',
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
             ),

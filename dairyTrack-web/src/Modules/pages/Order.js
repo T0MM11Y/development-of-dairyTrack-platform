@@ -23,6 +23,7 @@ const Order = () => {
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state for submission loading
   const [order, setOrder] = useState({
     customer_name: "",
     email: "",
@@ -294,21 +295,26 @@ const Order = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
+    setIsSubmitting(true); // Start loading
 
     if (!order.customer_name) {
       setFormError("Customer name is required.");
+      setIsSubmitting(false); // Stop loading
       return;
     }
     if (!order.location) {
       setFormError("Location is required.");
+      setIsSubmitting(false); // Stop loading
       return;
     }
     if (order.order_items.length === 0) {
       setFormError("Please add at least one order item.");
+      setIsSubmitting(false); // Stop loading
       return;
     }
     if (order.phone_number && phoneError) {
       setFormError("Please fix the phone number format.");
+      setIsSubmitting(false); // Stop loading
       return;
     }
 
@@ -380,6 +386,8 @@ const Order = () => {
           "An unexpected error occurred while placing the order.",
       });
       console.error("Error placing order:", err);
+    } finally {
+      setIsSubmitting(false); // Stop loading
     }
   };
 
@@ -404,11 +412,11 @@ const Order = () => {
           left: 0,
           width: "100vw",
           height: "100vh",
-          backgroundColor: "#ffffff", // Ensures white background
-          zIndex: 9999, // Ensures it's on top
-          display: "flex", // Added from CSS class for content centering
-          alignItems: "center", // Added from CSS class for content centering
-          justifyContent: "center", // Added from CSS class for content centering
+          backgroundColor: "#ffffff",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <motion.div
@@ -420,12 +428,12 @@ const Order = () => {
           <img
             src={require("../../assets/loading.gif")}
             style={{
-              display: "block", // Diperlukan agar margin: auto berfungsi untuk penengahan
-              maxWidth: "30vw", // Lebar responsif, hingga 80% dari lebar viewport
-              maxHeight: "30vh", // Tinggi responsif, hingga 70% dari tinggi viewport (menyisakan ruang untuk teks)
-              width: "auto", // Pertahankan rasio aspek
-              height: "auto", // Pertahankan rasio aspek
-              margin: "0 auto 1rem", // Tengahkan secara horizontal, tambahkan margin bawah 1rem
+              display: "block",
+              maxWidth: "30vw",
+              maxHeight: "30vh",
+              width: "auto",
+              height: "auto",
+              margin: "0 auto 1rem",
             }}
           />
           <motion.p
@@ -719,7 +727,7 @@ const Order = () => {
                     >
                       <h5>Order Items</h5>
                     </motion.div>
-                    <Row className="mb-3">
+                    <Row className="mb-3 align-items-end">
                       <Col md={6}>
                         <Form.Group>
                           <Form.Label>Product Type</Form.Label>
@@ -772,19 +780,20 @@ const Order = () => {
                           </motion.div>
                         </Form.Group>
                       </Col>
-                      <Col md={2}>
+                      <Col md={2} className="d-flex align-items-end">
                         <motion.div
                           variants={animations.scaleIn}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          className="w-100"
                         >
                           <Button
                             variant="primary"
-                            className="w-100 mt-4 action-btn"
+                            className="w-100 action-btn add-order-btn"
                             onClick={addOrderItem}
                             disabled={availableProducts.length === 0}
                           >
-                            Add
+                            +
                           </Button>
                         </motion.div>
                       </Col>
@@ -903,10 +912,24 @@ const Order = () => {
                   <Button
                     variant="primary"
                     type="submit"
-                    disabled={phoneError || formError}
+                    disabled={phoneError || formError || isSubmitting}
                     className="action-btn-large"
                   >
-                    Place Order
+                    {isSubmitting ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        Processing...
+                      </>
+                    ) : (
+                      "Place Order"
+                    )}
                   </Button>
                 </motion.div>
               </Form>
@@ -1095,7 +1118,7 @@ const Order = () => {
           margin-top: 2rem;
         }
 
-        .stat-hero {
+        .stat-item {
           background: rgba(255, 255, 255, 0.15);
           padding: 1rem 1.5rem;
           border-radius: 12px;
@@ -1106,7 +1129,7 @@ const Order = () => {
           transition: all 0.3s ease;
         }
 
-        .stat-hero:hover {
+        .stat-item:hover {
           background: rgba(255, 255, 255, 0.25);
         }
 
@@ -1217,14 +1240,14 @@ const Order = () => {
 
         .card-title {
           font-size: 1.5rem;
-          font-weight: bold 700;
+          font-weight: 700;
           margin-bottom: 0;
         }
 
         .section-title {
           margin-bottom: 2rem;
           color: ${theme.dark};
-          font-weight: 1.2rem;
+          font-weight: 600;
         }
 
         .form-alert {
@@ -1234,7 +1257,7 @@ const Order = () => {
           margin-bottom: 2rem;
         }
 
-        .form-input {
+        .order-form-section .form-input {
           border-radius: 8px;
           padding: 0.75rem;
           border: 1px solid #e2e8f0;
@@ -1242,12 +1265,12 @@ const Order = () => {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .form-input:focus {
+        .order-form-section .form-input:focus {
           border-color: ${theme.primary};
           box-shadow: 0 0 0 0.2rem rgba(233, 163, 25, 0.25);
         }
 
-        .phone-input {
+        .order-form-section .phone-input {
           width: 100%;
           padding-left: 3.5rem;
         }
@@ -1344,8 +1367,8 @@ const Order = () => {
         }
 
         .quantity {
-          font-weight: 0.9rem;
-          min-width: 500px;
+          font-weight: 600;
+          min-width: 30px;
           text-align: center;
         }
 
@@ -1360,9 +1383,9 @@ const Order = () => {
 
         .total-price {
           margin-top: 1.5rem;
-          font-size: 600;
+          font-size: 1.1rem;
           color: ${theme.dark};
-          font-weight: bold;
+          font-weight: 600;
         }
 
         .form-actions {
@@ -1379,7 +1402,10 @@ const Order = () => {
           border-radius: 25px;
           font-weight: 600;
           transition: all 0.3s ease;
-          min-width: 0;
+          min-width: 150px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .action-btn-large:hover {
           box-shadow: ${theme.shadows.glow};
@@ -1409,7 +1435,7 @@ const Order = () => {
           }
 
           .stat-number {
-            font-size: 1rem.5rem;
+            font-size: 1.5rem;
           }
 
           .stat-label {
@@ -1444,7 +1470,7 @@ const Order = () => {
           }
 
           .section-title {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
           }
 
           .form-actions {
@@ -1510,4 +1536,3 @@ const Order = () => {
 };
 
 export default Order;
-// tess

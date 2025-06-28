@@ -31,4 +31,9 @@ class AuthUtils {
     }
     return userId;
   }
+
+  static Future<bool> isSupervisor() async {
+    final userData = await getUser();
+    return userData['role_id'] == 2;
+  }
 }

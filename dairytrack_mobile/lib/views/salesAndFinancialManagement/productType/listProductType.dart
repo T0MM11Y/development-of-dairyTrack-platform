@@ -1,14 +1,13 @@
-import 'package:dairytrack_mobile/views/GuestView/BlogGuestsView.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/utils/authutils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productTypeProvider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/productType.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/statisticCard.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/productTypeCard.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/createProductTypeModal.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/editProductTypeModal.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/createProductTypeBottomSheet.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/editProductTypeBottomSheet.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/deleteProductTypeModal.dart';
-import 'package:dairytrack_mobile/views/initialAdminDashboard.dart';
 
 class ListProductTypes extends StatefulWidget {
   const ListProductTypes({super.key});
@@ -19,40 +18,72 @@ class ListProductTypes extends StatefulWidget {
 
 class _ListProductTypesState extends State<ListProductTypes> {
   String _searchQuery = '';
+  int? _userRoleId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  Future<void> _fetchUserRole() async {
+    try {
+      final userData = await AuthUtils.getUser();
+      setState(() {
+        _userRoleId = userData['role_id'] ?? 0;
+      });
+    } catch (e) {
+      // Handle error silently or show a snackbar if needed
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isSupervisor = _userRoleId == 2;
+
     return ChangeNotifierProvider<ProductTypeProvider>(
       create: (_) => ProductTypeProvider()..fetchProductTypes(),
       child: Consumer<ProductTypeProvider>(
         builder: (context, provider, child) {
           final totalItems = provider.productTypes.length;
 
-          // Fungsi untuk membuka modal dengan menyediakan provider secara eksplisit
+          // Function to open modals/bottom sheets with explicit provider
           void showCreateProductTypeModal() {
-            showDialog(
+            if (isSupervisor) return; // Prevent action for supervisors
+            showModalBottomSheet(
               context: context,
+              isScrollControlled: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
               builder: (dialogContext) =>
                   ChangeNotifierProvider<ProductTypeProvider>.value(
-                value: provider, // Gunakan instance provider yang sudah ada
-                child: const CreateProductTypeModal(),
+                value: provider,
+                child: const CreateProductTypeBottomSheet(),
               ),
             );
           }
 
           void showEditProductTypeModal(ProdukType product) {
-            showDialog(
+            if (isSupervisor) return; // Prevent action for supervisors
+            showModalBottomSheet(
               context: context,
+              isScrollControlled: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
               builder: (dialogContext) =>
                   ChangeNotifierProvider<ProductTypeProvider>.value(
                 value: provider,
-                child: EditProductTypeModal(product: product),
+                child: EditProductTypeBottomSheet(product: product),
               ),
             );
           }
 
           void showDeleteProductTypeModal(ProdukType product) {
+            if (isSupervisor) return; // Prevent action for supervisors
             showDialog(
+              // Changed back to showDialog
               context: context,
               builder: (dialogContext) =>
                   ChangeNotifierProvider<ProductTypeProvider>.value(
@@ -62,22 +93,23 @@ class _ListProductTypesState extends State<ListProductTypes> {
             );
           }
 
+          // Rest of the code remains unchanged
           return Scaffold(
             appBar: AppBar(
               title: const Text(
-                'Data Jenis Produk',
+                'Product Types',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              backgroundColor: AppColors.mediumGray,
+              backgroundColor: Colors.blueGrey[700],
               actions: [
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: provider.fetchProductTypes,
-                  tooltip: 'Refresh',
+                  tooltip: 'Refresh Data',
                 ),
               ],
             ),
@@ -97,7 +129,7 @@ class _ListProductTypesState extends State<ListProductTypes> {
                         ),
                         TextButton(
                           onPressed: provider.fetchProductTypes,
-                          child: const Text('Coba Lagi'),
+                          child: const Text('Try Again'),
                         ),
                       ],
                     ),
@@ -111,7 +143,7 @@ class _ListProductTypesState extends State<ListProductTypes> {
                           padding: const EdgeInsets.all(16.0),
                           child: TextField(
                             decoration: InputDecoration(
-                              hintText: 'Cari berdasarkan Nama Produk...',
+                              hintText: 'Search by Product Name...',
                               prefixIcon: const Icon(Icons.search),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -143,8 +175,9 @@ class _ListProductTypesState extends State<ListProductTypes> {
                           ),
                         ),
                         StatisticsCard(
-                            totalCount: totalItems,
-                            label: 'Sum Of Product Types'),
+                          totalCount: totalItems,
+                          label: 'Total Product Types',
+                        ),
                         Expanded(
                           child: provider.productTypes.isEmpty
                               ? Center(
@@ -158,7 +191,7 @@ class _ListProductTypesState extends State<ListProductTypes> {
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
-                                        'Tidak ada jenis produk ditemukan',
+                                        'No product types found',
                                         style: TextStyle(
                                           fontSize: 18,
                                           color: Colors.grey[600],
@@ -166,7 +199,7 @@ class _ListProductTypesState extends State<ListProductTypes> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Klik tombol + untuk menambah jenis produk',
+                                        'Click the + button to add a product type',
                                         style:
                                             TextStyle(color: Colors.grey[500]),
                                       ),
@@ -179,12 +212,16 @@ class _ListProductTypesState extends State<ListProductTypes> {
                                         .map((product) => ProductTypeCard(
                                               productType: product,
                                               provider: provider,
-                                              onEdit: () =>
-                                                  showEditProductTypeModal(
-                                                      product),
-                                              onDelete: () =>
-                                                  showDeleteProductTypeModal(
-                                                      product),
+                                              onEdit: isSupervisor
+                                                  ? null
+                                                  : () =>
+                                                      showEditProductTypeModal(
+                                                          product),
+                                              onDelete: isSupervisor
+                                                  ? null
+                                                  : () =>
+                                                      showDeleteProductTypeModal(
+                                                          product),
                                             ))
                                         .toList(),
                                     const SizedBox(height: 80),
@@ -196,10 +233,16 @@ class _ListProductTypesState extends State<ListProductTypes> {
                   ),
               ],
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: showCreateProductTypeModal,
-              backgroundColor: Colors.blueGrey[800],
-              child: const Icon(Icons.add, color: Colors.white),
+            floatingActionButton: Tooltip(
+              message: isSupervisor
+                  ? 'Supervisors cannot create product types'
+                  : 'Add New Product Type',
+              child: FloatingActionButton(
+                onPressed: isSupervisor ? null : showCreateProductTypeModal,
+                backgroundColor:
+                    isSupervisor ? Colors.grey[400] : Colors.blueGrey[800],
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
             ),
           );
         },

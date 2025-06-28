@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/productType.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/customSnackbar.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productTypeProvider.dart';
 
 class DeleteProductTypeModal extends StatelessWidget {
@@ -14,13 +15,21 @@ class DeleteProductTypeModal extends StatelessWidget {
     final success = await provider.deleteProductType(product.id);
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Jenis produk berhasil dihapus')),
+      CustomSnackbar.show(
+        context: context,
+        message: 'Product type deleted successfully',
+        backgroundColor: Colors.green,
+        icon: Icons.check_circle,
+        iconColor: Colors.white,
       );
       provider.fetchProductTypes();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.errorMessage)),
+      CustomSnackbar.show(
+        context: context,
+        message: 'Failed to delete product type: ${provider.errorMessage}',
+        backgroundColor: Colors.red,
+        icon: Icons.error,
+        iconColor: Colors.white,
       );
     }
   }
@@ -30,12 +39,13 @@ class DeleteProductTypeModal extends StatelessWidget {
     return Consumer<ProductTypeProvider>(
       builder: (context, provider, child) {
         return AlertDialog(
-          title: const Text('Hapus Jenis Produk'),
-          content: Text('Anda yakin ingin menghapus "${product.productName}"?'),
+          title: const Text('Delete Product Type'),
+          content:
+              Text('Are you sure you want to delete "${product.productName}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: provider.isLoading
@@ -53,7 +63,7 @@ class DeleteProductTypeModal extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Hapus', style: TextStyle(color: Colors.white)),
+                  : const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

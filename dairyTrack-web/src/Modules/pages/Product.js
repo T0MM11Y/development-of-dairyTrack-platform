@@ -29,7 +29,7 @@ const Product = () => {
   const [viewMode, setViewMode] = useState("grid");
   const productsPerPage = 6;
 
-  // Theme configuration
+  // Theme configuration (aligned with Order component)
   const theme = {
     primary: "#E9A319",
     secondary: "#3D8D7A",
@@ -49,7 +49,7 @@ const Product = () => {
     },
   };
 
-  // Animation variants
+  // Animation variants (aligned with Order component)
   const animations = {
     fadeInUp: {
       hidden: { opacity: 0, y: 40 },
@@ -207,7 +207,7 @@ const Product = () => {
     loadingGif = require("../../assets/loading.gif");
   } catch (e) {
     console.warn("Loading GIF not found, using fallback");
-    loadingGif = "https://via.placeholder.com/100?text=Loading"; // Fallback image
+    loadingGif = "https://via.placeholder.com/100?text=Loading";
   }
 
   if (loading) {
@@ -220,11 +220,11 @@ const Product = () => {
           left: 0,
           width: "100vw",
           height: "100vh",
-          backgroundColor: "#ffffff", // Ensures white background
-          zIndex: 9999, // Ensures it's on top
-          display: "flex", // Added from CSS class for content centering
-          alignItems: "center", // Added from CSS class for content centering
-          justifyContent: "center", // Added from CSS class for content centering
+          backgroundColor: "#ffffff",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <motion.div
@@ -234,14 +234,14 @@ const Product = () => {
           className="loading-content"
         >
           <img
-            src={require("../../assets/loading.gif")}
+            src={loadingGif}
             style={{
-              display: "block", // Diperlukan agar margin: auto berfungsi untuk penengahan
-              maxWidth: "30vw", // Lebar responsif, hingga 80% dari lebar viewport
-              maxHeight: "30vh", // Tinggi responsif, hingga 70% dari tinggi viewport (menyisakan ruang untuk teks)
-              width: "auto", // Pertahankan rasio aspek
-              height: "auto", // Pertahankan rasio aspek
-              margin: "0 auto 1rem", // Tengahkan secara horizontal, tambahkan margin bawah 1rem
+              display: "block",
+              maxWidth: "30vw",
+              maxHeight: "30vh",
+              width: "auto",
+              height: "auto",
+              margin: "0 auto 1rem",
             }}
           />
           <motion.p
@@ -314,13 +314,13 @@ const Product = () => {
                     Quality Products
                   </div>
                   <h1 className="hero-title">
-                    Premium <span className="gradient-text">Products</span>
+                    Produk <span className="gradient-text">Premium</span>
                   </h1>
                   <div className="title-divider"></div>
                   <p className="hero-description">
-                    Discover a variety of high-quality dairy and healthy food
-                    products from Dairy~Track. Processed with high standards for
-                    your health and satisfaction.
+                    Temukan berbagai produk olahan susu dan pangan sehat
+                    berkualitas dari Dairy~Track. Diproses dengan standar tinggi
+                    untuk kesehatan dan kepuasan Anda.
                   </p>
                   <div className="hero-stats">
                     <motion.div
@@ -803,7 +803,7 @@ const Product = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="modal-backdrop"
+            className="product-modal-backdrop"
             onClick={() => setShowDetailModal(false)}
           >
             <motion.div
@@ -811,7 +811,7 @@ const Product = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 50 }}
               transition={{ duration: 0.3 }}
-              className="modal-container"
+              className="product-modal-container"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-card">
@@ -939,6 +939,7 @@ const Product = () => {
         .modern-products {
           font-family: "Inter", sans-serif;
           overflow-x: hidden;
+          padding-top: 70px; /* Adjusted for potential fixed header */
         }
 
         /* Loading Screen */
@@ -1616,7 +1617,7 @@ const Product = () => {
         }
 
         /* Modal Styles */
-        .modal-backdrop {
+        .product-modal-backdrop {
           position: fixed;
           top: 0;
           left: 0;
@@ -1627,11 +1628,11 @@ const Product = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 2000;
+          z-index: 1500; /* Below assumed login modal z-index (2000) */
           padding: 2rem;
         }
 
-        .modal-container {
+        .product-modal-container {
           width: 100%;
           max-width: 900px;
           max-height: 90vh;
@@ -1855,459 +1856,7 @@ const Product = () => {
             align-self: flex-end;
           }
 
-          .modal-backdrop {
-            padding: 1rem;
-          }
-
-          .modal-header {
-            padding: 1.5rem;
-          }
-
-          .modal-body {
-            padding: 1.5rem;
-          }
-
-          .modal-title {
-            font-size: 1.5rem;
-          }
-
-          .modal-meta {
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .modal-actions {
-            flex-direction: column;
-          }
-
-          .action-btn-large {
-          border: 2px solid ${theme.primary};
-          color: ${theme.primary};
-          padding: 0.75rem 1.5rem;
-          border-radius: 25px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          text-decoration: none;
-        }
-
-        .action-btn-large:hover {
-          background: ${theme.primary};
-          color: white;
-        }
-
-        /* No Results */
-        .no-results {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 400px;
-        }
-
-        .no-results-content {
-          text-align: center;
-          color: #718096;
-        }
-
-        .no-results-content i {
-          margin-bottom: 1.5rem;
-          color: #cbd5e0;
-        }
-
-        .no-results-content h4 {
-          color: ${theme.dark};
-          margin-bottom: 1rem;
-        }
-
-        /* Pagination */
-        .pagination-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin-top: 3rem;
-          gap: 2rem;
-        }
-
-        .pagination-info {
-          color: #718096;
-          font-weight: 500;
-        }
-
-        .custom-pagination .page-link {
-          color: ${theme.primary};
-          border: 1px solid #e2e8f0;
-          padding: 0.75rem 1rem;
-          margin: 0 2px;
-          border-radius: 8px;
-        }
-
-        .custom-pagination .page-item.active .page-link {
-          background: ${theme.primary};
-          border-color: ${theme.primary};
-          color: white;
-        }
-
-        .custom-pagination .page-link:hover {
-          background: rgba(233, 163, 25, 0.1);
-          border-color: ${theme.primary};
-        }
-
-        /* Sidebar */
-        .sidebar-sticky {
-          position: sticky;
-          top: 100px;
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-        }
-
-        .sidebar-card {
-          background: white;
-          border-radius: 20px;
-          overflow: hidden;
-          box-shadow: ${theme.shadows.card};
-        }
-
-        .sidebar-card .card-header {
-          background: ${theme.gradients.secondary};
-          color: white;
-          padding: 1.5rem;
-          border: none;
-        }
-
-        .sidebar-card .card-body {
-          padding: 0;
-        }
-
-        /* Featured Products */
-        .featured-item {
-          padding: 1.5rem;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .featured-item:last-child {
-          border-bottom: none;
-        }
-
-        .featured-title {
-          color: ${theme.primary};
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-        }
-
-        .featured-description {
-          color: #718096;
-          font-size: 0.9rem;
-          line-height: 1.5;
-          margin-bottom: 1rem;
-        }
-
-        .featured-link {
-          color: ${theme.primary};
-          text-decoration: none;
-          font-weight: 500;
-          font-size: 0.9rem;
-          padding: 0;
-        }
-
-        .featured-link:hover {
-          color: ${theme.primary};
-          text-decoration: none;
-        }
-
-        /* Recent Products */
-        .recent-item {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding: 1rem 1.5rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .recent-item:last-child {
-          border-bottom: none;
-        }
-
-        .recent-item:hover {
-          background: ${theme.light};
-        }
-
-        .recent-image {
-          width: 60px;
-          height: 60px;
-          border-radius: 8px;
-          overflow: hidden;
-          flex-shrink: 0;
-        }
-
-        .recent-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .recent-content {
-          flex: 1;
-        }
-
-        .recent-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: ${theme.dark};
-          margin-bottom: 0.25rem;
-          line-height: 1.3;
-        }
-
-        .recent-date {
-          color: #718096;
-          font-size: 0.8rem;
-        }
-
-        /* Modal Styles */
-        .modal-backdrop {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2000;
-          padding: 2rem;
-        }
-
-        .modal-container {
-          width: 100%;
-          max-width: 900px;
-          max-height: 90vh;
-          overflow-y: auto;
-        }
-
-        .modal-card {
-          background: white;
-          border-radius: 24px;
-          overflow: hidden;
-          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-header {
-          background: ${theme.gradients.primary};
-          color: white;
-          padding: 2rem;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .modal-header::before {
-          content: "";
-          position: absolute;
-          top: -50%;
-          right: -20px;
-          width: 100px;
-          height: 100px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 50%;
-        }
-
-        .modal-header-content {
-          position: relative;
-          z-index: 2;
-        }
-
-        .modal-title {
-          font-size: 1.8rem;
-          font-weight: 700;
-          margin-bottom: 1rem;
-          line-height: 1.3;
-        }
-
-        .modal-meta {
-          display: flex;
-          gap: 2rem;
-          font-size: 0.9rem;
-          opacity: 0.9;
-        }
-
-        .modal-close {
-          position: absolute;
-          top: 1.5rem;
-          right: 1.5rem;
-          background: rgba(255, 255, 255, 0.2);
-          border: none;
-          color: white;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1rem;
-          backdrop-filter: blur(10px);
-          z-index: 3;
-        }
-
-        .modal-body {
-          padding: 2rem;
-        }
-
-        .modal-categories {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-        }
-
-        .modal-category-badge {
-          font-size: 0.85rem;
-          font-weight: 600;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          border: none;
-        }
-
-        .modal-image-container {
-          text-align: center;
-          margin-bottom: 2rem;
-        }
-
-        .modal-image {
-          max-width: 100%;
-          max-height: 400px;
-          object-fit: contain;
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-content {
-          font-size: 1.1rem;
-          line-height: 1.8;
-          color: #4a5568;
-        }
-
-        .modal-footer {
-          padding: 1.5rem 2rem;
-          border-top: 1px solid #e2e8f0;
-          background: ${theme.light};
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-          .sidebar-sticky {
-            position: static;
-            margin-top: 3rem;
-          }
-        }
-
-        @media (max-width: 992px) {
-          .hero-stats {
-            flex-wrap: wrap;
-            justify-content: center;
-          }
-
-          .stat-item {
-            min-width: 120px;
-          }
-
-          .product-card.list .product-card-inner {
-            flex-direction: column;
-          }
-
-          .product-card.list .product-image-container {
-            width: 100%;
-            height: 250px;
-          }
-
-          .product-card.list .product-content {
-            padding: 1.5rem;
-          }
-
-          .filters-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-          }
-
-          .results-summary {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-          }
-
-          .pagination-container {
-            flex-direction: column;
-            gap: 1rem;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .hero-content {
-            padding: 4rem 0;
-          }
-
-          .hero-title {
-            font-size: 2.5rem;
-          }
-
-          .hero-stats {
-            gap: 1rem;
-          }
-
-          .stat-item {
-            padding: 0.75rem 1rem;
-            min-width: 100px;
-          }
-
-          .stat-number {
-            font-size: 1.5rem;
-          }
-
-          .stat-label {
-            font-size: 0.8rem;
-          }
-
-          .product-content-section {
-            padding: 60px 0;
-          }
-
-          .filters-container {
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-          }
-
-          .filters-title {
-            font-size: 1.2rem;
-          }
-
-          .product-meta {
-            flex-direction: column;
-            gap: 0.75rem;
-          }
-
-          .product-footer {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-          }
-
-          .product-actions {
-            align-self: flex-end;
-          }
-
-          .modal-backdrop {
+          .product-modal-backdrop {
             padding: 1rem;
           }
 
@@ -2377,7 +1926,7 @@ const Product = () => {
             height: 50px;
           }
 
-          .modal-container {
+          .product-modal-container {
             margin: 1rem 0;
           }
 
@@ -2388,21 +1937,21 @@ const Product = () => {
         }
 
         /* Custom Scrollbar */
-        .modal-container::-webkit-scrollbar {
+        .product-modal-container::-webkit-scrollbar {
           width: 6px;
         }
 
-        .modal-container::-webkit-scrollbar-track {
+        .product-modal-container::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 3px;
         }
 
-        .modal-container::-webkit-scrollbar-thumb {
+        .product-modal-container::-webkit-scrollbar-thumb {
           background: ${theme.primary};
           border-radius: 3px;
         }
 
-        .modal-container::-webkit-scrollbar-thumb:hover {
+        .product-modal-container::-webkit-scrollbar-thumb:hover {
           background: #d49617;
         }
       `}</style>

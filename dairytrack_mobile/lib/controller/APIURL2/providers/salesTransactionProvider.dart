@@ -1,7 +1,7 @@
-// productStockHistoryProvider.dart
+// salesTransactionProvider.dart
 import 'dart:io';
-import 'package:dairytrack_mobile/controller/APIURL2/controller/productStockHistoryController.dart';
-import 'package:dairytrack_mobile/controller/APIURL2/models/productStockHistory.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/controller/salesTransactionController.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/models/salesTransaction.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -9,24 +9,23 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class ProductStockHistoryProvider with ChangeNotifier {
-  final ProductStockHistoryController _controller =
-      ProductStockHistoryController();
+class SalesTransactionProvider with ChangeNotifier {
+  final SalesTransactionController _controller = SalesTransactionController();
   final _logger = Logger();
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  List<ProductStockHistory> _history = [];
+  List<SalesTransaction> _transactions = [];
   String? _searchQuery;
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isExporting = false;
 
-  List<ProductStockHistory> get history =>
+  List<SalesTransaction> get transactions =>
       _searchQuery == null || _searchQuery!.isEmpty
-          ? _history
-          : _history
-              .where((item) => item.productType.productName
+          ? _transactions
+          : _transactions
+              .where((item) => item.order.customerName
                   .toLowerCase()
                   .contains(_searchQuery!.toLowerCase()))
               .toList();
@@ -34,7 +33,7 @@ class ProductStockHistoryProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
   bool get isExporting => _isExporting;
 
-  ProductStockHistoryProvider() {
+  SalesTransactionProvider() {
     _initializeNotifications();
   }
 
@@ -50,21 +49,21 @@ class ProductStockHistoryProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchHistory({String queryString = ''}) async {
+  Future<void> fetchTransactions({String queryString = ''}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      _history =
-          await _controller.getProductStockHistory(queryString: queryString);
+      _transactions =
+          await _controller.getSalesTransactions(queryString: queryString);
       _isLoading = false;
-      _logger.i('Successfully fetched ${_history.length} history items');
+      _logger.i('Successfully fetched ${_transactions.length} transaction items');
       notifyListeners();
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Gagal memuat riwayat stok produk: $e';
-      _logger.e('Error fetching history: $e');
+      _errorMessage = 'Gagal memuat transaksi penjualan: $e';
+      _logger.e('Error fetching transactions: $e');
       notifyListeners();
     }
   }
@@ -81,8 +80,7 @@ class ProductStockHistoryProvider with ChangeNotifier {
 
     try {
       if (await _requestPermissions(context: null)) {
-        // context null untuk notifikasi
-        final result = await _controller.exportProductStockHistoryAsPdf(
+        final result = await _controller.exportSalesTransactionsAsPdf(
             queryString: queryString);
         if (result['success']) {
           final bytes = result['data'] as List<int>;
@@ -118,8 +116,7 @@ class ProductStockHistoryProvider with ChangeNotifier {
 
     try {
       if (await _requestPermissions(context: null)) {
-        // context null untuk notifikasi
-        final result = await _controller.exportProductStockHistoryAsExcel(
+        final result = await _controller.exportSalesTransactionsAsExcel(
             queryString: queryString);
         if (result['success']) {
           final bytes = result['data'] as List<int>;
@@ -152,7 +149,6 @@ class ProductStockHistoryProvider with ChangeNotifier {
     var storageStatus = await Permission.storage.status;
     var notificationStatus = await Permission.notification.status;
 
-    // Tampilkan alert kustom jika context tersedia
     if (context != null) {
       bool shouldRequest = await showDialog<bool>(
             context: context,
