@@ -274,6 +274,12 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
             showForRoles: [1, 2],
           },
           {
+            id: "salesTransaction",
+            title: "Sales Transaction",
+            link: getRoleBasedLink("/sales-transaction", userRoleId),
+            showForRoles: [1, 2],
+          },
+          {
             id: "finance",
             title: "Finance",
             link: getRoleBasedLink("/finance", userRoleId),

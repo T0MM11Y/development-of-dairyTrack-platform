@@ -6,10 +6,6 @@ import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart'
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
 import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -50,6 +46,11 @@ import '../widgets/notifications.dart';
 
 // Sales & Financial
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productType/listProductType.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStock/listProductStock.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/productStockHistory/listProductStockHistory.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/salesTransaction/salesTrasactionView.dart';
 
 class InitialAdminDashboard extends StatefulWidget {
   @override
@@ -233,6 +234,12 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           label: 'Sales',
           route: '/order',
           widget: () => ListOrderView(), // Assumed widget for sales
+        ),
+        NavigationItem(
+          icon: Icons.receipt_long, // Represents sales transactions
+          label: 'Sales Transactions',
+          route: '/salesTransactions',
+          widget: () => SalesTransactionView(), // Assumed widget for sales
         ),
         NavigationItem(
           icon: Icons.account_balance, // Represents financial data
@@ -430,7 +437,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
       navigationItems[10],
       navigationItems[11],
       navigationItems[12],
-      navigationItems[24]
+      navigationItems[23]
     ];
     final feedManagement = [
       navigationItems[19],
@@ -445,7 +452,8 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
       navigationItems[14],
       navigationItems[15],
       navigationItems[16],
-      navigationItems[17]
+      navigationItems[17],
+      navigationItems[18]
     ];
 
     return Positioned(

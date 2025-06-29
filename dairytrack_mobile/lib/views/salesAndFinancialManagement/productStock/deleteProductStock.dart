@@ -2,23 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/models/productStock.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockProvider.dart';
+import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/customSnackbar.dart';
 
 class DeleteStockModal extends StatelessWidget {
   final Stock stock;
 
   const DeleteStockModal({Key? key, required this.stock}) : super(key: key);
 
-  Future<void> _deleteStock(StockProvider provider, BuildContext context) async {
+  Future<void> _deleteStock(
+      StockProvider provider, BuildContext context) async {
     final success = await provider.deleteStock(stock.id);
     if (success) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Stok produk berhasil dihapus')),
+      CustomSnackbar.show(
+        context: context,
+        message: 'Product stock deleted successfully',
+        backgroundColor: Colors.green,
+        icon: Icons.check_circle,
+        iconColor: Colors.white,
       );
       provider.fetchStocks();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.errorMessage)),
+      CustomSnackbar.show(
+        context: context,
+        message: 'Failed to delete stock: ${provider.errorMessage}',
+        backgroundColor: Colors.red,
+        icon: Icons.error,
+        iconColor: Colors.white,
       );
     }
   }
@@ -28,12 +38,13 @@ class DeleteStockModal extends StatelessWidget {
     return Consumer<StockProvider>(
       builder: (context, provider, child) {
         return AlertDialog(
-          title: const Text('Hapus Stok Produk'),
-          content: Text('Anda yakin ingin menghapus stok "${stock.productTypeDetail.productName}"?'),
+          title: const Text('Delete Product Stock'),
+          content: Text(
+              'Are you sure you want to delete stock "${stock.productTypeDetail.productName}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: provider.isLoading
@@ -51,7 +62,7 @@ class DeleteStockModal extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Hapus', style: TextStyle(color: Colors.white)),
+                  : const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

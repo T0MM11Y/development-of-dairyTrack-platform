@@ -1,14 +1,14 @@
-// productStockHistoryController.dart
+// salesTransactionController.dart
 import 'package:dairytrack_mobile/api/apiController.dart';
-import 'package:dairytrack_mobile/controller/APIURL2/models/productStockHistory.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/models/salesTransaction.dart';
 import 'package:logger/logger.dart';
 import 'package:dairytrack_mobile/controller/APIURL2/api_services/apiService.dart';
 
-class ProductStockHistoryController {
-  final String _baseEndpoint = '$API_URL2/product-history';
+class SalesTransactionController {
+  final String _baseEndpoint = '$API_URL2/sales/sales-transactions';
   final _logger = Logger();
 
-  Future<List<ProductStockHistory>> getProductStockHistory(
+  Future<List<SalesTransaction>> getSalesTransactions(
       {String queryString = ''}) async {
     final response = await apiRequest(
       url: '$_baseEndpoint/${queryString.isNotEmpty ? '?$queryString' : ''}',
@@ -19,27 +19,26 @@ class ProductStockHistoryController {
     if (response['success']) {
       try {
         final List<dynamic> data = response['data'] ?? [];
-        _logger.i('Parsing ${data.length} product stock history items');
+        _logger.i('Parsing ${data.length} sales transaction items');
         return data.map((json) {
           if (json is Map<String, dynamic>) {
-            return ProductStockHistory.fromJson(json);
+            return SalesTransaction.fromJson(json);
           } else {
             _logger.e('Invalid JSON item: $json');
             throw Exception('Invalid JSON format');
           }
         }).toList();
       } catch (e) {
-        _logger.e('Error parsing product stock history: $e');
-        throw Exception('Failed to parse product stock history: $e');
+        _logger.e('Error parsing sales transactions: $e');
+        throw Exception('Failed to parse sales transactions: $e');
       }
     } else {
-      _logger
-          .e('Failed to fetch product stock history: ${response['message']}');
+      _logger.e('Failed to fetch sales transactions: ${response['message']}');
       throw Exception(response['message']);
     }
   }
 
-  Future<Map<String, dynamic>> exportProductStockHistoryAsPdf(
+  Future<Map<String, dynamic>> exportSalesTransactionsAsPdf(
       {String queryString = ''}) async {
     try {
       final response = await apiRequest(
@@ -51,11 +50,11 @@ class ProductStockHistoryController {
       );
 
       if (response['success'] && response['statusCode'] == 200) {
-        _logger.i('Successfully exported product stock history as PDF');
+        _logger.i('Successfully exported sales transactions as PDF');
         return {
           'success': true,
           'data': response['bodyBytes'],
-          'filename': 'product_history_${DateTime.now().toIso8601String()}.pdf',
+          'filename': 'sales_transactions_${DateTime.now().toIso8601String()}.pdf',
         };
       } else {
         final error = response['body'] ?? 'Unknown error';
@@ -66,7 +65,7 @@ class ProductStockHistoryController {
         };
       }
     } catch (e) {
-      _logger.e('Error exporting product stock history as PDF: $e');
+      _logger.e('Error exporting sales transactions as PDF: $e');
       return {
         'success': false,
         'message': 'Failed to export PDF: $e',
@@ -74,7 +73,7 @@ class ProductStockHistoryController {
     }
   }
 
-  Future<Map<String, dynamic>> exportProductStockHistoryAsExcel(
+  Future<Map<String, dynamic>> exportSalesTransactionsAsExcel(
       {String queryString = ''}) async {
     try {
       final response = await apiRequest(
@@ -89,12 +88,12 @@ class ProductStockHistoryController {
       );
 
       if (response['success'] && response['statusCode'] == 200) {
-        _logger.i('Successfully exported product stock history as Excel');
+        _logger.i('Successfully exported sales transactions as Excel');
         return {
           'success': true,
           'data': response['bodyBytes'],
           'filename':
-              'product_history_${DateTime.now().toIso8601String()}.xlsx',
+              'sales_transactions_${DateTime.now().toIso8601String()}.xlsx',
         };
       } else {
         final error = response['body'] ?? 'Unknown error';
@@ -105,7 +104,7 @@ class ProductStockHistoryController {
         };
       }
     } catch (e) {
-      _logger.e('Error exporting product stock history as Excel: $e');
+      _logger.e('Error exporting sales transactions as Excel: $e');
       return {
         'success': false,
         'message': 'Failed to export Excel: $e',

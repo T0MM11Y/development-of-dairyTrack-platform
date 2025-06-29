@@ -36,8 +36,7 @@ def check_product_expiration():
                 if time_to_expiry <= timedelta(hours=4) and time_to_expiry > timedelta(seconds=0):
                     if not Notification.objects.filter(
                         product_stock=product,
-                        type='EXPIRY_WARN_4H',
-                        is_read=False
+                        type='EXPIRY_WARN_4H'
                     ).exists():
                         for admin in admins:
                             Notification.objects.create(
@@ -49,6 +48,8 @@ def check_product_expiration():
                                 created_at_wib=timezone.now().astimezone(timezone.get_current_timezone())
                             )
                             logger.info("Sent 4-hour warning for product %s to user %s", product.id, admin.id)
+                    else:
+                        logger.debug("Skipped EXPIRY_WARN_4H notification for product %s: already notified", product.id)
                 
                 elif product.expiry_at <= now:
                     product.status = "expired"
@@ -60,8 +61,7 @@ def check_product_expiration():
                     product.save()
                     if not Notification.objects.filter(
                         product_stock=product,
-                        type='PROD_EXPIRED',
-                        is_read=False
+                        type='PROD_EXPIRED'
                     ).exists():
                         for admin in admins:
                             Notification.objects.create(
@@ -73,6 +73,8 @@ def check_product_expiration():
                                 created_at_wib=timezone.now().astimezone(timezone.get_current_timezone())
                             )
                             logger.info("Marked product %s as expired and notified user %s", product.id, admin.id)
+                    else:
+                        logger.debug("Skipped PROD_EXPIRED notification for product %s: already notified", product.id)
             
             long_expired_products = ProductStock.objects.filter(
                 status="expired",
@@ -84,8 +86,7 @@ def check_product_expiration():
                 logger.debug("Product %s expired at %s (>2 hours ago)", product.id, expiry_wib)
                 if not Notification.objects.filter(
                     product_stock=product,
-                    type='PRODUCT_LONG_EXPIRED',
-                    is_read=False
+                    type='PRODUCT_LONG_EXPIRED'
                 ).exists():
                     for admin in admins:
                         Notification.objects.create(
@@ -97,5 +98,10 @@ def check_product_expiration():
                             created_at_wib=timezone.now().astimezone(timezone.get_current_timezone())
                         )
                         logger.info("Sent long expired notification for product %s to user %s", product.id, admin.id)
+                    # Ubah status produk untuk mencegah pemrosesan ulang
+                    product.status = "long_expired_processed"
+                    product.save()
+                else:
+                    logger.debug("Skipped PRODUCT_LONG_EXPIRED notification for product %s: already notified", product.id)
     except Exception as e:
         logger.error("Error in check_product_expiration: %s", str(e), exc_info=True)

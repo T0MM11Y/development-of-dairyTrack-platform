@@ -1,39 +1,34 @@
-import 'package:dairytrack_mobile/controller/APIURL2/models/productStockHistory.dart';
-import 'package:dairytrack_mobile/controller/APIURL2/providers/productStockHistoryProvider.dart';
+// salesTransactionView.dart
+import 'package:dairytrack_mobile/controller/APIURL2/models/salesTransaction.dart';
+import 'package:dairytrack_mobile/controller/APIURL2/providers/salesTransactionProvider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/filterCard.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/customSnackbar.dart';
-import 'package:dairytrack_mobile/views/salesAndFinancialManagement/component/actionButtons.dart';
 
-class ProductStockHistoryView extends StatefulWidget {
+class SalesTransactionView extends StatefulWidget {
   @override
-  _ProductStockHistoryViewState createState() =>
-      _ProductStockHistoryViewState();
+  _SalesTransactionViewState createState() => _SalesTransactionViewState();
 }
 
-class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
+class _SalesTransactionViewState extends State<SalesTransactionView>
     with TickerProviderStateMixin {
   late AnimationController _chartAnimationController;
   late Animation<double> _chartAnimation;
   TextEditingController _searchController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
-  String? _selectedChangeType;
+  String? _selectedPaymentMethod;
   final Logger _logger = Logger();
-  int _currentPage = 1;
-  int _itemsPerPage = 10;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ProductStockHistoryProvider>(context, listen: false)
-          .fetchHistory();
+      Provider.of<SalesTransactionProvider>(context, listen: false)
+          .fetchTransactions();
     });
   }
 
@@ -62,7 +57,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          'Product Stock History',
+          'Transaksi Penjualan',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.blueGrey[800],
@@ -71,11 +66,11 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
           IconButton(
             icon: Icon(Icons.download, color: Colors.white),
             onPressed: _showExportOptions,
-            tooltip: 'Export Data',
+            tooltip: 'Ekspor Data',
           ),
         ],
       ),
-      body: Consumer<ProductStockHistoryProvider>(
+      body: Consumer<SalesTransactionProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return Center(
@@ -92,7 +87,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
           }
           return RefreshIndicator(
             onRefresh: () =>
-                provider.fetchHistory(queryString: _buildQueryString()),
+                provider.fetchTransactions(queryString: _buildQueryString()),
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.all(16),
@@ -105,9 +100,9 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                   SizedBox(height: 16),
                   _buildDonutChart(provider),
                   SizedBox(height: 16),
-                  _buildDetailedStatistics(provider.history),
+                  _buildDetailedStatistics(provider.transactions),
                   SizedBox(height: 16),
-                  _buildHistoryList(provider),
+                  _buildTransactionList(provider),
                 ],
               ),
             ),
@@ -117,11 +112,11 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     );
   }
 
-  Widget _buildSearchBar(ProductStockHistoryProvider provider) {
+  Widget _buildSearchBar(SalesTransactionProvider provider) {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText: 'Search by product name...',
+        hintText: 'Cari berdasarkan nama pelanggan...',
         prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
@@ -144,9 +139,12 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     );
   }
 
-  Widget _buildFilterSection(ProductStockHistoryProvider provider) {
-    final changeTypes =
-        provider.history.map((e) => e.changeType).toSet().toList()..sort();
+  Widget _buildFilterSection(SalesTransactionProvider provider) {
+    final paymentMethods = provider.transactions
+        .map((e) => e.paymentMethod)
+        .toSet()
+        .toList()
+      ..sort();
 
     return Card(
       elevation: 2,
@@ -169,9 +167,8 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
         ),
         childrenPadding: EdgeInsets.all(16),
         children: [
-          // Date Filter
           Text(
-            'Date Filter',
+            'Filter Tanggal',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -202,7 +199,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                     ),
                     child: Text(
                       _startDate == null
-                          ? 'Select Start Date'
+                          ? 'Pilih Tanggal Mulai'
                           : DateFormat('dd MMM yyyy').format(_startDate!),
                       style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
@@ -231,7 +228,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                     ),
                     child: Text(
                       _endDate == null
-                          ? 'Select End Date'
+                          ? 'Pilih Tanggal Selesai'
                           : DateFormat('dd MMM yyyy').format(_endDate!),
                       style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
@@ -241,9 +238,8 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
             ],
           ),
           SizedBox(height: 16),
-          // Change Type Filter
           Text(
-            'Change Type',
+            'Metode Pembayaran',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -252,7 +248,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
           ),
           SizedBox(height: 8),
           DropdownButtonFormField<String?>(
-            value: _selectedChangeType,
+            value: _selectedPaymentMethod,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -265,84 +261,80 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
               contentPadding:
                   EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             ),
-            hint: Text('Select Change Type',
+            hint: Text('Pilih Metode Pembayaran',
                 style: TextStyle(color: Colors.grey[700])),
             items: [
               DropdownMenuItem<String?>(
                 value: null,
-                child: Text('All'),
+                child: Text('Semua'),
               ),
-              ...changeTypes.map((type) => DropdownMenuItem<String>(
-                    value: type,
-                    child: Text(type),
+              ...paymentMethods.map((method) => DropdownMenuItem<String>(
+                    value: method,
+                    child: Text(method),
                   )),
             ],
             onChanged: (value) {
-              setState(() => _selectedChangeType = value);
+              setState(() => _selectedPaymentMethod = value);
             },
           ),
           SizedBox(height: 16),
-          ActionButtons(
-            isLoading: false,
-            onSubmit: () {
-              if (_startDate != null && _endDate != null) {
-                if (_endDate!.isBefore(_startDate!)) {
-                  CustomSnackbar.show(
-                    context: context,
-                    message: 'End date cannot be before start date',
-                    backgroundColor: Colors.red,
-                    icon: Icons.error,
-                    iconColor: Colors.white,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  if (_startDate != null && _endDate != null) {
+                    if (_endDate!.isBefore(_startDate!)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                'Tanggal akhir tidak boleh sebelum tanggal mulai')),
+                      );
+                      return;
+                    }
+                  }
+                  final query = _buildQueryString();
+                  _logger.i('Applying filter with query: $query');
+                  provider.fetchTransactions(queryString: query).then((_) {
+                    if (provider.errorMessage.isNotEmpty) {
+                      _logger.e('Filter error: ${provider.errorMessage}');
+                    } else {
+                      _logger.i('Filter applied successfully');
+                    }
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Filter diterapkan')),
                   );
-                  return;
-                }
-              }
-              final query = _buildQueryString();
-              _logger.i('Applying filter with query: $query');
-              provider.fetchHistory(queryString: query).then((_) {
-                if (provider.errorMessage.isNotEmpty) {
-                  _logger.e('Filter error: ${provider.errorMessage}');
-                  CustomSnackbar.show(
-                    context: context,
-                    message: 'Failed to apply filter: ${provider.errorMessage}',
-                    backgroundColor: Colors.red,
-                    icon: Icons.error,
-                    iconColor: Colors.white,
-                  );
-                } else {
-                  _logger.i('Filter applied successfully');
-                  CustomSnackbar.show(
-                    context: context,
-                    message: 'Filter applied successfully',
-                    backgroundColor: Colors.green,
-                    icon: Icons.check_circle,
-                    iconColor: Colors.white,
-                  );
-                }
-              });
-            },
-            submitText: 'Apply Filter',
-            submitColor: Colors.blueGrey[800]!,
-            onCancel: (_startDate != null ||
-                    _endDate != null ||
-                    _selectedChangeType != null)
-                ? () {
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                child: Text('Filter', style: TextStyle(fontSize: 14)),
+              ),
+              if (_startDate != null ||
+                  _endDate != null ||
+                  _selectedPaymentMethod != null)
+                TextButton(
+                  onPressed: () {
                     setState(() {
                       _startDate = null;
                       _endDate = null;
-                      _selectedChangeType = null;
+                      _selectedPaymentMethod = null;
                     });
                     _logger.i('Resetting filters');
-                    provider.fetchHistory();
-                    CustomSnackbar.show(
-                      context: context,
-                      message: 'Filters cleared',
-                      backgroundColor: Colors.blue,
-                      icon: Icons.clear_all,
-                      iconColor: Colors.white,
+                    provider.fetchTransactions();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Filter dihapus')),
                     );
-                  }
-                : null,
+                  },
+                  child: Text('Hapus Filter',
+                      style: TextStyle(color: Colors.red[600])),
+                ),
+            ],
           ),
         ],
       ),
@@ -357,30 +349,31 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     if (_endDate != null) {
       params['end_date'] = DateFormat('yyyy-MM-dd').format(_endDate!);
     }
-    if (_selectedChangeType != null) {
-      params['change_type'] = Uri.encodeComponent(_selectedChangeType!);
+    if (_selectedPaymentMethod != null) {
+      params['payment_method'] = Uri.encodeComponent(_selectedPaymentMethod!);
     }
     final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
     _logger.i('Generated query string: $query');
     return query;
   }
 
-  Widget _buildDonutChart(ProductStockHistoryProvider provider) {
-    final history = provider.history;
-    final Map<String, double> changeTypeMap = {};
-    for (var item in history) {
-      changeTypeMap[item.changeType] =
-          (changeTypeMap[item.changeType] ?? 0) + 1;
+  Widget _buildDonutChart(SalesTransactionProvider provider) {
+    final transactions = provider.transactions;
+    final Map<String, double> paymentMethodMap = {};
+    for (var item in transactions) {
+      paymentMethodMap[item.paymentMethod] =
+          (paymentMethodMap[item.paymentMethod] ?? 0) +
+              double.parse(item.totalPrice);
     }
-    final totalChanges =
-        changeTypeMap.values.fold(0.0, (sum, count) => sum + count);
+    final totalAmount =
+        paymentMethodMap.values.fold(0.0, (sum, amount) => sum + amount);
 
     final chartData =
-        changeTypeMap.entries.toList().asMap().entries.map((entry) {
+        paymentMethodMap.entries.toList().asMap().entries.map((entry) {
       final index = entry.key;
       final mapEntry = entry.value;
       final percentage =
-          totalChanges > 0 ? (mapEntry.value / totalChanges * 100) : 0.0;
+          totalAmount > 0 ? (mapEntry.value / totalAmount * 100) : 0.0;
       return PieChartSectionData(
         color: _getChartColor(index % _chartColors.length),
         value: mapEntry.value,
@@ -414,7 +407,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                 Icon(Icons.donut_large, color: Colors.teal[600], size: 20),
                 SizedBox(width: 8),
                 Text(
-                  'Change Type Distribution',
+                  'Distribusi Metode Pembayaran',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -425,7 +418,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
             ),
             SizedBox(height: 8),
             Text(
-              'Percentage of changes by type',
+              'Persentase total penjualan berdasarkan metode pembayaran',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             SizedBox(height: 16),
@@ -438,7 +431,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                           PieChartSectionData(
                             color: Colors.grey[300],
                             value: 1,
-                            title: 'No data',
+                            title: 'Tidak ada data',
                             radius: 60,
                             titleStyle: TextStyle(
                                 fontSize: 12, color: Colors.grey[600]),
@@ -451,18 +444,18 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
               ),
             ),
             SizedBox(height: 16),
-            _buildChartLegend(changeTypeMap),
+            _buildChartLegend(paymentMethodMap),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChartLegend(Map<String, double> changeTypeMap) {
+  Widget _buildChartLegend(Map<String, double> paymentMethodMap) {
     return Wrap(
       spacing: 16,
       runSpacing: 8,
-      children: changeTypeMap.entries.toList().asMap().entries.map((entry) {
+      children: paymentMethodMap.entries.toList().asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
         return Row(
@@ -478,7 +471,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
             ),
             SizedBox(width: 8),
             Text(
-              '${item.key}: ${item.value.toStringAsFixed(0)} changes',
+              '${item.key}: Rp ${item.value.toStringAsFixed(0)}',
               style: TextStyle(fontSize: 12, color: Colors.grey[700]),
             ),
           ],
@@ -487,20 +480,26 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     );
   }
 
-  Widget _buildDetailedStatistics(List<ProductStockHistory> history) {
-    final productTypes =
-        history.map((e) => e.productType.productName).toSet().toList();
-    final stats = productTypes.map((type) {
-      final items =
-          history.where((h) => h.productType.productName == type).toList();
-      final totalStock =
-          items.fold(0, (sum, item) => sum + item.quantityChange);
-      final percentage = history.isNotEmpty
-          ? (totalStock /
-              history.fold(0, (sum, item) => sum + item.quantityChange) *
+  Widget _buildDetailedStatistics(List<SalesTransaction> transactions) {
+    final productNames = transactions
+        .expand((t) => t.order.orderItems
+            .map((i) => i.productTypeDetail?.productName ?? ''))
+        .toSet()
+        .toList();
+    final stats = productNames.map((name) {
+      final items = transactions
+          .expand((t) => t.order.orderItems)
+          .where((i) => i.productTypeDetail?.productName == name)
+          .toList();
+      final totalAmount = items.fold(0.0,
+          (sum, item) => sum + (double.tryParse(item.totalPrice ?? '0') ?? 0));
+      final percentage = transactions.isNotEmpty
+          ? (totalAmount /
+              transactions.fold(
+                  0.0, (sum, t) => sum + (double.tryParse(t.totalPrice) ?? 0)) *
               100)
           : 0.0;
-      return {'name': type, 'stock': totalStock, 'percentage': percentage};
+      return {'name': name, 'amount': totalAmount, 'percentage': percentage};
     }).toList();
 
     return SlideTransition(
@@ -526,7 +525,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                 Icon(Icons.bar_chart, color: Colors.blue[600], size: 20),
                 SizedBox(width: 8),
                 Text(
-                  'Product Comparison',
+                  'Perbandingan Produk',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -537,7 +536,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
             ),
             SizedBox(height: 8),
             Text(
-              'Percentage of stock changes by product name',
+              'Persentase penjualan berdasarkan nama produk',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             SizedBox(height: 16),
@@ -613,14 +612,8 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     );
   }
 
-  Widget _buildHistoryList(ProductStockHistoryProvider provider) {
-    final history = provider.history;
-    final totalItems = history.length;
-    final totalPages = (totalItems / _itemsPerPage).ceil();
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(0, totalItems);
-    final paginatedHistory = history.sublist(startIndex, endIndex);
-
+  Widget _buildTransactionList(SalesTransactionProvider provider) {
+    final transactions = provider.transactions;
     return SlideTransition(
       position: Tween<Offset>(begin: Offset(-0.5, 0), end: Offset.zero)
           .animate(_chartAnimation),
@@ -644,7 +637,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                 Icon(Icons.history, color: Colors.purple[600], size: 20),
                 SizedBox(width: 8),
                 Text(
-                  'Stock History List',
+                  'Daftar Transaksi Penjualan',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -655,11 +648,11 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
             ),
             SizedBox(height: 8),
             Text(
-              'History of product stock changes',
+              'Riwayat transaksi penjualan',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             SizedBox(height: 16),
-            history.isEmpty
+            transactions.isEmpty
                 ? Center(
                     child: Column(
                       children: [
@@ -667,103 +660,52 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                             size: 48, color: Colors.grey[400]),
                         SizedBox(height: 16),
                         Text(
-                          'No stock history available',
+                          'Belum ada transaksi penjualan',
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   )
-                : Column(
-                    children: [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: paginatedHistory.length,
-                        itemBuilder: (context, index) {
-                          final item = paginatedHistory[index];
-                          final iconColor = _getIconColor(item.changeType);
-                          return Card(
-                            margin: EdgeInsets.only(bottom: 8),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: iconColor.withOpacity(0.2),
-                                child: Icon(
-                                  Icons.inventory_2,
-                                  color: iconColor,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                item.productType.productName,
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.w600),
-                              ),
-                              subtitle: Text(
-                                'Change: ${item.quantityChange} ${item.unit} (${item.changeType})\nDate: ${DateFormat('dd MMM yyyy, HH:mm', 'en_US').format(item.changeDate)}',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[600]),
-                              ),
-                              trailing: Text(
-                                '${item.quantityChange} ${item.unit}',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.green[600]),
-                              ),
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: transactions.length,
+                    itemBuilder: (context, index) {
+                      final item = transactions[index];
+                      final iconColor = _getIconColor(item.paymentMethod);
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: iconColor.withOpacity(0.2),
+                            child: Icon(
+                              Icons.monetization_on,
+                              color: iconColor,
+                              size: 20,
                             ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text('Items per page: '),
-                              DropdownButton<int>(
-                                value: _itemsPerPage,
-                                items: [5, 10, 20, 50]
-                                    .map((value) => DropdownMenuItem<int>(
-                                          value: value,
-                                          child: Text('$value'),
-                                        ))
-                                    .toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _itemsPerPage = value!;
-                                    _currentPage = 1;
-                                  });
-                                },
-                              ),
-                            ],
                           ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.chevron_left),
-                                onPressed: _currentPage > 1
-                                    ? () {
-                                        setState(() => _currentPage--);
-                                      }
-                                    : null,
-                              ),
-                              Text('Page $_currentPage of $totalPages'),
-                              IconButton(
-                                icon: Icon(Icons.chevron_right),
-                                onPressed: _currentPage < totalPages
-                                    ? () {
-                                        setState(() => _currentPage++);
-                                      }
-                                    : null,
-                              ),
-                            ],
+                          title: Text(
+                            item.order.customerName,
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w600),
                           ),
-                        ],
-                      ),
-                    ],
+                          subtitle: Text(
+                            'Order: ${item.order.orderNo}\nTotal: Rp ${item.totalPrice}\nMetode: ${item.paymentMethod}\nTanggal: ${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(item.transactionDate)}',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          trailing: Text(
+                            'Rp ${item.totalPrice}',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green[600]),
+                          ),
+                        ),
+                      );
+                    },
                   ),
           ],
         ),
@@ -771,14 +713,14 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
     );
   }
 
-  Color _getIconColor(String changeType) {
-    switch (changeType.toLowerCase()) {
-      case 'expired':
-        return Colors.red[600]!;
-      case 'contamination':
-        return Colors.yellow[600]!;
-      case 'used':
+  Color _getIconColor(String paymentMethod) {
+    switch (paymentMethod.toLowerCase()) {
+      case 'cash':
         return Colors.green[600]!;
+      case 'card':
+        return Colors.blue[600]!;
+      case 'transfer':
+        return Colors.purple[600]!;
       default:
         return Colors.blueGrey[600]!;
     }
@@ -791,14 +733,14 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Consumer<ProductStockHistoryProvider>(
+        return Consumer<SalesTransactionProvider>(
           builder: (context, provider, child) => Container(
             padding: EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Export Stock History',
+                  'Ekspor Transaksi Penjualan',
                   style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -807,7 +749,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                 SizedBox(height: 16),
                 ListTile(
                   leading: Icon(Icons.picture_as_pdf, color: Colors.red[600]),
-                  title: Text('Export as PDF'),
+                  title: Text('Ekspor sebagai PDF'),
                   enabled: !provider.isExporting,
                   onTap: () {
                     Navigator.pop(context);
@@ -819,7 +761,7 @@ class _ProductStockHistoryViewState extends State<ProductStockHistoryView>
                 ),
                 ListTile(
                   leading: Icon(Icons.table_chart, color: Colors.green[600]),
-                  title: Text('Export as Excel'),
+                  title: Text('Ekspor sebagai Excel'),
                   enabled: !provider.isExporting,
                   onTap: () {
                     Navigator.pop(context);

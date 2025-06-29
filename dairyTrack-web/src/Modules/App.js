@@ -87,6 +87,7 @@ import ProductType from "./pages/Admin/ProductType/listProductType";
 import ProductStock from "./pages/Admin/Product/ListProductStock";
 import ProductHistory from "./pages/Admin/ProductHistory/ListProductHistory";
 import SalesOrder from "./pages/Admin/Order/ListOrder";
+import SalesTransaction from "./pages/Admin/SalesTransaction/ListSalesTransaction";
 import Finance from "./pages/Admin/Finance/Finance";
 import FinanceRecord from "./pages/Admin/Finance/FinanceRecords";
 
@@ -800,6 +801,12 @@ const RouteConfig = () => {
           <ProtectedRoute path="/admin/finance">
             <AdminLayout>
               <Finance />
+            </AdminLayout>
+          </ProtectedRoute>
+
+          <ProtectedRoute path="/admin/sales-transaction">
+            <AdminLayout>
+              <SalesTransaction />
             </AdminLayout>
           </ProtectedRoute>
 
