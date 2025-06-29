@@ -744,14 +744,14 @@ class _MilkingViewState extends State<MilkingView> {
           await milkingSessionController.addMilkingSession(sessionData);
       if (response['success'] == true) {
         Navigator.pop(context);
-        _showSuccessDialog('Sesi pemerahan berhasil ditambahkan');
+        _showSuccessDialog('Milking session successfully added');
         await _fetchData();
       } else {
         _showErrorDialog(
-            response['message'] ?? 'Gagal menambahkan sesi pemerahan');
+            response['message'] ?? 'Failed to add milking session');
       }
     } catch (e) {
-      _showErrorDialog('Terjadi kesalahan: $e');
+      _showErrorDialog('There is an error: $e');
     } finally {
       setState(() {
         isActionLoading = false;
@@ -785,14 +785,14 @@ class _MilkingViewState extends State<MilkingView> {
 
       if (response['success'] == true) {
         Navigator.pop(context);
-        _showSuccessDialog('Sesi pemerahan berhasil diperbarui');
+        _showSuccessDialog('Milking session successfully updated');
         await _fetchData();
       } else {
         _showErrorDialog(
-            response['message'] ?? 'Gagal memperbarui sesi pemerahan');
+            response['message'] ?? 'Failed to update milking session');
       }
     } catch (e) {
-      _showErrorDialog('Terjadi kesalahan: $e');
+      _showErrorDialog('There is an error: $e');
     } finally {
       setState(() {
         isActionLoading = false;
@@ -822,7 +822,7 @@ class _MilkingViewState extends State<MilkingView> {
           ],
         ),
         content: Text(
-          'Apakah Anda yakin ingin menghapus sesi pemerahan ini? Tindakan ini tidak dapat dibatalkan.',
+          'Are you sure you want to delete this milking session? This action cannot be undone..',
           style: TextStyle(
             fontSize: 14,
             color: Colors.white, // White text for dark bg
@@ -833,7 +833,7 @@ class _MilkingViewState extends State<MilkingView> {
             onPressed:
                 isActionLoading ? null : () => Navigator.pop(context, false),
             child: Text(
-              'Batal',
+              'Cancel',
               style: TextStyle(
                 color: Color(0xFF3D90D7),
                 fontWeight: FontWeight.bold,
@@ -845,7 +845,7 @@ class _MilkingViewState extends State<MilkingView> {
                 isActionLoading ? null : () => Navigator.pop(context, true),
             icon: Icon(Icons.delete, size: 16, color: Colors.white),
             label: Text(
-              'Hapus',
+              'Delete',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -870,11 +870,11 @@ class _MilkingViewState extends State<MilkingView> {
         final response =
             await milkingSessionController.deleteMilkingSession(sessionId);
         if (response['success'] == true) {
-          _showSuccessDialog('Sesi pemerahan berhasil dihapus');
+          _showSuccessDialog('Milking session successfully deleted');
           await _fetchData();
         } else {
           _showErrorDialog(
-              response['message'] ?? 'Gagal menghapus sesi pemerahan');
+              response['message'] ?? 'Failed to delete milking session');
         }
       } catch (e) {
         _showErrorDialog('Terjadi kesalahan: $e');
@@ -899,10 +899,10 @@ class _MilkingViewState extends State<MilkingView> {
         await file.writeAsBytes(bytes);
         OpenFile.open(filePath);
       } else {
-        _showErrorDialog(response['message'] ?? 'Gagal mengekspor ke PDF');
+        _showErrorDialog(response['message'] ?? 'Failed to export to PDF');
       }
     } catch (e) {
-      _showErrorDialog('Terjadi kesalahan: $e');
+      _showErrorDialog('There is an error: $e');
     }
   }
 
@@ -1099,7 +1099,7 @@ class _MilkingViewState extends State<MilkingView> {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _fetchData,
-                child: Text('Coba Lagi'),
+                child: Text('Try again'),
               ),
             ],
           ),
@@ -1218,7 +1218,7 @@ class _MilkingViewState extends State<MilkingView> {
                   // Search bar
                   TextField(
                     decoration: InputDecoration(
-                      hintText: 'Cari sesi...',
+                      hintText: 'Search for sessions...',
                       prefixIcon: Icon(Icons.search, size: 20),
                       suffixIcon: searchTerm.isNotEmpty
                           ? IconButton(
@@ -1448,7 +1448,7 @@ class _MilkingViewState extends State<MilkingView> {
             ),
           ),
           title: Text(
-            '${session['cow_name'] ?? 'Sapi #${session['cow_id']}'} • ${session['milker_name'] ?? 'Pemerah #${session['milker_id']}'}',
+            '${session['cow_name'] ?? 'Cow #${session['cow_id']}'} • ${session['milker_name'] ?? 'Milker #${session['milker_id']}'}',
             style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,

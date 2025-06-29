@@ -23,8 +23,13 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(5);
+  const [usersPerPage] = useState(8);
   const [selectedRole, setSelectedRole] = useState("");
+  // Add loading states for different processes
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState("");
+
   // Tambahkan: Ambil user dari localStorage
   const getCurrentUser = () => {
     if (typeof localStorage !== "undefined") {
@@ -52,6 +57,9 @@ const Users = () => {
   });
   const [expandedUser, setExpandedUser] = useState(null);
   const history = useHistory();
+
+  // Check if any process is loading
+  const isAnyProcessLoading = loading || isDeleting || isExporting;
 
   // Fetch users data
   useEffect(() => {
@@ -106,26 +114,90 @@ const Users = () => {
   }, [users]);
 
   // Handle sorting
-  const handleSort = useCallback((key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  }, []);
+  const handleSort = useCallback(
+    (key) => {
+      if (isAnyProcessLoading) return;
+      setSortConfig((prevConfig) => ({
+        key,
+        direction:
+          prevConfig.key === key && prevConfig.direction === "asc"
+            ? "desc"
+            : "asc",
+      }));
+    },
+    [isAnyProcessLoading]
+  );
 
   // Handle user edit
   const handleEditUser = useCallback(
     (userId) => {
+      if (isAnyProcessLoading) return;
       history.push(`/admin/edit-user/${userId}`);
     },
-    [history]
+    [history, isAnyProcessLoading]
   );
+
+  // Handle Excel export
+  const handleExportToExcel = useCallback(async () => {
+    if (isAnyProcessLoading) return;
+
+    setIsExporting(true);
+    setExportType("Excel");
+
+    try {
+      await exportUsersToExcel();
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Users exported to Excel successfully!",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to export users to Excel.",
+      });
+    } finally {
+      setIsExporting(false);
+      setExportType("");
+    }
+  }, [isAnyProcessLoading]);
+
+  // Handle PDF export
+  const handleExportToPDF = useCallback(async () => {
+    if (isAnyProcessLoading) return;
+
+    setIsExporting(true);
+    setExportType("PDF");
+
+    try {
+      await exportUsersToPDF();
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Users exported to PDF successfully!",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to export users to PDF.",
+      });
+    } finally {
+      setIsExporting(false);
+      setExportType("");
+    }
+  }, [isAnyProcessLoading]);
+
   // Handle user deletion
   const handleDeleteUser = useCallback(
     async (userId) => {
+      if (isAnyProcessLoading) return;
+
       const userToDelete = users.find((user) => user.id === userId);
 
       const confirmResult = await Swal.fire({
@@ -136,18 +208,15 @@ const Users = () => {
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
         confirmButtonText: "Yes, delete it permanently!",
-        // Tambahkan tombol "Tidak, batalkan!"
         cancelButtonText: "No, cancel!",
-        // Tambahkan kelas CSS kustom untuk tombol
         customClass: {
           confirmButton: "btn btn-danger",
           cancelButton: "btn btn-secondary ms-2",
         },
-        buttonsStyling: false, // Menonaktifkan styling default SweetAlert2
+        buttonsStyling: false,
       });
 
       if (confirmResult.isConfirmed) {
-        // Add name verification
         const { value: text } = await Swal.fire({
           title: `Please type "delete ${userToDelete?.username}" to confirm`,
           input: "text",
@@ -163,23 +232,35 @@ const Users = () => {
         });
 
         if (text === `delete ${userToDelete?.username}`) {
-          const response = await deleteUser(userId);
-          if (response.success) {
-            Swal.fire("Deleted!", response.message, "success");
-            setUsers((prevUsers) =>
-              prevUsers.filter((user) => user.id !== userId)
-            );
-          } else {
+          setIsDeleting(true);
+
+          try {
+            const response = await deleteUser(userId);
+            if (response.success) {
+              Swal.fire("Deleted!", response.message, "success");
+              setUsers((prevUsers) =>
+                prevUsers.filter((user) => user.id !== userId)
+              );
+            } else {
+              Swal.fire(
+                "Error!",
+                response.message || "Failed to delete user.",
+                "error"
+              );
+            }
+          } catch (error) {
             Swal.fire(
               "Error!",
-              response.message || "Failed to delete user.",
+              "An unexpected error occurred while deleting user.",
               "error"
             );
+          } finally {
+            setIsDeleting(false);
           }
         }
       }
     },
-    [users, deleteUser]
+    [users, deleteUser, isAnyProcessLoading]
   );
 
   // Filter, sort, and paginate users
@@ -223,7 +304,6 @@ const Users = () => {
     users,
     searchTerm,
     selectedRole,
-    // Removed selectedStatus dependency
     sortConfig,
     usersPerPage,
     indexOfFirstUser,
@@ -252,9 +332,13 @@ const Users = () => {
   }, []);
 
   // Toggle expanded user
-  const toggleExpandUser = useCallback((userId) => {
-    setExpandedUser((prev) => (prev === userId ? null : userId));
-  }, []);
+  const toggleExpandUser = useCallback(
+    (userId) => {
+      if (isAnyProcessLoading) return;
+      setExpandedUser((prev) => (prev === userId ? null : userId));
+    },
+    [isAnyProcessLoading]
+  );
 
   // Pagination controls
   const PaginationControls = () => {
@@ -282,15 +366,31 @@ const Users = () => {
     return (
       <nav aria-label="Page navigation">
         <ul className="pagination justify-content-center mb-0">
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-            <button className="page-link" onClick={() => setCurrentPage(1)}>
+          <li
+            className={`page-item ${
+              currentPage === 1 || isAnyProcessLoading ? "disabled" : ""
+            }`}
+          >
+            <button
+              className="page-link"
+              onClick={() => !isAnyProcessLoading && setCurrentPage(1)}
+              disabled={isAnyProcessLoading}
+            >
               <i className="bi bi-chevron-double-left"></i>
             </button>
           </li>
-          <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+          <li
+            className={`page-item ${
+              currentPage === 1 || isAnyProcessLoading ? "disabled" : ""
+            }`}
+          >
             <button
               className="page-link"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() =>
+                !isAnyProcessLoading &&
+                setCurrentPage((prev) => Math.max(1, prev - 1))
+              }
+              disabled={isAnyProcessLoading}
             >
               <i className="bi bi-chevron-left"></i>
             </button>
@@ -305,11 +405,14 @@ const Users = () => {
           {pageNumbers.map((number) => (
             <li
               key={number}
-              className={`page-item ${currentPage === number ? "active" : ""}`}
+              className={`page-item ${currentPage === number ? "active" : ""} ${
+                isAnyProcessLoading ? "disabled" : ""
+              }`}
             >
               <button
                 className="page-link"
-                onClick={() => setCurrentPage(number)}
+                onClick={() => !isAnyProcessLoading && setCurrentPage(number)}
+                disabled={isAnyProcessLoading}
               >
                 {number}
               </button>
@@ -324,32 +427,62 @@ const Users = () => {
 
           <li
             className={`page-item ${
-              currentPage === totalPages ? "disabled" : ""
+              currentPage === totalPages || isAnyProcessLoading
+                ? "disabled"
+                : ""
             }`}
           >
             <button
               className="page-link"
               onClick={() =>
+                !isAnyProcessLoading &&
                 setCurrentPage((prev) => Math.min(totalPages, prev + 1))
               }
+              disabled={isAnyProcessLoading}
             >
               <i className="bi bi-chevron-right"></i>
             </button>
           </li>
           <li
             className={`page-item ${
-              currentPage === totalPages ? "disabled" : ""
+              currentPage === totalPages || isAnyProcessLoading
+                ? "disabled"
+                : ""
             }`}
           >
             <button
               className="page-link"
-              onClick={() => setCurrentPage(totalPages)}
+              onClick={() => !isAnyProcessLoading && setCurrentPage(totalPages)}
+              disabled={isAnyProcessLoading}
             >
               <i className="bi bi-chevron-double-right"></i>
             </button>
           </li>
         </ul>
       </nav>
+    );
+  };
+
+  // Loading Overlay Component
+  const LoadingOverlay = () => {
+    if (!isAnyProcessLoading) return null;
+
+    let loadingText = "Loading...";
+    if (isDeleting) loadingText = "Deleting user...";
+    else if (isExporting) loadingText = `Exporting to ${exportType}...`;
+
+    return (
+      <div className="loading-overlay">
+        <div className="loading-content">
+          <Spinner
+            animation="border"
+            role="status"
+            variant="light"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          <p className="mt-3 text-white fs-5">{loadingText}</p>
+        </div>
+      </div>
     );
   };
 
@@ -375,7 +508,9 @@ const Users = () => {
   }
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-4" style={{ position: "relative" }}>
+      <LoadingOverlay />
+
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-grey py-3">
           <div className="d-flex flex-column">
@@ -495,17 +630,23 @@ const Users = () => {
                   placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+                    if (!isAnyProcessLoading) {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }
                   }}
+                  disabled={isAnyProcessLoading}
                 />
                 {searchTerm && (
                   <button
                     className="btn btn-outline-secondary border-0"
                     onClick={() => {
-                      setSearchTerm("");
-                      setCurrentPage(1);
+                      if (!isAnyProcessLoading) {
+                        setSearchTerm("");
+                        setCurrentPage(1);
+                      }
                     }}
+                    disabled={isAnyProcessLoading}
                   >
                     <i className="bi bi-x-lg"></i>
                   </button>
@@ -518,30 +659,44 @@ const Users = () => {
                   className="form-select shadow-sm py-2 border-0 w-auto"
                   value={selectedRole}
                   onChange={(e) => {
-                    setSelectedRole(e.target.value);
-                    setCurrentPage(1);
+                    if (!isAnyProcessLoading) {
+                      setSelectedRole(e.target.value);
+                      setCurrentPage(1);
+                    }
                   }}
+                  disabled={isAnyProcessLoading}
                 >
                   <option value="">All Roles</option>
                   <option value="1">Admin</option>
                   <option value="2">Supervisor</option>
                   <option value="3">Farmer</option>
                 </select>
-                {/* Removed status dropdown */}
                 <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
                   <button
                     className="btn btn-success shadow-sm"
-                    onClick={exportUsersToExcel}
+                    onClick={handleExportToExcel}
+                    disabled={isAnyProcessLoading}
                   >
-                    <i className="fas fa-file-excel me-1"></i> Excel
+                    {isExporting && exportType === "Excel" ? (
+                      <Spinner animation="border" size="sm" className="me-1" />
+                    ) : (
+                      <i className="fas fa-file-excel me-1"></i>
+                    )}
+                    Excel
                   </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Export to PDF</Tooltip>}>
                   <button
                     className="btn btn-danger shadow-sm"
-                    onClick={exportUsersToPDF}
+                    onClick={handleExportToPDF}
+                    disabled={isAnyProcessLoading}
                   >
-                    <i className="fas fa-file-pdf me-1"></i> PDF
+                    {isExporting && exportType === "PDF" ? (
+                      <Spinner animation="border" size="sm" className="me-1" />
+                    ) : (
+                      <i className="fas fa-file-pdf me-1"></i>
+                    )}
+                    PDF
                   </button>
                 </OverlayTrigger>
                 <OverlayTrigger overlay={<Tooltip>Add New User</Tooltip>}>
@@ -549,12 +704,13 @@ const Users = () => {
                     <Link
                       to="/admin/add-users"
                       className={`btn btn-primary shadow-sm${
-                        isSupervisor ? " disabled" : ""
+                        isSupervisor || isAnyProcessLoading ? " disabled" : ""
                       }`}
-                      tabIndex={isSupervisor ? -1 : 0}
-                      aria-disabled={isSupervisor}
+                      tabIndex={isSupervisor || isAnyProcessLoading ? -1 : 0}
+                      aria-disabled={isSupervisor || isAnyProcessLoading}
                       onClick={(e) => {
-                        if (isSupervisor) e.preventDefault();
+                        if (isSupervisor || isAnyProcessLoading)
+                          e.preventDefault();
                       }}
                     >
                       <i className="fas fa-user-plus me-1"></i> Add User
@@ -574,8 +730,13 @@ const Users = () => {
                   </th>
                   <th
                     scope="col"
-                    className="cursor-pointer fw-medium"
+                    className={`fw-medium ${
+                      !isAnyProcessLoading ? "cursor-pointer" : ""
+                    }`}
                     onClick={() => handleSort("username")}
+                    style={{
+                      cursor: isAnyProcessLoading ? "not-allowed" : "pointer",
+                    }}
                   >
                     <div className="d-flex justify-content-between align-items-center">
                       Username
@@ -593,8 +754,13 @@ const Users = () => {
                   </th>
                   <th
                     scope="col"
-                    className="cursor-pointer fw-medium"
+                    className={`fw-medium ${
+                      !isAnyProcessLoading ? "cursor-pointer" : ""
+                    }`}
                     onClick={() => handleSort("email")}
+                    style={{
+                      cursor: isAnyProcessLoading ? "not-allowed" : "pointer",
+                    }}
                   >
                     <div className="d-flex justify-content-between align-items-center">
                       Email
@@ -618,8 +784,13 @@ const Users = () => {
                   </th>
                   <th
                     scope="col"
-                    className="text-center cursor-pointer fw-medium"
+                    className={`text-center fw-medium ${
+                      !isAnyProcessLoading ? "cursor-pointer" : ""
+                    }`}
                     onClick={() => handleSort("role_id")}
+                    style={{
+                      cursor: isAnyProcessLoading ? "not-allowed" : "pointer",
+                    }}
                   >
                     <div className="d-flex justify-content-center align-items-center">
                       Role
@@ -632,7 +803,6 @@ const Users = () => {
                       )}
                     </div>
                   </th>
-                  {/* Removed Status column header */}
                   <th scope="col" className="text-center fw-medium">
                     Actions
                   </th>
@@ -648,11 +818,14 @@ const Users = () => {
                         }`}
                         onClick={() => toggleExpandUser(user.id)}
                         style={{
-                          cursor: "pointer",
+                          cursor: isAnyProcessLoading
+                            ? "not-allowed"
+                            : "pointer",
                           backgroundColor:
                             expandedUser === user.id
                               ? "rgba(0, 0, 0, 0.03)"
                               : "inherit",
+                          opacity: isAnyProcessLoading ? 0.6 : 1,
                         }}
                       >
                         <td className="text-center text-muted">
@@ -675,7 +848,7 @@ const Users = () => {
                                   user.role_id === 1
                                     ? "text-primary"
                                     : user.role_id === 2
-                                    ? "text-light opacity-75" /* Changed from text-white to text-light */
+                                    ? "text-light opacity-75"
                                     : "text-info"
                                 }`}
                               ></i>
@@ -699,7 +872,6 @@ const Users = () => {
                         <td className="text-center">
                           {getRoleBadge(user.role_id)}
                         </td>
-                        {/* Removed Status column */}
                         <td className="text-center">
                           <div className="btn-group">
                             <OverlayTrigger
@@ -712,12 +884,20 @@ const Users = () => {
                                     currentUser?.role_id === 1
                                       ? "btn-outline-warning"
                                       : "btn-outline-secondary"
-                                  } border-0${isSupervisor ? " disabled" : ""}`}
-                                  tabIndex={isSupervisor ? -1 : 0}
-                                  aria-disabled={isSupervisor}
+                                  } border-0${
+                                    isSupervisor || isAnyProcessLoading
+                                      ? " disabled"
+                                      : ""
+                                  }`}
+                                  tabIndex={
+                                    isSupervisor || isAnyProcessLoading ? -1 : 0
+                                  }
+                                  aria-disabled={
+                                    isSupervisor || isAnyProcessLoading
+                                  }
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (isSupervisor) {
+                                    if (isSupervisor || isAnyProcessLoading) {
                                       e.preventDefault();
                                     } else {
                                       handleEditUser(user.id);
@@ -740,13 +920,24 @@ const Users = () => {
                                   } border-0`}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Disable delete for Admin users
-                                    if (!isSupervisor && user.role_id !== 1)
+                                    if (
+                                      !isSupervisor &&
+                                      user.role_id !== 1 &&
+                                      !isAnyProcessLoading
+                                    )
                                       handleDeleteUser(user.id);
                                   }}
-                                  disabled={isSupervisor || user.role_id === 1}
+                                  disabled={
+                                    isSupervisor ||
+                                    user.role_id === 1 ||
+                                    isAnyProcessLoading
+                                  }
                                 >
-                                  <i className="fas fa-trash-alt"></i>
+                                  {isDeleting ? (
+                                    <Spinner animation="border" size="sm" />
+                                  ) : (
+                                    <i className="fas fa-trash-alt"></i>
+                                  )}
                                 </button>
                               </span>
                             </OverlayTrigger>
@@ -758,7 +949,6 @@ const Users = () => {
                 ) : (
                   <tr>
                     <td colSpan="9" className="text-center py-4">
-                      {/* Updated colspan from 10 to 9 since we removed a column */}
                       <div className="text-muted">
                         <i
                           className="fas fa-search fs-3 d-block mb-2"
@@ -812,6 +1002,31 @@ const Users = () => {
         }
         .table-hover tbody tr:hover {
           background-color: rgba(13, 110, 253, 0.05);
+        }
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        }
+        .loading-content {
+          text-align: center;
+          background-color: rgba(0, 0, 0, 0.8);
+          padding: 2rem;
+          border-radius: 1rem;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+        }
+        .loading-content p {
+          margin: 0;
+          font-weight: 500;
+          letter-spacing: 0.5px;
         }
       `}</style>
     </div>

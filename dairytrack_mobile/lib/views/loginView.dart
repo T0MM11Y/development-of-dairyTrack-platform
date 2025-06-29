@@ -114,6 +114,8 @@ enum UserRole {
 class LoginSecurityManager {
   static const int maxFailedAttempts = 3;
   static const int lockDurationSeconds = 30;
+  static const String _keyFailedAttempts = 'login_failed_attempts';
+  static const String _keyLockoutEndTime = 'login_lockout_end_time';
 
   int _failedAttempts = 0;
   bool _isLocked = false;
@@ -124,39 +126,91 @@ class LoginSecurityManager {
   bool get isLocked => _isLocked;
   int get lockDuration => _lockDuration;
 
-  void incrementFailedAttempts() {
-    _failedAttempts++;
-    if (_failedAttempts >= maxFailedAttempts) {
-      _lockAccount();
+  // Initialize from SharedPreferences
+  Future<void> initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Load failed attempts
+    _failedAttempts = prefs.getInt(_keyFailedAttempts) ?? 0;
+
+    // Load lockout data
+    final lockoutEndTime = prefs.getInt(_keyLockoutEndTime);
+    if (lockoutEndTime != null) {
+      final currentTime = DateTime.now().millisecondsSinceEpoch;
+      final remainingTime = ((lockoutEndTime - currentTime) / 1000).floor();
+
+      if (remainingTime > 0) {
+        _lockDuration = remainingTime;
+        _isLocked = true;
+      } else {
+        // Lockout has expired, clear data
+        await _clearLockoutData();
+        _failedAttempts = 0;
+        _isLocked = false;
+      }
     }
   }
 
-  void resetFailedAttempts() => _failedAttempts = 0;
+  Future<void> incrementFailedAttempts() async {
+    _failedAttempts++;
+    await _saveFailedAttempts();
 
-  void _lockAccount() {
+    if (_failedAttempts >= maxFailedAttempts) {
+      await _lockAccount();
+    }
+  }
+
+  Future<void> resetFailedAttempts() async {
+    _failedAttempts = 0;
+    await _clearLockoutData();
+  }
+
+  Future<void> _lockAccount() async {
     _isLocked = true;
     _lockDuration = lockDurationSeconds;
+
+    // Save lockout end time to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final lockoutEndTime =
+        DateTime.now().millisecondsSinceEpoch + (lockDurationSeconds * 1000);
+    await prefs.setInt(_keyLockoutEndTime, lockoutEndTime);
   }
 
   void startLockTimer(VoidCallback onTick) {
-    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _lockTimer?.cancel(); // Cancel existing timer if any
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (_lockDuration > 0) {
         _lockDuration--;
         onTick();
       } else {
-        _unlock();
+        await _unlock();
         timer.cancel();
+        onTick(); // Final update to refresh UI
       }
     });
   }
 
-  void _unlock() {
+  Future<void> _unlock() async {
     _isLocked = false;
     _failedAttempts = 0;
     _lockDuration = lockDurationSeconds;
+    await _clearLockoutData();
   }
 
-  void dispose() => _lockTimer?.cancel();
+  Future<void> _saveFailedAttempts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyFailedAttempts, _failedAttempts);
+  }
+
+  Future<void> _clearLockoutData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyFailedAttempts);
+    await prefs.remove(_keyLockoutEndTime);
+  }
+
+  void dispose() {
+    _lockTimer?.cancel();
+  }
 }
 
 class UserDataManager {
@@ -212,6 +266,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
   bool _isLoading = false;
   bool _isRedirecting = false;
   bool _loginSuccess = false;
+  bool _isInitialized = false;
 
   late AnimationController _animationController;
   late AnimationController _retroAnimationController;
@@ -227,6 +282,22 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     super.initState();
     _securityManager = LoginSecurityManager();
     _initializeAnimations();
+    _initializeSecurityManager();
+  }
+
+  Future<void> _initializeSecurityManager() async {
+    await _securityManager.initialize();
+
+    // If locked, start the timer
+    if (_securityManager.isLocked && _securityManager.lockDuration > 0) {
+      _securityManager.startLockTimer(() {
+        if (mounted) setState(() {});
+      });
+    }
+
+    setState(() {
+      _isInitialized = true;
+    });
   }
 
   void _initializeAnimations() {
@@ -306,8 +377,19 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showRetroAlert("Error", "A network error occurred. Please try again..",
+
+      // Count network errors as failed attempts too
+      await _securityManager.incrementFailedAttempts();
+
+      if (_securityManager.isLocked) {
+        _securityManager.startLockTimer(() {
+          if (mounted) setState(() {});
+        });
+      }
+
+      _showRetroAlert("Error", "A network error occurred. Please try again.",
           isError: true);
+      setState(() {});
     }
   }
 
@@ -315,12 +397,12 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
     if (response['success'] == true) {
       await _handleSuccessfulLogin(response);
     } else {
-      _handleFailedLogin(response);
+      await _handleFailedLogin(response);
     }
   }
 
   Future<void> _handleSuccessfulLogin(Map<String, dynamic> response) async {
-    _securityManager.resetFailedAttempts();
+    await _securityManager.resetFailedAttempts();
 
     try {
       await UserDataManager.saveUserData(response);
@@ -338,23 +420,29 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
         _loginSuccess = false;
         _isRedirecting = false;
       });
-      _showRetroAlert(
-          "Error", "Gagal menyimpan data pengguna. Silakan coba lagi.",
+      _showRetroAlert("Error", "Failed to save user data. Please try again.",
           isError: true);
     }
   }
 
-  void _handleFailedLogin(Map<String, dynamic> response) {
-    _securityManager.incrementFailedAttempts();
-    _showRetroAlert("Login Failed",
-        response['message'] ?? "Incorrect username or password.",
-        isError: true);
+  Future<void> _handleFailedLogin(Map<String, dynamic> response) async {
+    await _securityManager.incrementFailedAttempts();
+
+    String errorMessage =
+        response['message'] ?? "Incorrect username or password.";
 
     if (_securityManager.isLocked) {
+      errorMessage = "Too many failed attempts. Account locked for 30 seconds.";
       _securityManager.startLockTimer(() {
         if (mounted) setState(() {});
       });
+    } else {
+      final remaining = LoginSecurityManager.maxFailedAttempts -
+          _securityManager.failedAttempts;
+      errorMessage += " $remaining attempts remaining.";
     }
+
+    _showRetroAlert("Login Failed", errorMessage, isError: true);
     setState(() {});
   }
 
@@ -422,7 +510,9 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                         ),
                         child: Icon(
                           isError
-                              ? Icons.error_outline
+                              ? (_securityManager.isLocked
+                                  ? Icons.lock_outline
+                                  : Icons.error_outline)
                               : Icons.check_circle_outline,
                           color: isError
                               ? RetroAppColors.error
@@ -739,7 +829,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        enabled: !_isLoading && !_isRedirecting,
+        enabled: !_isLoading && !_isRedirecting && !_securityManager.isLocked,
         style: const TextStyle(
           color: RetroAppColors.textPrimary,
           fontSize: 14,
@@ -769,7 +859,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                     color: RetroAppColors.secondary,
                     size: 18,
                   ),
-                  onPressed: onSuffixIconPressed,
+                  onPressed:
+                      _securityManager.isLocked ? null : onSuffixIconPressed,
                 )
               : null,
           border: InputBorder.none,
@@ -782,6 +873,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
   }
 
   Widget _buildRetroButton() {
+    final isButtonLocked = _securityManager.isLocked;
+
     return Container(
       width: double.infinity,
       height: 46,
@@ -789,20 +882,26 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
         gradient: LinearGradient(
           colors: _loginSuccess
               ? [RetroAppColors.success, RetroAppColors.success]
-              : [RetroAppColors.secondary, RetroAppColors.secondaryLight],
+              : isButtonLocked
+                  ? [RetroAppColors.error, RetroAppColors.error]
+                  : [RetroAppColors.secondary, RetroAppColors.secondaryLight],
         ),
         borderRadius: BorderRadius.circular(23),
         border: Border.all(
           color: _loginSuccess
               ? RetroAppColors.success
-              : RetroAppColors.secondaryDark,
+              : isButtonLocked
+                  ? RetroAppColors.error
+                  : RetroAppColors.secondaryDark,
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
             color: (_loginSuccess
                     ? RetroAppColors.success
-                    : RetroAppColors.secondary)
+                    : isButtonLocked
+                        ? RetroAppColors.error
+                        : RetroAppColors.secondary)
                 .withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -849,16 +948,26 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               RetroAppColors.textOnDark),
                         ),
                       )
-                    : Text(
-                        _securityManager.isLocked
-                            ? "LOCKED (${_securityManager.lockDuration}s)"
-                            : "ENTER",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: RetroAppColors.textOnDark,
-                          letterSpacing: 0.5,
-                        ),
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isButtonLocked) ...[
+                            const Icon(Icons.lock,
+                                color: RetroAppColors.textOnDark, size: 18),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            isButtonLocked
+                                ? "LOCKED (${_securityManager.lockDuration}s)"
+                                : "ENTER",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: RetroAppColors.textOnDark,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
           ),
         ),
@@ -885,17 +994,21 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               color: RetroAppColors.error,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(Icons.warning_amber_rounded,
-                color: RetroAppColors.textOnDark, size: 16),
+            child: Icon(
+                _securityManager.isLocked
+                    ? Icons.lock_outline
+                    : Icons.warning_amber_rounded,
+                color: RetroAppColors.textOnDark,
+                size: 16),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "WARNING!",
-                  style: TextStyle(
+                Text(
+                  _securityManager.isLocked ? "ACCOUNT LOCKED!" : "WARNING!",
+                  style: const TextStyle(
                     color: RetroAppColors.error,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -903,7 +1016,9 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  "The experiment failed: ${_securityManager.failedAttempts}/${LoginSecurityManager.maxFailedAttempts}",
+                  _securityManager.isLocked
+                      ? "Account locked for ${_securityManager.lockDuration} seconds"
+                      : "Failed attempts: ${_securityManager.failedAttempts}/${LoginSecurityManager.maxFailedAttempts}",
                   style: const TextStyle(
                     color: RetroAppColors.error,
                     fontSize: 12,
@@ -939,26 +1054,49 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [RetroAppColors.accent, RetroAppColors.accentLight],
+              gradient: LinearGradient(
+                colors: _securityManager.isLocked
+                    ? [RetroAppColors.error, RetroAppColors.error]
+                    : [RetroAppColors.accent, RetroAppColors.accentLight],
               ),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: RetroAppColors.accentDark, width: 1),
+              border: Border.all(
+                  color: _securityManager.isLocked
+                      ? RetroAppColors.error
+                      : RetroAppColors.accentDark,
+                  width: 1),
             ),
-            child: const Text(
-              "Welcome Back!",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: RetroAppColors.textOnDark,
-                letterSpacing: 1,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_securityManager.isLocked) ...[
+                  const Icon(
+                    Icons.lock_outline,
+                    color: RetroAppColors.textOnDark,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  _securityManager.isLocked
+                      ? "Account Locked!"
+                      : "Welcome Back!",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: RetroAppColors.textOnDark,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            "Log in to your account to continue",
-            style: TextStyle(
+          Text(
+            _securityManager.isLocked
+                ? "Please wait for the lockout period to expire"
+                : "Log in to your account to continue",
+            style: const TextStyle(
               fontSize: 12,
               color: RetroAppColors.textSecondary,
               fontWeight: FontWeight.w500,
@@ -1112,6 +1250,25 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [RetroAppColors.primary, RetroAppColors.primaryLight],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: RetroAppColors.accent,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
@@ -1142,12 +1299,10 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               width: 1,
                             ),
                           ),
-                          // ...existing code...
                           child: TextButton(
                             onPressed: _isRedirecting
                                 ? null
                                 : () {
-                                    // Ganti Navigator.pop(context) menjadi pushReplacement ke InitialDashboard
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
                                         builder: (context) =>
@@ -1179,7 +1334,6 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                          // ...existing code...
                         ),
                       ],
                     ),

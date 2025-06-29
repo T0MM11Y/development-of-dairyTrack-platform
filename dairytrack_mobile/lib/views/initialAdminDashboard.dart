@@ -4,6 +4,7 @@ import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
@@ -276,7 +277,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'feed-schedule',
           widget: () => DailyFeedView(),
         ),
-         NavigationItem(
+        NavigationItem(
           icon: Icons.monitor_heart,
           label: 'Health Dashboard', // Changed from 'HealthDashboard'
           route: 'health-dashboard',
@@ -288,7 +289,6 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
-       
       ];
 
   @override
@@ -459,8 +459,8 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 Colors.deepPurple, productsSales),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
-            _buildFabGroup('Health Check Management', Icons.medical_services, Colors.red,
-                cattleHealth),
+            _buildFabGroup('Health Check Management', Icons.medical_services,
+                Colors.red, cattleHealth),
             _buildFabGroup('Content Management', Icons.library_books,
                 Colors.amber, contentManagement),
             _buildFabGroup(
@@ -1814,7 +1814,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueGrey[800],
@@ -1877,7 +1877,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isUnread
@@ -2525,7 +2525,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${item['value']} sapi (${item['percentage']}%)',
+                              '${item['value']} cow (${item['percentage']}%)',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: color,
@@ -3661,7 +3661,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginView()),
+        MaterialPageRoute(builder: (context) => InitialDashboard()),
         (route) => false,
       );
     } catch (e) {

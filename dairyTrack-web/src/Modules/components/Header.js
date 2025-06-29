@@ -19,9 +19,9 @@ const Header = () => {
   const location = useLocation();
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const [redirecting, setRedirecting] = useState(false); // State untuk loading overlay
-
+  const [redirecting, setRedirecting] = useState(false);
   const [lockoutTime, setLockoutTime] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Enhanced theme
   const theme = {
@@ -82,7 +82,6 @@ const Header = () => {
         transition: { duration: 0.3 },
       },
     },
-    // Animation untuk loading overlay
     loadingOverlay: {
       hidden: { opacity: 0 },
       visible: {
@@ -96,6 +95,7 @@ const Header = () => {
     },
   };
 
+  // Initialize login attempts and lockout state from localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -103,7 +103,33 @@ const Header = () => {
     } else {
       console.log("No user data found in localStorage.");
     }
+
+    // Load login attempts from localStorage
+    const savedAttempts = localStorage.getItem("loginAttempts");
+    if (savedAttempts) {
+      setLoginAttempts(parseInt(savedAttempts));
+    }
+
+    // Load lockout data from localStorage
+    const savedLockoutEndTime = localStorage.getItem("loginLockoutEndTime");
+    if (savedLockoutEndTime) {
+      const lockoutEndTime = parseInt(savedLockoutEndTime);
+      const currentTime = Date.now();
+      const remainingTime = Math.floor((lockoutEndTime - currentTime) / 1000);
+
+      if (remainingTime > 0) {
+        setLockoutTime(remainingTime);
+        setIsLocked(true);
+      } else {
+        // Lockout has expired, clear localStorage
+        localStorage.removeItem("loginLockoutEndTime");
+        localStorage.removeItem("loginAttempts");
+        setLoginAttempts(0);
+        setIsLocked(false);
+      }
+    }
   }, []);
+
   const isBlogPage =
     location.pathname === "/blog" || location.pathname.startsWith("/blog/");
 
@@ -127,39 +153,30 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Load lockout state
+  // Timer for lockout countdown
   useEffect(() => {
-    const savedLockoutEndTime = localStorage.getItem("loginLockoutEndTime");
-    if (savedLockoutEndTime) {
-      const remainingTime = Math.floor(
-        (parseInt(savedLockoutEndTime) - Date.now()) / 1000
-      );
-      if (remainingTime > 0) {
-        setLockoutTime(remainingTime);
-      } else {
-        localStorage.removeItem("loginLockoutEndTime");
-      }
-    }
-  }, []);
-
-  // Timer for lockout
-  useEffect(() => {
-    if (lockoutTime > 0) {
-      const timer = setInterval(() => {
-        setLockoutTime((prev) => prev - 1);
+    let timer;
+    if (lockoutTime > 0 && isLocked) {
+      timer = setInterval(() => {
+        setLockoutTime((prev) => {
+          const newTime = prev - 1;
+          if (newTime <= 0) {
+            // Lockout expired
+            setIsLocked(false);
+            localStorage.removeItem("loginLockoutEndTime");
+            localStorage.removeItem("loginAttempts");
+            setLoginAttempts(0);
+            return 0;
+          }
+          return newTime;
+        });
       }, 1000);
-      return () => clearInterval(timer);
     }
-  }, [lockoutTime]);
 
-  useEffect(() => {
-    if (lockoutTime > 0) {
-      const lockoutEndTime = Date.now() + lockoutTime * 1000;
-      localStorage.setItem("loginLockoutEndTime", lockoutEndTime.toString());
-    } else {
-      localStorage.removeItem("loginLockoutEndTime");
-    }
-  }, [lockoutTime]);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [lockoutTime, isLocked]);
 
   // Body scroll lock
   useEffect(() => {
@@ -181,19 +198,30 @@ const Header = () => {
 
   const toggleModal = () => {
     setShowModal(!showModal);
-    if (showModal) resetForm();
+    if (showModal) {
+      resetForm();
+    }
   };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  // Modified handleLogin function
+  // Enhanced handleLogin function with persistent lockout
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
 
+    // Check if user is currently locked out
+    if (isLocked && lockoutTime > 0) {
+      setErrorMessage(
+        `Account temporarily locked. Please wait ${lockoutTime} seconds before trying again.`
+      );
+      return;
+    }
+
+    // Validation
     if (username.trim().length < 3) {
       setErrorMessage("Username must be at least 3 characters");
       return;
@@ -204,21 +232,22 @@ const Header = () => {
       return;
     }
 
-    if (lockoutTime > 0) {
-      setErrorMessage(
-        `Please wait ${lockoutTime} seconds before trying again.`
-      );
-      return;
-    }
-
     setLoading(true);
+
     try {
       const result = await login(username, password);
 
       if (result.success) {
-        // Simpan data user dan token ke localStorage
+        // Reset attempts on successful login
+        setLoginAttempts(0);
+        localStorage.removeItem("loginAttempts");
+        localStorage.removeItem("loginLockoutEndTime");
+        setIsLocked(false);
+        setLockoutTime(0);
+
+        // Save user data and token
         localStorage.setItem("user", JSON.stringify(result.data));
-        localStorage.setItem("token", result.token || result.data.token); // Simpan token
+        localStorage.setItem("token", result.token || result.data.token);
         console.log("User data saved to localStorage:", result.data);
         console.log(
           "Token saved to localStorage:",
@@ -230,50 +259,79 @@ const Header = () => {
         setLoginSuccess(true);
 
         setTimeout(() => {
-          setRedirecting(true); // Tampilkan loading overlay
+          setRedirecting(true);
 
           setTimeout(() => {
-            // Redirect berdasarkan role
+            // Redirect based on role
             const userRole = result.data.role_id;
 
             if (userRole === 1) {
-              // Admin
               window.location.href = "/admin";
             } else if (userRole === 2) {
-              // Supervisor
               window.location.href = "/supervisor";
             } else if (userRole === 3) {
-              // Farmer
               window.location.href = "/farmer";
             } else {
-              // Role tidak dikenal, redirect ke home
               window.location.href = "/";
             }
-          }, 1500); // Delay untuk menampilkan loading overlay
+          }, 1500);
         }, 2000);
-
-        setLoginAttempts(0);
       } else {
+        // Handle failed login
         setSuccessMessage("");
-        setErrorMessage(result.message || "Login failed. Please try again.");
-        setLoginAttempts((prev) => {
-          const newAttempts = prev + 1;
-          if (newAttempts >= 3) {
-            setLockoutTime(30);
-            return 0;
-          }
-          return newAttempts;
-        });
+        setErrorMessage(
+          result.message || "Invalid username or password. Please try again."
+        );
+
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+
+        // Save attempts to localStorage
+        localStorage.setItem("loginAttempts", newAttempts.toString());
+
+        // Check if max attempts reached
+        if (newAttempts >= 3) {
+          setIsLocked(true);
+          setLockoutTime(30);
+
+          // Save lockout end time to localStorage
+          const lockoutEndTime = Date.now() + 30 * 1000;
+          localStorage.setItem(
+            "loginLockoutEndTime",
+            lockoutEndTime.toString()
+          );
+
+          setErrorMessage(
+            `Too many failed attempts. Account locked for 30 seconds.`
+          );
+        } else {
+          setErrorMessage(
+            `Invalid username or password. ${
+              3 - newAttempts
+            } attempts remaining.`
+          );
+        }
       }
     } catch (error) {
       setErrorMessage("An error occurred. Please try again later.");
       console.error("Login error:", error);
+
+      // Still count as failed attempt even if it's a network error
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+      localStorage.setItem("loginAttempts", newAttempts.toString());
+
+      if (newAttempts >= 3) {
+        setIsLocked(true);
+        setLockoutTime(30);
+        const lockoutEndTime = Date.now() + 30 * 1000;
+        localStorage.setItem("loginLockoutEndTime", lockoutEndTime.toString());
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // ...existing code... (getHeaderClasses dan navLinks tetap sama)
   const getHeaderClasses = () => {
     const baseStyles = {
       position: "fixed",
@@ -313,7 +371,6 @@ const Header = () => {
         style={getHeaderClasses()}
         className="modern-header"
       >
-        {/* Header content tetap sama */}
         <div className="container">
           <div className="header-content">
             {/* Enhanced Logo */}
@@ -340,6 +397,7 @@ const Header = () => {
                 </span>
               </Link>
             </motion.div>
+
             {/* Desktop Navigation */}
             <nav className="desktop-nav">
               <ul className="nav-list">
@@ -374,6 +432,7 @@ const Header = () => {
                 ))}
               </ul>
             </nav>
+
             {/* Action Buttons */}
             <div className="header-actions">
               <motion.button
@@ -467,11 +526,21 @@ const Header = () => {
                 <div className="modal-header">
                   <div className="modal-header-content">
                     <div className="modal-icon">
-                      <i className="fas fa-shield-alt"></i>
+                      <i
+                        className={`fas ${
+                          isLocked ? "fa-lock" : "fa-shield-alt"
+                        }`}
+                      ></i>
                     </div>
                     <div>
-                      <h3 className="modal-title">Welcome Back</h3>
-                      <p className="modal-subtitle">Sign in to your account</p>
+                      <h3 className="modal-title">
+                        {isLocked ? "Account Locked" : "Welcome Back"}
+                      </h3>
+                      <p className="modal-subtitle">
+                        {isLocked
+                          ? `Please wait ${lockoutTime} seconds`
+                          : "Sign in to your account"}
+                      </p>
                     </div>
                   </div>
                   <motion.button
@@ -502,7 +571,7 @@ const Header = () => {
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           required
-                          disabled={loading}
+                          disabled={loading || isLocked}
                         />
                       </div>
                     </div>
@@ -521,7 +590,7 @@ const Header = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          disabled={loading}
+                          disabled={loading || isLocked}
                         />
                         <motion.button
                           type="button"
@@ -529,6 +598,7 @@ const Header = () => {
                           whileTap={{ scale: 0.9 }}
                           className="password-toggle"
                           onClick={() => setShowPassword(!showPassword)}
+                          disabled={isLocked}
                         >
                           <i
                             className={`fas ${
@@ -538,6 +608,22 @@ const Header = () => {
                         </motion.button>
                       </div>
                     </div>
+
+                    {/* Login Attempts Warning */}
+                    {loginAttempts > 0 && !isLocked && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="warning-message"
+                      >
+                        <i className="fas fa-exclamation-triangle"></i>
+                        <span>
+                          {loginAttempts} failed attempt
+                          {loginAttempts > 1 ? "s" : ""}.{3 - loginAttempts}{" "}
+                          remaining before lockout.
+                        </span>
+                      </motion.div>
+                    )}
 
                     {/* Messages */}
                     <AnimatePresence>
@@ -565,18 +651,21 @@ const Header = () => {
                     {/* Submit Button */}
                     <motion.button
                       type="submit"
-                      whileHover={{ scale: loading ? 1 : 1.02 }}
-                      whileTap={{ scale: loading ? 1 : 0.98 }}
-                      className="submit-btn"
-                      disabled={loading || lockoutTime > 0 || loginSuccess}
+                      whileHover={{ scale: loading || isLocked ? 1 : 1.02 }}
+                      whileTap={{ scale: loading || isLocked ? 1 : 0.98 }}
+                      className={`submit-btn ${isLocked ? "locked" : ""}`}
+                      disabled={loading || isLocked || loginSuccess}
                     >
                       {loading ? (
                         <div className="loading-content">
                           <div className="loading-spinner"></div>
                           <span>Signing in...</span>
                         </div>
-                      ) : lockoutTime > 0 ? (
-                        <span>Locked ({lockoutTime}s)</span>
+                      ) : isLocked ? (
+                        <div className="locked-content">
+                          <i className="fas fa-lock"></i>
+                          <span>Locked ({lockoutTime}s)</span>
+                        </div>
                       ) : (
                         <div className="btn-content">
                           <i className="fas fa-sign-in-alt"></i>
@@ -588,7 +677,11 @@ const Header = () => {
                     {/* Security Notice */}
                     <div className="security-notice">
                       <i className="fas fa-shield-alt"></i>
-                      <span>Your login is secured with encryption</span>
+                      <span>
+                        {isLocked
+                          ? "Account locked for security after 3 failed attempts"
+                          : "Your login is secured with encryption"}
+                      </span>
                     </div>
                   </form>
                 </div>
@@ -598,7 +691,7 @@ const Header = () => {
         )}
       </AnimatePresence>
 
-      {/* Loading Overlay - Tambahan baru */}
+      {/* Loading Overlay */}
       <AnimatePresence>
         {redirecting && (
           <motion.div
@@ -666,10 +759,9 @@ const Header = () => {
       <style jsx>{`
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
-        /* ...existing styles tetap sama... */
         .modern-header {
           font-family: "Inter", sans-serif;
-          padding: 0.5rem 0; /* Dikurangi dari 1rem menjadi 0.5rem */
+          padding: 0.5rem 0;
         }
 
         .container {
@@ -684,6 +776,7 @@ const Header = () => {
           justify-content: space-between;
           position: relative;
         }
+
         /* Logo Styles */
         .logo-container {
           z-index: 10;
@@ -974,7 +1067,9 @@ const Header = () => {
           height: 4px;
           background: ${theme.primary};
           border-radius: 50%;
-        } /* Modal Styles */
+        }
+
+        /* Modal Styles */
         .modal-backdrop {
           position: fixed !important;
           top: 0 !important;
@@ -1014,7 +1109,9 @@ const Header = () => {
           flex-direction: column !important;
           width: 100% !important;
           box-sizing: border-box !important;
-        } /* Modal Header */
+        }
+
+        /* Modal Header */
         .modal-header {
           background: ${theme.primaryGradient};
           color: white;
@@ -1087,7 +1184,9 @@ const Header = () => {
           justify-content: center;
           font-size: 1rem;
           backdrop-filter: blur(10px);
-        } /* Modal Body */
+        }
+
+        /* Modal Body */
         .modal-body {
           padding: 2rem;
           flex: 1;
@@ -1107,6 +1206,7 @@ const Header = () => {
           max-width: 100%;
           box-sizing: border-box;
         }
+
         .form-group {
           display: flex;
           flex-direction: column;
@@ -1136,6 +1236,7 @@ const Header = () => {
           font-size: 1rem;
           z-index: 2;
         }
+
         .form-input {
           width: 100%;
           padding: 1rem 1rem 1rem 3rem;
@@ -1157,6 +1258,7 @@ const Header = () => {
         .form-input:disabled {
           background: #f7fafc;
           cursor: not-allowed;
+          opacity: 0.6;
         }
 
         .password-toggle {
@@ -1174,7 +1276,34 @@ const Header = () => {
         .password-toggle:hover {
           color: ${theme.primary};
           background: rgba(233, 163, 25, 0.1);
-        } /* Messages */
+        }
+
+        .password-toggle:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        /* Warning Message */
+        .warning-message {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          background: rgba(255, 193, 7, 0.1);
+          color: #f59e0b;
+          border: 1px solid rgba(255, 193, 7, 0.2);
+          min-height: 50px;
+          max-height: 50px;
+          height: 50px;
+          transition: all 0.3s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Messages */
         .message {
           display: flex;
           align-items: center;
@@ -1201,7 +1330,9 @@ const Header = () => {
           background: rgba(245, 101, 101, 0.1);
           color: #c53030;
           border: 1px solid rgba(245, 101, 101, 0.2);
-        } /* Submit Button */
+        }
+
+        /* Submit Button */
         .submit-btn {
           background: ${theme.primaryGradient};
           border: none;
@@ -1229,6 +1360,11 @@ const Header = () => {
           transform: none !important;
         }
 
+        .submit-btn.locked {
+          background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);
+          box-shadow: 0 8px 25px rgba(229, 62, 62, 0.3);
+        }
+
         .btn-content {
           display: flex;
           align-items: center;
@@ -1237,6 +1373,13 @@ const Header = () => {
         }
 
         .loading-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+
+        .locked-content {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1259,7 +1402,9 @@ const Header = () => {
           100% {
             transform: rotate(360deg);
           }
-        } /* Security Notice */
+        }
+
+        /* Security Notice */
         .security-notice {
           display: flex;
           align-items: center;
@@ -1275,7 +1420,7 @@ const Header = () => {
           box-sizing: border-box;
         }
 
-        /* NEW: Redirect Overlay Styles */
+        /* Redirect Overlay Styles */
         .redirect-overlay {
           position: fixed;
           top: 0;
@@ -1375,7 +1520,9 @@ const Header = () => {
         /* Utility Classes */
         .modal-open {
           overflow: hidden;
-        } /* Responsive Design */
+        }
+
+        /* Responsive Design */
         @media (max-width: 576px) {
           .container {
             padding: 0 1rem;
@@ -1420,7 +1567,8 @@ const Header = () => {
             height: 50px;
           }
 
-          .message {
+          .message,
+          .warning-message {
             min-height: 45px;
             max-height: 45px;
             height: 45px;

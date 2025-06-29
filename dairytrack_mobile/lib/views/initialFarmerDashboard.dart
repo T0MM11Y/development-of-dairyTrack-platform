@@ -15,6 +15,7 @@ import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dar
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';
@@ -534,7 +535,8 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       mini: true,
                       onPressed: () {
                         _toggleFab();
-                        _showMenuDialog('Health Check Management', healthManagement);
+                        _showMenuDialog(
+                            'Health Check Management', healthManagement);
                       },
                       child: const Icon(Icons.health_and_safety, size: 20),
                     ),
@@ -2375,7 +2377,7 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginView()),
+        MaterialPageRoute(builder: (context) => InitialDashboard()),
         (route) => false,
       );
     } catch (e) {

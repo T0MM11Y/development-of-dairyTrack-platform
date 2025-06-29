@@ -16,10 +16,139 @@ const EditUser = () => {
     contact: "",
     religion: "",
     role_id: "",
-    birth: "",
+    birth: new Date(),
   });
-  const [initialData, setInitialData] = useState(null); // Store initial data
+  const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isValid, setIsValid] = useState({});
+
+  // Live validation functions
+  const validateUsername = (username) => {
+    const usernameRegex = /^[a-zA-Z0-9._-]{3,20}$/;
+    if (!username) return { isValid: false, message: "Username is required" };
+    if (!usernameRegex.test(username)) {
+      return {
+        isValid: false,
+        message:
+          "Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, and hyphens",
+      };
+    }
+    return { isValid: true, message: "" };
+  };
+
+  const validateName = (name) => {
+    if (!name.trim())
+      return { isValid: false, message: "Full name is required" };
+    if (name.trim().length < 2)
+      return { isValid: false, message: "Name must be at least 2 characters" };
+    if (!/^[a-zA-Z\s]+$/.test(name))
+      return {
+        isValid: false,
+        message: "Name can only contain letters and spaces",
+      };
+    return { isValid: true, message: "" };
+  };
+
+  // ...existing code...
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const cleanEmail = email.toLowerCase().trim();
+
+    if (!email) return { isValid: false, message: "Email is required" };
+    if (!emailRegex.test(cleanEmail))
+      return { isValid: false, message: "Please enter a valid email address" };
+    if (
+      cleanEmail.includes("..") ||
+      cleanEmail.startsWith(".") ||
+      cleanEmail.endsWith(".")
+    ) {
+      return {
+        isValid: false,
+        message: "Email cannot contain consecutive dots or start/end with dots",
+      };
+    }
+    // Tambahan validasi untuk @gmail.co
+    if (/@gmail\.co(\W|$)/i.test(cleanEmail)) {
+      return {
+        isValid: false,
+        message: "Email domain @gmail.co is not valid. Use @gmail.com",
+      };
+    }
+    if (
+      !/\.(com|org|net|edu|gov|mil|int|co|id|ac|sch)(\.[a-z]{2})?$/i.test(
+        cleanEmail
+      )
+    ) {
+      return {
+        isValid: false,
+        message:
+          "Please use a valid email domain (e.g., .com, .org, .net, .id, .co.id)",
+      };
+    }
+    if (cleanEmail.split("@")[0].length < 3) {
+      return {
+        isValid: false,
+        message: "Email username part must be at least 3 characters",
+      };
+    }
+    if (/test|fake|dummy|sample|example|temp/i.test(cleanEmail)) {
+      return {
+        isValid: false,
+        message: "Please use a real email address, not a test/dummy email",
+      };
+    }
+    return { isValid: true, message: "" };
+  };
+
+  const validateContact = (contact) => {
+    const phoneRegex =
+      /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/;
+    if (!contact)
+      return { isValid: false, message: "Phone number is required" };
+    if (!phoneRegex.test(contact))
+      return { isValid: false, message: "Please enter a valid phone number" };
+    return { isValid: true, message: "" };
+  };
+
+  const validateReligion = (religion) => {
+    if (!religion) return { isValid: false, message: "Religion is required" };
+    return { isValid: true, message: "" };
+  };
+
+  const validateRole = (role_id) => {
+    if (!role_id) return { isValid: false, message: "Role is required" };
+    return { isValid: true, message: "" };
+  };
+
+  const validateBirthDate = (birth) => {
+    const birthDate = new Date(birth);
+    const today = new Date();
+    const hundredYearsAgo = new Date();
+    const fifteenYearsAgo = new Date();
+
+    hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+    fifteenYearsAgo.setFullYear(today.getFullYear() - 15);
+
+    today.setHours(0, 0, 0, 0);
+    birthDate.setHours(0, 0, 0, 0);
+
+    if (!birth) return { isValid: false, message: "Birth date is required" };
+    if (birthDate >= today)
+      return {
+        isValid: false,
+        message: "Birthdate cannot be today or in the future",
+      };
+    if (birthDate > fifteenYearsAgo)
+      return { isValid: false, message: "User must be at least 15 years old" };
+    if (birthDate < hundredYearsAgo)
+      return {
+        isValid: false,
+        message: "Birthdate cannot be more than 100 years ago",
+      };
+    return { isValid: true, message: "" };
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -39,7 +168,29 @@ const EditUser = () => {
               : new Date(),
           };
           setFormData(userData);
-          setInitialData(userData); // Save initial data for comparison
+          setInitialData(userData);
+
+          // Validate all fields after loading data
+          const validations = {
+            username: validateUsername(userData.username),
+            name: validateName(userData.name),
+            email: validateEmail(userData.email),
+            contact: validateContact(userData.contact),
+            religion: validateReligion(userData.religion),
+            role_id: validateRole(userData.role_id),
+            birth: validateBirthDate(userData.birth),
+          };
+
+          const newErrors = {};
+          const newIsValid = {};
+
+          Object.keys(validations).forEach((key) => {
+            newErrors[key] = validations[key].message;
+            newIsValid[key] = validations[key].isValid;
+          });
+
+          setErrors(newErrors);
+          setIsValid(newIsValid);
         } else {
           Swal.fire(
             "Error",
@@ -59,83 +210,92 @@ const EditUser = () => {
     fetchUserData();
   }, [userId, history]);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+    // Live validation
+    let validation;
+    switch (name) {
+      case "username":
+        validation = validateUsername(value);
+        break;
+      case "name":
+        validation = validateName(value);
+        break;
+      case "email":
+        validation = validateEmail(value);
+        break;
+      case "contact":
+        validation = validateContact(value);
+        break;
+      case "religion":
+        validation = validateReligion(value);
+        break;
+      case "role_id":
+        validation = validateRole(value);
+        break;
+      default:
+        validation = { isValid: true, message: "" };
+    }
+
+    setErrors({ ...errors, [name]: validation.message });
+    setIsValid({ ...isValid, [name]: validation.isValid });
   };
 
   const handleBirthChange = (date) => {
     setFormData({ ...formData, birth: date });
+
+    // Live validation for birth date
+    const validation = validateBirthDate(date);
+    setErrors({ ...errors, birth: validation.message });
+    setIsValid({ ...isValid, birth: validation.isValid });
   };
 
   const isFormChanged = useMemo(() => {
+    if (!initialData) return false;
     return JSON.stringify(formData) !== JSON.stringify(initialData);
   }, [formData, initialData]);
+
+  const isFormValid = useMemo(() => {
+    return (
+      Object.values(isValid).every(Boolean) && Object.keys(isValid).length > 0
+    );
+  }, [isValid]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Form validation
-    let isValid = true;
-    let errorMessage = "";
+    // Final validation check
+    const validations = {
+      username: validateUsername(formData.username),
+      name: validateName(formData.name),
+      email: validateEmail(formData.email),
+      contact: validateContact(formData.contact),
+      religion: validateReligion(formData.religion),
+      role_id: validateRole(formData.role_id),
+      birth: validateBirthDate(formData.birth),
+    };
 
-    // Validate username (alphanumeric with limited special characters)
-    const usernameRegex = /^[a-zA-Z0-9._-]{3,20}$/;
-    if (!usernameRegex.test(formData.username)) {
-      errorMessage =
-        "Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, and hyphens";
-      isValid = false;
-    }
+    const newErrors = {};
+    const newIsValid = {};
+    let hasErrors = false;
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      errorMessage = "Please enter a valid email address";
-      isValid = false;
-    }
+    Object.keys(validations).forEach((key) => {
+      newErrors[key] = validations[key].message;
+      newIsValid[key] = validations[key].isValid;
+      if (!validations[key].isValid) hasErrors = true;
+    });
 
-    // Contact number validation
-    const phoneRegex =
-      /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/;
-    if (!phoneRegex.test(formData.contact)) {
-      errorMessage = "Please enter a valid phone number";
-      isValid = false;
-    }
+    setErrors(newErrors);
+    setIsValid(newIsValid);
 
-    // Birthdate validation - enhanced
-    const birthDate = new Date(formData.birth);
-    const today = new Date();
-    const hundredYearsAgo = new Date();
-    const fifteenYearsAgo = new Date();
-
-    hundredYearsAgo.setFullYear(today.getFullYear() - 100);
-    fifteenYearsAgo.setFullYear(today.getFullYear() - 15);
-
-    // Set times to midnight to compare dates only
-    today.setHours(0, 0, 0, 0);
-    birthDate.setHours(0, 0, 0, 0);
-
-    if (birthDate >= today) {
-      errorMessage = "Birthdate cannot be today or in the future";
-      isValid = false;
-    } else if (birthDate > fifteenYearsAgo) {
-      errorMessage = "User must be at least 15 years old";
-      isValid = false;
-    } else if (birthDate < hundredYearsAgo) {
-      errorMessage = "Birthdate cannot be more than 100 years ago";
-      isValid = false;
-    }
-
-    if (!isValid) {
-      Swal.fire("Validation Error", errorMessage, "warning");
+    if (hasErrors) {
+      Swal.fire(
+        "Validation Error",
+        "Please fix all validation errors before submitting",
+        "warning"
+      );
       return;
     }
 
@@ -153,7 +313,7 @@ const EditUser = () => {
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     // Sanitize data
     const cleanedFormData = Object.fromEntries(
@@ -162,6 +322,9 @@ const EditUser = () => {
         typeof value === "string" ? value.trim() : value,
       ])
     );
+
+    // Ensure email is lowercase
+    cleanedFormData.email = cleanedFormData.email.toLowerCase();
 
     try {
       const response = await editUser(userId, cleanedFormData);
@@ -178,12 +341,33 @@ const EditUser = () => {
     } catch (error) {
       Swal.fire("Error", "An unexpected error occurred.", "error");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // Loading Overlay Component
+  const LoadingOverlay = () => {
+    if (!isSubmitting) return null;
+
+    return (
+      <div className="loading-overlay">
+        <div className="loading-content">
+          <Spinner
+            animation="border"
+            role="status"
+            variant="light"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          <p className="mt-3 text-white fs-5">Saving changes...</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{ position: "relative" }}>
+      <LoadingOverlay />
+
       <Card className="shadow-lg border-0 rounded-lg">
         <Card.Header className="bg-gradient-primary text-white py-3">
           <div className="d-flex justify-content-between align-items-center">
@@ -229,21 +413,27 @@ const EditUser = () => {
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.username
+                          ? "is-invalid"
+                          : isValid.username
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="username"
                       name="username"
                       value={formData.username}
                       onChange={handleChange}
-                      pattern="^[a-zA-Z0-9._-]{3,20}$"
-                      title="Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, and hyphens"
+                      disabled={isSubmitting}
                       required
                     />
+                    {errors.username && (
+                      <div className="invalid-feedback">{errors.username}</div>
+                    )}
+                    {isValid.username && (
+                      <div className="valid-feedback">Username looks good!</div>
+                    )}
                     <div className="form-text">Must be unique</div>
-                    <div className="form-text text-danger">
-                      {formData.username &&
-                        !/^[a-zA-Z0-9._-]{3,20}$/.test(formData.username) &&
-                        "Username must be 3-20 characters with only letters, numbers, dots, underscores, and hyphens"}
-                    </div>
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="name" className="form-label">
@@ -251,13 +441,26 @@ const EditUser = () => {
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.name
+                          ? "is-invalid"
+                          : isValid.name
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="name"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       required
                     />
+                    {errors.name && (
+                      <div className="invalid-feedback">{errors.name}</div>
+                    )}
+                    {isValid.name && (
+                      <div className="valid-feedback">Name looks good!</div>
+                    )}
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="birth" className="form-label">
@@ -267,7 +470,13 @@ const EditUser = () => {
                       selected={formData.birth}
                       onChange={handleBirthChange}
                       dateFormat="yyyy-MM-dd"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.birth
+                          ? "is-invalid"
+                          : isValid.birth
+                          ? "is-valid"
+                          : ""
+                      }`}
                       placeholderText="Select birth date"
                       maxDate={
                         new Date(
@@ -277,16 +486,17 @@ const EditUser = () => {
                       showYearDropdown
                       showMonthDropdown
                       dropdownMode="select"
+                      disabled={isSubmitting}
                       required
-                      style={{
-                        backgroundColor: "#f9f9f9",
-                        border: "1px solid #007bff",
-                        borderRadius: "8px",
-                        padding: "10px",
-                        fontSize: "14px",
-                        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                      }}
                     />
+                    {errors.birth && (
+                      <div className="text-danger mt-1">{errors.birth}</div>
+                    )}
+                    {isValid.birth && (
+                      <div className="text-success mt-1">
+                        Birth date is valid!
+                      </div>
+                    )}
                     <div className="form-text text-muted">
                       User must be at least 15 years old and not more than 100
                       years old.
@@ -297,11 +507,18 @@ const EditUser = () => {
                       Religion <span className="text-danger">*</span>
                     </label>
                     <select
-                      className="form-select"
+                      className={`form-select ${
+                        errors.religion
+                          ? "is-invalid"
+                          : isValid.religion
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="religion"
                       name="religion"
                       value={formData.religion}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       required
                     >
                       <option value="">Select Religion</option>
@@ -311,6 +528,12 @@ const EditUser = () => {
                       <option value="Hinduism">Hinduism</option>
                       <option value="Buddhism">Buddhism</option>
                     </select>
+                    {errors.religion && (
+                      <div className="invalid-feedback">{errors.religion}</div>
+                    )}
+                    {isValid.religion && (
+                      <div className="valid-feedback">Religion selected!</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -331,20 +554,26 @@ const EditUser = () => {
                     </label>
                     <input
                       type="email"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.email
+                          ? "is-invalid"
+                          : isValid.email
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
-                      title="Please enter a valid email address"
+                      disabled={isSubmitting}
                       required
                     />
-                    <div className="form-text text-danger">
-                      {formData.email &&
-                        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
-                        "Invalid email format"}
-                    </div>
+                    {errors.email && (
+                      <div className="invalid-feedback">{errors.email}</div>
+                    )}
+                    {isValid.email && (
+                      <div className="valid-feedback">Email looks good!</div>
+                    )}
                     <div className="form-text">Valid email address</div>
                   </div>
                   <div className="col-md-6">
@@ -353,21 +582,28 @@ const EditUser = () => {
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.contact
+                          ? "is-invalid"
+                          : isValid.contact
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="contact"
                       name="contact"
                       value={formData.contact}
                       onChange={handleChange}
-                      pattern="^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$"
+                      disabled={isSubmitting}
                       required
                     />
-                    <div className="form-text text-danger">
-                      {formData.contact &&
-                        !/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/.test(
-                          formData.contact
-                        ) &&
-                        "Invalid phone number format"}
-                    </div>
+                    {errors.contact && (
+                      <div className="invalid-feedback">{errors.contact}</div>
+                    )}
+                    {isValid.contact && (
+                      <div className="valid-feedback">
+                        Phone number looks good!
+                      </div>
+                    )}
                     <div className="form-text">Valid phone number</div>
                   </div>
                 </div>
@@ -387,11 +623,18 @@ const EditUser = () => {
                       Role <span className="text-danger">*</span>
                     </label>
                     <select
-                      className="form-select"
+                      className={`form-select ${
+                        errors.role_id
+                          ? "is-invalid"
+                          : isValid.role_id
+                          ? "is-valid"
+                          : ""
+                      }`}
                       id="role_id"
                       name="role_id"
                       value={formData.role_id}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       required
                     >
                       <option value="">Select Role</option>
@@ -399,6 +642,12 @@ const EditUser = () => {
                       <option value="2">Supervisor</option>
                       <option value="3">Farmer</option>
                     </select>
+                    {errors.role_id && (
+                      <div className="invalid-feedback">{errors.role_id}</div>
+                    )}
+                    {isValid.role_id && (
+                      <div className="valid-feedback">Role selected!</div>
+                    )}
                     <div className="form-text">Determine user access level</div>
                   </div>
                 </div>
@@ -410,9 +659,9 @@ const EditUser = () => {
                   type="submit"
                   className="btn btn-primary px-4"
                   style={{ color: "white" }}
-                  disabled={!isFormChanged || loading} // Disable button if no changes or loading
+                  disabled={!isFormChanged || !isFormValid || isSubmitting}
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <>
                       <Spinner
                         animation="border"
@@ -435,6 +684,34 @@ const EditUser = () => {
           )}
         </Card.Body>
       </Card>
+
+      <style jsx>{`
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        }
+        .loading-content {
+          text-align: center;
+          background-color: rgba(0, 0, 0, 0.8);
+          padding: 2rem;
+          border-radius: 1rem;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+        }
+        .loading-content p {
+          margin: 0;
+          font-weight: 500;
+          letter-spacing: 0.5px;
+        }
+      `}</style>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/finance/financeView.dart';
 import 'package:dairytrack_mobile/views/salesAndFinancialManagement/order/listOrder.dart';
@@ -425,8 +426,8 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                 contentMedia),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
-            _buildFabGroup('Health Check Management', Icons.medical_services, Colors.red,
-                cattleHealth),
+            _buildFabGroup('Health Check Management', Icons.medical_services,
+                Colors.red, cattleHealth),
             _buildFabGroup('Milking & Analysis', Icons.local_drink, Colors.blue,
                 milkingAnalysis),
             _buildFabGroup('Cattle Management', Icons.pets, Colors.brown,
@@ -964,7 +965,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '$displayedUnreadCount baru',
+                      '$displayedUnreadCount new',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -1025,7 +1026,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.teal[800],
@@ -1051,7 +1052,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text('Tutup'),
+                          child: Text('Close'),
                         ),
                       ],
                     ),
@@ -1088,7 +1089,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isUnread
@@ -1350,7 +1351,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Statistik Sistem',
+                          'System Statistics',
                           style: TextStyle(
                             fontSize: 16, // Konsisten dengan judul lain
                             fontWeight: FontWeight.w700,
@@ -1394,7 +1395,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                   children: [
                     _buildStatCard(
                       icon: Icons.pets,
-                      title: 'Total Sapi',
+                      title: 'Total Cow',
                       value: '${dashboardStats['totalCows']}',
                       color: Colors.brown[600]!,
                       bgColor: Colors.brown[50]!,
@@ -1592,7 +1593,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Distribusi Fase Laktasi',
+                    'Distribution of Lactation Phases',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -1604,7 +1605,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
             ),
             SizedBox(height: 8),
             Text(
-              'Komposisi fase laktasi sapi di peternakan',
+              'Composition of lactation phase of cows on farms',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -1677,7 +1678,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                         ),
                       ),
                       Text(
-                        'Total Sapi',
+                        'Total Cow',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -1737,7 +1738,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${item['value']} sapi (${item['percentage']}%)',
+                              '${item['value']} cow (${item['percentage']}%)',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: color,
@@ -1777,7 +1778,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               SizedBox(width: 8),
               Text(
-                'Statistik Detail',
+                'Detailed Statistics',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -2101,7 +2102,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               ),
               SizedBox(width: 6),
               Text(
-                'Informasi Data',
+                'Data Information',
                 style: TextStyle(
                   fontSize: 11, // Font lebih kecil
                   fontWeight: FontWeight.w600,
@@ -2374,7 +2375,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               ),
               SizedBox(width: 8),
               Text(
-                'Informasi Grafik',
+                'Graphic Information',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -2395,8 +2396,8 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               SizedBox(width: 16),
               _buildLegendItem(
                 color: Colors.teal[600]!,
-                label: 'Artikel Blog Aktif',
-                value: '${dashboardStats['totalBlogs']} artikel',
+                label: 'Active Blog Articles',
+                value: '${dashboardStats['totalBlogs']} article',
               ),
             ],
           ),
@@ -2405,13 +2406,13 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
             children: [
               _buildLegendItem(
                 color: Colors.amber[700]!,
-                label: 'Koleksi Galeri',
-                value: '${dashboardStats['totalGalleries']} foto',
+                label: 'Gallery Collection',
+                value: '${dashboardStats['totalGalleries']} Photo',
               ),
               SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  'Klik pada grafik untuk detail',
+                  'Click on the graph for details',
                   style: TextStyle(
                     fontSize: 10,
                     color: Colors.grey[500],
@@ -2538,14 +2539,14 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginView()),
+        MaterialPageRoute(builder: (context) => InitialDashboard()),
         (route) => false,
       );
     } catch (e) {
       print('Error during logout: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Terjadi kesalahan saat keluar'),
+          content: Text('An error occurred while exiting'),
           backgroundColor: Colors.red,
         ),
       );
@@ -3304,7 +3305,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               CircularProgressIndicator(color: Colors.deepOrange[400]),
               SizedBox(height: 16),
               Text(
-                'Memuat dashboard supervisor...',
+                'Loading supervisor dashboard...',
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ],
@@ -3370,11 +3371,11 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
               builder: (context) => AlertDialog(
                 backgroundColor: const Color(0xFF23272F),
                 title: Text(
-                  'Konfirmasi Keluar',
+                  'Confirm Exit',
                   style: TextStyle(color: Colors.white),
                 ),
                 content: Text(
-                  'Apakah Anda yakin ingin keluar dari aplikasi?',
+                  'Are you sure you want to exit the application??',
                   style: TextStyle(color: Colors.white70),
                 ),
                 actions: [
@@ -3392,8 +3393,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child:
-                        Text('Keluar', style: TextStyle(color: Colors.white)),
+                    child: Text('Exit', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -3405,7 +3405,7 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
           backgroundColor: Colors.red[400],
           elevation: 4,
           child: Icon(Icons.logout, color: Colors.white, size: 24),
-          tooltip: 'Keluar',
+          tooltip: 'Exit',
         ),
       ),
     );
