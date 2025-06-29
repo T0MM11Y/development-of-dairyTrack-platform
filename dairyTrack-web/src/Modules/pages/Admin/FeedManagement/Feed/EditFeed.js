@@ -22,14 +22,14 @@ const FeedEditPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  if (userData.user_id && userData.token) {
-    setCurrentUser(userData);
-  } else {
-    localStorage.removeItem("user");
-    history.push("/");
-  }
-}, [history]);
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id && userData.token) {
+      setCurrentUser(userData);
+    } else {
+      localStorage.removeItem("user");
+      history.push("/");
+    }
+  }, [history]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,9 +47,17 @@ const FeedEditPage = () => {
 
         if (feedResponse.success) {
           const feed = feedResponse.feed;
+          // Cari nama jenis pakan berdasarkan type_id
+          const typeName =
+            feedTypeResponse.success && feedTypeResponse.feedTypes
+              ? feedTypeResponse.feedTypes.find(
+                  (t) => t.id === parseInt(feed.type_id)
+                )?.name || "Belum ada"
+              : "Belum ada";
+
           const initialForm = {
-            typeId: feed.type_id || "",
-            typeName: "", // Will be updated in the next useEffect
+            typeId: feed.type_id ? feed.type_id.toString() : "",
+            typeName, // Set typeName langsung di sini
             name: feed.name || "",
             unit: feed.unit || "",
             min_stock: feed.min_stock || 0,
@@ -57,9 +65,14 @@ const FeedEditPage = () => {
             updated_at: feed.updated_at || "",
             updated_by: currentUser?.user_id || "",
             nutrisiList: feed.nutrisi_records.map((n) => ({
-              nutrisi_id: n.nutrisi_id,
+              nutrisi_id: n.nutrisi_id ? n.nutrisi_id.toString() : "",
               amount: n.amount || 0,
-              nutrisi_name: "", // Will be updated in the next useEffect
+              nutrisi_name:
+                nutritionResponse.success && nutritionResponse.nutritions
+                  ? nutritionResponse.nutritions.find(
+                      (nut) => nut.id === parseInt(n.nutrisi_id)
+                    )?.name || "Tidak diketahui"
+                  : "Tidak diketahui",
             })),
           };
           setForm(initialForm);
@@ -96,15 +109,19 @@ const FeedEditPage = () => {
     }
   }, [id, currentUser]);
 
-  // Update typeName and nutrisi_name after feedTypes and nutritions are loaded
+  // Update typeName and nutrisi_name when feedTypes or nutritions change
   useEffect(() => {
     if (form && feedTypes.length > 0 && nutritions.length > 0) {
       setForm((prev) => ({
         ...prev,
-        typeName: feedTypes.find((t) => t.id === parseInt(prev.typeId))?.name || "Tidak diketahui",
+        typeName:
+          feedTypes.find((t) => t.id === parseInt(prev.typeId))?.name ||
+          "Belum ada",
         nutrisiList: prev.nutrisiList.map((n) => ({
           ...n,
-          nutrisi_name: nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui",
+          nutrisi_name:
+            nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name ||
+            "Tidak diketahui",
         })),
       }));
     }
@@ -121,7 +138,8 @@ const FeedEditPage = () => {
       setForm((prev) => ({
         ...prev,
         typeId: value,
-        typeName: feedTypes.find((t) => t.id === parseInt(value))?.name || "Tidak diketahui",
+        typeName:
+          feedTypes.find((t) => t.id === parseInt(value))?.name || "Belum ada",
       }));
     } else {
       setForm((prev) => ({

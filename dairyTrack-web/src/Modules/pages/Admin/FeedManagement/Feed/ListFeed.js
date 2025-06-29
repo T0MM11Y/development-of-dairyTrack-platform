@@ -1,6 +1,5 @@
-// src/pages/Admin/FeedManagement/Feed/FeedListPage.js
 import React, { useEffect, useState } from "react";
-import { listFeeds, deleteFeed } from "../../../../controllers/feedController";
+import { listFeeds, deleteFeed, getFeedById } from "../../../../controllers/feedController";
 import { listFeedTypes } from "../../../../controllers/feedTypeController";
 import { listNutritions } from "../../../../controllers/nutritionController";
 import FeedCreatePage from "./CreateFeed";
@@ -12,6 +11,8 @@ import {
   Spinner,
   InputGroup,
   FormControl,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 
 const FeedListPage = () => {
@@ -20,13 +21,14 @@ const FeedListPage = () => {
   const [nutritions, setNutritions] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [editFeed, setEditFeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const PAGE_SIZE = 6;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
 
   const disableIfSupervisor = isSupervisor
     ? {
@@ -39,25 +41,25 @@ const FeedListPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [feedResponse, feedTypeResponse, nutritionResponse] =
-        await Promise.all([listFeeds(), listFeedTypes(), listNutritions()]);
+      const [feedResponse, feedTypeResponse, nutritionResponse] = await Promise.all([
+        listFeeds(),
+        listFeedTypes(),
+        listNutritions(),
+      ]);
 
       if (feedResponse.success) {
         setData(feedResponse.feeds || []);
       } else {
-        if (feedResponse.message.includes("Token")) {
+        if (feedResponse.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
-            text: "Silakan login kembali.",
+            title: "Sesi Berakhir",
+            text: "Token tidak valid atau kedaluwarsa. Silakan login kembali.",
           });
           localStorage.removeItem("user");
           window.location.href = "/";
         } else {
-          Swal.fire(
-            "Error",
-            feedResponse.message || "Gagal memuat data.",
-            "error"
-          );
+          Swal.fire("Error", feedResponse.message || "Gagal memuat data.", "error");
         }
         setData([]);
       }
@@ -89,9 +91,16 @@ const FeedListPage = () => {
       const response = await deleteFeed(deleteId);
       if (response.success) {
         setData((prev) => prev.filter((item) => item.id !== deleteId));
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Pakan berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
         setDeleteId(null);
       } else {
-        if (response.message.includes("Token")) {
+        if (response.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
             title: "Sesi Berakhir",
@@ -100,33 +109,45 @@ const FeedListPage = () => {
           localStorage.removeItem("user");
           window.location.href = "/";
         } else {
-          Swal.fire(
-            "Error",
-            response.message || "Gagal menghapus pakan.",
-            "error"
-          );
+          Swal.fire("Error", response.message || "Gagal menghapus pakan.", "error");
         }
       }
     } catch (err) {
       Swal.fire("Error", "Terjadi kesalahan saat menghapus pakan.", "error");
-      console.error(err);
+    }
+  };
+
+  const handleEdit = async (id) => {
+    try {
+      const response = await getFeedById(id);
+      if (response.success) {
+        setEditFeed(response.feed);
+        setModalType("edit");
+      } else {
+        Swal.fire("Error", response.message || "Gagal memuat data pakan.", "error");
+      }
+    } catch (err) {
+      Swal.fire("Error", "Terjadi kesalahan saat memuat data pakan.", "error");
     }
   };
 
   const paginatedData = data
-    .filter((item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
-  if (!user.token) {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  } else {
-    fetchData();
-  }
-}, []);
+    if (!user.token || !user.user_id || !user.role) {
+      Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan. Silakan login kembali.",
+      });
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } else {
+      fetchData();
+    }
+  }, []);
 
   useEffect(() => {
     if (deleteId) {
@@ -152,8 +173,8 @@ const FeedListPage = () => {
   return (
     <div className="container-fluid mt-4">
       <Card className="shadow-lg border-0 rounded-lg">
-        <Card.Header className="bg-gradient-primary text-grey py-3">
-          <h4 className="mb-0 text-primary fw-bold">
+        <Card.Header className="bg-primary text-white py-3">
+          <h4 className="mb-0 fw-bold">
             <i className="fas fa-box me-2" /> Daftar Pakan
           </h4>
         </Card.Header>
@@ -208,7 +229,7 @@ const FeedListPage = () => {
                 <tbody>
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="text-center text-muted">
+                      <td colSpan={12} className="text-center text-muted">
                         Tidak ada data ditemukan.
                       </td>
                     </tr>
@@ -221,27 +242,11 @@ const FeedListPage = () => {
                         <td>{item.unit}</td>
                         <td>{item.min_stock}</td>
                         <td>Rp {item.price.toLocaleString("id-ID")}</td>
-                        <td>
-                          {item.created_by
-                            ? item.created_by.name
-                            : "Tidak diketahui"}
-                        </td>
-                        <td>
-                          {item.updated_by
-                            ? item.updated_by.name
-                            : "Tidak diketahui"}
-                        </td>
-                        <td>
-                          {new Date(item.created_at).toLocaleDateString(
-                            "id-ID"
-                          )}
-                        </td>
-                        <td>
-                          {new Date(item.updated_at).toLocaleDateString(
-                            "id-ID"
-                          )}
-                        </td>
-                        <td>
+                        <td>{item.created_by ? item.created_by.name : "Tidak diketahui"}</td>
+                        <td>{item.updated_by ? item.updated_by.name : "Tidak diketahui"}</td>
+                        <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
+                        <td>{new Date(item.updated_at).toLocaleDateString("id-ID")}</td>
+                        <  td>
                           {item.nutrisi_records.length > 0
                             ? item.nutrisi_records.map((n, i) => (
                                 <div key={i}>
@@ -251,29 +256,27 @@ const FeedListPage = () => {
                             : "Tidak ada nutrisi"}
                         </td>
                         <td>
-                          <Button
-                            variant="outline-warning"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => {
-                              if (!isSupervisor) {
-                                window.location.href = `/admin/edit-feed/${item.id}`;
-                              }
-                            }}
-                            {...disableIfSupervisor}
-                          >
-                            <i className="fas fa-edit" />
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() =>
-                              !isSupervisor && setDeleteId(item.id)
-                            }
-                            {...disableIfSupervisor}
-                          >
-                            <i className="fas fa-trash" />
-                          </Button>
+                          <OverlayTrigger overlay={<Tooltip>Edit</Tooltip>}>
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => !isSupervisor && handleEdit(item.id)}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-edit" />
+                            </Button>
+                          </OverlayTrigger>
+                          <OverlayTrigger overlay={<Tooltip>Hapus</Tooltip>}>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => !isSupervisor && setDeleteId(item.id)}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-trash" />
+                            </Button>
+                          </OverlayTrigger>
                         </td>
                       </tr>
                     ))
@@ -309,14 +312,20 @@ const FeedListPage = () => {
             </div>
           )}
 
-          {modalType === "create" && (
+          {(modalType === "create" || modalType === "edit") && (
             <FeedCreatePage
+              show={true}
               feedTypes={feedTypes}
               nutritions={nutritions}
-              onClose={() => setModalType(null)}
+              feed={modalType === "edit" ? editFeed : null}
+              onClose={() => {
+                setModalType(null);
+                setEditFeed(null);
+              }}
               onSaved={() => {
                 fetchData();
                 setModalType(null);
+                setEditFeed(null);
               }}
             />
           )}

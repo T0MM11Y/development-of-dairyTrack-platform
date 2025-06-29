@@ -1,30 +1,34 @@
 // CreateFeedType.js
 import { useState, useEffect } from "react";
-import { addFeedType } from "../../../../controllers/feedTypeController";
+import { addFeedType, updateFeedType } from "../../../../controllers/feedTypeController";
 import Swal from "sweetalert2";
+import { Modal, Button, Form } from "react-bootstrap";
 
-const FeedTypeCreatePage = ({ onClose, onSaved }) => {
+const FeedTypeCreatePage = ({ show, onClose, onSaved, feedType }) => {
   const [form, setForm] = useState({
     name: "",
     created_by: "",
+    updated_by: "",
   });
   const [currentUser, setCurrentUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  if (userData.user_id && userData.token) {
-    setCurrentUser(userData);
-    setForm((prev) => ({
-      ...prev,
-      created_by: userData.user_id || "",
-    }));
-  } else {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  }
-}, []);
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id && userData.token) {
+      setCurrentUser(userData);
+      setForm((prev) => ({
+        ...prev,
+        created_by: userData.user_id || "",
+        updated_by: userData.user_id || "",
+        name: feedType?.name || "",
+      }));
+    } else {
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    }
+  }, [feedType]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,52 +40,53 @@ const FeedTypeCreatePage = ({ onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Menampilkan Sweet Alert konfirmasi sebelum menyimpan
+
+    const isEdit = !!feedType;
+    const confirmText = isEdit
+      ? `Apakah Anda yakin ingin mengubah jenis pakan "${feedType.name}" jadi "${form.name}"?`
+      : `Apakah Anda yakin ingin menambahkan jenis pakan "${form.name}"?`;
+
     const result = await Swal.fire({
       title: "Konfirmasi",
-      text: `Apakah Anda yakin ingin menambahkan jenis pakan "${form.name}"?`,
+      text: confirmText,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Simpan",
-      cancelButtonText: "Batal"
+      confirmButtonText: isEdit ? "Ya, Ubah!" : "Ya, Simpan",
+      cancelButtonText: "Batal",
     });
-    
-    // Jika user membatalkan, hentikan proses
+
     if (!result.isConfirmed) {
       return;
     }
-    
+
     setSubmitting(true);
 
     try {
-      const response = await addFeedType({ name: form.name });
+      const response = isEdit
+        ? await updateFeedType(feedType.id, { name: form.name })
+        : await addFeedType({ name: form.name });
       if (response.success) {
         Swal.fire({
           icon: "success",
           title: "Berhasil",
-          text: "Jenis pakan berhasil disimpan.",
+          text: isEdit ? "Jenis pakan berhasil diperbarui." : "Jenis pakan berhasil disimpan.",
           timer: 1500,
           showConfirmButton: false,
         });
 
         if (onSaved) onSaved();
-
-        setForm({
-          name: "",
-          created_by: currentUser?.user_id || "",
-        });
+        onClose();
       } else {
-        throw new Error(response.message || "Gagal menyimpan jenis pakan.");
+        throw new Error(response.message || (isEdit ? "Gagal memperbarui jenis pakan." : "Gagal menyimpan jenis pakan."));
       }
     } catch (err) {
-      let message = err.message || "Gagal menyimpan jenis pakan.";
+      let message = err.message || (isEdit ? "Gagal memperbarui jenis pakan." : "Gagal menyimpan jenis pakan.");
       setError(message);
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
+        title: "Gagal",
         text: message,
       });
     } finally {
@@ -90,59 +95,66 @@ const FeedTypeCreatePage = ({ onClose, onSaved }) => {
   };
 
   return (
-    <div
-      className="modal show d-block"
-      style={{
-        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-        minHeight: "100vh",
-        paddingTop: "3rem",
-      }}
+    <Modal
+      show={show}
+      onHide={onClose}
+      backdrop="static"
+      keyboard={false}
+      size="lg"
+      centered
     >
-      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Tambah Jenis Pakan</h4>
-            <button className="btn-close" onClick={onClose} disabled={submitting}></button>
-          </div>
-          <div className="modal-body">
-            {error && <p className="text-danger text-center">{error}</p>}
+      <Modal.Header closeButton>
+        <Modal.Title className="text-info fw-bold">{feedType ? "Edit Jenis Pakan" : "Tambah Jenis Pakan"}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && <p className="text-danger text-center">{error}</p>}
 
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Nama Jenis Pakan</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="form-control"
-                  required
-                />
-              </div>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Nama Jenis Pakan</Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
 
-              <div className="mb-3">
-                <label className="form-label fw-bold">Dibuat oleh</label>
-                <input
-                  type="text"
-                  className="form-control bg-light"
-                  value={currentUser?.name || "Tidak diketahui"}
-                  disabled
-                />
-                <input type="hidden" name="created_by" value={form.created_by} />
-              </div>
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">{feedType ? "Diperbarui oleh" : "Dibuat oleh"}</Form.Label>
+            <Form.Control
+              type="text"
+              className="bg-light"
+              value={currentUser?.name || "Tidak diketahui"}
+              disabled
+            />
+            <Form.Control type="hidden" name={feedType ? "updated_by" : "created_by"} value={form[feedType ? "updated_by" : "created_by"]} />
+          </Form.Group>
 
-              <button
-                type="submit"
-                className="btn btn-info w-100"
-                disabled={submitting}
-              >
-                {submitting ? "Menyimpan..." : "Simpan"}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+          {feedType && (
+            <Form.Group className="mb-3">
+              <Form.Label className="form-label fw-bold">Tanggal Diperbarui</Form.Label>
+              <Form.Control
+                type="text"
+                value={new Date(feedType.updated_at).toLocaleString("id-ID")}
+                readOnly
+                disabled
+              />
+            </Form.Group>
+          )}
+
+          <Button
+            type="submit"
+            variant="info"
+            className="w-100"
+            disabled={submitting}
+          >
+            {submitting ? "Menyimpan..." : feedType ? "Simpan Perubahan" : "Simpan"}
+          </Button>
+        </Form>
+      </Modal.Body>
+    </Modal>
   );
 };
 

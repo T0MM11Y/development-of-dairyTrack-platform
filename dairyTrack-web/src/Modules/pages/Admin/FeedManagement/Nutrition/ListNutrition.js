@@ -2,8 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   listNutritions,
   deleteNutrition,
-  exportNutritionsToPDF,
-  exportNutritionsToExcel,
+  getNutritionById,
 } from "../../../../controllers/nutritionController";
 import NutritionCreatePage from "./CreateNutrition";
 import Swal from "sweetalert2";
@@ -14,19 +13,22 @@ import {
   Spinner,
   InputGroup,
   FormControl,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 
 const NutritionListPage = () => {
   const [data, setData] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [editNutrition, setEditNutrition] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const PAGE_SIZE = 6;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
 
   const disableIfSupervisor = isSupervisor
     ? {
@@ -43,7 +45,7 @@ const NutritionListPage = () => {
       if (response.success) {
         setData(response.nutritions || []);
       } else {
-        if (response.message.includes("Token")) {
+        if (response.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
             title: "Sesi Berakhir",
@@ -64,16 +66,22 @@ const NutritionListPage = () => {
     }
   };
 
-  // Use useCallback to memoize the handleDelete function
   const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     try {
       const response = await deleteNutrition(deleteId);
       if (response.success) {
         setData((prev) => prev.filter((item) => item.id !== deleteId));
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Nutrisi berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
         setDeleteId(null);
       } else {
-        if (response.message.includes("Token")) {
+        if (response.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
             title: "Sesi Berakhir",
@@ -91,25 +99,20 @@ const NutritionListPage = () => {
       }
     } catch (err) {
       Swal.fire("Error", "Terjadi kesalahan saat menghapus nutrisi.", "error");
-      console.error(err);
     }
-  }, [deleteId]); // Add deleteId as dependency
+  }, [deleteId]);
 
-  const handleExportPDF = async () => {
+  const handleEdit = async (id) => {
     try {
-      await exportNutritionsToPDF();
+      const response = await getNutritionById(id);
+      if (response.success) {
+        setEditNutrition(response.nutrition);
+        setModalType("edit");
+      } else {
+        Swal.fire("Error", response.message || "Gagal memuat data nutrisi.", "error");
+      }
     } catch (err) {
-      Swal.fire("Error", "Gagal mengekspor ke PDF.", "error");
-      console.error(err);
-    }
-  };
-
-  const handleExportExcel = async () => {
-    try {
-      await exportNutritionsToExcel();
-    } catch (err) {
-      Swal.fire("Error", "Gagal mengekspor ke Excel.", "error");
-      console.error(err);
+      Swal.fire("Error", "Terjadi kesalahan saat memuat data nutrisi.", "error");
     }
   };
 
@@ -120,7 +123,7 @@ const NutritionListPage = () => {
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
-    if (!user.token) {
+    if (!user.token || !user.user_id || !user.role) {
       Swal.fire({
         icon: "error",
         title: "Sesi Berakhir",
@@ -131,7 +134,7 @@ const NutritionListPage = () => {
     } else {
       fetchData();
     }
-  }, [user.token]); // Add user.token as dependency
+  }, []);
 
   useEffect(() => {
     if (deleteId) {
@@ -152,15 +155,13 @@ const NutritionListPage = () => {
         }
       });
     }
-  }, [deleteId, handleDelete]); // Add handleDelete as dependency
-
-  // Rest of the component remains unchanged
+  }, [deleteId, handleDelete]);
 
   return (
     <div className="container-fluid mt-4">
       <Card className="shadow-lg border-0 rounded-lg">
-        <Card.Header className="bg-gradient-primary text-grey py-3">
-          <h4 className="mb-0 text-primary fw-bold">
+        <Card.Header className="bg-primary text-white py-3">
+          <h4 className="mb-0 fw-bold">
             <i className="fas fa-seedling me-2" /> Daftar Nutrisi
           </h4>
         </Card.Header>
@@ -178,22 +179,6 @@ const NutritionListPage = () => {
               />
             </InputGroup>
             <div>
-              <Button
-                variant="outline-primary"
-                className="me-2"
-                onClick={handleExportPDF}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-file-pdf me-2" /> Ekspor PDF
-              </Button>
-              <Button
-                variant="outline-success"
-                className="me-2"
-                onClick={handleExportExcel}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-file-excel me-2" /> Ekspor Excel
-              </Button>
               <Button
                 variant="primary"
                 onClick={() => !isSupervisor && setModalType("create")}
@@ -227,7 +212,7 @@ const NutritionListPage = () => {
                 <tbody>
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center text-muted">
+                      <td colSpan={8} className="text-center text-muted">
                         Tidak ada data ditemukan.
                       </td>
                     </tr>
@@ -248,39 +233,33 @@ const NutritionListPage = () => {
                             : "Tidak diketahui"}
                         </td>
                         <td>
-                          {new Date(item.created_at).toLocaleDateString(
-                            "id-ID"
-                          )}
+                          {new Date(item.created_at).toLocaleDateString("id-ID")}
                         </td>
                         <td>
-                          {new Date(item.updated_at).toLocaleDateString(
-                            "id-ID"
-                          )}
+                          {new Date(item.updated_at).toLocaleDateString("id-ID")}
                         </td>
                         <td>
-                          <Button
-                            variant="outline-warning"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => {
-                              if (!isSupervisor) {
-                                window.location.href = `/admin/edit-nutrition/${item.id}`;
-                              }
-                            }}
-                            {...disableIfSupervisor}
-                          >
-                            <i className="fas fa-edit" />
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() =>
-                              !isSupervisor && setDeleteId(item.id)
-                            }
-                            {...disableIfSupervisor}
-                          >
-                            <i className="fas fa-trash" />
-                          </Button>
+                          <OverlayTrigger overlay={<Tooltip>Edit</Tooltip>}>
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => !isSupervisor && handleEdit(item.id)}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-edit" />
+                            </Button>
+                          </OverlayTrigger>
+                          <OverlayTrigger overlay={<Tooltip>Hapus</Tooltip>}>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => !isSupervisor && setDeleteId(item.id)}
+                              {...disableIfSupervisor}
+                            >
+                              <i className="fas fa-trash" />
+                            </Button>
+                          </OverlayTrigger>
                         </td>
                       </tr>
                     ))
@@ -316,13 +295,19 @@ const NutritionListPage = () => {
             </div>
           )}
 
-          {modalType === "create" && (
+          {(modalType === "create" || modalType === "edit") && (
             <NutritionCreatePage
-              onClose={() => setModalType(null)}
+              show={true}
+              onClose={() => {
+                setModalType(null);
+                setEditNutrition(null);
+              }}
               onSaved={() => {
                 fetchData();
                 setModalType(null);
+                setEditNutrition(null);
               }}
+              nutrition={modalType === "edit" ? editNutrition : null}
             />
           )}
         </Card.Body>

@@ -4,7 +4,6 @@ import Swal from "sweetalert2";
 export const addFeed = async (feedData) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token || null;
-  console.log("addFeed - Token:", token, "Data:", feedData);
   if (!token) {
     Swal.fire({
       icon: "error",
@@ -26,25 +25,20 @@ export const addFeed = async (feedData) => {
     });
 
     const data = await response.json();
-    console.log("addFeed - Response:", { status: response.status, data });
     if (response.ok) {
       return { success: true, feed: data.data, message: data.message };
     } else {
       return { success: false, message: data.message || "Gagal menambahkan pakan." };
     }
   } catch (error) {
-    console.error("addFeed - Error:", error.message || error);
-    return {
-      success: false,
-      message: "Terjadi kesalahan saat menambahkan pakan.",
-    };
+    console.error("addFeed - Error:", error.message);
+    return { success: false, message: "Terjadi kesalahan saat menambahkan pakan." };
   }
 };
 
 export const listFeeds = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token || null;
-  console.log("listFeeds - Token:", token);
   if (!token) {
     return { success: false, message: "Token tidak ditemukan." };
   }
@@ -56,14 +50,13 @@ export const listFeeds = async () => {
     });
 
     const data = await response.json();
-    console.log("listFeeds - Response:", { status: response.status, data });
     if (response.ok) {
       return { success: true, feeds: data.data };
     } else {
       return { success: false, message: data.message || "Gagal memuat data pakan." };
     }
   } catch (error) {
-    console.error("listFeeds - Error:", error);
+    console.error("listFeeds - Error:", error.message);
     return { success: false, message: "Terjadi kesalahan saat memuat data pakan." };
   }
 };
@@ -71,7 +64,6 @@ export const listFeeds = async () => {
 export const getFeedById = async (id) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token || null;
-  console.log("getFeedById - Token:", token, "ID:", id);
   if (!token) {
     return { success: false, message: "Token tidak ditemukan." };
   }
@@ -83,14 +75,13 @@ export const getFeedById = async (id) => {
     });
 
     const data = await response.json();
-    console.log("getFeedById - Response:", { status: response.status, data });
     if (response.ok) {
       return { success: true, feed: data.data };
     } else {
       return { success: false, message: data.message || "Gagal memuat data pakan." };
     }
   } catch (error) {
-    console.error("getFeedById - Error:", error);
+    console.error("getFeedById - Error:", error.message);
     return { success: false, message: "Terjadi kesalahan saat memuat data pakan." };
   }
 };
@@ -98,7 +89,6 @@ export const getFeedById = async (id) => {
 export const updateFeed = async (id, feedData) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token || null;
-  console.log("updateFeed - Token:", token, "ID:", id, "Data:", feedData);
   if (!token) {
     Swal.fire({
       icon: "error",
@@ -120,14 +110,13 @@ export const updateFeed = async (id, feedData) => {
     });
 
     const data = await response.json();
-    console.log("updateFeed - Response:", { status: response.status, data });
     if (response.ok) {
       return { success: true, feed: data.data, message: data.message };
     } else {
       return { success: false, message: data.message || "Gagal memperbarui pakan." };
     }
   } catch (error) {
-    console.error("updateFeed - Error:", error);
+    console.error("updateFeed - Error:", error.message);
     return { success: false, message: "Terjadi kesalahan saat memperbarui pakan." };
   }
 };
@@ -135,7 +124,6 @@ export const updateFeed = async (id, feedData) => {
 export const deleteFeed = async (id) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = user.token || null;
-  console.log("deleteFeed - Token:", token, "ID:", id);
   if (!token) {
     Swal.fire({
       icon: "error",
@@ -155,14 +143,13 @@ export const deleteFeed = async (id) => {
     });
 
     const data = await response.json();
-    console.log("deleteFeed - Response:", { status: response.status, data });
     if (response.ok) {
       return { success: true, message: data.message };
     } else {
       return { success: false, message: data.message || "Gagal menghapus pakan." };
     }
   } catch (error) {
-    console.error("deleteFeed - Error:", error);
+    console.error("deleteFeed - Error:", error.message);
     return { success: false, message: "Terjadi kesalahan saat menghapus pakan." };
   }
 };

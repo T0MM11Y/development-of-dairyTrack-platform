@@ -1,32 +1,48 @@
 import { useState, useEffect } from "react";
-import { addFeedStock } from "../../../../controllers/feedStockController";
+import { addFeedStock, updateFeedStock } from "../../../../controllers/feedStockController";
 import Swal from "sweetalert2";
-import { Button } from "react-bootstrap";
+import { Modal, Button, Form } from "react-bootstrap";
 
-const AddFeedStock = ({ feeds, onClose, onSaved }) => {
+const AddFeedStock = ({ show, feeds, stock, onClose, onSaved }) => {
   const [form, setForm] = useState({
     feedId: "",
     additionalStock: "",
+    stock: "",
   });
+  const [originalStock, setOriginalStock] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  if (userData.user_id && userData.token) {
-    setCurrentUser(userData);
-  } else {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  }
-}, []);
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id && userData.token) {
+      setCurrentUser(userData);
+      setForm((prev) => ({
+        ...prev,
+        feedId: stock?.feed_id || "",
+        stock: stock?.stock || "",
+        feed_name: stock?.feed_name || "",
+      }));
+      if (stock) {
+        setOriginalStock(stock.stock);
+      }
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan. Silakan login kembali.",
+      });
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    }
+  }, [stock]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "additionalStock" || name === "stock" ? (value === "" ? "" : parseFloat(value) || 0) : value,
     }));
   };
 
@@ -39,35 +55,57 @@ const AddFeedStock = ({ feeds, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isEdit = !!stock;
+    const confirmText = isEdit
+      ? `Apakah Anda yakin ingin mengubah stok pakan "${form.feed_name}" dari ${originalStock} menjadi ${form.stock}?`
+      : `Apakah Anda yakin ingin menambahkan stok pakan "${feeds.find((f) => f.id === parseInt(form.feedId))?.name || "Tidak Diketahui"}" sebanyak ${form.additionalStock}?`;
+
+    const result = await Swal.fire({
+      title: "Konfirmasi",
+      text: confirmText,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: isEdit ? "Ya, Ubah!" : "Ya, Simpan",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
     try {
-      const payload = {
-        feedId: parseInt(form.feedId),
-        additionalStock: parseFloat(form.additionalStock) || 0,
-      };
-
-      const response = await addFeedStock(payload);
+      const payload = isEdit
+        ? { stock: parseFloat(form.stock) || 0 }
+        : {
+            feedId: parseInt(form.feedId),
+            additionalStock: parseFloat(form.additionalStock) || 0,
+          };
+      const response = isEdit ? await updateFeedStock(stock.id, payload) : await addFeedStock(payload);
       if (response.success) {
         Swal.fire({
           icon: "success",
           title: "Berhasil",
-          text: response.message || "Stok pakan berhasil ditambahkan.",
+          text: isEdit ? "Stok pakan berhasil diperbarui." : "Stok pakan berhasil ditambahkan.",
           timer: 1500,
           showConfirmButton: false,
         });
         if (onSaved) onSaved();
         onClose();
       } else {
-        throw new Error(response.message || "Gagal menambah stok pakan.");
+        throw new Error(response.message || (isEdit ? "Gagal memperbarui stok pakan." : "Gagal menambah stok pakan."));
       }
     } catch (err) {
-      const message = err.message || "Terjadi kesalahan saat menambah stok pakan.";
+      const message = err.message || (isEdit ? "Gagal memperbarui stok pakan." : "Gagal menambah stok pakan.");
       setError(message);
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
+        title: "Gagal",
         text: message,
       });
     } finally {
@@ -76,86 +114,96 @@ const AddFeedStock = ({ feeds, onClose, onSaved }) => {
   };
 
   return (
-    <div
-      className="modal show d-block"
-      style={{
-        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-        minHeight: "100vh",
-        paddingTop: "3rem",
-      }}
+    <Modal
+      show={show}
+      onHide={onClose}
+      backdrop="static"
+      keyboard={false}
+      size="lg"
+      centered
     >
-      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
-          <div className="modal-header bg-light border-bottom">
-            <h4 className="modal-title text-info fw-bold">Tambah Stok Pakan</h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
-          </div>
-          <div className="modal-body p-4">
-            {error && <p className="text-danger text-center mb-4">{error}</p>}
+      <Modal.Header closeButton>
+        <Modal.Title className="text-info fw-bold">
+          {stock ? "Edit Stok Pakan" : "Tambah Stok Pakan"}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && <p className="text-danger text-center">{error}</p>}
 
-            <form onSubmit={handleSubmit}>
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Nama Pakan</label>
-                  <select
-                    name="feedId"
-                    value={form.feedId}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                  >
-                    <option value="">Pilih Pakan</option>
-                    {feeds.map((feed) => (
-                      <option key={feed.id} value={feed.id}>
-                        {feed.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Tambahan Stok</label>
-                  <input
-                    type="number"
-                    name="additionalStock"
-                    value={formatNumber(form.additionalStock)}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Dibuat oleh</label>
-                  <input
-                    type="text"
-                    className="form-control bg-light"
-                    value={currentUser?.name || "Tidak diketahui"}
-                    disabled
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-info w-100 mt-3"
-                disabled={submitting}
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Nama Pakan</Form.Label>
+            {stock ? (
+              <Form.Control
+                type="text"
+                value={form.feed_name}
+                readOnly
+                disabled
+                className="bg-light"
+              />
+            ) : (
+              <Form.Select
+                name="feedId"
+                value={form.feedId}
+                onChange={handleChange}
+                required
               >
-                {submitting ? "Menyimpan..." : "Simpan"}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+                <option value="">Pilih Pakan</option>
+                {feeds.map((feed) => (
+                  <option key={feed.id} value={feed.id}>
+                    {feed.name}
+                  </option>
+                ))}
+              </Form.Select>
+            )}
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">{stock ? "Stok" : "Tambahan Stok"}</Form.Label>
+            <Form.Control
+              type="number"
+              name={stock ? "stock" : "additionalStock"}
+              value={formatNumber(stock ? form.stock : form.additionalStock)}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">{stock ? "Diperbarui oleh" : "Dibuat oleh"}</Form.Label>
+            <Form.Control
+              type="text"
+              className="bg-light"
+              value={currentUser?.name || "Tidak diketahui"}
+              disabled
+            />
+          </Form.Group>
+
+          {stock && (
+            <Form.Group className="mb-3">
+              <Form.Label className="form-label fw-bold">Tanggal Diperbarui</Form.Label>
+              <Form.Control
+                type="text"
+                value={form.updated_at ? new Date(form.updated_at).toLocaleString("id-ID") : "Belum diperbarui"}
+                readOnly
+                disabled
+              />
+            </Form.Group>
+          )}
+
+          <Button
+            type="submit"
+            variant="info"
+            className="w-100"
+            disabled={submitting}
+          >
+            {submitting ? "Menyimpan..." : stock ? "Simpan Perubahan" : "Simpan"}
+          </Button>
+        </Form>
+      </Modal.Body>
+    </Modal>
   );
 };
 

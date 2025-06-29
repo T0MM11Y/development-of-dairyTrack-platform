@@ -650,3 +650,193 @@ exports.searchDailyFeeds = async (req, res) => {
     return res.status(500).json({ success: false, message: "Terjadi kesalahan pada server." });
   }
 };
+
+
+
+// // Create multiple daily feeds
+// exports.createDailyFeed = async (req, res) => {
+//   const transaction = await sequelize.transaction();
+//   try {
+//     // Menerima array feeds dari body
+//     let feeds = req.body;
+//     const userId = req.user?.id;
+
+//     // Jika bukan array, ubah menjadi array untuk konsistensi
+//     if (!Array.isArray(feeds)) {
+//       feeds = [feeds];
+//     }
+
+//     if (!userId) {
+//       await transaction.rollback();
+//       return res.status(401).json({ success: false, message: "Autentikasi gagal. Silakan login kembali." });
+//     }
+
+//     if (feeds.length === 0) {
+//       await transaction.rollback();
+//       return res.status(400).json({ success: false, message: "Data jadwal pakan tidak boleh kosong." });
+//     }
+
+//     const createdFeeds = [];
+//     const errors = [];
+
+//     // Validasi dan proses setiap feed
+//     for (const feedData of feeds) {
+//       const { cow_id, date, session, items = [] } = feedData;
+
+//       // Validasi input
+//       if (!cow_id || !date || !session) {
+//         errors.push({ data: feedData, message: "Harap lengkapi cow_id, date, dan session." });
+//         continue;
+//       }
+
+//       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isValidDate(date)) {
+//         errors.push({ data: feedData, message: "Tanggal tidak valid. Gunakan format YYYY-MM-DD." });
+//         continue;
+//       }
+
+//       if (!["Pagi", "Siang", "Sore"].includes(session)) {
+//         errors.push({ data: feedData, message: "Session harus Pagi, Siang, atau Sore." });
+//         continue;
+//       }
+
+//       // Validasi user
+//       const user = await User.findByPk(userId, { attributes: ["id"], transaction });
+//       if (!user) {
+//         errors.push({ data: feedData, message: `User dengan ID ${userId} tidak ditemukan.` });
+//         continue;
+//       }
+
+//       // Validasi sapi
+//       const cow = await Cow.findByPk(cow_id, { transaction });
+//       if (!cow) {
+//         errors.push({ data: feedData, message: `Sapi dengan ID ${cow_id} tidak ditemukan.` });
+//         continue;
+//       }
+
+//       // Validasi izin user terhadap sapi
+//       const userCowAssociation = await UserCowAssociation.findOne({
+//         where: { user_id: userId, cow_id },
+//         transaction,
+//       });
+//       if (!userCowAssociation) {
+//         errors.push({ data: feedData, message: `Anda tidak memiliki izin untuk mengelola sapi dengan ID ${cow_id}.` });
+//         continue;
+//       }
+
+//       // Cek duplikasi feed
+//       const existingFeed = await DailyFeedSchedule.findOne({
+//         where: { cow_id, date, session },
+//         transaction,
+//       });
+//       if (existingFeed) {
+//         errors.push({
+//           data: feedData,
+//           message: `Jadwal pakan untuk sapi ${cow.name} pada ${date} sesi ${session} sudah ada.`,
+//         });
+//         continue;
+//       }
+
+//       // Validasi items
+//       if (items.length > 0) {
+//         for (const item of items) {
+//           if (!item.feed_id || !item.quantity || item.quantity <= 0) {
+//             errors.push({ data: feedData, message: "Setiap item harus memiliki feed_id dan quantity yang valid (> 0)." });
+//             continue;
+//           }
+//           const feed = await Feed.findByPk(item.feed_id, { transaction });
+//           if (!feed) {
+//             errors.push({ data: feedData, message: `Pakan dengan ID ${item.feed_id} tidak ditemukan.` });
+//             continue;
+//           }
+//         }
+//       }
+
+//       // Ambil data cuaca
+//       const weather = await getCurrentWeather();
+
+//       // Buat jadwal pakan baru
+//       const newFeed = await DailyFeedSchedule.create(
+//         {
+//           cow_id,
+//           date,
+//           session,
+//           weather,
+//           user_id: userId,
+//           created_by: userId,
+//           updated_by: userId,
+//         },
+//         { transaction }
+//       );
+
+//       let totalNutrients = [];
+//       if (items.length > 0) {
+//         const feedItems = items.map((item) => ({
+//           daily_feed_id: newFeed.id,
+//           feed_id: item.feed_id,
+//           quantity: parseFloat(item.quantity),
+//           user_id: userId,
+//           created_by: userId,
+//           updated_by: userId,
+//         }));
+
+//         await DailyFeedItems.bulkCreate(feedItems, { transaction, validate: true });
+
+//         totalNutrients = await calculateTotalNutrients(feedItems, transaction);
+//         await newFeed.update({ total_nutrients: totalNutrients }, { transaction });
+//       }
+
+//       // Ambil data lengkap untuk respons
+//       const createdFeed = await DailyFeedSchedule.findByPk(newFeed.id, {
+//         include: [
+//           {
+//             model: DailyFeedItems,
+//             as: "DailyFeedItems",
+//             include: [
+//               {
+//                 model: Feed,
+//                 as: "Feed",
+//                 attributes: ["id", "name", "price"],
+//                 include: [{ model: FeedNutrisi, as: "FeedNutrisiRecords", include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }] }],
+//               },
+//             ],
+//           },
+//           { model: Cow, as: "Cow", attributes: ["id", "name"] },
+//           { model: User, as: "User", attributes: ["id", "name"] },
+//           { model: User, as: "Creator", attributes: ["id", "name"] },
+//           { model: User, as: "Updater", attributes: ["id", "name"] },
+//         ],
+//         transaction,
+//       });
+
+//       createdFeeds.push(createdFeed);
+//     }
+
+//     await transaction.commit();
+
+//     // Jika ada error, kembalikan bersama data yang berhasil dibuat
+//     if (errors.length > 0) {
+//       return res.status(207).json({
+//         success: true,
+//         message: `Sebagian jadwal pakan berhasil dibuat, tetapi ada ${errors.length} kesalahan.`,
+//         data: createdFeeds.map(formatFeedResponse),
+//         errors,
+//       });
+//     }
+
+//     return res.status(201).json({
+//       success: true,
+//       message: `${createdFeeds.length} jadwal pakan berhasil dibuat.`,
+//       data: createdFeeds.map(formatFeedResponse),
+//     });
+//   } catch (error) {
+//     await transaction.rollback();
+//     console.error("Error creating daily feeds:", error);
+//     if (error.name === "SequelizeValidationError") {
+//       return res.status(400).json({ success: false, message: `Validasi gagal: ${error.errors.map(e => e.message).join(", ")}` });
+//     }
+//     if (error.name === "SequelizeForeignKeyConstraintError") {
+//       return res.status(400).json({ success: false, message: "Data tidak valid: sapi atau user tidak ditemukan." });
+//     }
+//     return res.status(500).json({ success: false, message: "Terjadi kesalahan pada server." });
+//   }
+// };
