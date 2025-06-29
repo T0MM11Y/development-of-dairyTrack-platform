@@ -9,7 +9,7 @@ class Config:
     
     # production
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or (
-        'mysql+pymysql://tthsanbe_TA:Cy2U0x1JJRFY@178.248.73.218:3306/tthsanbe_k3l11'
+        'mysql+pymysql://tthsanbe_TA:Cy2U0x1JJRFY@178.248.73.218:3306/tthsanbe_t5th'
     )
 
 
