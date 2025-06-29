@@ -917,7 +917,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // Tambah Kategori
+            // Add Kategori
             ScaleTransition(
               scale: _expandAnimation,
               child: Container(
@@ -960,7 +960,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // Tambah Blog
+            // Add Blog
             ScaleTransition(
               scale: _expandAnimation,
               child: Container(
@@ -1603,7 +1603,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   controller: _categoryNameController,
                   style: const TextStyle(color: darkText),
                   decoration: const InputDecoration(
-                    labelText: 'Nama Kategori',
+                    labelText: 'Category Name',
                     prefixIcon: Icon(Icons.label, color: darkInfo),
                   ),
                 ),
@@ -1626,7 +1626,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                   _categoryNameController.clear();
                   _categoryDescriptionController.clear();
                 },
-                child: const Text('Batal'),
+                child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -1644,7 +1644,7 @@ class _BlogViewState extends State<BlogView> with TickerProviderStateMixin {
                     );
                   }
                 },
-                child: const Text('Tambah'),
+                child: const Text('Add'),
               ),
             ],
           ),

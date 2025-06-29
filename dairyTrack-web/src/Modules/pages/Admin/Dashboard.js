@@ -961,7 +961,7 @@ const Dashboard = () => {
                           {dashboardStats.totalCows}
                         </h4>
                         <small style={{ color: "#1565c0", opacity: 0.8 }}>
-                          Total Sapi
+                          Total Cow
                         </small>
                       </motion.div>
                     </Col>

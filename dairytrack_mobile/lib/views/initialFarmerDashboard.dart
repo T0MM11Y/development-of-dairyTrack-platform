@@ -15,6 +15,7 @@ import 'package:dairytrack_mobile/views/feedManagement/feedType/listFeedType.dar
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
 import 'package:dairytrack_mobile/views/feedManagement/nutrition/listNutrition.dart';
 import 'package:dairytrack_mobile/views/feedManagement/grafik/dailyFeedUsage.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';
@@ -483,7 +484,6 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
     );
   }
 
-  // ...existing code...
   Widget _buildFloatingActionButtons() {
     // Group navigation items by category
     final cowManagement = [navigationItems[1]]; // My Cows
@@ -535,7 +535,8 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
                       mini: true,
                       onPressed: () {
                         _toggleFab();
-                        _showMenuDialog('Health Check Management', healthManagement);
+                        _showMenuDialog(
+                            'Health Check Management', healthManagement);
                       },
                       child: const Icon(Icons.health_and_safety, size: 20),
                     ),
@@ -2364,9 +2365,9 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
   }
 
   String _getPerformanceText(double avgPerSession) {
-    if (avgPerSession >= 15) return '🌟 Produksi Tinggi';
-    if (avgPerSession >= 10) return '⚡ Produksi Sedang';
-    return '📈 Perlu Perhatian';
+    if (avgPerSession >= 15) return '🌟 High Production';
+    if (avgPerSession >= 10) return '⚡ Medium Production';
+    return '📈 Need Attention';
   }
 
   Future<void> _logout() async {
@@ -2376,14 +2377,14 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginView()),
+        MaterialPageRoute(builder: (context) => InitialDashboard()),
         (route) => false,
       );
     } catch (e) {
       print('Error during logout: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Terjadi kesalahan saat keluar'),
+          content: Text('An error occurred while exiting'),
           backgroundColor: Colors.red,
         ),
       );
@@ -2392,124 +2393,168 @@ class _InitialFarmerDashboardState extends State<InitialFarmerDashboard>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.teal[400],
-          title: Text(
-            'Farmer Dashboard',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+    // Wrap with WillPopScope to intercept device back button
+    return WillPopScope(
+      onWillPop: () async {
+        // Show the logout dialog when back button is pressed
+        final shouldLogout = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF23272F),
+            title: Text(
+              'Confirm Exit',
+              style: TextStyle(color: Colors.white),
             ),
+            content: Text(
+              'Are you sure you want to logout and exit the application?',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child:
+                    Text('Cancel', style: TextStyle(color: Colors.tealAccent)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text('Exit', style: TextStyle(color: Colors.white)),
+              ),
+            ],
           ),
-          automaticallyImplyLeading: false, // Hilangkan hamburger menu
-          actions: [
-            _buildNotificationButton(),
-            SizedBox(width: 8),
-          ],
+        );
+        if (shouldLogout == true) {
+          _logout();
+        }
+        // Prevent default back navigation
+        return false;
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        body: Stack(
-          // Ganti body menjadi Stack
-          children: [
-            // Main content
-            isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.teal[400]!),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Loading farm data...',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _initializeDashboard,
-                    color: const Color.fromRGBO(0, 150, 136, 1),
-                    child: SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.teal[400],
+            title: Text(
+              'Farmer Dashboard',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            automaticallyImplyLeading: false, // Hilangkan hamburger menu
+            actions: [
+              _buildNotificationButton(),
+              SizedBox(width: 8),
+            ],
+          ),
+          body: Stack(
+            // Ganti body menjadi Stack
+            children: [
+              // Main content
+              isLoading
+                  ? Center(
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildWelcomeCard(),
-                          _buildNotificationPreview(),
-                          _buildMilkProductionChart(),
-                          _buildLactationChart(),
-                          _buildMyCowsList(),
-                          SizedBox(height: 80), // beri ruang untuk FAB
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.teal[400]!),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Loading farm data...',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
-
-            // Floating Action Buttons
-            _buildFloatingActionButtons(),
-          ],
-        ),
-
-        // Pindahkan logout FAB ke kiri bawah
-        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final shouldLogout = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                backgroundColor: const Color(0xFF23272F),
-                title: Text(
-                  'Confirm Exit',
-                  style: TextStyle(color: Colors.white),
-                ),
-                content: Text(
-                  'Are you sure you want to exit the application?',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text('Cancel',
-                        style: TextStyle(color: Colors.tealAccent)),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[400],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _initializeDashboard,
+                      color: const Color.fromRGBO(0, 150, 136, 1),
+                      child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          children: [
+                            _buildWelcomeCard(),
+                            _buildNotificationPreview(),
+                            _buildMilkProductionChart(),
+                            _buildLactationChart(),
+                            _buildMyCowsList(),
+                            SizedBox(height: 80), // beri ruang untuk FAB
+                          ],
+                        ),
                       ),
                     ),
-                    child: Text('Exit', style: TextStyle(color: Colors.white)),
+
+              // Floating Action Buttons
+              _buildFloatingActionButtons(),
+            ],
+          ),
+
+          // Pindahkan logout FAB ke kiri bawah
+          floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: const Color(0xFF23272F),
+                  title: Text(
+                    'Confirm Exit',
+                    style: TextStyle(color: Colors.white),
                   ),
-                ],
-              ),
-            );
-            if (shouldLogout == true) {
-              _logout();
-            }
-          },
-          backgroundColor: Colors.red[400],
-          elevation: 4,
-          child: Icon(Icons.logout, color: Colors.white, size: 24),
-          tooltip: 'Exit',
+                  content: Text(
+                    'Are you sure you want to exit the application?',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('Cancel',
+                          style: TextStyle(color: Colors.tealAccent)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child:
+                          Text('Exit', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+              if (shouldLogout == true) {
+                _logout();
+              }
+            },
+            backgroundColor: Colors.red[400],
+            elevation: 4,
+            child: Icon(Icons.logout, color: Colors.white, size: 24),
+            tooltip: 'Exit',
+          ),
         ),
       ),
     );

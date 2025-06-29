@@ -4,6 +4,7 @@ import 'package:dairytrack_mobile/controller/APIURL1/loginController.dart';
 import 'package:dairytrack_mobile/views/analythics/milkProductionAnalysisView.dart';
 import 'package:dairytrack_mobile/views/analythics/milkQualityControlsView.dart';
 import 'package:dairytrack_mobile/views/cattleDistribution.dart';
+import 'package:dairytrack_mobile/views/initialDashboard.dart';
 import 'package:dairytrack_mobile/views/milkingView.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -283,7 +284,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'feed-schedule',
           widget: () => DailyFeedView(),
         ),
-         NavigationItem(
+        NavigationItem(
           icon: Icons.monitor_heart,
           label: 'Health Dashboard', // Changed from 'HealthDashboard'
           route: 'health-dashboard',
@@ -295,7 +296,6 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
           route: 'feed-item',
           widget: () => DailyFeedItemsPage(),
         ),
-       
       ];
 
   @override
@@ -467,8 +467,8 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                 Colors.deepPurple, productsSales),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
-            _buildFabGroup('Health Check Management', Icons.medical_services, Colors.red,
-                cattleHealth),
+            _buildFabGroup('Health Check Management', Icons.medical_services,
+                Colors.red, cattleHealth),
             _buildFabGroup('Content Management', Icons.library_books,
                 Colors.amber, contentManagement),
             _buildFabGroup(
@@ -1822,7 +1822,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueGrey[800],
@@ -1885,7 +1885,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              notification['title'] ?? 'Notifikasi',
+                              notification['title'] ?? 'Notification',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isUnread
@@ -2533,7 +2533,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${item['value']} sapi (${item['percentage']}%)',
+                              '${item['value']} cow (${item['percentage']}%)',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: color,
@@ -3669,7 +3669,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => LoginView()),
+        MaterialPageRoute(builder: (context) => InitialDashboard()),
         (route) => false,
       );
     } catch (e) {
@@ -3684,6 +3684,7 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
   }
 
 // ...existing code...
+  // ...existing code...
   @override
   Widget build(BuildContext context) {
     if (currentUser == null || isLoading) {
@@ -3705,98 +3706,141 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(
-            'Admin Dashboard',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+    // Tambahkan WillPopScope agar back button device menampilkan dialog logout
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldLogout = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF23272F),
+            title: Text(
+              'Confirm Exit',
+              style: TextStyle(color: Colors.white),
             ),
+            content: Text(
+              'Are you sure you want to exit the application?',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Cancel',
+                    style: TextStyle(color: Colors.blueGrey[300])),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text('Exit', style: TextStyle(color: Colors.white)),
+              ),
+            ],
           ),
-          backgroundColor: Colors.blueGrey[800],
-          elevation: 0,
-          actions: [
-            _buildNotificationButton(),
-            SizedBox(width: 8),
-          ],
+        );
+        if (shouldLogout == true) {
+          _logout();
+        }
+        // Prevent default back navigation
+        return false;
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFe0eafc), Color(0xFFcfdef3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        body: Stack(
-          children: [
-            RefreshIndicator(
-              color: Colors.blueGrey[800],
-              onRefresh: _initializeDashboard,
-              child: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(bottom: 80),
-                child: Column(
-                  children: [
-                    _buildWelcomeCard(),
-                    _buildNotificationPreview(),
-                    _buildQuickStats(),
-                    _buildStatsOverview(),
-                    _buildLactationChart(),
-                    SizedBox(height: 80),
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(
+              'Admin Dashboard',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.blueGrey[800],
+            elevation: 0,
+            actions: [
+              _buildNotificationButton(),
+              SizedBox(width: 8),
+            ],
+          ),
+          body: Stack(
+            children: [
+              RefreshIndicator(
+                color: Colors.blueGrey[800],
+                onRefresh: _initializeDashboard,
+                child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.only(bottom: 80),
+                  child: Column(
+                    children: [
+                      _buildWelcomeCard(),
+                      _buildNotificationPreview(),
+                      _buildQuickStats(),
+                      _buildStatsOverview(),
+                      _buildLactationChart(),
+                      SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
+              _buildFloatingActionButtons(),
+            ],
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: const Color(0xFF23272F),
+                  title: Text(
+                    'Confirm Exit',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  content: Text(
+                    'Are you sure you want to logout and exit the application?',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('Cancel',
+                          style: TextStyle(color: Colors.blueGrey[300])),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[400],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child:
+                          Text('Exit', style: TextStyle(color: Colors.white)),
+                    ),
                   ],
                 ),
-              ),
-            ),
-            _buildFloatingActionButtons(),
-          ],
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final shouldLogout = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                backgroundColor: const Color(0xFF23272F),
-                title: Text(
-                  'Confirm Exit',
-                  style: TextStyle(color: Colors.white),
-                ),
-                content: Text(
-                  'Are you sure you want to exit the application?',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text('Cancel',
-                        style: TextStyle(color: Colors.blueGrey[300])),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[400],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text('Exit', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              ),
-            );
-            if (shouldLogout == true) {
-              _logout();
-            }
-          },
-          backgroundColor: Colors.red[400],
-          elevation: 4,
-          child: Icon(Icons.logout, color: Colors.white, size: 24),
-          tooltip: 'Exit',
+              );
+              if (shouldLogout == true) {
+                _logout();
+              }
+            },
+            backgroundColor: Colors.red[400],
+            elevation: 4,
+            child: Icon(Icons.logout, color: Colors.white, size: 24),
+            tooltip: 'Exit',
+          ),
         ),
       ),
     );
