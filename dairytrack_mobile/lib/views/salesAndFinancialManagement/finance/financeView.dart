@@ -21,6 +21,8 @@ class _FinanceViewState extends State<FinanceView> {
   DateTime? _startDate;
   DateTime? _endDate;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+  int _currentPage = 1;
+  final int _itemsPerPage = 10;
 
   @override
   void initState() {
@@ -67,6 +69,7 @@ class _FinanceViewState extends State<FinanceView> {
       _startDate = null;
       _endDate = null;
       _searchController.clear();
+      _currentPage = 1;
     });
     Provider.of<FinanceProvider>(context, listen: false).setSearchQuery('');
     Provider.of<FinanceProvider>(context, listen: false).fetchAllData();
@@ -83,7 +86,7 @@ class _FinanceViewState extends State<FinanceView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Keuangan',
+          'Finance',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -129,6 +132,16 @@ class _FinanceViewState extends State<FinanceView> {
       ),
       body: Consumer<FinanceProvider>(
         builder: (context, provider, child) {
+          final int totalPages =
+              (provider.transactions.length / _itemsPerPage).ceil();
+          final int startIndex = (_currentPage - 1) * _itemsPerPage;
+          final int endIndex =
+              startIndex + _itemsPerPage < provider.transactions.length
+                  ? startIndex + _itemsPerPage
+                  : provider.transactions.length;
+          final List transactionsPage =
+              provider.transactions.sublist(startIndex, endIndex);
+
           return Column(
             children: [
               // Search Bar Section - Moved to Top
@@ -164,7 +177,7 @@ class _FinanceViewState extends State<FinanceView> {
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          labelText: 'Cari berdasarkan deskripsi',
+                          labelText: 'Search by description',
                           labelStyle: TextStyle(color: Colors.grey[600]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -226,7 +239,7 @@ class _FinanceViewState extends State<FinanceView> {
                                   const SizedBox(width: 8),
                                   Text(
                                     _startDate == null
-                                        ? 'Tanggal Mulai'
+                                        ? 'Start Date'
                                         : _dateFormat.format(_startDate!),
                                     style: TextStyle(
                                       color: _startDate == null
@@ -268,7 +281,7 @@ class _FinanceViewState extends State<FinanceView> {
                                   const SizedBox(width: 8),
                                   Text(
                                     _endDate == null
-                                        ? 'Tanggal Akhir'
+                                        ? 'End Date'
                                         : _dateFormat.format(_endDate!),
                                     style: TextStyle(
                                       color: _endDate == null
@@ -355,7 +368,7 @@ class _FinanceViewState extends State<FinanceView> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Saldo Tersedia',
+                                              'Available Balance',
                                               style: TextStyle(
                                                 color: Colors.white
                                                     .withOpacity(0.9),
@@ -413,7 +426,7 @@ class _FinanceViewState extends State<FinanceView> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              'Total Pendapatan',
+                                              'Total Income',
                                               style: TextStyle(
                                                 color: Colors.green[800],
                                                 fontWeight: FontWeight.w600,
@@ -467,7 +480,7 @@ class _FinanceViewState extends State<FinanceView> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              'Total Pengeluaran',
+                                              'Total Expense',
                                               style: TextStyle(
                                                 color: Colors.red[800],
                                                 fontWeight: FontWeight.w600,
@@ -525,7 +538,7 @@ class _FinanceViewState extends State<FinanceView> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Distribusi Keuangan',
+                                        'Financial Distribution',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
@@ -625,7 +638,30 @@ class _FinanceViewState extends State<FinanceView> {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      // Transaction List
+                      // Recent Transactions
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.receipt_long,
+                              color: Colors.blueGrey[600],
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Recent Transactions',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.blueGrey[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Transaction List with Pagination
                       if (provider.isLoading)
                         const Padding(
                           padding: EdgeInsets.all(32.0),
@@ -665,7 +701,7 @@ class _FinanceViewState extends State<FinanceView> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Tidak ada transaksi',
+                                'No transactions',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 16,
@@ -675,76 +711,124 @@ class _FinanceViewState extends State<FinanceView> {
                           ),
                         )
                       else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: provider.transactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction = provider.transactions[index];
-                            final amount =
-                                double.tryParse(transaction.amount) ??
-                                    0.0; // Parse string to double
-                            return Container(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 4, horizontal: 16),
-                              child: Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.all(16),
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: transaction.transactionType ==
-                                              'income'
-                                          ? Colors.green[100]
-                                          : Colors.red[100],
-                                      borderRadius: BorderRadius.circular(8),
+                        Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: transactionsPage.length,
+                              itemBuilder: (context, index) {
+                                final transaction = transactionsPage[index];
+                                final amount =
+                                    double.tryParse(transaction.amount) ?? 0.0;
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical: 4, horizontal: 16),
+                                  child: Card(
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Icon(
-                                      transaction.transactionType == 'income'
-                                          ? Icons.add_circle
-                                          : Icons.remove_circle,
-                                      color: transaction.transactionType ==
-                                              'income'
-                                          ? Colors.green[600]
-                                          : Colors.red[600],
-                                    ),
-                                  ),
-                                  title: Text(
-                                    transaction.description,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      '${transaction.transactionType == 'income' ? 'Pendapatan' : 'Pengeluaran'} • ${_dateFormat.format(transaction.transactionDate)}',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
+                                    child: ListTile(
+                                      contentPadding: const EdgeInsets.all(16),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: transaction.transactionType ==
+                                                  'income'
+                                              ? Colors.green[100]
+                                              : Colors.red[100],
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          transaction.transactionType ==
+                                                  'income'
+                                              ? Icons.add_circle
+                                              : Icons.remove_circle,
+                                          color: transaction.transactionType ==
+                                                  'income'
+                                              ? Colors.green[600]
+                                              : Colors.red[600],
+                                        ),
+                                      ),
+                                      title: Text(
+                                        transaction.description,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          '${transaction.transactionType == 'income' ? 'Income' : 'Expense'} • ${_dateFormat.format(transaction.transactionDate)}',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      trailing: Text(
+                                        '${amount < 0 ? '-' : ''}Rp ${NumberFormat('#,###').format(amount.abs())}',
+                                        style: TextStyle(
+                                          color: transaction.transactionType ==
+                                                  'income'
+                                              ? Colors.green[600]
+                                              : Colors.red[600],
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  trailing: Text(
-                                    '${amount < 0 ? '-' : ''}Rp ${NumberFormat('#,###').format(amount.abs())}',
-                                    style: TextStyle(
-                                      color: transaction.transactionType ==
-                                              'income'
-                                          ? Colors.green[600]
-                                          : Colors.red[600],
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                );
+                              },
+                            ),
+                            if (totalPages > 1)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0, horizontal: 16.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.arrow_back,
+                                          color: _currentPage > 1
+                                              ? Colors.blueGrey[600]
+                                              : Colors.grey[400]),
+                                      onPressed: _currentPage > 1
+                                          ? () {
+                                              setState(() {
+                                                _currentPage--;
+                                              });
+                                            }
+                                          : null,
                                     ),
-                                  ),
+                                    Text(
+                                      'Page $_currentPage of $totalPages',
+                                      style: TextStyle(
+                                        color: Colors.blueGrey[800],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.arrow_forward,
+                                          color: _currentPage < totalPages
+                                              ? Colors.blueGrey[600]
+                                              : Colors.grey[400]),
+                                      onPressed: _currentPage < totalPages
+                                          ? () {
+                                              setState(() {
+                                                _currentPage++;
+                                              });
+                                            }
+                                          : null,
+                                    ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
+                          ],
                         ),
                       const SizedBox(height: 80), // Space for FAB
                     ],
@@ -778,7 +862,7 @@ class _FinanceViewState extends State<FinanceView> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Pilih Aksi',
+                    'Select Action',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -795,7 +879,7 @@ class _FinanceViewState extends State<FinanceView> {
                       ),
                       child: Icon(Icons.add_circle, color: Colors.green[600]),
                     ),
-                    title: const Text('Tambah Pendapatan'),
+                    title: const Text('Add Income'),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(
@@ -813,7 +897,7 @@ class _FinanceViewState extends State<FinanceView> {
                       ),
                       child: Icon(Icons.remove_circle, color: Colors.red[600]),
                     ),
-                    title: const Text('Tambah Pengeluaran'),
+                    title: const Text('Add Expense'),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(
@@ -831,7 +915,7 @@ class _FinanceViewState extends State<FinanceView> {
                       ),
                       child: Icon(Icons.category, color: Colors.blue[600]),
                     ),
-                    title: const Text('Tambah Jenis Pendapatan'),
+                    title: const Text('Add Income Type'),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(
@@ -849,7 +933,7 @@ class _FinanceViewState extends State<FinanceView> {
                       ),
                       child: Icon(Icons.category, color: Colors.orange[600]),
                     ),
-                    title: const Text('Tambah Jenis Pengeluaran'),
+                    title: const Text('Add Expense Type'),
                     onTap: () {
                       Navigator.pop(context);
                       showDialog(

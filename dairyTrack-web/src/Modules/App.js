@@ -1177,6 +1177,12 @@ const RouteConfig = () => {
             </AdminLayout>
           </ProtectedRoute>
 
+          <ProtectedRoute path="/supervisor/sales-transaction">
+            <AdminLayout>
+              <SalesTransaction />
+            </AdminLayout>
+          </ProtectedRoute>
+
           <ProtectedRoute path="/supervisor/finance">
             <AdminLayout>
               <Finance />

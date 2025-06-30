@@ -29,11 +29,11 @@ class _CreateProductTypeBottomSheetState
   final _logger = Logger();
 
   final List<String> _unitOptions = [
-    'Bottle',
-    'Gallon',
-    'Liters',
-    'Cup',
-    'Pieces',
+    'Botol',
+    'Galon',
+    'Liter',
+    'Gelas',
+    'Buah',
   ];
 
   @override
@@ -74,32 +74,23 @@ class _CreateProductTypeBottomSheetState
         'imageFileName': imageFileName,
       };
 
-      try {
-        final success = await provider.createProductType(newProduct);
-        if (success) {
-          Navigator.pop(context);
-          CustomSnackbar.show(
-            context: context,
-            message: 'Product type added successfully',
-            backgroundColor: Colors.green,
-            icon: Icons.check_circle,
-            iconColor: Colors.white,
-          );
-          provider.fetchProductTypes();
-        } else {
-          CustomSnackbar.show(
-            context: context,
-            message: 'Failed to add product type: ${provider.errorMessage}',
-            backgroundColor: Colors.red,
-            icon: Icons.error,
-            iconColor: Colors.white,
-          );
-        }
-      } catch (e) {
-        _logger.e('Error submitting form: $e');
+      final success = await provider.createProductType(newProduct);
+      if (success) {
+        Navigator.pop(context);
         CustomSnackbar.show(
           context: context,
-          message: 'Failed to add product type: $e',
+          message: 'Jenis produk berhasil ditambahkan',
+          backgroundColor: Colors.green,
+          icon: Icons.check_circle,
+          iconColor: Colors.white,
+        );
+        provider.fetchProductTypes();
+      } else {
+        CustomSnackbar.show(
+          context: context,
+          message: provider.errorMessage.isNotEmpty
+              ? provider.errorMessage
+              : 'Gagal menambahkan jenis produk',
           backgroundColor: Colors.red,
           icon: Icons.error,
           iconColor: Colors.white,
@@ -108,7 +99,7 @@ class _CreateProductTypeBottomSheetState
     } else {
       CustomSnackbar.show(
         context: context,
-        message: 'Please fill in all required fields',
+        message: 'Harap isi semua kolom yang diperlukan',
         backgroundColor: Colors.orange,
         icon: Icons.warning,
         iconColor: Colors.white,
@@ -147,7 +138,7 @@ class _CreateProductTypeBottomSheetState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Add Product Type',
+                    'Tambah Jenis Produk',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -170,12 +161,12 @@ class _CreateProductTypeBottomSheetState
                         TextFormField(
                           controller: _productNameController,
                           decoration: const InputDecoration(
-                            labelText: 'Product Name',
+                            labelText: 'Nama Produk',
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Product name cannot be empty';
+                              return 'Nama produk tidak boleh kosong';
                             }
                             return null;
                           },
@@ -184,13 +175,13 @@ class _CreateProductTypeBottomSheetState
                         TextFormField(
                           controller: _descriptionController,
                           decoration: const InputDecoration(
-                            labelText: 'Description',
+                            labelText: 'Deskripsi',
                             border: OutlineInputBorder(),
                           ),
                           maxLines: 3,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Description cannot be empty';
+                              return 'Deskripsi tidak boleh kosong';
                             }
                             return null;
                           },
@@ -199,20 +190,21 @@ class _CreateProductTypeBottomSheetState
                         TextFormField(
                           controller: _priceController,
                           decoration: const InputDecoration(
-                            labelText: 'Price (Rp)',
+                            labelText: 'Harga (Rp)',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           inputFormatters: [RupiahInputFormatter()],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Price cannot be empty';
+                              return 'Harga tidak boleh kosong';
                             }
                             final numericValue =
                                 RupiahInputFormatter.parseToNumericString(
                                     value);
-                            if (numericValue.isEmpty) {
-                              return 'Price must be a valid number';
+                            if (numericValue.isEmpty ||
+                                double.tryParse(numericValue) == null) {
+                              return 'Harga harus berupa angka yang valid';
                             }
                             return null;
                           },
@@ -220,7 +212,7 @@ class _CreateProductTypeBottomSheetState
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           decoration: const InputDecoration(
-                            labelText: 'Unit',
+                            labelText: 'Satuan',
                             border: OutlineInputBorder(),
                           ),
                           items: _unitOptions
@@ -237,7 +229,7 @@ class _CreateProductTypeBottomSheetState
                           },
                           validator: (value) {
                             if (value == null) {
-                              return 'Unit is required';
+                              return 'Satuan harus dipilih';
                             }
                             return null;
                           },
@@ -246,7 +238,7 @@ class _CreateProductTypeBottomSheetState
                         _imageFile != null
                             ? Image.file(_imageFile!,
                                 height: 100, fit: BoxFit.cover)
-                            : const Text('No image selected'),
+                            : const Text('Tidak ada gambar dipilih'),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: _pickImage,
@@ -254,7 +246,7 @@ class _CreateProductTypeBottomSheetState
                             backgroundColor: Colors.blueGrey[800],
                           ),
                           child: const Text(
-                            'Select Image',
+                            'Pilih Gambar',
                             style: TextStyle(color: Colors.white),
                           ),
                         ),
@@ -262,7 +254,7 @@ class _CreateProductTypeBottomSheetState
                         ActionButtons(
                           isLoading: provider.isLoading,
                           onSubmit: () => _submitForm(provider),
-                          submitText: 'Add',
+                          submitText: 'Tambah',
                           submitColor: Colors.blueGrey[800]!,
                         ),
                       ],

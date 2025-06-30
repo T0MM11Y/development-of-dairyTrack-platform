@@ -113,9 +113,12 @@ class ProductTypeCard extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             Text(
-              productType.productDescription.length > 50
-                  ? 'Rp.{productType.productDescription.substring(0, 50)}...'
-                  : productType.productDescription,
+              productType.productDescription != null &&
+                      productType.productDescription!.isNotEmpty
+                  ? (productType.productDescription!.length > 50
+                      ? productType.productDescription!.substring(0, 50) + '...'
+                      : productType.productDescription!)
+                  : 'No description available',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
