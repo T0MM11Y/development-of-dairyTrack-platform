@@ -182,7 +182,7 @@ class _NotificationWidgetState extends State<NotificationWidget>
       });
 
       await _notificationService.cancelNotification(notificationId);
-_showSuccessSnackBar('Notification marked as read');
+      _showSuccessSnackBar('Notification marked as read');
     } else {
       _showErrorSnackBar(result['message']);
     }
@@ -206,7 +206,7 @@ _showSuccessSnackBar('Notification marked as read');
         });
 
         await _notificationService.cancelAllNotifications();
-_showSuccessSnackBar('All notifications marked as read');
+        _showSuccessSnackBar('All notifications marked as read');
       } else {
         _showErrorSnackBar(result['message']);
       }
@@ -218,13 +218,13 @@ _showSuccessSnackBar('All notifications marked as read');
   }
 
   Future<void> _clearAllNotifications() async {
-  final bool? confirmed = await _showConfirmationDialog(
-    title: 'Delete All Notifications',
-    content:
-        'Are you sure you want to delete all notifications? This action cannot be undone.',
-    confirmText: 'Delete All',
-    isDestructive: true,
-  );
+    final bool? confirmed = await _showConfirmationDialog(
+      title: 'Delete All Notifications',
+      content:
+          'Are you sure you want to delete all notifications? This action cannot be undone.',
+      confirmText: 'Delete All',
+      isDestructive: true,
+    );
 
     if (confirmed == true) {
       setState(() {
@@ -242,12 +242,13 @@ _showSuccessSnackBar('All notifications marked as read');
           });
 
           await _notificationService.cancelAllNotifications();
-_showSuccessSnackBar('All notifications deleted successfully');
+          _showSuccessSnackBar('All notifications deleted successfully');
         } else {
           _showErrorSnackBar(result['message']);
         }
       } catch (e) {
-_showErrorSnackBar('An error occurred while deleting all notifications');
+        _showErrorSnackBar(
+            'An error occurred while deleting all notifications');
         print('Error clearing all notifications: $e');
       } finally {
         setState(() {
@@ -271,12 +272,12 @@ _showErrorSnackBar('An error occurred while deleting all notifications');
         });
 
         await _notificationService.cancelNotification(notificationId);
-_showSuccessSnackBar('Notification deleted successfully');
+        _showSuccessSnackBar('Notification deleted successfully');
       } else {
         _showErrorSnackBar(result['message']);
       }
     } catch (e) {
-_showErrorSnackBar('An error occurred while deleting the notification');
+      _showErrorSnackBar('An error occurred while deleting the notification');
       print('Error deleting notification: $e');
     }
   }
@@ -346,7 +347,7 @@ _showErrorSnackBar('An error occurred while deleting the notification');
   }
 
   String _getRelativeTime(String? timestamp) {
-    if (timestamp == null) return 'Tidak diketahui';
+    if (timestamp == null) return 'Unknown';
 
     try {
       final now = DateTime.now();
@@ -357,11 +358,11 @@ _showErrorSnackBar('An error occurred while deleting the notification');
       if (difference.inMinutes < 1) {
         return 'Baru saja';
       } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} menit lalu';
+        return '${difference.inMinutes} minutes ago';
       } else if (difference.inHours < 24) {
-        return '${difference.inHours} jam lalu';
+        return '${difference.inHours} hours ago';
       } else if (difference.inDays < 7) {
-        return '${difference.inDays} hari lalu';
+        return '${difference.inDays} last day';
       } else {
         return DateFormat('dd MMM yyyy', 'id_ID').format(wibDate);
       }
@@ -371,7 +372,7 @@ _showErrorSnackBar('An error occurred while deleting the notification');
   }
 
   String _formatDateTime(String? timestamp) {
-    if (timestamp == null) return 'Tidak diketahui';
+    if (timestamp == null) return 'Unknown';
 
     try {
       final date =
@@ -379,7 +380,7 @@ _showErrorSnackBar('An error occurred while deleting the notification');
       return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
     } catch (e) {
       print('DEBUG - Error parsing date: $e');
-      return 'Tidak diketahui';
+      return 'Unknown';
     }
   }
 
@@ -557,7 +558,7 @@ _showErrorSnackBar('An error occurred while deleting the notification');
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-hintText: 'Search notifications...',
+          hintText: 'Search notifications...',
           hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
           prefixIcon: Container(
             padding: EdgeInsets.all(10),
@@ -768,9 +769,7 @@ hintText: 'Search notifications...',
                     ),
                     SizedBox(width: 12),
                     Text(
-                      _isMarkingAllRead
-                         ? 'Processing...'
-: 'Mark All as Read',
+                      _isMarkingAllRead ? 'Processing...' : 'Mark All as Read',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -792,7 +791,7 @@ hintText: 'Search notifications...',
                     ),
                     SizedBox(width: 12),
                     Text(
-_isClearingAll ? 'Deleting...' : 'Delete All',
+                      _isClearingAll ? 'Deleting...' : 'Delete All',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -833,7 +832,7 @@ _isClearingAll ? 'Deleting...' : 'Delete All',
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-_isClearingAll ? 'Deleting...' : 'Delete',
+                      _isClearingAll ? 'Deleting...' : 'Delete',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -878,7 +877,7 @@ _isClearingAll ? 'Deleting...' : 'Delete',
                           color: Colors.white, size: 14),
                     SizedBox(width: 4),
                     Text(
-_isMarkingAllRead ? 'Processing...' : 'Mark',
+                      _isMarkingAllRead ? 'Processing...' : 'Mark',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -951,7 +950,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
             ),
             SizedBox(height: 24),
             Text(
-'Loading notifications...',
+              'Loading notifications...',
               style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 15,
@@ -960,7 +959,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
             ),
             SizedBox(height: 6),
             Text(
-'Please wait a moment',
+              'Please wait a moment',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 13,
@@ -1013,7 +1012,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                   ),
                   SizedBox(height: 32),
                   Text(
-'No notifications',
+                    'No notifications',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1024,7 +1023,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
-'All notifications will appear here.\nYou will receive alerts about important matters related to your farm.',
+                      'All notifications will appear here.\nYou will receive alerts about important matters related to your farm.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -1040,7 +1039,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                       await _loadNotifications();
                     },
                     icon: Icon(Icons.refresh_rounded, size: 18),
-                    label: Text('Muat Ulang',
+                    label: Text('Reload',
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
@@ -1091,7 +1090,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
             ),
             SizedBox(height: 12),
             Text(
-'No matching notifications',
+              'No matching notifications',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 15,
@@ -1100,7 +1099,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
             ),
             SizedBox(height: 6),
             Text(
-'Try using a different keyword',
+              'Try using a different keyword',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 13,
@@ -1176,7 +1175,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                             children: [
                               Expanded(
                                 child: Text(
-                                  notification['title'] ?? 'Notifikasi',
+                                  notification['title'] ?? 'Notifications',
                                   style: TextStyle(
                                     fontWeight: isUnread
                                         ? FontWeight.bold
@@ -1292,7 +1291,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                       size: 14, color: _primaryColor),
                 ),
                 SizedBox(width: 10),
-                Text('Tandai Dibaca',
+                Text('Mark Read',
                     style:
                         TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
               ],
@@ -1340,14 +1339,14 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
     );
   }
 
- void _showDeleteConfirmation(int notificationId, int index) async {
-  final bool? confirmed = await _showConfirmationDialog(
-    title: 'Delete Notification',
-    content:
-        'Are you sure you want to delete this notification? This action cannot be undone.',
-    confirmText: 'Delete',
-    isDestructive: true,
-  );
+  void _showDeleteConfirmation(int notificationId, int index) async {
+    final bool? confirmed = await _showConfirmationDialog(
+      title: 'Delete Notification',
+      content:
+          'Are you sure you want to delete this notification? This action cannot be undone.',
+      confirmText: 'Delete',
+      isDestructive: true,
+    );
 
     if (confirmed == true) {
       _deleteNotification(notificationId, index);
@@ -1371,7 +1370,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
               CircularProgressIndicator(color: _primaryColor, strokeWidth: 2.5),
               SizedBox(height: 20),
               Text(
-'Deleting all notifications...',
+                'Deleting all notifications...',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1380,7 +1379,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
               ),
               SizedBox(height: 8),
               Text(
-'Please wait, do not close the app',
+                'Please wait, do not close the app',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],
@@ -1513,7 +1512,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-'Received Time',
+                                  'Received Time',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -1556,7 +1555,7 @@ _isMarkingAllRead ? 'Processing...' : 'Mark',
                                     size: 14, color: Colors.grey[600]),
                                 SizedBox(width: 6),
                                 Text(
-'Additional Details',
+                                  'Additional Details',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,

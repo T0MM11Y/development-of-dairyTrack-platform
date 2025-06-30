@@ -352,9 +352,9 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             'rangeSessions': 0,
             'highestProduction': '0.0',
             'lowestProduction': '0.0',
-            'lastMilking': 'Sapi pejantan tidak diperah',
+            'lastMilking': 'Bulls are not milked',
             'breedingInfo': {
-              'status': 'Aktif untuk pembiakan',
+              'status': 'Active for breeding',
               'age': _formatAge(selectedCowData['birth']?.toString()),
               'maturityStatus': _getMaturityStatus(),
             },
@@ -506,8 +506,8 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
           (now.year - birth.year) * 12 + (now.month - birth.month);
 
       return totalMonths >= 18
-          ? 'Dewasa - siap kawin'
-          : 'Muda - belum siap kawin';
+          ? 'Adult - ready to mate'
+          : 'Young - not ready to marry';
     } catch (e) {
       print('Error parsing birth date: $e');
       return 'N/A';
@@ -605,21 +605,21 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
   String _getLactationDescription(String phase) {
     switch (phase) {
       case 'Bull':
-        return 'Sapi Pejantan - untuk pembiakan';
+        return 'Bull - for breeding';
       case 'Calf':
-        return 'Pedet - masih menyusu';
+        return 'Calf - still nursing';
       case 'Heifer':
-        return 'Dara - belum pernah beranak';
+        return 'Heifer - has not calved yet';
       case 'Dry':
-        return 'Kering - tidak sedang laktasi';
+        return 'Dry - not in lactation';
       case 'Early':
-        return 'Awal Laktasi - produksi tinggi';
+        return 'Early Lactation - high production';
       case 'Mid':
-        return 'Mid Laktasi - produksi stabil';
+        return 'Mid Lactation - stable production';
       case 'Late':
-        return 'Akhir Laktasi - produksi menurun';
+        return 'Late Lactation - declining production';
       default:
-        return 'Status tidak diketahui';
+        return 'Status unknown';
     }
   }
 
@@ -755,7 +755,7 @@ class _MilkProductionAnalysisViewState extends State<MilkProductionAnalysisView>
             IconButton(
               icon: Icon(Icons.date_range),
               onPressed: _selectDateRange,
-              tooltip: 'Pilih Rentang Tanggal',
+              tooltip: 'Select Date Range',
             ),
         ],
       ),

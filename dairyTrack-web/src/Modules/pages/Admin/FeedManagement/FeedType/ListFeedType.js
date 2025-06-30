@@ -1,4 +1,3 @@
-// FeedTypeListPage.js
 import React, { useEffect, useState } from "react";
 import {
   addFeedType,
@@ -6,8 +5,6 @@ import {
   listFeedTypes,
   updateFeedType,
   deleteFeedType,
-  exportFeedTypesToPDF,
-  exportFeedTypesToExcel,
 } from "../../../../controllers/feedTypeController";
 import FeedTypeCreatePage from "./CreateFeedType";
 import Swal from "sweetalert2";
@@ -17,12 +14,9 @@ import {
   Table,
   Spinner,
   Modal,
-  Row,
-  Col,
   Form,
   InputGroup,
   FormControl,
-  Badge,
   OverlayTrigger,
   Tooltip,
 } from "react-bootstrap";
@@ -31,13 +25,14 @@ const FeedTypeListPage = () => {
   const [data, setData] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [editFeedType, setEditFeedType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const PAGE_SIZE = 6;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
 
   const disableIfSupervisor = isSupervisor
     ? {
@@ -54,7 +49,7 @@ const FeedTypeListPage = () => {
       if (response.success) {
         setData(response.feedTypes || []);
       } else {
-        if (response.message.includes("Token")) {
+        if (response.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
             title: "Sesi Berakhir",
@@ -81,9 +76,16 @@ const FeedTypeListPage = () => {
       const response = await deleteFeedType(deleteId);
       if (response.success) {
         setData((prev) => prev.filter((item) => item.id !== deleteId));
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Jenis pakan berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
         setDeleteId(null);
       } else {
-        if (response.message.includes("Token")) {
+        if (response.message?.includes("Token")) {
           Swal.fire({
             icon: "error",
             title: "Sesi Berakhir",
@@ -97,25 +99,20 @@ const FeedTypeListPage = () => {
       }
     } catch (err) {
       Swal.fire("Error", "Terjadi kesalahan saat menghapus jenis pakan.", "error");
-      console.error(err);
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleEdit = async (id) => {
     try {
-      await exportFeedTypesToPDF();
+      const response = await getFeedTypeById(id);
+      if (response.success) {
+        setEditFeedType(response.feedType);
+        setModalType("edit");
+      } else {
+        Swal.fire("Error", response.message || "Gagal memuat data jenis pakan.", "error");
+      }
     } catch (err) {
-      Swal.fire("Error", "Gagal mengekspor ke PDF.", "error");
-      console.error(err);
-    }
-  };
-
-  const handleExportExcel = async () => {
-    try {
-      await exportFeedTypesToExcel();
-    } catch (err) {
-      Swal.fire("Error", "Gagal mengekspor ke Excel.", "error");
-      console.error(err);
+      Swal.fire("Error", "Terjadi kesalahan saat memuat data jenis pakan.", "error");
     }
   };
 
@@ -126,13 +123,13 @@ const FeedTypeListPage = () => {
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
-  if (!user.token) {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  } else {
-    fetchData();
-  }
-}, []);
+    if (!user.token || !user.user_id || !user.role) {
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } else {
+      fetchData();
+    }
+  }, []);
 
   useEffect(() => {
     if (deleteId) {
@@ -158,8 +155,8 @@ const FeedTypeListPage = () => {
   return (
     <div className="container-fluid mt-4">
       <Card className="shadow-lg border-0 rounded-lg">
-        <Card.Header className="bg-gradient-primary text-grey py-3">
-          <h4 className="mb-0 text-primary fw-bold">
+        <Card.Header className="bg-primary text-white py-3">
+          <h4 className="mb-0 fw-bold">
             <i className="fas fa-leaf me-2" /> Jenis Pakan
           </h4>
         </Card.Header>
@@ -177,22 +174,6 @@ const FeedTypeListPage = () => {
               />
             </InputGroup>
             <div>
-              <Button
-                variant="outline-primary"
-                className="me-2"
-                onClick={handleExportPDF}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-file-pdf me-2" /> Ekspor PDF
-              </Button>
-              <Button
-                variant="outline-success"
-                className="me-2"
-                onClick={handleExportExcel}
-                {...disableIfSupervisor}
-              >
-                <i className="fas fa-file-excel me-2" /> Ekspor Excel
-              </Button>
               <Button
                 variant="primary"
                 onClick={() => !isSupervisor && setModalType("create")}
@@ -225,7 +206,7 @@ const FeedTypeListPage = () => {
                 <tbody>
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center text-muted">
+                      <td colSpan={7} className="text-center text-muted">
                         Tidak ada data ditemukan.
                       </td>
                     </tr>
@@ -256,11 +237,7 @@ const FeedTypeListPage = () => {
                               variant="outline-warning"
                               size="sm"
                               className="me-2"
-                              onClick={() => {
-                                if (!isSupervisor) {
-                                  window.location.href = `/admin/edit-feedType/${item.id}`;
-                                }
-                              }}
+                              onClick={() => !isSupervisor && handleEdit(item.id)}
                               {...disableIfSupervisor}
                             >
                               <i className="fas fa-edit" />
@@ -270,9 +247,7 @@ const FeedTypeListPage = () => {
                             <Button
                               variant="outline-danger"
                               size="sm"
-                              onClick={() =>
-                                !isSupervisor && setDeleteId(item.id)
-                              }
+                              onClick={() => !isSupervisor && setDeleteId(item.id)}
                               {...disableIfSupervisor}
                             >
                               <i className="fas fa-trash" />
@@ -313,13 +288,19 @@ const FeedTypeListPage = () => {
             </div>
           )}
 
-          {modalType === "create" && (
+          {(modalType === "create" || modalType === "edit") && (
             <FeedTypeCreatePage
-              onClose={() => setModalType(null)}
+              show={true}
+              onClose={() => {
+                setModalType(null);
+                setEditFeedType(null);
+              }}
               onSaved={() => {
                 fetchData();
                 setModalType(null);
+                setEditFeedType(null);
               }}
+              feedType={modalType === "edit" ? editFeedType : null}
             />
           )}
         </Card.Body>
