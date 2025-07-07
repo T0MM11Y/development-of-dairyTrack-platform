@@ -112,11 +112,29 @@ setError("Failed to fetch symptom data. Please make sure the API server is runni
 
   const [currentPage, setCurrentPage] = useState(1);
   // 🔍 Filter data berdasarkan nama sapi
-  const filteredData = data.filter((item) => {
-    const hc = healthChecks.find((h) => h.id === item.health_check);
-    const cow = cows.find((c) => c.id === hc?.cow || c.id === hc?.cow?.id);
-    const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
-    const valuesToSearch = [
+ const filteredData = data.filter((item) => {
+  const hc = healthChecks.find((h) => h.id === item.health_check);
+  const cow = cows.find((c) => c.id === hc?.cow || c.id === hc?.cow?.id);
+  const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
+
+  const status = (hc?.status || "").toLowerCase(); // ✅ ambil status dari healthCheck!
+
+  // Alias status
+  const statusAliases = {
+    pending: ["pending", "belum ditangani", "not handled"],
+    handled: ["handled", "sudah ditangani"],
+    healthy: ["healthy", "sehat"],
+  };
+
+  const statusMatched = Object.entries(statusAliases).some(
+    ([key, aliases]) =>
+      key === status &&
+      aliases.some((alias) =>
+        alias.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
+
+  const valuesToSearch = [
     cowName,
     item.eye_condition || "",
     item.mouth_condition || "",
@@ -128,12 +146,16 @@ setError("Failed to fetch symptom data. Please make sure the API server is runni
     item.weight_condition || "",
     item.reproductive_condition || "",
     item.created_by?.name || "",
+    status, // ✅ agar bisa dicari langsung juga pakai kata aslinya
   ];
 
-  return valuesToSearch.some((val) =>
-    val.toLowerCase().includes(searchTerm.toLowerCase())
+  return (
+    valuesToSearch.some((val) =>
+      val.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || statusMatched
   );
 });
+
 
   // ⏩ Data yang ditampilkan sesuai halaman
  const sortedFilteredData = [...filteredData].sort((a, b) => b.id - a.id); // atau pakai created_at jika ada
