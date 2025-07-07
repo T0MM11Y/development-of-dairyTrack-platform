@@ -116,8 +116,24 @@ setError("Failed to fetch symptom data. Please make sure the API server is runni
     const hc = healthChecks.find((h) => h.id === item.health_check);
     const cow = cows.find((c) => c.id === hc?.cow || c.id === hc?.cow?.id);
     const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
-    return cowName.includes(searchTerm.toLowerCase());
-  });
+    const valuesToSearch = [
+    cowName,
+    item.eye_condition || "",
+    item.mouth_condition || "",
+    item.nose_condition || "",
+    item.anus_condition || "",
+    item.leg_condition || "",
+    item.skin_condition || "",
+    item.behavior || "",
+    item.weight_condition || "",
+    item.reproductive_condition || "",
+    item.created_by?.name || "",
+  ];
+
+  return valuesToSearch.some((val) =>
+    val.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+});
 
   // ⏩ Data yang ditampilkan sesuai halaman
  const sortedFilteredData = [...filteredData].sort((a, b) => b.id - a.id); // atau pakai created_at jika ada

@@ -125,11 +125,31 @@ const disableIfAdminOrSupervisor = (isAdmin || isSupervisor)
     }
   };
 
-  const paginatedData = data
-    .filter((item) =>
-      ListCowName(item.cow).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+const paginatedData = data
+  .filter((item) => {
+    const search = searchTerm.toLowerCase();
+
+    const cowName = ListCowName(item.cow).toLowerCase();
+    const temperature = String(item.rectal_temperature || "").toLowerCase();
+    const heartRate = String(item.heart_rate || "").toLowerCase();
+    const respiration = String(item.respiration_rate || "").toLowerCase();
+    const rumination = String(item.rumination || "").toLowerCase();
+    const recordedBy = item?.checked_by?.name?.toLowerCase?.() || "";
+    const status = (item?.status || "").toLowerCase();
+
+    return (
+      cowName.includes(search) ||
+      temperature.includes(search) ||
+      heartRate.includes(search) ||
+      respiration.includes(search) ||
+      rumination.includes(search) ||
+      recordedBy.includes(search) ||
+      status.includes(search)
+    );
+  })
+  .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+
 
 useEffect(() => {
   if (!currentUser) return;
