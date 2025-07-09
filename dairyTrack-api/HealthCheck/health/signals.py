@@ -126,7 +126,7 @@ def check_reproduction_alert(sender, instance, created, **kwargs):
             Notification.objects.create(
                 cow=instance.cow,
                 user=user,
-message=f"Reproduksi sapi {instance.cow.name}: {alert_msg}",
+message=f"Reproduksi cow {instance.cow.name}: {alert_msg}",
                 type="reproduction",
                 created_at=now()
             )

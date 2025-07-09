@@ -177,7 +177,7 @@ text: "An error occurred while updating the data.",
                       className={`form-control fw-semibold ${
                         form.status === "handled" ? "text-success" : "text-warning"
                       }`}
-                      value={form.status === "handled" ? "Sudah ditangani" : "Belum ditangani"}
+                      value={form.status === "handled" ? "Handled" : "Not Handled"}
                       readOnly
                       disabled
                     />

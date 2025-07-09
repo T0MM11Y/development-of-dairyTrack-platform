@@ -43,10 +43,25 @@ const isSupervisor = currentUser?.role_id === 2;
     return cow ? `${cow.name} (${cow.breed})` : "Unknown";
   };
 
-  const filteredData = data.filter((item) => {
-    const cowName = getCowName(item.cow)?.toLowerCase() || "";
-    return cowName.includes(searchTerm.toLowerCase());
-  });
+ const filteredData = data.filter((item) => {
+  const search = searchTerm.toLowerCase();
+
+  const cowName = getCowName(item.cow)?.toLowerCase() || "";
+  const calvingInterval = String(item.calving_interval || "").toLowerCase();
+  const servicePeriod = String(item.service_period || "").toLowerCase();
+  const conceptionRate = String(item.conception_rate || "").toLowerCase();
+  const recordedDate = (item.recorded_at || "").toLowerCase();
+  const recordedBy = (item?.created_by?.name || "").toLowerCase();
+
+  return (
+    cowName.includes(search) ||
+    calvingInterval.includes(search) ||
+    servicePeriod.includes(search) ||
+    conceptionRate.replace("%", "").includes(search) || // tanpa persen juga bisa dicocokkan
+    recordedDate.includes(search) ||
+    recordedBy.includes(search)
+  );
+});
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * PAGE_SIZE,

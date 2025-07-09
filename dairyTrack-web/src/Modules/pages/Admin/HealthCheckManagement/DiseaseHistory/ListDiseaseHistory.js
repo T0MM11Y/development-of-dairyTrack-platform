@@ -129,13 +129,28 @@ const isSupervisor = currentUser?.role_id === 2;
     const resolveCow = (c) => (typeof c === "object" ? c.id : c);
 
     const filteredData = data.filter((item) => {
-    const hcId = resolveCheck(item.health_check);
-    const check = checks.find((c) => c.id === hcId);
-    const cowId = resolveCow(check?.cow);
-    const cow = cows.find((c) => c.id === cowId);
-    const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
-    return cowName.includes(searchTerm.toLowerCase());
-  });
+  const search = searchTerm.toLowerCase();
+
+  const hcId = resolveCheck(item.health_check);
+  const check = checks.find((c) => c.id === hcId);
+  const cowId = resolveCow(check?.cow);
+  const cow = cows.find((c) => c.id === cowId);
+  const cowName = cow ? `${cow.name} (${cow.breed})`.toLowerCase() : "";
+
+  const diseaseName = (item?.disease_name || "").toLowerCase();
+  const recordedBy = (item?.created_by?.name || "").toLowerCase();
+  const status = (item?.status || "").toLowerCase();
+  const description = (item?.description || "").toLowerCase();
+
+  return (
+    cowName.includes(search) ||
+    diseaseName.includes(search) ||
+    recordedBy.includes(search) ||
+    status.includes(search) ||
+    description.includes(search)
+  );
+});
+
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * PAGE_SIZE,
