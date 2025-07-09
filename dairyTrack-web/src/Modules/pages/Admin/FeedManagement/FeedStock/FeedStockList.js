@@ -36,13 +36,13 @@ const FeedStockListPage = () => {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isSupervisor = user?.role?.toLowerCase() === "supervisor";
-  const isFarmer = user?.role?.toLowerCase() === "farmer";
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
-  const disableIfSupervisor = isSupervisor || isFarmer
+  // Disable actions only for Supervisor
+  const disableIfSupervisor = isSupervisor
     ? {
         disabled: true,
-        title: "Hanya Admin yang dapat mengedit atau menghapus data",
+        title: "Hanya Admin dan Farmer yang dapat mengedit atau menambah stok",
         style: { opacity: 0.5, cursor: "not-allowed" },
       }
     : {};
@@ -264,7 +264,7 @@ const FeedStockListPage = () => {
                 <Button
                   variant="primary"
                   className="custom-button"
-                  onClick={() => !isSupervisor && !isFarmer && setModalType("add")}
+                  onClick={() => !isSupervisor && setModalType("add")}
                   {...disableIfSupervisor}
                 >
                   <i className="fas fa-plus me-2" /> Tambah Stok
@@ -315,7 +315,7 @@ const FeedStockListPage = () => {
                                     variant="outline-primary"
                                     size="sm"
                                     className="custom-button"
-                                    onClick={() => !isSupervisor && !isFarmer && item.stock && handleEdit(item.stock.id)}
+                                    onClick={() => !isSupervisor && item.stock && handleEdit(item.stock.id)}
                                     {...disableIfSupervisor}
                                     disabled={!item.stock}
                                   >
