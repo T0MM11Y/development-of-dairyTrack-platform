@@ -471,20 +471,24 @@ class _DailyFeedViewState extends State<DailyFeedView> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _showMissingSessions ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white,
+          // Show warning icon only if there are cows with missing sessions
+          if (_cowsWithMissingSessions.isNotEmpty)
+            IconButton(
+              icon: Icon(
+                _showMissingSessions
+                    ? Icons.warning_amber_rounded
+                    : Icons.warning,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  _showMissingSessions = !_showMissingSessions;
+                });
+              },
+              tooltip: _showMissingSessions
+                  ? 'Sembunyikan Sapi tanpa Jadwal'
+                  : 'Tampilkan Sapi tanpa Jadwal',
             ),
-            onPressed: () {
-              setState(() {
-                _showMissingSessions = !_showMissingSessions;
-              });
-            },
-            tooltip: _showMissingSessions
-                ? 'Sembunyikan Jadwal Hilang'
-                : 'Tampilkan Jadwal Hilang',
-          ),
         ],
       ),
       floatingActionButton: isFarmer
@@ -497,7 +501,7 @@ class _DailyFeedViewState extends State<DailyFeedView> {
           : null,
       body: Column(
         children: [
-          // Date Picker and Search Bar
+          // Date Picker and Search Bar (unchanged)
           Container(
             color: Colors.teal.shade600,
             child: Padding(
@@ -637,127 +641,146 @@ class _DailyFeedViewState extends State<DailyFeedView> {
                                           size: 24,
                                         ),
                                         const SizedBox(width: 8),
-                                        Text(
-                                          'Jadwal Tidak Lengkap (${_cowsWithMissingSessions.length})',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.teal,
+                                        Expanded(
+                                          child: Text(
+                                            'Sapi tanpa Jadwal (${_cowsWithMissingSessions.length})',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.teal,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: _cowsWithMissingSessions.length,
-                                    itemBuilder: (context, index) {
-                                      final cow =
-                                          _cowsWithMissingSessions[index];
-                                      return Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12)),
-                                        color: Colors.white,
-                                        margin:
-                                            const EdgeInsets.only(bottom: 8),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      cow['name'],
-                                                      style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Colors.black87,
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: MediaQuery.of(context)
+                                              .size
+                                              .height *
+                                          0.4, // Limit height to prevent overflow
+                                    ),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount:
+                                          _cowsWithMissingSessions.length,
+                                      itemBuilder: (context, index) {
+                                        final cow =
+                                            _cowsWithMissingSessions[index];
+                                        return Card(
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12)),
+                                          color: Colors.white,
+                                          margin:
+                                              const EdgeInsets.only(bottom: 8),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        cow['name'],
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.black87,
+                                                        ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    '(${cow['missingSessions'].length} sesi)',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color:
-                                                          Colors.grey.shade600,
+                                                    Text(
+                                                      '(${cow['missingSessions'].length} sesi)',
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: Colors
+                                                              .grey.shade600),
                                                     ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Sesi hilang: ${(cow['missingSessions'] as List<String>).join(", ")}',
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.teal),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                if (isFarmer) ...[
+                                                  const SizedBox(height: 12),
+                                                  Wrap(
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children:
+                                                        (cow['missingSessions']
+                                                                as List<String>)
+                                                            .map<Widget>(
+                                                                (session) {
+                                                      return ElevatedButton(
+                                                        onPressed: () {
+                                                          _autoCreateDailyFeed(
+                                                              cow['id'],
+                                                              cow['name'],
+                                                              session);
+                                                        },
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Colors.teal
+                                                                  .shade600,
+                                                          shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          8)),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      12,
+                                                                  vertical: 8),
+                                                        ),
+                                                        child: Text(
+                                                          'Buat Sesi $session',
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 12),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      );
+                                                    }).toList(),
                                                   ),
                                                 ],
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                'Sesi hilang: ${(cow['missingSessions'] as List<String>).join(", ")}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.teal,
-                                                ),
-                                              ),
-                                              if (isFarmer) ...[
-                                                const SizedBox(height: 12),
-                                                Wrap(
-                                                  spacing: 8,
-                                                  runSpacing: 8,
-                                                  children:
-                                                      (cow['missingSessions']
-                                                              as List<String>)
-                                                          .map<Widget>(
-                                                              (session) {
-                                                    return ElevatedButton(
-                                                      onPressed: () {
-                                                        _autoCreateDailyFeed(
-                                                            cow['id'],
-                                                            cow['name'],
-                                                            session);
-                                                      },
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                        backgroundColor: Colors
-                                                            .teal.shade600,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            8)),
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 8),
-                                                      ),
-                                                      child: Text(
-                                                        'Buat Sesi $session',
-                                                        style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 12),
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                                ),
                                               ],
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          // List Jadwal Pakan
+                          // List Jadwal Pakan (unchanged)
                           if (_groupedFeeds.isEmpty && !_showMissingSessions)
                             const Center(
                               child: Padding(

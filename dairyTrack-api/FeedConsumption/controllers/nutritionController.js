@@ -1,5 +1,7 @@
 const Nutrisi = require("../models/nutritionModel");
 const User = require("../models/userModel");
+const Sequelize = require("sequelize");
+const { Op } = Sequelize;
 
 // Helper function to format Nutrisi response
 const formatNutrisiResponse = (nutrisi) => ({
@@ -8,8 +10,12 @@ const formatNutrisiResponse = (nutrisi) => ({
   unit: nutrisi.unit,
   user_id: nutrisi.user_id,
   user_name: nutrisi.User ? nutrisi.User.name : null,
-  created_by: nutrisi.Creator ? { id: nutrisi.Creator.id, name: nutrisi.Creator.name } : null,
-  updated_by: nutrisi.Updater ? { id: nutrisi.Updater.id, name: nutrisi.Updater.name } : null,
+  created_by: nutrisi.Creator
+    ? { id: nutrisi.Creator.id, name: nutrisi.Creator.name }
+    : null,
+  updated_by: nutrisi.Updater
+    ? { id: nutrisi.Updater.id, name: nutrisi.Updater.name }
+    : null,
   created_at: nutrisi.createdAt,
   updated_at: nutrisi.updatedAt,
   deleted_at: nutrisi.deletedAt, // Opsional untuk debugging atau admin
@@ -41,8 +47,22 @@ exports.addNutrisi = async (req, res) => {
       });
     }
 
+    const trimmedName = name.trim();
+    const existingNutrisi = await Nutrisi.findOne({
+      where: Sequelize.where(
+        Sequelize.fn("LOWER", Sequelize.col("name")),
+        trimmedName.toLowerCase()
+      ),
+    });
+    if (existingNutrisi) {
+      return res.status(400).json({
+        success: false,
+        message: `Nutrisi dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama yang berbeda.`,
+      });
+    }
+
     const nutrisi = await Nutrisi.create({
-      name,
+      name: trimmedName,
       unit,
       user_id: userId,
       created_by: userId,
@@ -92,16 +112,16 @@ exports.updateNutrisi = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    if (!name) {
+    console.log(
+      "updateNutrisi - Data yang diterima:",
+      JSON.stringify(req.body, null, 2)
+    );
+
+    // Validasi: Pastikan setidaknya satu field dikirim
+    if (!name && !unit) {
       return res.status(400).json({
         success: false,
-        message: "Nama nutrisi wajib diisi",
-      });
-    }
-    if (!unit) {
-      return res.status(400).json({
-        success: false,
-        message: "Satuan nutrisi wajib diisi",
+        message: "Setidaknya nama atau satuan harus diisi untuk pembaruan.",
       });
     }
 
@@ -121,12 +141,55 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
+    // Gunakan nilai yang sudah ada jika field tidak dikirim
+    const trimmedName = name ? name.trim() : nutrisi.name;
+    const updateUnit = unit !== undefined ? unit : nutrisi.unit;
+
+    // Validasi nama tidak kosong
+    if (!trimmedName) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama nutrisi tidak boleh kosong.",
+      });
+    }
+
+    // Validasi satuan tidak kosong
+    if (!updateUnit) {
+      return res.status(400).json({
+        success: false,
+        message: "Satuan nutrisi tidak boleh kosong.",
+      });
+    }
+
+    // Cek duplikat nama, kecuali untuk ID nutrisi yang sedang diedit
+    if (trimmedName.toLowerCase() !== nutrisi.name.toLowerCase()) {
+      const existingNutrisi = await Nutrisi.findOne({
+        where: {
+          [Op.and]: [
+            Sequelize.where(
+              Sequelize.fn("LOWER", Sequelize.col("name")),
+              trimmedName.toLowerCase()
+            ),
+            { id: { [Op.ne]: id } },
+          ],
+        },
+      });
+      if (existingNutrisi) {
+        return res.status(400).json({
+          success: false,
+          message: `Nutrisi dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama yang berbeda.`,
+        });
+      }
+    }
+
+    // Lakukan pembaruan
     await nutrisi.update({
-      name,
-      unit,
+      name: trimmedName,
+      unit: updateUnit,
       updated_by: userId,
     });
 
+    // Ambil data nutrisi yang diperbarui beserta relasi user
     const nutrisiWithUsers = await Nutrisi.findByPk(id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },

@@ -175,7 +175,7 @@ const FeedTypeListPage = () => {
             </InputGroup>
             <div>
               <Button
-                variant="primary"
+                variant="success"
                 onClick={() => !isSupervisor && setModalType("create")}
                 {...disableIfSupervisor}
               >

@@ -34,46 +34,42 @@ const FeedEditPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [feedResponse, feedTypeResponse, nutritionResponse] =
-          await Promise.all([
-            getFeedById(id),
-            listFeedTypes(),
-            listNutritions(),
-          ]);
+        const [feedResponse, feedTypeResponse, nutritionResponse] = await Promise.all([
+          getFeedById(id),
+          listFeedTypes(),
+          listNutritions(),
+        ]);
 
-        console.log("Feed Response:", feedResponse);
-        console.log("Feed Types Response:", feedTypeResponse);
-        console.log("Nutritions Response:", nutritionResponse);
+        console.log("Feed Response:", JSON.stringify(feedResponse, null, 2));
+        console.log("Feed Types Response:", JSON.stringify(feedTypeResponse, null, 2));
+        console.log("Nutritions Response:", JSON.stringify(nutritionResponse, null, 2));
 
         if (feedResponse.success) {
           const feed = feedResponse.feed;
-          // Cari nama jenis pakan berdasarkan type_id
           const typeName =
             feedTypeResponse.success && feedTypeResponse.feedTypes
-              ? feedTypeResponse.feedTypes.find(
-                  (t) => t.id === parseInt(feed.type_id)
-                )?.name || "Belum ada"
+              ? feedTypeResponse.feedTypes.find((t) => t.id === parseInt(feed.type_id))?.name || "Belum ada"
               : "Belum ada";
 
           const initialForm = {
             typeId: feed.type_id ? feed.type_id.toString() : "",
-            typeName, // Set typeName langsung di sini
-            name: feed.name || "",
-            unit: feed.unit || "",
-            min_stock: feed.min_stock || 0,
-            price: feed.price || 0,
+            typeName,
+            name: feed.name ? feed.name.trim() : "",
+            unit: feed.unit ? feed.unit.trim() : "",
+            min_stock: feed.min_stock !== undefined ? feed.min_stock.toString() : "0",
+            price: feed.price !== undefined ? feed.price.toString() : "0",
             updated_at: feed.updated_at || "",
             updated_by: currentUser?.user_id || "",
-            nutrisiList: feed.nutrisi_records.map((n) => ({
-              nutrisi_id: n.nutrisi_id ? n.nutrisi_id.toString() : "",
-              amount: n.amount || 0,
-              nutrisi_name:
-                nutritionResponse.success && nutritionResponse.nutritions
-                  ? nutritionResponse.nutritions.find(
-                      (nut) => nut.id === parseInt(n.nutrisi_id)
-                    )?.name || "Tidak diketahui"
-                  : "Tidak diketahui",
-            })),
+            nutrisiList: feed.nutrisi_records
+              ? feed.nutrisi_records.map((n) => ({
+                  nutrisi_id: n.nutrisi_id ? n.nutrisi_id.toString() : "",
+                  amount: n.amount !== undefined ? n.amount.toString() : "0",
+                  nutrisi_name:
+                    nutritionResponse.success && nutritionResponse.nutritions
+                      ? nutritionResponse.nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui"
+                      : "Tidak diketahui",
+                }))
+              : [],
           };
           setForm(initialForm);
           setOriginalForm(initialForm);
@@ -94,11 +90,11 @@ const FeedEditPage = () => {
         }
       } catch (err) {
         setError("Gagal memuat data pakan.");
-        console.error(err);
+        console.error("Fetch error:", err.message, err.stack);
         Swal.fire({
           icon: "error",
           title: "Gagal Memuat",
-          text: "Gagal memuat data pakan.",
+          text: err.message || "Gagal memuat data pakan.",
         });
       } finally {
         setLoading(false);
@@ -109,19 +105,14 @@ const FeedEditPage = () => {
     }
   }, [id, currentUser]);
 
-  // Update typeName and nutrisi_name when feedTypes or nutritions change
   useEffect(() => {
     if (form && feedTypes.length > 0 && nutritions.length > 0) {
       setForm((prev) => ({
         ...prev,
-        typeName:
-          feedTypes.find((t) => t.id === parseInt(prev.typeId))?.name ||
-          "Belum ada",
+        typeName: feedTypes.find((t) => t.id === parseInt(prev.typeId))?.name || "Belum ada",
         nutrisiList: prev.nutrisiList.map((n) => ({
           ...n,
-          nutrisi_name:
-            nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name ||
-            "Tidak diketahui",
+          nutrisi_name: nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui",
         })),
       }));
     }
@@ -138,8 +129,7 @@ const FeedEditPage = () => {
       setForm((prev) => ({
         ...prev,
         typeId: value,
-        typeName:
-          feedTypes.find((t) => t.id === parseInt(value))?.name || "Belum ada",
+        typeName: feedTypes.find((t) => t.id === parseInt(value))?.name || "Belum ada",
       }));
     } else {
       setForm((prev) => ({
@@ -153,13 +143,11 @@ const FeedEditPage = () => {
     const updatedNutrisiList = [...form.nutrisiList];
     updatedNutrisiList[index] = {
       ...updatedNutrisiList[index],
-      [field]:
-        field === "amount"
-          ? value === ""
-            ? ""
-            : parseFloat(value) || 0
-          : value,
-      nutrisi_name: field === "nutrisi_id" ? nutritions.find((nut) => nut.id === parseInt(value))?.name || "Tidak diketahui" : updatedNutrisiList[index].nutrisi_name,
+      [field]: field === "amount" ? (value === "" ? "" : parseFloat(value) || 0) : value,
+      nutrisi_name:
+        field === "nutrisi_id"
+          ? nutritions.find((nut) => nut.id === parseInt(value))?.name || "Tidak diketahui"
+          : updatedNutrisiList[index].nutrisi_name,
     };
     setForm((prev) => ({
       ...prev,
@@ -182,10 +170,9 @@ const FeedEditPage = () => {
   };
 
   const formatNumber = (value) => {
-    if (value === "" || isNaN(value)) return "";
+    if (value === "" || value === null || value === undefined || isNaN(value)) return "";
     const num = parseFloat(value);
-    if (Number.isInteger(num)) return num.toString();
-    return num.toString();
+    return Number.isInteger(num) ? num.toString() : num.toFixed(2);
   };
 
   const getAvailableNutritions = (currentIndex) => {
@@ -193,9 +180,7 @@ const FeedEditPage = () => {
       .filter((_, index) => index !== currentIndex)
       .map((n) => n.nutrisi_id)
       .filter((id) => id);
-    return nutritions.filter(
-      (n) => !selectedNutrisiIds.includes(n.id.toString())
-    );
+    return nutritions.filter((n) => !selectedNutrisiIds.includes(n.id.toString()));
   };
 
   const detectChanges = () => {
@@ -204,43 +189,36 @@ const FeedEditPage = () => {
     const messages = [];
     let hasChanges = false;
 
-    // Compare typeId
     if (form.typeId !== originalForm.typeId) {
       const oldType = feedTypes.find((t) => t.id === parseInt(originalForm.typeId))?.name || "Tidak diketahui";
       const newType = feedTypes.find((t) => t.id === parseInt(form.typeId))?.name || "Tidak diketahui";
-      messages.push(`Mengubah jenis pakan yang awalnya "${oldType}" menjadi "${newType}"`);
+      messages.push(`Mengubah jenis pakan dari "${oldType}" menjadi "${newType}"`);
       hasChanges = true;
     }
 
-    // Compare name
     if (form.name.trim() !== originalForm.name.trim()) {
       messages.push(`Mengubah nama pakan dari "${originalForm.name.trim()}" menjadi "${form.name.trim()}"`);
       hasChanges = true;
     }
 
-    // Compare unit
     if (form.unit.trim() !== originalForm.unit.trim()) {
       messages.push(`Mengubah satuan dari "${originalForm.unit.trim()}" menjadi "${form.unit.trim()}"`);
       hasChanges = true;
     }
 
-    // Compare min_stock
     if (parseFloat(form.min_stock) !== parseFloat(originalForm.min_stock)) {
       messages.push(`Mengubah stok minimum dari "${formatNumber(originalForm.min_stock)}" menjadi "${formatNumber(form.min_stock)}"`);
       hasChanges = true;
     }
 
-    // Compare price
     if (parseFloat(form.price) !== parseFloat(originalForm.price)) {
       messages.push(`Mengubah harga dari "Rp ${formatNumber(originalForm.price).toLocaleString("id-ID")}" menjadi "Rp ${formatNumber(form.price).toLocaleString("id-ID")}"`);
       hasChanges = true;
     }
 
-    // Compare nutrisiList
-    const oldNutrisiList = originalForm.nutrisiList;
-    const newNutrisiList = form.nutrisiList;
+    const oldNutrisiList = originalForm.nutrisiList || [];
+    const newNutrisiList = form.nutrisiList || [];
 
-    // Detect removed nutritions
     const removedNutritions = oldNutrisiList.filter(
       (oldN) => !newNutrisiList.some((newN) => newN.nutrisi_id === oldN.nutrisi_id)
     );
@@ -252,27 +230,21 @@ const FeedEditPage = () => {
       hasChanges = true;
     }
 
-    // Detect added nutritions
     const addedNutritions = newNutrisiList.filter(
       (newN) => !oldNutrisiList.some((oldN) => oldN.nutrisi_id === newN.nutrisi_id)
     );
     if (addedNutritions.length > 0) {
-      const addedDetails = addedNutritions.map(
-        (n) => {
-          const name = nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui";
-          return `${name} (${formatNumber(n.amount)})`
-        }
-      );
+      const addedDetails = addedNutritions.map((n) => {
+        const name = nutritions.find((nut) => nut.id === parseInt(n.nutrisi_id))?.name || "Tidak diketahui";
+        return `${name} (${formatNumber(n.amount)})`;
+      });
       messages.push(`Menambahkan nutrisi: ${addedDetails.join(", ")}`);
       hasChanges = true;
     }
 
-    // Detect updated nutritions
     const updatedNutritions = newNutrisiList.filter((newN) =>
       oldNutrisiList.some(
-        (oldN) =>
-          oldN.nutrisi_id === newN.nutrisi_id &&
-          parseFloat(oldN.amount) !== parseFloat(newN.amount)
+        (oldN) => oldN.nutrisi_id === newN.nutrisi_id && parseFloat(oldN.amount) !== parseFloat(newN.amount)
       )
     );
     if (updatedNutritions.length > 0) {
@@ -302,8 +274,8 @@ const FeedEditPage = () => {
     }
 
     const confirmationText = messages.length > 0
-      ? `Apakah Anda yakin ingin menyimpan perubahan berikut untuk pakan "${form.name}"?\n\n${messages.join("\n")}`
-      : `Apakah Anda yakin ingin menyimpan perubahan untuk pakan "${form.name}"?`;
+      ? `Apakah Anda yakin ingin menyimpan perubahan berikut untuk pakan "${form.name.trim()}"?\n\n${messages.join("\n")}`
+      : `Apakah Anda yakin ingin menyimpan perubahan untuk pakan "${form.name.trim()}"?`;
 
     const result = await Swal.fire({
       title: "Konfirmasi Perubahan",
@@ -323,18 +295,41 @@ const FeedEditPage = () => {
 
     setSubmitting(true);
     try {
+      // Validasi input
+      if (!form.name.trim()) {
+        throw new Error("Nama pakan tidak boleh kosong.");
+      }
+      if (!form.unit.trim()) {
+        throw new Error("Satuan tidak boleh kosong.");
+      }
+      if (form.min_stock === "" || isNaN(form.min_stock)) {
+        throw new Error("Stok minimum harus berupa angka yang valid.");
+      }
+      if (form.price === "" || isNaN(form.price)) {
+        throw new Error("Harga harus berupa angka yang valid.");
+      }
+      if (form.nutrisiList.some((n) => n.nutrisi_id === "")) {
+        throw new Error("Semua nutrisi harus memiliki ID nutrisi yang valid.");
+      }
+
       const payload = {
-        typeId: parseInt(form.typeId),
+        typeId: form.typeId ? parseInt(form.typeId) : undefined,
         name: form.name.trim(),
         unit: form.unit.trim(),
-        min_stock: parseFloat(form.min_stock) || 0,
-        price: parseFloat(form.price) || 0,
+        min_stock: parseFloat(form.min_stock),
+        price: parseFloat(form.price),
         nutrisiList: form.nutrisiList.map((n) => ({
           nutrisi_id: parseInt(n.nutrisi_id),
-          amount: parseFloat(n.amount) || 0,
+          amount: n.amount !== "" && !isNaN(n.amount) ? parseFloat(n.amount) : 0.0,
         })),
       };
+
+      console.log("Payload yang dikirim:", JSON.stringify(payload, null, 2));
+      console.log("Authorization header:", `Bearer ${currentUser.token}`);
+
       const response = await updateFeed(id, payload);
+      console.log("Respons dari backend:", JSON.stringify(response, null, 2));
+
       if (response.success) {
         Swal.fire({
           icon: "success",
@@ -348,7 +343,7 @@ const FeedEditPage = () => {
         throw new Error(response.message || "Gagal memperbarui pakan.");
       }
     } catch (err) {
-      console.error("Update error:", err);
+      console.error("Update error:", err.message, err.stack);
       Swal.fire({
         icon: "error",
         title: "Gagal Memperbarui",
@@ -397,7 +392,6 @@ const FeedEditPage = () => {
                       value={form.typeId}
                       onChange={handleChange}
                       className="form-control"
-                      required
                     >
                       <option value="">Pilih Jenis Pakan</option>
                       {feedTypes.map((type) => (
@@ -442,7 +436,7 @@ const FeedEditPage = () => {
                     <input
                       type="number"
                       name="min_stock"
-                      value={formatNumber(form.min_stock)}
+                      value={form.min_stock}
                       onChange={handleChange}
                       className="form-control"
                       required
@@ -460,7 +454,7 @@ const FeedEditPage = () => {
                       <input
                         type="number"
                         name="price"
-                        value={formatNumber(form.price)}
+                        value={form.price}
                         onChange={handleChange}
                         className="form-control"
                         required
@@ -471,9 +465,7 @@ const FeedEditPage = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">
-                      Diperbarui oleh
-                    </label>
+                    <label className="form-label fw-bold">Diperbarui oleh</label>
                     <input
                       type="text"
                       className="form-control bg-light"
@@ -481,19 +473,13 @@ const FeedEditPage = () => {
                       readOnly
                       disabled
                     />
-                    <input
-                      type="hidden"
-                      name="updated_by"
-                      value={form.updated_by}
-                    />
+                    <input type="hidden" name="updated_by" value={form.updated_by} />
                   </div>
                 </div>
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">
-                      Tanggal Diperbarui
-                    </label>
+                    <label className="form-label fw-bold">Tanggal Diperbarui</label>
                     <input
                       type="text"
                       className="form-control bg-light"
@@ -513,21 +499,11 @@ const FeedEditPage = () => {
                   {form.nutrisiList.map((nutrisi, index) => (
                     <div key={index} className="row mb-2 align-items-center">
                       <div className="col-md-5">
-                        {index === 0 && (
-                          <label className="form-label mb-1">
-                            Pilih Nutrisi
-                          </label>
-                        )}
+                        {index === 0 && <label className="form-label mb-1">Pilih Nutrisi</label>}
                         <select
                           className="form-control"
                           value={nutrisi.nutrisi_id}
-                          onChange={(e) =>
-                            handleNutrisiChange(
-                              index,
-                              "nutrisi_id",
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleNutrisiChange(index, "nutrisi_id", e.target.value)}
                           required
                         >
                           <option value="">Pilih Nutrisi</option>
@@ -542,17 +518,12 @@ const FeedEditPage = () => {
                         </small>
                       </div>
                       <div className="col-md-5">
-                        {index === 0 && (
-                          <label className="form-label mb-1">Jumlah</label>
-                        )}
+                        {index === 0 && <label className="form-label mb-1">Jumlah</label>}
                         <input
                           type="number"
                           className="form-control"
-                          value={formatNumber(nutrisi.amount)}
-                          onChange={(e) =>
-                            handleNutrisiChange(index, "amount", e.target.value)
-                          }
-                          required
+                          value={nutrisi.amount}
+                          onChange={(e) => handleNutrisiChange(index, "amount", e.target.value)}
                           min="0"
                           step="0.01"
                         />
@@ -568,11 +539,7 @@ const FeedEditPage = () => {
                       </div>
                     </div>
                   ))}
-                  <Button
-                    variant="outline-primary"
-                    onClick={addNutrisi}
-                    className="mt-2"
-                  >
+                  <Button variant="outline-primary" onClick={addNutrisi} className="mt-2">
                     Tambah Nutrisi
                   </Button>
                 </div>
