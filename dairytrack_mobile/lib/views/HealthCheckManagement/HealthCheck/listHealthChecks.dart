@@ -26,6 +26,8 @@ class _HealthCheckListViewState extends State<HealthCheckListView> {
   int _currentPage = 1;
   final int _pageSize = 5;
   String _search = '';
+  String _filterRecordedBy = '';
+  String _filterStatus = '';
   bool get _isAdmin => _currentUser?['role_id'] == 1;
   bool get _isSupervisor => _currentUser?['role_id'] == 2;
   bool get _isFarmer => _currentUser?['role_id'] == 3;
@@ -103,14 +105,47 @@ Future<void> _loadData() async {
 }
 
 
-  List<Map<String, dynamic>> get _filteredChecks {
-    final keyword = _search.toLowerCase();
-    return _healthChecks.where((check) {
-      final cow = check['cow'] as Map<String, dynamic>? ?? {};
-      final name = (cow['name'] ?? '').toString().toLowerCase();
-      return name.contains(keyword);
-    }).toList();
-  }
+List<Map<String, dynamic>> get _filteredChecks {
+  final keyword = _search.toLowerCase();
+
+  return _healthChecks.where((check) {
+    final cow = check['cow'] as Map<String, dynamic>? ?? {};
+    final name = (cow['name'] ?? '').toString().toLowerCase();
+    final temperature = (check['rectal_temperature'] ?? '').toString().toLowerCase();
+    final heartRate = (check['heart_rate'] ?? '').toString().toLowerCase();
+    final respiration = (check['respiration_rate'] ?? '').toString().toLowerCase();
+    final rumination = (check['rumination'] ?? '').toString().toLowerCase();
+    final recordedBy = (check['checked_by']?['name'] ?? '').toString().toLowerCase();
+    final statusRaw = (check['status'] ?? '').toString().toLowerCase();
+
+    final statusAliases = {
+      'pending': ['pending', 'belum ditangani', 'not handled'],
+      'handled': ['handled', 'sudah ditangani'],
+      'healthy': ['healthy', 'sehat'],
+    };
+
+    final matchesStatusAlias = statusAliases.entries.any((entry) =>
+      entry.key == statusRaw &&
+      entry.value.any((alias) => alias.contains(keyword))
+    );
+
+    final matchesSearch = name.contains(keyword) ||
+        temperature.contains(keyword) ||
+        heartRate.contains(keyword) ||
+        respiration.contains(keyword) ||
+        rumination.contains(keyword) ||
+        recordedBy.contains(keyword) ||
+        matchesStatusAlias;
+
+    final matchesRecordedBy = _filterRecordedBy.isEmpty ||
+        recordedBy == _filterRecordedBy.toLowerCase();
+
+    final matchesStatus = _filterStatus.isEmpty ||
+        statusRaw == _filterStatus.toLowerCase();
+
+    return matchesSearch && matchesRecordedBy && matchesStatus;
+  }).toList();
+}
 
   List<Map<String, dynamic>> get _availableCows {
     return _cows.where((cow) {
@@ -150,7 +185,7 @@ Future<void> _loadData() async {
 Widget build(BuildContext context) {
   final paginated = _filteredChecks.skip((_currentPage - 1) * _pageSize).take(_pageSize).toList();
   final totalPages = (_filteredChecks.length / _pageSize).ceil();
-  
+
   return Container(
     decoration: const BoxDecoration(
       gradient: LinearGradient(
@@ -161,37 +196,38 @@ Widget build(BuildContext context) {
     ),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-   appBar: AppBar(
-  elevation: 8,
-  centerTitle: true,
-  backgroundColor: _isFarmer
-      ? Colors.teal[400]
-      : _isSupervisor
-          ? Colors.blue[700]
-          : Colors.blueGrey[800],
-  title: const Text(
-    'Health Check',
-    style: TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
-    ),
-  ),
-),
-
-
+      appBar: AppBar(
+        elevation: 8,
+        centerTitle: true,
+        backgroundColor: _isFarmer
+            ? Colors.teal[400]
+            : _isSupervisor
+                ? Colors.blue[700]
+                : Colors.blueGrey[800],
+        title: const Text(
+          'Health Check',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+          ),
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 16),
+                // 🔍 Search Field
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white,
-                      hintText: 'Search Cow Name...',
+                      hintText: 'Search cow name, temperature, recorder...',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -204,6 +240,60 @@ Widget build(BuildContext context) {
                     }),
                   ),
                 ),
+                const SizedBox(height: 12),
+                // 🔽 Filter by Recorder
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      labelText: 'Filter by Recorder',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    value: _filterRecordedBy.isEmpty ? null : _filterRecordedBy,
+                    items: _healthChecks
+                        .map((e) => e['checked_by']?['name'])
+                        .whereType<String>()
+                        .toSet()
+                        .map((name) => DropdownMenuItem(value: name, child: Text(name)))
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _filterRecordedBy = val ?? '';
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 🔽 Filter by Status
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      labelText: 'Filter by Status',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    value: _filterStatus.isEmpty ? null : _filterStatus,
+                    items: const [
+                      DropdownMenuItem(value: 'pending', child: Text('Not Handled')),
+                      DropdownMenuItem(value: 'handled', child: Text('Handled')),
+                      DropdownMenuItem(value: 'healthy', child: Text('Healthy')),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _filterStatus = val ?? '';
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 📋 Health Check List
                 Expanded(
                   child: paginated.isEmpty
                       ? const Center(
@@ -274,87 +364,84 @@ Widget build(BuildContext context) {
                                     Text('Heart Rate: ${item['heart_rate']} bpm'),
                                     Text('Respiration Rate: ${item['respiration_rate']} bpm'),
                                     Text('Rumination: ${item['rumination']} kontraksi'),
-                                    Text('Recorded By: ${item['checked_by']?['name'] ?? 'Uknown'}'),
+                                    Text('Recorded By: ${item['checked_by']?['name'] ?? 'Unknown'}'),
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                       ElevatedButton.icon(
-  icon: const Icon(Icons.edit, size: 18),
-  label: const Text('Edit'),
-  onPressed: () {
-    if (_isAdmin || _isSupervisor) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Access Denied'),
-content: const Text('This role does not have permission to edit data'),
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.edit, size: 18),
+                                          label: const Text('Edit'),
+                                          onPressed: () {
+                                            if (_isAdmin || _isSupervisor) {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Access Denied'),
+                                                  content: const Text('This role does not have permission to edit data'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(context),
+                                                      child: const Text('Close'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              return;
+                                            }
 
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    if (status == 'healthy' || status == 'handled') {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-        title: const Text('Cannot Be Edited'),
-content: const Text('This data cannot be edited'),
-
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EditHealthCheckView(
-            healthCheckId: item['id'],
-            onUpdated: _loadData,
-          ),
-        ),
-      );
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.orange,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-  ),
-),
+                                            if (status == 'healthy' || status == 'handled') {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Cannot Be Edited'),
+                                                  content: const Text('This data cannot be edited'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(context),
+                                                      child: const Text('Close'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            } else {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => EditHealthCheckView(
+                                                    healthCheckId: item['id'],
+                                                    onUpdated: _loadData,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                          ),
+                                        ),
                                         const SizedBox(width: 8),
-                                      ElevatedButton.icon(
-  icon: const Icon(Icons.delete, size: 18),
-  label: const Text('Delete'),
-  onPressed: () async {
-    if (_isAdmin || _isSupervisor) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-        title: const Text('Access Denied'),
-content: const Text('This role does not have permission to delete data'),
-
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
+                                        ElevatedButton.icon(
+                                          icon: const Icon(Icons.delete, size: 18),
+                                          label: const Text('Delete'),
+                                          onPressed: () async {
+                                            if (_isAdmin || _isSupervisor) {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Access Denied'),
+                                                  content: const Text('This role does not have permission to delete data'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(context),
+                                                      child: const Text('Close'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              return;
+                                            }
 
                                             final confirmed = await showDialog<bool>(
                                               context: context,
@@ -373,6 +460,7 @@ content: const Text('This role does not have permission to delete data'),
                                                 ],
                                               ),
                                             );
+
                                             if (confirmed == true) _deleteCheck(item['id']);
                                           },
                                           style: ElevatedButton.styleFrom(
@@ -410,57 +498,55 @@ content: const Text('This role does not have permission to delete data'),
                   ),
               ],
             ),
-     floatingActionButton: FloatingActionButton(
-  tooltip: 'Add Data',
-backgroundColor: _isFarmer
-      ? Colors.teal[400]
-      : _isSupervisor
-          ? Colors.blue[700]
-          : Colors.blueGrey[800],  onPressed: () {
-    if (_isAdmin || _isSupervisor) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Access Denied'),
-content: const Text('This role does not have permission to add health check data.'),
-
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    } else if (_availableCows.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Cannot Add Health Check'),
-content: const Text(
-  'No cows are available for health checks. All cows already have active checks.',
-),
-
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CreateHealthCheckView(onSaved: _loadData),
-        ),
-      );
-    }
-  },
-  child: const Icon(Icons.add),
-),
-
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Add Data',
+        backgroundColor: _isFarmer
+            ? Colors.teal[400]
+            : _isSupervisor
+                ? Colors.blue[700]
+                : Colors.blueGrey[800],
+        onPressed: () {
+          if (_isAdmin || _isSupervisor) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Access Denied'),
+                content: const Text('This role does not have permission to add health check data.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          } else if (_availableCows.isEmpty) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Cannot Add Health Check'),
+                content: const Text(
+                  'No cows are available for health checks. All cows already have active checks.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CreateHealthCheckView(onSaved: _loadData),
+              ),
+            );
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
     ),
   );
 }
