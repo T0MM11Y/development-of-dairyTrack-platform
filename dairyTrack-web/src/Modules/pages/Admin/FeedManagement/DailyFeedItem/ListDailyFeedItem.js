@@ -30,7 +30,7 @@ const ListDailyFeedItem = () => {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [exportModalShow, setExportModalShow] = useState(false);
-  const [showNoFeedItemsModal, setShowNoFeedItemsModal] = useState(false); // New state for no feed items modal
+  const [showNoFeedItemsModal, setShowNoFeedItemsModal] = useState(false);
   const [exportStartDate, setExportStartDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -74,26 +74,27 @@ const ListDailyFeedItem = () => {
           }),
         ]);
 
-      const cowsArray = cowsData.success ? (cowsData.cows || []) : [];
+      const cowsArray = cowsData.success ? (cowsData.cows || []).filter((cow) => cow.is_active === true) : [];
       setCows(cowsArray);
       const allowedCowIds = new Set(cowsArray.map((cow) => cow.id));
 
       const dailyFeedsData = dailyFeedsResponse.success
         ? (dailyFeedsResponse.data || []).filter(
-            (feed) => !user?.role?.toLowerCase() === "farmer" || allowedCowIds.has(feed.cow_id)
+            (feed) => !isFarmer || allowedCowIds.has(feed.cow_id)
           )
         : [];
       setDailyFeeds(dailyFeedsData);
+      console.log("Daily feeds:", JSON.stringify(dailyFeedsData, null, 2));
 
       const allowedDailyFeedIds = new Set(dailyFeedsData.map((feed) => feed.id));
       const feedItemsArray = Array.isArray(feedItemsResponse)
         ? feedItemsResponse.filter(
             (item) =>
-              !user?.role?.toLowerCase() === "farmer" || allowedDailyFeedIds.has(item.daily_feed_id)
+              !isFarmer || allowedDailyFeedIds.has(item.daily_feed_id)
           )
         : (feedItemsResponse.data || []).filter(
             (item) =>
-              !user?.role?.toLowerCase() === "farmer" || allowedDailyFeedIds.has(item.daily_feed_id)
+              !isFarmer || allowedDailyFeedIds.has(item.daily_feed_id)
           );
       setFeedItems(feedItemsArray);
 
@@ -189,15 +190,16 @@ const ListDailyFeedItem = () => {
       sesi: dailyFeed.session,
       weather: dailyFeed.weather || "Tidak Ada",
       items: items,
-      daily_feed_id: dailyFeed.id, // Added for edit action in no feed items modal
+      daily_feed_id: dailyFeed.id,
+      is_active: dailyFeed.is_active !== undefined ? dailyFeed.is_active : true,
     };
 
     return acc;
   }, {});
+  console.log("Grouped feed items:", JSON.stringify(groupedFeedItems, null, 2));
 
-  // New logic: Identify cows with schedules that have no feed items
   const cowsWithNoFeedItems = Object.values(groupedFeedItems)
-    .filter((group) => !group.items || group.items.length === 0)
+    .filter((group) => (!group.items || group.items.length === 0) && group.is_active === true)
     .map((group) => ({
       cow_id: group.cow_id,
       cow_name: group.cow,
@@ -225,7 +227,6 @@ const ListDailyFeedItem = () => {
     );
   });
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredFeedItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -244,6 +245,15 @@ const ListDailyFeedItem = () => {
   };
 
   const handleDeleteClick = async (group, session) => {
+    if (group.is_active === false) {
+      Swal.fire(
+        "Error",
+        "Sapi ini tidak aktif. Tidak dapat menghapus item pakan.",
+        "error"
+      );
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Konfirmasi",
       text: `Apakah Anda yakin ingin menghapus data pakan untuk sapi ${group.cow} pada tanggal ${group.date} sesi ${group.sesi}?`,
@@ -308,10 +318,10 @@ const ListDailyFeedItem = () => {
 
       const apiData = feedItemsResponse.data || [];
       const dailyFeedsData = dailyFeedsResponse.data || [];
-      const cowsArray = cowsData.cows || [];
+      const cowsArray = (cowsData.cows || []).filter((cow) => cow.is_active === true);
 
       const cowMap = Object.fromEntries(
-        cowsArray.map((cow) => [cow.id, cow.name || `Sapi #${cow.id}`])
+        dailyFeedsData.map((feed) => [feed.cow_id, feed.cow_name || `Sapi #${feed.cow_id}`])
       );
       const birthDateMap = Object.fromEntries(
         cowsArray.map((cow) => [cow.id, cow.birth || null])
@@ -618,12 +628,19 @@ const ListDailyFeedItem = () => {
                             size="sm"
                             className="me-2"
                             onClick={() => {
-                              if (!isRestricted && group.items.length > 0) {
-                                setEditId(group.items[0].daily_feed_id);
-                                setModalType("edit");
+                              if (isRestricted) return;
+                              if (group.is_active === false) {
+                                Swal.fire(
+                                  "Error",
+                                  "Sapi ini tidak aktif. Tidak dapat mengedit item pakan.",
+                                  "error"
+                                );
+                                return;
                               }
+                              setEditId(group.daily_feed_id);
+                              setModalType("edit");
                             }}
-                            disabled={isRestricted || group.items.length === 0}
+                            disabled={isRestricted}
                             {...disableIfRestricted}
                           >
                             <i className="fas fa-edit" />
@@ -677,7 +694,7 @@ const ListDailyFeedItem = () => {
 
       {modalType === "create" && (
         <CreateDailyFeedItem
-          dailyFeeds={dailyFeeds}
+          dailyFeeds={dailyFeeds.filter((feed) => feed.is_active === true)}
           defaultDate={selectedDate}
           onFeedItemAdded={() => {
             fetchData();
@@ -746,7 +763,6 @@ const ListDailyFeedItem = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* New Modal for Cows with No Feed Items */}
       <Modal
         show={showNoFeedItemsModal}
         onHide={() => setShowNoFeedItemsModal(false)}
