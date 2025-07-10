@@ -112,6 +112,10 @@ const CowsMilkAnalysis = () => {
   const [selectedCow, setSelectedCow] = useState(null);
   const [milkingSessions, setMilkingSessions] = useState([]);
   const [dailySummaries, setDailySummaries] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFocus, setSearchFocus] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cowsPerPage, setCowsPerPage] = useState(8);
   const [dateRange, setDateRange] = useState({
     startDate: format(
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -433,7 +437,61 @@ const CowsMilkAnalysis = () => {
     loadDailySummaries();
   }, [selectedCow, dateRange]);
 
-  // Calculate cow performance metrics
+  // Add keyboard shortcut to return to main view
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && selectedCow) {
+        setSelectedCow(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedCow]);
+  // Filter cows based on search term with improved matching
+  const filteredCows = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return cows;
+    }
+
+    // Normalize search term: remove extra spaces, convert to lowercase
+    const normalizedSearch = searchTerm
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+    const searchTerms = normalizedSearch.split(" ");
+
+    return cows.filter((cow) => {
+      // Prepare normalized cow data for searching
+      const cowName = cow.name ? cow.name.toLowerCase() : "";
+      const cowBreed = cow.breed ? cow.breed.toLowerCase() : "";
+      const cowId = cow.id ? cow.id.toString() : "";
+
+      // Check if ALL search terms are found in any of the cow's data
+      return searchTerms.every(
+        (term) =>
+          cowName.includes(term) ||
+          cowBreed.includes(term) ||
+          cowId.includes(term)
+      );
+    });
+  }, [cows, searchTerm]);
+
+  // Pagination logic
+  const indexOfLastCow = currentPage * cowsPerPage;
+  const indexOfFirstCow = indexOfLastCow - cowsPerPage;
+  const currentCows = filteredCows.slice(indexOfFirstCow, indexOfLastCow);
+  const totalPages = Math.ceil(filteredCows.length / cowsPerPage);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   // Calculate cow performance metrics
   const cowPerformance = useMemo(() => {
     if (!selectedCow || !milkingSessions.length) return null;
@@ -552,6 +610,63 @@ const CowsMilkAnalysis = () => {
     };
   }, [selectedCow, milkingSessions, dateRange]);
 
+  // Calculate farm performance metrics - highest and lowest producing cows
+  const farmPerformance = useMemo(() => {
+    if (!milkingSessions.length || !cows.length) return null;
+
+    // Group sessions by cow
+    const cowProductionMap = {};
+    const femaleCows = cows.filter(
+      (cow) => !cow.gender || cow.gender.toLowerCase() !== "male"
+    );
+
+    femaleCows.forEach((cow) => {
+      const cowSessions = milkingSessions.filter(
+        (session) => session.cow_id === cow.id
+      );
+
+      if (cowSessions.length > 0) {
+        // Calculate average production per session
+        const totalVolume = cowSessions.reduce(
+          (sum, session) => sum + parseFloat(session.volume || 0),
+          0
+        );
+        const avgPerSession =
+          cowSessions.length > 0 ? totalVolume / cowSessions.length : 0;
+
+        cowProductionMap[cow.id] = {
+          cowId: cow.id,
+          cowName: cow.name,
+          breed: cow.breed,
+          avgProduction: avgPerSession,
+          totalVolume: totalVolume,
+          milkingSessions: cowSessions.length,
+        };
+      }
+    });
+
+    // Convert map to array for sorting
+    const cowProductionArray = Object.values(cowProductionMap);
+
+    // Sort by average production
+    const sortedByAvg = [...cowProductionArray].sort(
+      (a, b) => b.avgProduction - a.avgProduction
+    );
+
+    // Get highest and lowest producers
+    const highestProducers = sortedByAvg.slice(0, 3);
+    const lowestProducers = [...sortedByAvg]
+      .sort((a, b) => a.avgProduction - b.avgProduction)
+      .slice(0, 3);
+
+    return {
+      highestProducers,
+      lowestProducers,
+      totalCows: femaleCows.length,
+      totalMilkingCows: cowProductionArray.length,
+    };
+  }, [cows, milkingSessions]);
+
   if (!currentUser) {
     return (
       <Alert variant="danger">
@@ -602,18 +717,29 @@ const CowsMilkAnalysis = () => {
         >
           <Card style={styles.filterCard}>
             <Card.Body>
+              {" "}
               <Row className="align-items-center">
                 <Col md={4}>
-                  <h5
-                    className="mb-0"
-                    style={{
-                      fontWeight: "500",
-                      letterSpacing: "0.9px",
-                    }}
-                  >
-                    <i className="fas fa-paw me-2 text-info"></i>
-                    Analysis for: {selectedCow.name}
-                  </h5>
+                  <div className="d-flex align-items-center">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      className="me-3"
+                      onClick={() => setSelectedCow(null)}
+                    >
+                      <i className="fas fa-arrow-left me-1"></i> Back
+                    </Button>
+                    <h5
+                      className="mb-0"
+                      style={{
+                        fontWeight: "500",
+                        letterSpacing: "0.9px",
+                      }}
+                    >
+                      <i className="fas fa-paw me-2 text-info"></i>
+                      Analysis for: {selectedCow.name}
+                    </h5>
+                  </div>
                 </Col>
                 <Col md={4}>
                   {!cowPerformance?.isMale && (
@@ -763,7 +889,7 @@ const CowsMilkAnalysis = () => {
                                 style={{ fontSize: "20px" }}
                               ></i>
                               <div>
-                                <strong className="text-success">Umur:</strong>
+                                <strong className="text-success">Age:</strong>
                                 <br />
                                 <span className="text-success">
                                   {cowPerformance.breedingInfo.age}
@@ -960,9 +1086,7 @@ const CowsMilkAnalysis = () => {
                           >
                             {cowPerformance.highestProduction}L
                           </h6>
-                          <small style={{ color: "#2e7d32", opacity: 0.8 }}>
-                            Highest
-                          </small>
+                          <small className="text-muted">Highest</small>
                         </div>
                       </Col>
                       <Col xs={4}>
@@ -987,9 +1111,7 @@ const CowsMilkAnalysis = () => {
                           >
                             {cowPerformance.lowestProduction}L
                           </h6>
-                          <small style={{ color: "#c62828", opacity: 0.8 }}>
-                            Lowest
-                          </small>
+                          <small className="text-muted">Lowest</small>
                         </div>
                       </Col>
                     </Row>
@@ -1234,24 +1356,193 @@ const CowsMilkAnalysis = () => {
           </Row>
         </motion.div>
       )}
-      {/* Cows Grid */}
+      {/* Farm Performance Overview - Before Cow Selection */}
+      {!selectedCow && farmPerformance && cows.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <Card style={styles.card}>
+            <Card.Header className="bg-white border-bottom-0">
+              <h5 style={styles.heading}>
+                <i className="fas fa-trophy me-2"></i>
+                Farm Performance Overview
+              </h5>
+              <p style={styles.subheading} className="mb-0">
+                Highest and lowest milk producing cows in the farm
+              </p>
+            </Card.Header>
+            <Card.Body>
+              <Row>
+                <Col md={6} className="mb-3 mb-md-0">
+                  <h6 className="fw-bold text-success mb-3">
+                    <i className="fas fa-arrow-up me-2"></i>
+                    Top 3 Highest Producers
+                  </h6>
+                  {farmPerformance.highestProducers.length > 0 ? (
+                    <div className="list-group">
+                      {farmPerformance.highestProducers.map((cow, index) => (
+                        <button
+                          key={cow.cowId}
+                          className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                          onClick={() =>
+                            setSelectedCow(cows.find((c) => c.id === cow.cowId))
+                          }
+                        >
+                          <div className="d-flex align-items-center">
+                            <span className="badge bg-success rounded-pill me-3">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <div className="fw-bold">{cow.cowName}</div>
+                              <small className="text-muted">{cow.breed}</small>
+                            </div>
+                          </div>
+                          <div className="d-flex flex-column align-items-end">
+                            <span className="fw-bold">
+                              {cow.avgProduction.toFixed(1)}L
+                            </span>
+                            <small className="text-muted">per session</small>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted">No production data available</p>
+                  )}
+                </Col>
+                <Col md={6}>
+                  <h6 className="fw-bold text-danger mb-3">
+                    <i className="fas fa-arrow-down me-2"></i>
+                    Top 3 Lowest Producers
+                  </h6>
+                  {farmPerformance.lowestProducers.length > 0 ? (
+                    <div className="list-group">
+                      {farmPerformance.lowestProducers.map((cow, index) => (
+                        <button
+                          key={cow.cowId}
+                          className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                          onClick={() =>
+                            setSelectedCow(cows.find((c) => c.id === cow.cowId))
+                          }
+                        >
+                          <div className="d-flex align-items-center">
+                            <span className="badge bg-danger rounded-pill me-3">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <div className="fw-bold">{cow.cowName}</div>
+                              <small className="text-muted">{cow.breed}</small>
+                            </div>
+                          </div>
+                          <div className="d-flex flex-column align-items-end">
+                            <span className="fw-bold">
+                              {cow.avgProduction.toFixed(1)}L
+                            </span>
+                            <small className="text-muted">per session</small>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted">No production data available</p>
+                  )}
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-4"
       >
         <Card style={styles.card}>
+          {" "}
           <Card.Header className="bg-white border-bottom-0">
-            <h5 style={styles.heading}>
-              <i className="fas fa-cow me-2"></i>
-              {currentUser.role_id === 3
-                ? "The Cows You Manage"
-                : "All Cows on the Farm"}
-            </h5>
-            <p style={styles.subheading} className="mb-0">
-              Click on the cow card to see detailed analysis.
-            </p>
-          </Card.Header>
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 style={styles.heading}>
+                  <i className="fas fa-cow me-2"></i>
+                  {currentUser.role_id === 3
+                    ? "The Cows You Manage"
+                    : "All Cows on the Farm"}
+                </h5>
+                <p style={styles.subheading} className="mb-0">
+                  Click on the cow card to see detailed analysis.
+                </p>
+              </div>{" "}
+              <div style={{ width: "280px" }}>
+                <div
+                  className={`input-group input-group-sm ${
+                    searchFocus ? "shadow-sm" : ""
+                  }`}
+                  style={{
+                    transition: "all 0.3s ease",
+                    borderRadius: "50px",
+                    overflow: "hidden",
+                    background: searchFocus ? "#ffffff" : "#f8f9fa",
+                    border: searchFocus
+                      ? "1px solid #3D90D7"
+                      : "1px solid #e9ecef",
+                  }}
+                >
+                  <span
+                    className="input-group-text border-0"
+                    style={{
+                      background: "transparent",
+                      color: searchFocus ? "#3D90D7" : "#adb5bd",
+                    }}
+                  >
+                    <i className="fas fa-search"></i>
+                  </span>
+                  <Form.Control
+                    type="text"
+                    placeholder="Search by name, breed, or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => setSearchFocus(true)}
+                    onBlur={() => setSearchFocus(false)}
+                    className="border-0"
+                    style={{
+                      background: "transparent",
+                      boxShadow: "none",
+                      transition: "all 0.3s ease",
+                    }}
+                  />
+                  {searchTerm && (
+                    <button
+                      className="btn border-0"
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      title="Clear search"
+                      style={{
+                        color: "#3D90D7",
+                        background: "transparent",
+                      }}
+                    >
+                      <i className="fas fa-times-circle"></i>
+                    </button>
+                  )}
+                </div>
+
+                {/* Search filters/dropdown could go here */}
+                {searchTerm && (
+                  <div className="d-flex justify-content-end">
+                    <small
+                      className="text-primary mt-1"
+                      style={{ fontSize: "0.7rem" }}
+                    >
+                      Press Enter to search
+                    </small>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card.Header>{" "}
           <Card.Body>
             {cows.length === 0 ? (
               <div className="text-center py-5">
@@ -1265,112 +1556,303 @@ const CowsMilkAnalysis = () => {
                     : "There is no data on cattle yet"}
                 </p>
               </div>
+            ) : filteredCows.length === 0 ? (
+              <div className="text-center py-5">
+                <i
+                  className="fas fa-search text-muted"
+                  style={{ fontSize: "48px" }}
+                ></i>
+                <p className="text-muted mt-3">
+                  No cows found matching "{searchTerm}"
+                </p>
+              </div>
             ) : (
-              <Row className="g-3">
-                {cows.map((cow, index) => {
-                  const lactationPhase = getLactationPhase(cow);
-                  const isSelected = selectedCow?.id === cow.id;
-                  const isMale =
-                    cow.gender && cow.gender.toLowerCase() === "male";
-
-                  return (
-                    <Col lg={3} md={4} sm={6} key={cow.id}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ y: -5 }}
-                      >
-                        <Card
-                          style={{
-                            ...styles.cowCard,
-                            ...(isSelected ? styles.selectedCard : {}),
-                          }}
-                          onClick={() => setSelectedCow(cow)}
+              <>
+                {" "}
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    {searchTerm && (
+                      <div className="d-flex align-items-center">
+                        <Badge
+                          bg="info"
+                          className="me-2 d-flex align-items-center"
+                          style={{ padding: "6px 10px", borderRadius: "20px" }}
                         >
-                          <Card.Body className="p-3">
-                            <div className="d-flex justify-content-between align-items-start mb-2">
-                              <div>
-                                <h6
-                                  className="mb-1 fw-bold"
-                                  style={{ color: "#2c3e50" }}
+                          <i className="fas fa-search me-1"></i>
+                          <span>{filteredCows.length}</span>
+                        </Badge>
+                        <small className="text-muted">
+                          cows found matching "{searchTerm}"
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <small className="text-muted me-2">Rows:</small>
+                    <Form.Select
+                      size="sm"
+                      value={cowsPerPage}
+                      onChange={(e) => {
+                        setCowsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      style={{ width: "70px" }}
+                    >
+                      <option value="4">4</option>
+                      <option value="8">8</option>
+                      <option value="12">12</option>
+                      <option value="16">16</option>
+                    </Form.Select>
+                  </div>
+                </div>
+                <Row className="g-3">
+                  {currentCows.map((cow, index) => {
+                    const lactationPhase = getLactationPhase(cow);
+                    const isSelected = selectedCow?.id === cow.id;
+                    const isMale =
+                      cow.gender && cow.gender.toLowerCase() === "male";
+
+                    return (
+                      <Col lg={3} md={4} sm={6} key={cow.id}>
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          whileHover={{ y: -5 }}
+                        >
+                          <Card
+                            style={{
+                              ...styles.cowCard,
+                              ...(isSelected ? styles.selectedCard : {}),
+                            }}
+                            onClick={() => setSelectedCow(cow)}
+                          >
+                            <Card.Body className="p-3">
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                  <h6
+                                    className="mb-1 fw-bold"
+                                    style={{ color: "#2c3e50" }}
+                                  >
+                                    {cow.name}
+                                  </h6>
+                                  <small className="text-muted">
+                                    ID: {cow.id}
+                                  </small>
+                                </div>
+                                <div className="text-end">
+                                  <div style={{ fontSize: "24px" }}>
+                                    {isMale ? "🐂" : "🐄"}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mb-2">
+                                <Badge
+                                  bg={getLactationColor(lactationPhase)}
+                                  className="me-2"
+                                  title={getLactationDescription(
+                                    lactationPhase
+                                  )}
                                 >
-                                  {cow.name}
-                                </h6>
+                                  {lactationPhase}
+                                </Badge>
+                                <Badge
+                                  bg="outline-secondary"
+                                  className="border text-secondary"
+                                >
+                                  {cow.breed}
+                                </Badge>
+                              </div>
+
+                              <Row className="small text-muted">
+                                <Col xs={6}>
+                                  <div>
+                                    <i className="fas fa-birthday-cake me-1"></i>
+                                    {formatAge(cow.birth)}
+                                  </div>
+                                </Col>
+                                <Col xs={6}>
+                                  <div>
+                                    <i className="fas fa-venus-mars me-1"></i>
+                                    {cow.gender}
+                                  </div>
+                                </Col>
+                              </Row>
+
+                              {/* Show lactation description */}
+                              <div className="mt-2">
                                 <small className="text-muted">
-                                  ID: {cow.id}
+                                  <i className="fas fa-info-circle me-1"></i>
+                                  {getLactationDescription(lactationPhase)}
                                 </small>
                               </div>
-                              <div className="text-end">
-                                <div style={{ fontSize: "24px" }}>
-                                  {isMale ? "🐂" : "🐄"}
+
+                              {currentUser.role_id !== 3 && cow.farmerName && (
+                                <div className="mt-2 pt-2 border-top">
+                                  <small className="text-muted">
+                                    <i className="fas fa-user me-1"></i>
+                                    Farmer: {cow.farmerName}
+                                  </small>
                                 </div>
-                              </div>
-                            </div>
+                              )}
 
-                            <div className="mb-2">
-                              <Badge
-                                bg={getLactationColor(lactationPhase)}
-                                className="me-2"
-                                title={getLactationDescription(lactationPhase)}
-                              >
-                                {lactationPhase}
-                              </Badge>
-                              <Badge
-                                bg="outline-secondary"
-                                className="border text-secondary"
-                              >
-                                {cow.breed}
-                              </Badge>
-                            </div>
-
-                            <Row className="small text-muted">
-                              <Col xs={6}>
-                                <div>
-                                  <i className="fas fa-birthday-cake me-1"></i>
-                                  {formatAge(cow.birth)}
+                              {isSelected && (
+                                <div className="mt-2 pt-2 border-top">
+                                  <small className="text-primary fw-bold">
+                                    <i className="fas fa-check-circle me-1"></i>
+                                    Selected for analysis
+                                  </small>
                                 </div>
-                              </Col>
-                              <Col xs={6}>
-                                <div>
-                                  <i className="fas fa-venus-mars me-1"></i>
-                                  {cow.gender}
-                                </div>
-                              </Col>
-                            </Row>
+                              )}
+                            </Card.Body>
+                          </Card>
+                        </motion.div>
+                      </Col>
+                    );
+                  })}{" "}
+                </Row>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="d-flex justify-content-center mt-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <nav aria-label="Cow pagination">
+                        <ul className="pagination pagination-sm">
+                          {/* First page button */}
+                          <li
+                            className={`page-item ${
+                              currentPage === 1 ? "disabled" : ""
+                            }`}
+                          >
+                            <button
+                              className="page-link"
+                              onClick={() => setCurrentPage(1)}
+                              disabled={currentPage === 1}
+                            >
+                              <i className="fas fa-angle-double-left"></i>
+                            </button>
+                          </li>
 
-                            {/* Show lactation description */}
-                            <div className="mt-2">
-                              <small className="text-muted">
-                                <i className="fas fa-info-circle me-1"></i>
-                                {getLactationDescription(lactationPhase)}
-                              </small>
-                            </div>
+                          {/* Previous button */}
+                          <li
+                            className={`page-item ${
+                              currentPage === 1 ? "disabled" : ""
+                            }`}
+                          >
+                            <button
+                              className="page-link"
+                              onClick={() => setCurrentPage(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              <i className="fas fa-angle-left"></i>
+                            </button>
+                          </li>
 
-                            {currentUser.role_id !== 3 && cow.farmerName && (
-                              <div className="mt-2 pt-2 border-top">
-                                <small className="text-muted">
-                                  <i className="fas fa-user me-1"></i>
-                                  Farmer: {cow.farmerName}
-                                </small>
-                              </div>
-                            )}
+                          {/* Page numbers */}
+                          {[...Array(totalPages)].map((_, idx) => {
+                            // Show: current page, 1 page before and after current, first and last page
+                            const pageNum = idx + 1;
 
-                            {isSelected && (
-                              <div className="mt-2 pt-2 border-top">
-                                <small className="text-primary fw-bold">
-                                  <i className="fas fa-check-circle me-1"></i>
-                                  Selected for analysis
-                                </small>
-                              </div>
-                            )}
-                          </Card.Body>
-                        </Card>
-                      </motion.div>
-                    </Col>
-                  );
-                })}
-              </Row>
+                            // Show ellipsis for many pages
+                            if (
+                              totalPages > 5 &&
+                              pageNum !== 1 &&
+                              pageNum !== totalPages &&
+                              Math.abs(pageNum - currentPage) > 1
+                            ) {
+                              // Only show one ellipsis between segments
+                              if (
+                                (pageNum === 2 && currentPage > 3) ||
+                                (pageNum === totalPages - 1 &&
+                                  currentPage < totalPages - 2)
+                              ) {
+                                return (
+                                  <li
+                                    key={`ellipsis-${pageNum}`}
+                                    className="page-item disabled"
+                                  >
+                                    <span className="page-link">...</span>
+                                  </li>
+                                );
+                              }
+                              return null;
+                            }
+
+                            // Show the page number
+                            if (
+                              pageNum === 1 ||
+                              pageNum === totalPages ||
+                              Math.abs(pageNum - currentPage) <= 1
+                            ) {
+                              return (
+                                <li
+                                  key={pageNum}
+                                  className={`page-item ${
+                                    currentPage === pageNum ? "active" : ""
+                                  }`}
+                                >
+                                  <button
+                                    className="page-link"
+                                    onClick={() => setCurrentPage(pageNum)}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                </li>
+                              );
+                            }
+
+                            return null;
+                          })}
+
+                          {/* Next button */}
+                          <li
+                            className={`page-item ${
+                              currentPage === totalPages ? "disabled" : ""
+                            }`}
+                          >
+                            <button
+                              className="page-link"
+                              onClick={() => setCurrentPage(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                            >
+                              <i className="fas fa-angle-right"></i>
+                            </button>
+                          </li>
+
+                          {/* Last page button */}
+                          <li
+                            className={`page-item ${
+                              currentPage === totalPages ? "disabled" : ""
+                            }`}
+                          >
+                            <button
+                              className="page-link"
+                              onClick={() => setCurrentPage(totalPages)}
+                              disabled={currentPage === totalPages}
+                            >
+                              <i className="fas fa-angle-double-right"></i>
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    </motion.div>
+                  </div>
+                )}
+                {/* Page info */}
+                {filteredCows.length > 0 && (
+                  <div className="d-flex justify-content-center mt-2">
+                    <small className="text-muted">
+                      Showing {indexOfFirstCow + 1}-
+                      {Math.min(indexOfLastCow, filteredCows.length)} of{" "}
+                      {filteredCows.length} cows
+                    </small>
+                  </div>
+                )}
+              </>
             )}
           </Card.Body>
         </Card>
@@ -1386,6 +1868,24 @@ const CowsMilkAnalysis = () => {
             <i className="fas fa-info-circle me-2"></i>
             <strong>Choose a cow</strong> from the card above to see detailed
             milk production analysis or breeding information
+          </Alert>
+        </motion.div>
+      )}
+
+      {/* Return instructions - shown only when a cow is selected */}
+      {selectedCow && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mb-4"
+        >
+          <Alert variant="light" className="text-center border">
+            <i className="fas fa-keyboard me-2"></i>
+            Press{" "}
+            <kbd className="bg-secondary text-white px-2 rounded">ESC</kbd> key
+            or click the <strong>Back</strong> button to return to the farm
+            overview
           </Alert>
         </motion.div>
       )}

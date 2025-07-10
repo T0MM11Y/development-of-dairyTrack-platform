@@ -149,11 +149,127 @@ const VALID_ROUTES = [
   "/farmer",
   "/farmer/*",
 ];
+/**
+ * Fungsi untuk mengubah waktu UTC ISO string ke waktu lokal Asia/Jakarta (WIB)
+ * @param {string} utcString - ISO string dari backend, contoh: "2025-07-01T16:04:28.775928Z"
+ * @returns {string} - Waktu lokal dalam format string, contoh: "2025-07-01 23:04:28"
+ */
+function toJakartaTimeString(utcString) {
+  if (!utcString) return "";
+  const date = new Date(utcString);
+  // Format: YYYY-MM-DD HH:mm:ss
+  return date
+    .toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    })
+    .replace(/\./g, ":")
+    .replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$2-$1");
+}
 
 // Global state untuk user data
 let globalCurrentUser = null;
 const userInitializedRef = { current: false };
 
+// Contoh penggunaan di pengecekan expired/log:
+const isTokenExpired = () => {
+  try {
+    const userData = getNormalizedUserData();
+    const expiredUtc = userData?.token_expires_at;
+    const expiredJakarta = toJakartaTimeString(expiredUtc);
+    const now = new Date();
+    const nowJakarta = toJakartaTimeString(now.toISOString());
+    console.log(
+      "Token expired check (UTC):",
+      expiredUtc,
+      "| (Jakarta):",
+      expiredJakarta,
+      "| Now (UTC):",
+      now.toISOString(),
+      "| Now (Jakarta):",
+      nowJakarta
+    );
+    if (!expiredUtc) return false;
+    const expiresAt = new Date(expiredUtc);
+    return now > expiresAt;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Fungsi paksa logout
+const forceLogout = async () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      if (userData?.token && userData?.user_id) {
+        try {
+          await logout(userData.token, userData.user_id);
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    // Abaikan error parsing
+  }
+  // Hapus localStorage dan redirect
+  localStorage.removeItem("user");
+  globalCurrentUser = null;
+  userInitializedRef.current = false;
+  window.location.href = "/";
+};
+
+// Komponen pengecekan token expired global (idle-based)
+const TokenExpiryChecker = () => {
+  const idleTimeout = 30000; // 30 detik tanpa aktivitas
+  const idleTimerRef = useRef(null);
+
+  // Fungsi untuk cek expired
+  const checkAndLogout = useCallback(() => {
+    if (isTokenExpired()) {
+      console.log("Token expired, force logout!");
+      forceLogout();
+    }
+  }, []);
+
+  // Reset timer setiap ada aktivitas
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = setTimeout(checkAndLogout, idleTimeout);
+  }, [checkAndLogout]);
+
+  useEffect(() => {
+    // Daftar event yang dianggap aktivitas user
+    const events = [
+      "mousemove",
+      "keydown",
+      "mousedown",
+      "touchstart",
+      "scroll",
+    ];
+    events.forEach((event) => window.addEventListener(event, resetIdleTimer));
+
+    // Set timer pertama kali
+    resetIdleTimer();
+
+    return () => {
+      events.forEach((event) =>
+        window.removeEventListener(event, resetIdleTimer)
+      );
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [resetIdleTimer]);
+
+  return null;
+};
 // Function to get normalized user data
 const getNormalizedUserData = () => {
   if (globalCurrentUser) {
@@ -1248,18 +1364,42 @@ const RouteConfig = () => {
   );
 };
 
-// Main App Component
 function App() {
+  const location = useLocation();
+
+  // Daftar path public (tanpa parameter)
+  const PUBLIC_PATHS = [
+    "/",
+    "/about",
+    "/contact",
+    "/blog",
+    "/gallery",
+    "/products",
+    "/orders",
+  ];
+
+  // Cek apakah saat ini di public page
+  const isPublicPage = PUBLIC_PATHS.includes(location.pathname);
+
+  return (
+    <SocketProvider>
+      {/* TokenExpiryChecker hanya untuk halaman non-public */}
+      {!isPublicPage && <TokenExpiryChecker />}
+      <UserInitializer />
+      <div className="App">
+        <RouteConfig />
+      </div>
+    </SocketProvider>
+  );
+}
+
+// Agar useLocation bisa dipakai di App, wrap dengan Router
+function AppWithRouter() {
   return (
     <Router>
-      <SocketProvider>
-        <UserInitializer />
-        <div className="App">
-          <RouteConfig />
-        </div>
-      </SocketProvider>
+      <App />
     </Router>
   );
 }
 
-export default App;
+export default AppWithRouter;

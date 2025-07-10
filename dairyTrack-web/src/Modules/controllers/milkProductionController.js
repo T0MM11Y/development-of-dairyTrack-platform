@@ -2,7 +2,10 @@ import { API_URL1 } from "../../api/apiController.js";
 import Swal from "sweetalert2";
 
 // Function to add a new milking session
-export const addMilkingSession = async (sessionData) => {
+export const addMilkingSession = async (
+  sessionData,
+  skipNotification = false
+) => {
   try {
     const response = await fetch(
       `${API_URL1}/milk-production/milking-sessions`,
@@ -17,27 +20,36 @@ export const addMilkingSession = async (sessionData) => {
 
     if (response.ok) {
       const data = await response.json();
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: data.message,
-      });
+      // Only show notification if not skipping
+      if (!skipNotification) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: data.message,
+        });
+      }
       return { success: true, id: data.id, message: data.message };
     } else {
       const error = await response.json();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.error || "Failed to add milking session.",
-      });
+      // Only show notification if not skipping
+      if (!skipNotification) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.error || "Failed to add milking session.",
+        });
+      }
       return { success: false, message: error.error };
     }
   } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "An error occurred while adding the milking session.",
-    });
+    // Only show notification if not skipping
+    if (!skipNotification) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while adding the milking session.",
+      });
+    }
     console.error("Error adding milking session:", error);
     return {
       success: false,
@@ -244,27 +256,32 @@ export const exportMilkProductionToExcel = async () => {
   }
 };
 
-// Function to delete a milking session
-export const deleteMilkingSession = async (sessionId) => {
+// Function to delete a milking session (without confirmation for bulk operations)
+export const deleteMilkingSession = async (
+  sessionId,
+  skipConfirmation = false
+) => {
   try {
-    // Confirmation dialog before deletion
-    const confirmResult = await Swal.fire({
-      title: "Are you sure?",
-      text: "This will permanently delete this milking session and update related data. This action cannot be undone!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
-    });
+    // Show confirmation dialog only if not skipped (for single deletions)
+    if (!skipConfirmation) {
+      const confirmResult = await Swal.fire({
+        title: "Are you sure?",
+        text: "This will permanently delete this milking session and update related data. This action cannot be undone!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+      });
 
-    // If user cancels the deletion
-    if (!confirmResult.isConfirmed) {
-      return { success: false, canceled: true };
+      // If user cancels the deletion
+      if (!confirmResult.isConfirmed) {
+        return { success: false, canceled: true };
+      }
     }
 
-    // User confirmed, proceed with deletion
+    // Proceed with deletion
     const response = await fetch(
       `${API_URL1}/milk-production/milking-sessions/${sessionId}`,
       {
@@ -277,29 +294,43 @@ export const deleteMilkingSession = async (sessionId) => {
 
     if (response.ok) {
       const data = await response.json();
-      Swal.fire({
-        icon: "success",
-        title: "Deleted!",
-        text: "The milking session has been deleted successfully.",
-        timer: 2000,
-        timerProgressBar: true,
-      });
+
+      // Show success message only for single deletions
+      if (!skipConfirmation) {
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "The milking session has been deleted successfully.",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+
       return { success: true, message: data.message };
     } else {
       const error = await response.json();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.error || "Failed to delete the milking session.",
-      });
+
+      // Show error message only for single deletions
+      if (!skipConfirmation) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error.error || "Failed to delete the milking session.",
+        });
+      }
+
       return { success: false, message: error.error };
     }
   } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "An error occurred while deleting the milking session.",
-    });
+    // Show error message only for single deletions
+    if (!skipConfirmation) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while deleting the milking session.",
+      });
+    }
+
     console.error("Error deleting milking session:", error);
     return {
       success: false,

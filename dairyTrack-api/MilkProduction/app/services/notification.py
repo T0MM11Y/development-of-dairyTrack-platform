@@ -52,7 +52,7 @@ class NotificationConfig:
     SUPERVISOR_ROLE_NAMES: Tuple[str, ...] = ('supervisor', 'Supervisor', 'mandor', 'Mandor')
     
     # Production thresholds
-    LOW_PRODUCTION_THRESHOLD: float = 10.0
+    LOW_PRODUCTION_THRESHOLD: float = 15.0
     HIGH_PRODUCTION_THRESHOLD: float = 25.0
     # Production change thresholds (percentage)
     PRODUCTION_INCREASE_THRESHOLD: float = 15.0  # 15% increase
@@ -537,10 +537,9 @@ class NotificationService:
                 today = date.today()
                 current_time = self.get_timezone_aware_time()
                 
-                # Only run this check in the afternoon (after 12 PM)
-                if current_time.hour < 12:
-                    logger.info("Too early to check for missing milking activity")
-                    return 0
+                # DIPERBAIKI: Tidak ada batasan waktu untuk pengecekan missing milking
+                # Sistem akan selalu mengecek jika ada data yang hilang tanpa membatasi jam
+                logger.info(f"Checking for missing milking data at {current_time.strftime('%H:%M')}")
                     
                 # Get all active cows
                 all_cows = Cow.query.filter_by(is_active=True).all()

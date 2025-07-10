@@ -6,6 +6,8 @@ import {
   listCowsByUser,
   getCowManagers,
 } from "../../../../Modules/controllers/cattleDistributionController";
+import Select from "react-select"; // Tambahkan import ini di bagian atas
+
 import { getAllFarmers } from "../../../../Modules/controllers/usersController";
 
 import {
@@ -20,6 +22,7 @@ import {
   Tooltip,
   Badge,
   Row,
+  Dropdown,
   Col,
 } from "react-bootstrap";
 import {
@@ -33,6 +36,8 @@ import {
 
 const ListMilking = () => {
   // ========== STATE MANAGEMENT ==========
+  const [multiRowMilkers, setMultiRowMilkers] = useState([[]]);
+
   const [currentUser, setCurrentUser] = useState(null);
   const [cowList, setCowList] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -50,15 +55,231 @@ const ListMilking = () => {
   const [selectedCow, setSelectedCow] = useState("");
   const [selectedMilker, setSelectedMilker] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [viewSession, setViewSession] = useState(null);
+  // Multi-select delete state
+  const [selectedSessions, setSelectedSessions] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
 
-  // Form state
+  // Tambahkan state baru untuk multi add
+  const [showMultiAddModal, setShowMultiAddModal] = useState(false);
+  const [multiSessions, setMultiSessions] = useState([
+    {
+      cow_id: "",
+      milker_id: "",
+      volume: "",
+      milking_time: getLocalDateTime(),
+      notes: "",
+    },
+  ]);
+
+  // Saat tambah baris baru, tambahkan juga array kosong di multiRowMilkers
+  const handleAddMultiRow = () => {
+    setMultiSessions([
+      ...multiSessions,
+      {
+        cow_id: "",
+        milker_id: "",
+        volume: "",
+        milking_time: getLocalDateTime(),
+        notes: "",
+      },
+    ]);
+    setMultiRowMilkers([...multiRowMilkers, []]);
+  };
+
+  const handleMultiCowChange = async (idx, cowId) => {
+    handleMultiSessionChange(idx, "cow_id", cowId);
+    handleMultiSessionChange(idx, "milker_id", ""); // reset milker
+
+    if (currentUser?.role_id === 1 && cowId) {
+      // Fetch milker untuk cow ini
+      setIsSubmitting(true);
+      const res = await getCowManagers(cowId);
+      setIsSubmitting(false);
+      setMultiRowMilkers((prev) => {
+        const copy = [...prev];
+        copy[idx] = res.success ? res.managers || [] : [];
+        return copy;
+      });
+    } else {
+      setMultiRowMilkers((prev) => {
+        const copy = [...prev];
+        copy[idx] = [];
+        return copy;
+      });
+    }
+  };
+
+  // Handler untuk hapus baris
+  const handleRemoveMultiRow = (idx) => {
+    setMultiSessions(multiSessions.filter((_, i) => i !== idx));
+    setMultiRowMilkers(multiRowMilkers.filter((_, i) => i !== idx));
+  };
+  // Handler perubahan field
+  const handleMultiSessionChange = (idx, field, value) => {
+    setMultiSessions((prev) =>
+      prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row))
+    );
+  };
+
+  // ...existing code...
+  // Submit multi add
+  // ...existing code...
+  // ...existing code...
+  const handleMultiAddSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Debug: Print all multiSessions before validation
+    console.log("DEBUG: multiSessions before validation:", multiSessions);
+
+    // === Gabungkan semua error validasi jadi satu notifikasi ===
+    let errorMsg = "";
+    for (const [i, session] of multiSessions.entries()) {
+      if (!session.cow_id || !session.milker_id || !session.volume) {
+        errorMsg += `Baris ${i + 1}: Lengkapi semua kolom.\n`;
+      }
+      if (parseFloat(session.volume) > 30) {
+        errorMsg += `Baris ${i + 1}: Volume maksimal 30 liter.\n`;
+      }
+    }
+    // Validasi duplikat cow_id + milking_time
+    const uniqueSet = new Set();
+    for (const [i, session] of multiSessions.entries()) {
+      const key = `${session.cow_id}_${session.milking_time}`;
+      if (uniqueSet.has(key)) {
+        errorMsg += `Baris ${i + 1}: Duplikat sapi & waktu pemerahan.\n`;
+      }
+      uniqueSet.add(key);
+    }
+    if (errorMsg) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Validasi Gagal",
+        html: `<pre style="text-align:left;white-space:pre-line">${errorMsg}</pre>`,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Debug: Print all milking_time values
+    multiSessions.forEach((s, idx) => {
+      console.log(
+        `DEBUG: Row ${idx + 1} milking_time:`,
+        s.milking_time,
+        typeof s.milking_time
+      );
+    });
+
+    // Show loading modal ONCE for all requests
+    Swal.fire({
+      title: "Adding Sessions...",
+      text: `Please wait while ${multiSessions.length} sessions are being added.`,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      showConfirmButton: false,
+    });
+
+    let successCount = 0;
+    let errorCount = 0;
+    for (const [idx, session] of multiSessions.entries()) {
+      const userId = currentUser?.id || currentUser?.user_id;
+      const creatorInfo = currentUser
+        ? `Created by: ${currentUser.name || currentUser.username} (Role: ${
+            currentUser.role_id === 1
+              ? "Admin"
+              : currentUser.role_id === 2
+              ? "Supervisor"
+              : "Farmer"
+          }, ID: ${userId})`
+        : "Created by: Unknown";
+
+      // Debug: Format milking_time before sending
+      let milkingTime = session.milking_time;
+      if (milkingTime && milkingTime.length === 16) {
+        milkingTime = milkingTime + ":00";
+      }
+
+      const sessionData = {
+        ...session,
+        milking_time: milkingTime,
+        volume: parseFloat(session.volume),
+        notes: session.notes
+          ? `${session.notes}\n\n${creatorInfo}`
+          : creatorInfo,
+      };
+      try {
+        // Pass true to skip individual notifications
+        const res = await addMilkingSession(sessionData, true);
+        if (res.success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      } catch (err) {
+        errorCount++;
+      }
+      // Tambahkan delay 300ms antar request
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    Swal.close(); // Close loading modal before showing result
+
+    // Show a summary notification
+    if (successCount > 0 || errorCount > 0) {
+      let title, message, icon;
+
+      if (successCount > 0 && errorCount === 0) {
+        title = "Success!";
+        message = `All ${successCount} milking sessions were added successfully.`;
+        icon = "success";
+      } else if (successCount > 0 && errorCount > 0) {
+        title = "Partial Success";
+        message = `${successCount} session(s) added successfully, but ${errorCount} failed.`;
+        icon = "warning";
+      } else {
+        title = "Failed";
+        message = `Failed to add all ${errorCount} session(s).`;
+        icon = "error";
+      }
+
+      await Swal.fire({
+        title: title,
+        text: message,
+        icon: icon,
+      });
+    }
+
+    // Refresh data if there were successful additions
+    if (successCount > 0) {
+      const sessionsResponse = await getMilkingSessions();
+      if (sessionsResponse.success && sessionsResponse.sessions) {
+        setSessions(sessionsResponse.sessions);
+      }
+      setShowMultiAddModal(false);
+      setMultiSessions([
+        {
+          cow_id: "",
+          milker_id: "",
+          volume: "",
+          milking_time: getLocalDateTime(),
+          notes: "",
+        },
+      ]);
+      setMultiRowMilkers([[]]);
+    }
+    setIsSubmitting(false);
+  };
+  // ...existing code...
+
   const [newSession, setNewSession] = useState({
     cow_id: "",
     milker_id: "",
@@ -87,6 +308,47 @@ const ListMilking = () => {
       String(date.getDate()).padStart(2, "0")
     );
   }
+  const getCowOptions = (cows) =>
+    cows
+      .filter((cow) => cow.gender?.toLowerCase() === "female")
+      .map((cow) => ({
+        value: String(cow.id).trim(), // pastikan string dan trim
+        label: `${cow.name?.trim() || ""} (ID: ${String(cow.id).trim()}) - ${
+          cow.lactation_phase || "Unknown"
+        }`,
+        search: `${(cow.name || "").toLowerCase().replace(/\s+/g, "")}${String(
+          cow.id
+        )
+          .toLowerCase()
+          .replace(/\s+/g, "")}`,
+      }));
+
+  const getMilkerOptions = (farmers) =>
+    farmers.map((farmer) => ({
+      value: String(farmer.user_id || farmer.id).trim(),
+      label: `${(farmer.name || farmer.username || "").trim()} (ID: ${String(
+        farmer.user_id || farmer.id
+      ).trim()})`,
+      search: `${(farmer.name || farmer.username || "")
+        .toLowerCase()
+        .replace(/\s+/g, "")}${String(farmer.user_id || farmer.id)
+        .toLowerCase()
+        .replace(/\s+/g, "")}`,
+    }));
+
+  // --- Custom filterOption untuk react-select agar pencarian tidak terpengaruh huruf kecil/spasi ---
+  const customFilterOption = (option, inputValue) => {
+    const normalizedInput = inputValue.toLowerCase().replace(/\s+/g, "");
+    const normalizedLabel = (option.label || "")
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    const normalizedSearch = option.data?.search || "";
+    return (
+      normalizedLabel.includes(normalizedInput) ||
+      normalizedSearch.includes(normalizedInput)
+    );
+  };
+
   const fetchFarmersForCow = useCallback(
     async (cowId) => {
       if (!cowId || currentUser?.role_id !== 1) {
@@ -598,62 +860,266 @@ const ListMilking = () => {
     getSessionLocalDate,
   ]);
   // Check if user is a supervisor
-  const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]);
-
-  // Handle deletion of a milking session
+  const isSupervisor = useMemo(() => currentUser?.role_id === 2, [currentUser]); // Handle deletion of a milking session
   const handleDeleteSession = useCallback(async (sessionId) => {
     try {
+      const response = await deleteMilkingSession(sessionId, false); // Show confirmation for single delete
+
+      if (response.success) {
+        // Refresh sessions
+        const sessionsResponse = await getMilkingSessions();
+        if (sessionsResponse.success && sessionsResponse.sessions) {
+          setSessions(sessionsResponse.sessions);
+        }
+      } else if (!response.canceled) {
+        // Show error only if not canceled by user
+        Swal.fire({
+          title: "Error!",
+          text: response.message || "Failed to delete session",
+          icon: "error",
+          timer: 3000,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "An unexpected error occurred while deleting the session",
+        icon: "error",
+        timer: 3000,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end",
+      });
+    }
+  }, []);
+  // Multi-select delete functions
+  const handleSelectSession = (sessionId) => {
+    console.log("Selecting/deselecting session:", sessionId);
+    setSelectedSessions((prev) => {
+      const newSelection = prev.includes(sessionId)
+        ? prev.filter((id) => id !== sessionId)
+        : [...prev, sessionId];
+      console.log("New selection:", newSelection);
+      return newSelection;
+    });
+  };
+  const handleSelectAll = () => {
+    const currentPageSessions =
+      filteredAndPaginatedSessions.currentSessions.map((session) => session.id);
+
+    console.log(
+      "HandleSelectAll - Current page sessions:",
+      currentPageSessions
+    );
+    console.log("HandleSelectAll - Currently selected:", selectedSessions);
+
+    // Check if all current page sessions are already selected
+    const allCurrentPageSelected = currentPageSessions.every((id) =>
+      selectedSessions.includes(id)
+    );
+
+    console.log(
+      "HandleSelectAll - All current page selected:",
+      allCurrentPageSelected
+    );
+
+    if (allCurrentPageSelected) {
+      // Deselect all current page sessions
+      setSelectedSessions((prev) => {
+        const newSelection = prev.filter(
+          (id) => !currentPageSessions.includes(id)
+        );
+        console.log(
+          "HandleSelectAll - Deselecting, new selection:",
+          newSelection
+        );
+        return newSelection;
+      });
+    } else {
+      // Select all current page sessions (add only new ones)
+      setSelectedSessions((prev) => {
+        const newSelection = [...prev];
+        currentPageSessions.forEach((id) => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        console.log(
+          "HandleSelectAll - Selecting all, new selection:",
+          newSelection
+        );
+        return newSelection;
+      });
+    }
+  }; // Update selectAll when filtered sessions change
+  useEffect(() => {
+    const currentPageSessions =
+      filteredAndPaginatedSessions?.currentSessions?.map(
+        (session) => session.id
+      ) || [];
+
+    // Check if all current page sessions are selected
+    const allCurrentPageSelected =
+      currentPageSessions.length > 0 &&
+      currentPageSessions.every((id) => selectedSessions.includes(id));
+
+    setSelectAll(allCurrentPageSelected);
+  }, [filteredAndPaginatedSessions, selectedSessions]);
+  // Clear selections when filters change (but not when page changes)
+  useEffect(() => {
+    setSelectedSessions([]);
+    setSelectAll(false);
+  }, [searchTerm, selectedCow, selectedMilker, selectedDate]); // Handle bulk delete
+  const handleBulkDelete = async () => {
+    console.log("=== BULK DELETE DEBUG ===");
+    console.log("Selected sessions:", selectedSessions);
+    console.log("Selected sessions length:", selectedSessions.length);
+
+    if (selectedSessions.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Sessions Selected",
+        text: "Please select at least one session to delete.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return;
+    } // Filter selected sessions to only include those that exist in current filtered results
+    const currentFilteredSessionIds =
+      filteredAndPaginatedSessions.filteredSessions.map(
+        (session) => session.id
+      );
+    const validSelectedSessions = selectedSessions.filter((sessionId) =>
+      currentFilteredSessionIds.includes(sessionId)
+    );
+
+    console.log("Current filtered session IDs:", currentFilteredSessionIds);
+    console.log("Valid selected sessions:", validSelectedSessions);
+    console.log(
+      "Valid selected sessions length:",
+      validSelectedSessions.length
+    );
+
+    if (validSelectedSessions.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Valid Sessions Selected",
+        text: "The selected sessions are not available in the current view. Please refresh and try again.",
+        timer: 3000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    try {
       const result = await Swal.fire({
-        title: "Delete Milking Session?",
-        text: "You won't be able to revert this!",
+        title: `Delete ${validSelectedSessions.length} Sessions?`,
+        text: "You won't be able to revert this action!",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonText: `Yes, delete ${validSelectedSessions.length} sessions!`,
         allowOutsideClick: false,
         allowEscapeKey: false,
       });
 
       if (result.isConfirmed) {
-        const response = await deleteMilkingSession(sessionId);
+        setIsSubmitting(true);
 
-        if (response.success) {
-          // Refresh sessions
-          const sessionsResponse = await getMilkingSessions();
-          if (sessionsResponse.success && sessionsResponse.sessions) {
-            setSessions(sessionsResponse.sessions);
+        // Show loading toast
+        Swal.fire({
+          title: "Deleting...",
+          text: `Deleting ${validSelectedSessions.length} sessions, please wait...`,
+          icon: "info",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        let successCount = 0;
+        let errorCount = 0; // Delete each session silently (without individual alerts)
+        for (const sessionId of validSelectedSessions) {
+          try {
+            console.log(`Attempting to delete session ID: ${sessionId}`);
+            const response = await deleteMilkingSession(sessionId, true); // Skip confirmation for bulk operations
+
+            if (response.success) {
+              successCount++;
+              console.log(`✅ Successfully deleted session ${sessionId}`);
+            } else {
+              errorCount++;
+              console.log(
+                `❌ Failed to delete session ${sessionId}:`,
+                response.message
+              );
+            }
+          } catch (error) {
+            errorCount++;
+            console.error(`❌ Exception deleting session ${sessionId}:`, error);
           }
+        }
 
-          // Show success toast
+        // Refresh sessions
+        const sessionsResponse = await getMilkingSessions();
+        if (sessionsResponse.success && sessionsResponse.sessions) {
+          setSessions(sessionsResponse.sessions);
+        }
+
+        // Clear selections
+        setSelectedSessions([]);
+        setSelectAll(false);
+        setIsSubmitting(false);
+
+        // Close loading and show result with only ONE alert
+        Swal.close();
+
+        if (successCount > 0 && errorCount === 0) {
           Swal.fire({
-            title: "Deleted!",
-            text: "The milking session has been deleted successfully.",
+            title: "Success!",
+            text: `${successCount} sessions deleted successfully.`,
             icon: "success",
             timer: 2000,
             showConfirmButton: false,
-            toast: true,
-            position: "top-end",
+          });
+        } else if (successCount > 0 && errorCount > 0) {
+          Swal.fire({
+            title: "Partial Success",
+            text: `${successCount} sessions deleted, ${errorCount} failed.`,
+            icon: "warning",
+            timer: 3000,
+            showConfirmButton: true,
           });
         } else {
-          await Swal.fire({
-            title: "Error",
-            text: response.message || "Failed to delete session",
+          Swal.fire({
+            title: "Error!",
+            text: "Failed to delete sessions.",
             icon: "error",
-            confirmButtonText: "OK",
+            timer: 3000,
+            showConfirmButton: true,
           });
         }
       }
     } catch (error) {
-      console.error("Error deleting session:", error);
-      await Swal.fire({
-        title: "Error",
-        text: "An unexpected error occurred while deleting the session",
+      setIsSubmitting(false);
+      console.error("Error in bulk delete:", error);
+      Swal.close(); // Make sure loading is closed
+      Swal.fire({
+        title: "Error!",
+        text: "An unexpected error occurred while deleting sessions",
         icon: "error",
-        confirmButtonText: "OK",
+        timer: 3000,
+        showConfirmButton: true,
       });
     }
-  }, []);
+  };
 
   // Open add modal with pre-filled data
   const handleOpenAddModal = useCallback(() => {
@@ -720,6 +1186,28 @@ const ListMilking = () => {
       return;
     }
 
+    // === ADDITION: Validate volume max 30 liter ===
+    const volumeValue = parseFloat(newSession.volume);
+    if (isNaN(volumeValue) || volumeValue <= 0) {
+      setIsSubmitting(false);
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Volume",
+        text: "Please enter a valid milk volume.",
+      });
+      return;
+    }
+    if (volumeValue > 30) {
+      setIsSubmitting(false);
+      Swal.fire({
+        icon: "warning",
+        title: "Volume Too High",
+        text: "Maximum allowed volume is 30 liters per session.",
+      });
+      return;
+    }
+    // === END ADDITION ===
+
     console.log("Final milker_id:", finalMilkerId);
 
     // Add creator info to notes
@@ -737,7 +1225,7 @@ const ListMilking = () => {
     const sessionData = {
       ...newSession,
       milker_id: finalMilkerId, // Use the validated milker_id
-      volume: parseFloat(newSession.volume),
+      volume: volumeValue,
       notes: newSession.notes
         ? `${newSession.notes}\n\n${creatorInfo}`
         : creatorInfo,
@@ -1019,6 +1507,13 @@ const ListMilking = () => {
               >
                 <i className="fas fa-plus me-2" /> Add Milking Session
               </Button>
+              <Button
+                variant="secondary shadow-sm ms-2"
+                onClick={() => setShowMultiAddModal(true)}
+                disabled={isSupervisor}
+              >
+                <i className="fas fa-layer-group me-2" /> Multi Add
+              </Button>
             </div>
 
             <div className="d-flex gap-2">
@@ -1029,8 +1524,7 @@ const ListMilking = () => {
                 >
                   <i className="fas fa-file-pdf me-2" /> PDF
                 </Button>
-              </OverlayTrigger>
-
+              </OverlayTrigger>{" "}
               <OverlayTrigger overlay={<Tooltip>Export to Excel</Tooltip>}>
                 <Button
                   variant="success shadow-sm opacity-35"
@@ -1039,8 +1533,64 @@ const ListMilking = () => {
                   <i className="fas fa-file-excel me-2" /> Excel
                 </Button>
               </OverlayTrigger>
+              {/* Bulk Delete Button */}
+              <OverlayTrigger
+                overlay={
+                  <Tooltip>
+                    Delete selected sessions ({selectedSessions.length}{" "}
+                    selected)
+                  </Tooltip>
+                }
+              >
+                <Button
+                  variant="danger shadow-sm"
+                  onClick={handleBulkDelete}
+                  disabled={selectedSessions.length === 0 || isSubmitting}
+                  className={
+                    selectedSessions.length > 0 ? "opacity-100" : "opacity-35"
+                  }
+                >
+                  <i className="fas fa-trash-alt me-2" />
+                  Delete ({selectedSessions.length})
+                </Button>
+              </OverlayTrigger>
             </div>
           </div>
+
+          {/* Selected Sessions Info Bar */}
+          {selectedSessions.length > 0 && (
+            <div className="mb-3">
+              <div
+                className="alert alert-primary d-flex align-items-center justify-content-between py-2"
+                role="alert"
+              >
+                <div className="d-flex align-items-center">
+                  <i className="fas fa-check-circle me-2"></i>
+                  <span>
+                    <strong>{selectedSessions.length}</strong> session
+                    {selectedSessions.length !== 1 ? "s" : ""} selected
+                    {selectedSessions.length >
+                      filteredAndPaginatedSessions.currentSessions.length && (
+                      <small className="text-muted ms-2">
+                        (across multiple pages)
+                      </small>
+                    )}
+                  </span>
+                </div>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedSessions([]);
+                    setSelectAll(false);
+                  }}
+                >
+                  <i className="fas fa-times me-1"></i>
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <Row className="mb-4">
@@ -1304,6 +1854,7 @@ const ListMilking = () => {
               className="table table-hover border rounded shadow-sm"
               style={{ fontFamily: "'Nunito', sans-serif" }}
             >
+              {" "}
               <thead className="bg-gradient-light">
                 <tr
                   style={{
@@ -1311,7 +1862,18 @@ const ListMilking = () => {
                     letterSpacing: "0.4px",
                   }}
                 >
-                  <th className="py-3 text-center" style={{ width: "5%" }}>
+                  <th className="py-3 text-center" style={{ width: "4%" }}>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      disabled={
+                        filteredAndPaginatedSessions?.currentSessions
+                          ?.length === 0
+                      }
+                    />
+                  </th>
+                  <th className="py-3 text-center" style={{ width: "4%" }}>
                     #
                   </th>
                   <th className="py-3" style={{ width: "15%" }}>
@@ -1326,22 +1888,29 @@ const ListMilking = () => {
                   <th className="py-3" style={{ width: "18%" }}>
                     Milking Time
                   </th>
-                  <th className="py-3" style={{ width: "25%" }}>
+                  <th className="py-3" style={{ width: "22%" }}>
                     Notes
                   </th>
                   <th className="py-3 text-center" style={{ width: "15%" }}>
                     Actions
                   </th>
                 </tr>
-              </thead>
+              </thead>{" "}
               <tbody>
-                {filteredAndPaginatedSessions.currentSessions.map(
+                {filteredAndPaginatedSessions?.currentSessions?.map(
                   (session, index) => (
                     <tr
                       key={session.id}
                       className="align-middle"
                       style={{ transition: "all 0.2s" }}
                     >
+                      <td className="text-center">
+                        <Form.Check
+                          type="checkbox"
+                          checked={selectedSessions.includes(session.id)}
+                          onChange={() => handleSelectSession(session.id)}
+                        />
+                      </td>
                       <td className="fw-bold text-center">
                         {(currentPage - 1) * sessionsPerPage + index + 1}
                       </td>
@@ -1634,6 +2203,593 @@ const ListMilking = () => {
           )}
         </Card.Body>
       </Card>
+      <Modal
+        show={showMultiAddModal}
+        onHide={() => !isSubmitting && setShowMultiAddModal(false)}
+        size="xl"
+        backdrop={isSubmitting ? "static" : true}
+        keyboard={!isSubmitting}
+        style={{ zIndex: 12000 }}
+        dialogClassName="zindex-modal-fix"
+      >
+        <Modal.Header closeButton={!isSubmitting} className="bg-light">
+          <Modal.Title>
+            <i className="fas fa-layer-group me-2 text-secondary"></i>
+            Multi Add Milking Sessions
+            {isSubmitting && (
+              <Spinner
+                animation="border"
+                size="sm"
+                className="ms-2"
+                variant="primary"
+              />
+            )}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {/* Quick Actions Bar */}
+          <div className="mb-4 p-3 bg-light rounded">
+            <h6 className="mb-3">
+              <i className="fas fa-magic me-2"></i>Quick Actions
+            </h6>
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="form-label-sm">
+                    Set Same Date for All
+                  </Form.Label>
+                  <Form.Control
+                    type="date"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const selectedDate = e.target.value;
+                        setMultiSessions((prev) =>
+                          prev.map((session) => ({
+                            ...session,
+                            milking_time: `${selectedDate}T${
+                              session.milking_time.split("T")[1] || "06:00"
+                            }`,
+                          }))
+                        );
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    size="sm"
+                    max={new Date().toISOString().split("T")[0]} // Prevent future date
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="form-label-sm">
+                    Set Same Time for All
+                  </Form.Label>
+                  <Form.Control
+                    type="time"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const selectedTime = e.target.value;
+                        setMultiSessions((prev) =>
+                          prev.map((session) => ({
+                            ...session,
+                            milking_time: `${
+                              session.milking_time.split("T")[0]
+                            }T${selectedTime}`,
+                          }))
+                        );
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="form-label-sm">
+                    Set Same Volume for All
+                  </Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="30"
+                    placeholder="Volume (L)"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const volume = e.target.value;
+                        setMultiSessions((prev) =>
+                          prev.map((session) => ({
+                            ...session,
+                            volume: volume,
+                          }))
+                        );
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="form-label-sm">
+                    Set Same Notes for All
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Notes for all"
+                    onChange={(e) => {
+                      const notes = e.target.value;
+                      setMultiSessions((prev) =>
+                        prev.map((session) => ({
+                          ...session,
+                          notes: notes,
+                        }))
+                      );
+                    }}
+                    disabled={isSubmitting}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <div className="mb-3">
+              <Form.Label className="form-label-sm">
+                Quick Time for All:
+              </Form.Label>
+              <div className="d-flex gap-2 flex-wrap">
+                {[
+                  {
+                    time: "06:00",
+                    label: "Morning (06:00)",
+                    variant: "outline-warning",
+                    icon: "fas fa-sun",
+                  },
+                  {
+                    time: "14:00",
+                    label: "Afternoon (14:00)",
+                    variant: "outline-info",
+                    icon: "fas fa-cloud-sun",
+                  },
+                  {
+                    time: "18:00",
+                    label: "Evening (18:00)",
+                    variant: "outline-secondary",
+                    icon: "fas fa-moon",
+                  },
+                ].map((timeBtn) => (
+                  <Button
+                    key={timeBtn.time}
+                    variant={timeBtn.variant}
+                    size="sm"
+                    onClick={() => {
+                      setMultiSessions((prev) =>
+                        prev.map((session) => ({
+                          ...session,
+                          milking_time: `${
+                            session.milking_time.split("T")[0]
+                          }T${timeBtn.time}`,
+                        }))
+                      );
+                    }}
+                    disabled={isSubmitting}
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    <i className={`${timeBtn.icon} me-1`}></i>
+                    {timeBtn.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-3">
+              <Form.Label className="form-label-sm">
+                Quick Volume for All:
+              </Form.Label>
+              <div className="d-flex gap-1 flex-wrap">
+                {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map((volume) => (
+                  <Button
+                    key={volume}
+                    variant="outline-success"
+                    size="sm"
+                    onClick={() => {
+                      setMultiSessions((prev) =>
+                        prev.map((session) => ({
+                          ...session,
+                          volume: volume,
+                        }))
+                      );
+                    }}
+                    disabled={isSubmitting}
+                    style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                  >
+                    <i className="fas fa-plus me-1"></i>
+                    {volume}L
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Form.Label className="form-label-sm">
+                Quick Notes for All:
+              </Form.Label>
+              <div className="d-flex gap-1 flex-wrap">
+                {[
+                  {
+                    text: "Normal milking session",
+                    label: "Normal",
+                    variant: "outline-primary",
+                  },
+                  {
+                    text: "High quality milk",
+                    label: "High Quality",
+                    variant: "outline-success",
+                  },
+                  {
+                    text: "Routine check completed",
+                    label: "Routine",
+                    variant: "outline-info",
+                  },
+                  {
+                    text: "Special attention needed",
+                    label: "Attention",
+                    variant: "outline-warning",
+                  },
+                ].map((note, index) => (
+                  <Button
+                    key={index}
+                    variant={note.variant}
+                    size="sm"
+                    onClick={() => {
+                      setMultiSessions((prev) =>
+                        prev.map((session) => ({
+                          ...session,
+                          notes: note.text,
+                        }))
+                      );
+                    }}
+                    disabled={isSubmitting}
+                    style={{ fontSize: "0.7rem", padding: "3px 6px" }}
+                  >
+                    {note.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <Form onSubmit={handleMultiAddSubmit}>
+            <Row className="mb-2 fw-bold text-muted">
+              <Col md={2}>Cow</Col>
+              <Col md={2}>Milker</Col>
+              <Col md={2}>Volume (L)</Col>
+              <Col md={3}>Date & Time</Col>
+              <Col md={2}>Notes</Col>
+              <Col md={1}>Action</Col>
+            </Row>
+            {multiSessions.map((row, idx) => (
+              <Row
+                key={idx}
+                className="mb-3 align-items-end border-bottom pb-2"
+              >
+                <Col md={2}>
+                  <Select
+                    options={getCowOptions(
+                      currentUser?.role_id === 1 ? cowList : userManagedCows
+                    )}
+                    value={
+                      row.cow_id
+                        ? getCowOptions(
+                            currentUser?.role_id === 1
+                              ? cowList
+                              : userManagedCows
+                          ).find(
+                            (opt) => String(opt.value) === String(row.cow_id)
+                          )
+                        : null
+                    }
+                    onChange={(selected) =>
+                      handleMultiCowChange(idx, selected ? selected.value : "")
+                    }
+                    isDisabled={isSubmitting}
+                    isClearable
+                    placeholder="Select Cow"
+                    classNamePrefix="react-select"
+                    filterOption={customFilterOption}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: (base) => ({ ...base, zIndex: 13000 }),
+                      control: (base) => ({ ...base, minHeight: "38px" }),
+                    }}
+                  />
+                </Col>
+                <Col md={2}>
+                  {currentUser?.role_id === 1 ? (
+                    <Select
+                      options={getMilkerOptions(multiRowMilkers[idx] || [])}
+                      value={
+                        row.milker_id
+                          ? getMilkerOptions(multiRowMilkers[idx] || []).find(
+                              (opt) =>
+                                String(opt.value) === String(row.milker_id)
+                            )
+                          : null
+                      }
+                      onChange={(selected) =>
+                        handleMultiSessionChange(
+                          idx,
+                          "milker_id",
+                          selected ? selected.value : ""
+                        )
+                      }
+                      isDisabled={isSubmitting || !row.cow_id}
+                      isClearable
+                      placeholder="Select Milker"
+                      classNamePrefix="react-select"
+                      filterOption={customFilterOption}
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: (base) => ({ ...base, zIndex: 13000 }),
+                        control: (base) => ({ ...base, minHeight: "38px" }),
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <Form.Control
+                        type="text"
+                        value={
+                          currentUser
+                            ? `${
+                                currentUser.name || currentUser.username
+                              } (ID: ${currentUser.id || currentUser.user_id})`
+                            : ""
+                        }
+                        disabled
+                        className="bg-light"
+                        size="sm"
+                      />
+                      {row.milker_id !==
+                        String(currentUser.id || currentUser.user_id) && (
+                        <span style={{ display: "none" }}>
+                          {handleMultiSessionChange(
+                            idx,
+                            "milker_id",
+                            String(currentUser.id || currentUser.user_id)
+                          )}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </Col>
+                <Col md={2}>
+                  <div className="position-relative">
+                    <Form.Control
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="30"
+                      placeholder="Volume"
+                      value={row.volume}
+                      onChange={(e) =>
+                        handleMultiSessionChange(idx, "volume", e.target.value)
+                      }
+                      required
+                      disabled={isSubmitting}
+                      size="sm"
+                    />
+                    <div className="position-absolute top-0 end-0 me-1 mt-1">
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="link"
+                          size="sm"
+                          className="p-0 border-0 text-muted"
+                          style={{ fontSize: "0.7rem" }}
+                          disabled={isSubmitting}
+                        >
+                          <i className="fas fa-caret-down"></i>
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          {["3.0", "5.0", "7.5", "10.0", "15.0", "20.0"].map(
+                            (vol) => (
+                              <Dropdown.Item
+                                key={vol}
+                                onClick={() =>
+                                  handleMultiSessionChange(idx, "volume", vol)
+                                }
+                              >
+                                {vol}L
+                              </Dropdown.Item>
+                            )
+                          )}
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </div>
+                  </div>
+                </Col>
+                <Col md={3}>
+                  <Row className="g-1">
+                    <Col>
+                      <Form.Control
+                        type="date"
+                        value={row.milking_time.split("T")[0]}
+                        onChange={(e) =>
+                          handleMultiSessionChange(
+                            idx,
+                            "milking_time",
+                            `${e.target.value}T${
+                              row.milking_time.split("T")[1] || "06:00"
+                            }`
+                          )
+                        }
+                        required
+                        disabled={isSubmitting}
+                        size="sm"
+                        max={new Date().toISOString().split("T")[0]} // Prevent future date
+                      />
+                    </Col>
+                    <Col>
+                      <Form.Control
+                        type="time"
+                        value={row.milking_time.split("T")[1] || "06:00"}
+                        onChange={(e) =>
+                          handleMultiSessionChange(
+                            idx,
+                            "milking_time",
+                            `${row.milking_time.split("T")[0]}T${
+                              e.target.value
+                            }`
+                          )
+                        }
+                        required
+                        disabled={isSubmitting}
+                        size="sm"
+                      />
+                    </Col>
+                  </Row>
+                </Col>
+                <Col md={2}>
+                  <Form.Control
+                    type="text"
+                    placeholder="Notes"
+                    value={row.notes}
+                    onChange={(e) =>
+                      handleMultiSessionChange(idx, "notes", e.target.value)
+                    }
+                    disabled={isSubmitting}
+                    size="sm"
+                  />
+                </Col>
+                <Col md={1}>
+                  <div className="d-flex gap-1">
+                    <Button
+                      variant="outline-info"
+                      size="sm"
+                      onClick={() => {
+                        const newRow = {
+                          ...row,
+                          milking_time: getLocalDateTime(),
+                        };
+                        setMultiSessions([...multiSessions, newRow]);
+                        setMultiRowMilkers([
+                          ...multiRowMilkers,
+                          multiRowMilkers[idx] || [],
+                        ]);
+                      }}
+                      disabled={isSubmitting}
+                      title="Copy this row"
+                    >
+                      <i className="fas fa-copy" />
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleRemoveMultiRow(idx)}
+                      disabled={isSubmitting || multiSessions.length === 1}
+                      title="Delete this row"
+                    >
+                      <i className="fas fa-trash" />
+                    </Button>
+                  </div>
+                </Col>
+              </Row>
+            ))}
+            <div className="d-flex justify-content-between align-items-center mt-4">
+              <div className="d-flex gap-2">
+                <Button
+                  variant="outline-success"
+                  onClick={handleAddMultiRow}
+                  disabled={isSubmitting}
+                >
+                  <i className="fas fa-plus me-1"></i> Add Row
+                </Button>
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-info"
+                    size="sm"
+                    disabled={isSubmitting}
+                  >
+                    <i className="fas fa-layers me-1"></i> Add Multiple
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    {[3, 5, 10].map((count) => (
+                      <Dropdown.Item
+                        key={count}
+                        onClick={() => {
+                          const newRows = Array(count)
+                            .fill()
+                            .map(() => ({
+                              cow_id: "",
+                              milker_id: "",
+                              volume: "",
+                              milking_time: getLocalDateTime(),
+                              notes: "",
+                            }));
+                          setMultiSessions([...multiSessions, ...newRows]);
+                          setMultiRowMilkers([
+                            ...multiRowMilkers,
+                            ...Array(count).fill([]),
+                          ]);
+                        }}
+                      >
+                        Add {count} rows
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+                <Button
+                  variant="outline-warning"
+                  size="sm"
+                  onClick={() => {
+                    setMultiSessions([
+                      {
+                        cow_id: "",
+                        milker_id: "",
+                        volume: "",
+                        milking_time: getLocalDateTime(),
+                        notes: "",
+                      },
+                    ]);
+                    setMultiRowMilkers([[]]);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <i className="fas fa-broom me-1"></i> Clear All
+                </Button>
+              </div>
+              <div className="d-flex gap-2">
+                <div className="text-muted small align-self-center">
+                  {multiSessions.filter((s) => s.cow_id && s.volume).length} /{" "}
+                  {multiSessions.length} completed
+                </div>
+                <Button variant="primary" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        className="me-2"
+                      />
+                      Adding {multiSessions.length} sessions...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save me-1"></i>
+                      Add All {multiSessions.length} Sessions
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </Form>
+          <style>
+            {`
+        .zindex-modal-fix {
+          z-index: 12000 !important;
+        }
+      `}
+          </style>
+        </Modal.Body>
+      </Modal>
       {/* View Milking Session Modal */}
       <Modal
         show={showViewModal}
@@ -1728,7 +2884,6 @@ const ListMilking = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
       {/* Add Milking Session Modal */}
       <Modal
         show={showAddModal}
@@ -1757,61 +2912,69 @@ const ListMilking = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Cow</Form.Label>
-                  <Form.Select
-                    value={newSession.cow_id}
-                    onChange={(e) => handleCowSelectionInAdd(e.target.value)}
-                    required
-                    className="shadow-sm"
-                    disabled={isSubmitting}
-                  >
-                    <option value="">-- Select Cow --</option>
-                    {(currentUser?.role_id === 1 ? cowList : userManagedCows)
-                      .filter((cow) => cow.gender?.toLowerCase() === "female")
-                      .map((cow) => (
-                        <option key={cow.id} value={cow.id}>
-                          {cow.name} (ID: {cow.id}) -{" "}
-                          {cow.lactation_phase || "Unknown"}
-                        </option>
-                      ))}
-                  </Form.Select>
+                  <Select
+                    options={getCowOptions(
+                      currentUser?.role_id === 1 ? cowList : userManagedCows
+                    )}
+                    value={
+                      newSession.cow_id
+                        ? getCowOptions(
+                            currentUser?.role_id === 1
+                              ? cowList
+                              : userManagedCows
+                          ).find(
+                            (opt) =>
+                              String(opt.value) === String(newSession.cow_id)
+                          )
+                        : null
+                    }
+                    onChange={(selected) =>
+                      handleCowSelectionInAdd(selected ? selected.value : "")
+                    }
+                    isDisabled={isSubmitting}
+                    isClearable
+                    placeholder="-- Select Cow --"
+                    classNamePrefix="react-select"
+                    filterOption={customFilterOption}
+                  />
                 </Form.Group>
               </Col>
-
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Milker</Form.Label>
                   {currentUser?.role_id === 1 ? (
-                    // Admin bisa memilih milker dari daftar farmers yang mengelola cow yang dipilih
-                    <Form.Select
-                      value={newSession.milker_id}
-                      onChange={(e) =>
+                    <Select
+                      options={getMilkerOptions(availableFarmersForCow)}
+                      value={
+                        newSession.milker_id
+                          ? getMilkerOptions(availableFarmersForCow).find(
+                              (opt) =>
+                                String(opt.value) ===
+                                String(newSession.milker_id)
+                            )
+                          : null
+                      }
+                      onChange={(selected) =>
                         setNewSession({
                           ...newSession,
-                          milker_id: e.target.value,
+                          milker_id: selected ? selected.value : "",
                         })
                       }
-                      required
-                      disabled={
+                      isDisabled={
                         !newSession.cow_id || loadingFarmers || isSubmitting
                       }
-                      className={!newSession.cow_id ? "bg-light" : ""}
-                    >
-                      <option value="">
-                        {!newSession.cow_id
+                      isClearable
+                      placeholder={
+                        !newSession.cow_id
                           ? "-- Choose the Cow First --"
                           : loadingFarmers
                           ? "-- Loading Breeders --"
-                          : "-- Select Blusher --"}
-                      </option>
-                      {availableFarmersForCow.map((farmer) => (
-                        <option key={farmer.user_id} value={farmer.id}>
-                          {farmer.name || farmer.username} (ID:{" "}
-                          {farmer.user_id || farmer.id})
-                        </option>
-                      ))}
-                    </Form.Select>
+                          : "-- Select Milker --"
+                      }
+                      classNamePrefix="react-select"
+                      filterOption={customFilterOption}
+                    />
                   ) : (
-                    // Farmer hanya bisa menggunakan ID mereka sendiri
                     <>
                       <Form.Control
                         type="text"
@@ -1865,7 +3028,7 @@ const ListMilking = () => {
                       type="number"
                       step="0.1"
                       min="0"
-                      max="50"
+                      max="30"
                       placeholder="Enter the volume of milk in liters"
                       value={newSession.volume}
                       onChange={(e) =>
@@ -1928,6 +3091,7 @@ const ListMilking = () => {
                   )}
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>
@@ -1943,6 +3107,7 @@ const ListMilking = () => {
                     <Form.Control
                       type="date"
                       value={newSession.milking_time.split("T")[0]}
+                      max={new Date().toISOString().split("T")[0]} // Prevent future date
                       onChange={(e) => {
                         const currentTime =
                           newSession.milking_time.split("T")[1] || "06:00";
@@ -1978,6 +3143,13 @@ const ListMilking = () => {
                         className="shadow-sm"
                         style={{ flex: 1 }}
                         disabled={isSubmitting}
+                        max={
+                          // If selected date is today, prevent future time
+                          newSession.milking_time.split("T")[0] ===
+                          new Date().toISOString().split("T")[0]
+                            ? new Date().toTimeString().slice(0, 5)
+                            : undefined
+                        }
                       />
                     </div>
 
@@ -1998,31 +3170,39 @@ const ListMilking = () => {
                         },
                         {
                           time: "18:00",
-                          label: "Afternoon (18:00)",
+                          label: "Evening (18:00)",
                           variant: "outline-secondary",
                           icon: "fas fa-moon",
                         },
-                      ].map((timeBtn) => (
-                        <Button
-                          key={timeBtn.time}
-                          variant={timeBtn.variant}
-                          size="sm"
-                          type="button"
-                          onClick={() => {
-                            const currentDate =
-                              newSession.milking_time.split("T")[0];
-                            setNewSession({
-                              ...newSession,
-                              milking_time: `${currentDate}T${timeBtn.time}`,
-                            });
-                          }}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                          disabled={isSubmitting}
-                        >
-                          <i className={`${timeBtn.icon} me-1`}></i>
-                          {timeBtn.label}
-                        </Button>
-                      ))}
+                      ].map((timeBtn) => {
+                        // Disable quick button if today and time is in the future
+                        const isToday =
+                          newSession.milking_time.split("T")[0] ===
+                          new Date().toISOString().split("T")[0];
+                        const nowTime = new Date().toTimeString().slice(0, 5);
+                        const isFuture = isToday && timeBtn.time > nowTime;
+                        return (
+                          <Button
+                            key={timeBtn.time}
+                            variant={timeBtn.variant}
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                              const currentDate =
+                                newSession.milking_time.split("T")[0];
+                              setNewSession({
+                                ...newSession,
+                                milking_time: `${currentDate}T${timeBtn.time}`,
+                              });
+                            }}
+                            style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                            disabled={isSubmitting || isFuture}
+                          >
+                            <i className={`${timeBtn.icon} me-1`}></i>
+                            {timeBtn.label}
+                          </Button>
+                        );
+                      })}
                     </div>
 
                     {/* Current Selection Display */}
@@ -2044,6 +3224,20 @@ const ListMilking = () => {
                           return date.toLocaleDateString("id-ID", options);
                         })()}
                       </small>
+                      {/* Validation: Show warning if in the future */}
+                      {(() => {
+                        const selected = new Date(newSession.milking_time);
+                        const now = new Date();
+                        if (selected > now) {
+                          return (
+                            <div className="text-danger mt-1">
+                              <i className="fas fa-exclamation-triangle me-1"></i>
+                              Milking time cannot be in the future.
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </Form.Group>
@@ -2211,7 +3405,6 @@ const ListMilking = () => {
           </Form>
         </Modal.Body>
       </Modal>
-
       {/* Edit Milking Session Modal */}
       <Modal
         show={showEditModal}
@@ -2241,62 +3434,71 @@ const ListMilking = () => {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Sapi</Form.Label>
-                    <Form.Select
-                      value={String(selectedSession.cow_id)}
-                      onChange={(e) => handleCowSelectionInEdit(e.target.value)}
-                      required
-                      className="shadow-sm"
-                      disabled={isSubmitting}
-                    >
-                      <option value="">-- Select Cow --</option>
-                      {(currentUser?.role_id === 1 ? cowList : userManagedCows)
-                        .filter((cow) => cow.gender?.toLowerCase() === "female")
-                        .map((cow) => (
-                          <option key={cow.id} value={String(cow.id)}>
-                            {cow.name} (ID: {cow.id}) -{" "}
-                            {cow.lactation_phase || "Unknown"}
-                          </option>
-                        ))}
-                    </Form.Select>
+                    <Select
+                      options={getCowOptions(
+                        currentUser?.role_id === 1 ? cowList : userManagedCows
+                      )}
+                      value={
+                        selectedSession.cow_id
+                          ? getCowOptions(
+                              currentUser?.role_id === 1
+                                ? cowList
+                                : userManagedCows
+                            ).find(
+                              (opt) =>
+                                String(opt.value) ===
+                                String(selectedSession.cow_id)
+                            )
+                          : null
+                      }
+                      onChange={(selected) =>
+                        handleCowSelectionInEdit(selected ? selected.value : "")
+                      }
+                      isDisabled={isSubmitting}
+                      isClearable
+                      placeholder="-- Select Cow --"
+                      classNamePrefix="react-select"
+                      filterOption={customFilterOption}
+                    />
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Pemerah</Form.Label>
                     {currentUser?.role_id === 1 ? (
-                      <Form.Select
-                        value={selectedSession.milker_id}
-                        onChange={(e) =>
+                      <Select
+                        options={getMilkerOptions(availableFarmersForCow)}
+                        value={
+                          selectedSession.milker_id
+                            ? getMilkerOptions(availableFarmersForCow).find(
+                                (opt) =>
+                                  String(opt.value) ===
+                                  String(selectedSession.milker_id)
+                              )
+                            : null
+                        }
+                        onChange={(selected) =>
                           setSelectedSession({
                             ...selectedSession,
-                            milker_id: e.target.value,
+                            milker_id: selected ? selected.value : "",
                           })
                         }
-                        required
-                        disabled={
+                        isDisabled={
                           !selectedSession.cow_id ||
                           loadingFarmers ||
                           isSubmitting
                         }
-                        className={
+                        isClearable
+                        placeholder={
                           !selectedSession.cow_id
-                            ? "bg-light shadow-sm"
-                            : "shadow-sm"
-                        }
-                      >
-                        <option value="">
-                          {!selectedSession.cow_id
                             ? "-- Choose the Cow First --"
                             : loadingFarmers
                             ? "-- Loading Breeders --"
-                            : "-- Select Blusher --"}
-                        </option>
-                        {availableFarmersForCow.map((farmer) => (
-                          <option key={farmer.user_id} value={farmer.user_id}>
-                            {farmer.name} (ID: {farmer.user_id})
-                          </option>
-                        ))}
-                      </Form.Select>
+                            : "-- Select Milker --"
+                        }
+                        classNamePrefix="react-select"
+                        filterOption={customFilterOption}
+                      />
                     ) : (
                       <>
                         <Form.Control
@@ -2337,7 +3539,7 @@ const ListMilking = () => {
                         type="number"
                         step="0.1"
                         min="0"
-                        max="50"
+                        max="30"
                         placeholder="Enter the volume of milk in liters"
                         value={selectedSession.volume}
                         onChange={(e) =>

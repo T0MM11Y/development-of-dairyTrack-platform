@@ -227,7 +227,7 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
     }
 
     final today = DateTime.now();
-    final hundredYearsAgo = DateTime(today.year - 100, today.month, today.day);
+    final sixtyYearsAgo = DateTime(today.year - 60, today.month, today.day);
     final fifteenYearsAgo = DateTime(today.year - 15, today.month, today.day);
 
     if (birth.isAfter(today)) {
@@ -242,10 +242,10 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
         'message': 'User must be at least 15 years old'
       };
     }
-    if (birth.isBefore(hundredYearsAgo)) {
+    if (birth.isBefore(sixtyYearsAgo)) {
       return {
         'isValid': false,
-        'message': 'Birthdate cannot be more than 100 years ago'
+        'message': 'Birthdate cannot be more than 60 years ago'
       };
     }
 
@@ -530,8 +530,10 @@ class _editMakeUsersViewState extends State<editMakeUsersView> {
                           DateTime? pickedDate = await showDatePicker(
                             context: context,
                             initialDate: _birth ?? DateTime.now(),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
+                            firstDate: DateTime(DateTime.now().year - 60,
+                                DateTime.now().month, DateTime.now().day),
+                            lastDate: DateTime(DateTime.now().year - 15,
+                                DateTime.now().month, DateTime.now().day),
                           );
                           if (pickedDate != null) {
                             _birth = pickedDate;

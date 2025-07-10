@@ -12,57 +12,59 @@ from app.services.notification import check_milk_expiry_and_notify, check_milk_p
 import pandas as pd
 
 milk_production_bp = Blueprint('milk_production', __name__)
-
-# MilkingSession routes
+# ...existing code...
 @milk_production_bp.route('/milking-sessions', methods=['POST'])
 def add_milking_session():
     data = request.json
-    
+
     try:
-        # Create a new milk batch automatically
+        # Gunakan microsecond agar batch_number benar-benar unik
+        now = datetime.utcnow()
+        batch_number = f"BATCH-{now.strftime('%Y%m%d%H%M%S')}{now.microsecond:06d}"
+
         new_batch = MilkBatch(
-            batch_number=f"BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            batch_number=batch_number,
             total_volume=data['volume'],
             status=MilkStatus.FRESH,
-            production_date=datetime.fromisoformat(data.get('milking_time', datetime.utcnow().isoformat())),
-            expiry_date=datetime.fromisoformat(data.get('milking_time', datetime.utcnow().isoformat())) + timedelta(hours=8),
+            production_date=datetime.fromisoformat(data.get('milking_time', now.isoformat())),
+            expiry_date=datetime.fromisoformat(data.get('milking_time', now.isoformat())) + timedelta(hours=8),
             notes=f"Auto-generated batch from milking session. {data.get('notes', '')}"
         )
-        
+
         db.session.add(new_batch)
         db.session.flush()  # This assigns an ID to new_batch without committing
-        
+
         # Now create the milking session with the new batch ID
         new_session = MilkingSession(
             cow_id=data['cow_id'],
             milker_id=data['milker_id'],
             milk_batch_id=new_batch.id,  # Link to the new batch
             volume=data['volume'],
-            milking_time=datetime.fromisoformat(data.get('milking_time', datetime.utcnow().isoformat())),
+            milking_time=datetime.fromisoformat(data.get('milking_time', now.isoformat())),
             notes=data.get('notes')
         )
-        
+
         db.session.add(new_session)
-        
+
         # Update the daily milk summary
         session_date = new_session.milking_time.date()
         summary = DailyMilkSummary.query.filter_by(
             cow_id=new_session.cow_id,
             date=session_date
         ).first()
-        
+
         if not summary:
             # Initialize with zero values when creating a new summary
             summary = DailyMilkSummary(
                 cow_id=new_session.cow_id,
                 date=session_date,
-                morning_volume=0,    # Initialize with zero instead of None
-                afternoon_volume=0,  # Initialize with zero instead of None
-                evening_volume=0,    # Initialize with zero instead of None
-                total_volume=0       # Initialize with zero instead of None
+                morning_volume=0,
+                afternoon_volume=0,
+                evening_volume=0,
+                total_volume=0
             )
             db.session.add(summary)
-        
+
         # Ensure values are initialized if they are None
         if summary.morning_volume is None:
             summary.morning_volume = 0
@@ -70,7 +72,7 @@ def add_milking_session():
             summary.afternoon_volume = 0
         if summary.evening_volume is None:
             summary.evening_volume = 0
-        
+
         # Determine time of day and update corresponding volume
         hour = new_session.milking_time.hour
         if hour < 12:
@@ -79,28 +81,30 @@ def add_milking_session():
             summary.afternoon_volume += float(new_session.volume)
         else:
             summary.evening_volume += float(new_session.volume)
-            
+
         # Ensure total_volume is not None
         if summary.total_volume is None:
             summary.total_volume = 0
         summary.total_volume = summary.morning_volume + summary.afternoon_volume + summary.evening_volume
-        
+
         db.session.commit()
-        #cek evening kosong apatidak
-        if summary.evening_volume == 0 or summary.afternoon_volume == 0:
-           check_milk_production_and_notify()
-           check_milk_expiry_and_notify()
+
+        # LOGIKA NOTIFIKASI YANG DIPERBAIKI
+        if hour >= 12:  # Hanya untuk pemerahan siang dan sore
+            check_milk_production_and_notify()
+            check_milk_expiry_and_notify()
 
         return jsonify({
-            "success": True, 
-            "message": "Milking session added successfully with new batch", 
+            "success": True,
+            "message": "Milking session added successfully with new batch",
             "id": new_session.id,
             "batch_id": new_batch.id
         }), 201
-    
+
     except Exception as e:
-        db.session.rollback()   
+        db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 400
+#
 
 @milk_production_bp.route('/milking-sessions', methods=['GET'])
 def get_milking_sessions():
@@ -141,8 +145,6 @@ def get_milk_batches():
     
     return jsonify(result), 200
 
-# Di milk_batch_controller.py atau yang sejenisnya
-
 @milk_production_bp.route('/milk-batch/update-status/<int:batch_id>', methods=['PUT'])
 def update_batch_status(batch_id):
     try:
@@ -171,13 +173,11 @@ def update_batch_status(batch_id):
         
         db.session.commit()
         
-        
         return jsonify({
             'message': 'Batch status updated successfully',
             'batch_id': batch_id,
             'old_status': old_status.value if old_status else None,
-            'new_status': status_enum.value,
-            'notifications_sent': notification_count
+            'new_status': status_enum.value
         }), 200
         
     except Exception as e:
@@ -362,8 +362,6 @@ def export_milking_sessions_excel():
         return send_file(buffer, as_attachment=True, download_name="milking_sessions.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# ...existing code...
 
 @milk_production_bp.route('/milking-sessions/<int:session_id>', methods=['DELETE'])
 def delete_milking_session(session_id):
@@ -561,14 +559,13 @@ def update_milking_session(session_id):
         
         db.session.commit()
         
-        # Get the latest summary data for notification checks
-        updated_summary = DailyMilkSummary.query.filter_by(
-            cow_id=new_cow_id,
-            date=new_date
-        ).first()
-        
-        # Check if evening or afternoon volumes exist to trigger notifications
-        if updated_summary and (updated_summary.evening_volume != 0 or updated_summary.afternoon_volume != 0):
+        # LOGIKA NOTIFIKASI YANG DIPERBAIKI UNTUK UPDATE
+        # Notifikasi untuk semua update KECUALI pagi (< 12:00)
+        # - Update pagi (00:00-11:59): TIDAK ADA notifikasi
+        # - Update siang (12:00-17:59): SELALU ada notifikasi
+        # - Update sore (18:00-23:59): SELALU ada notifikasi
+        if new_hour >= 12:  # Siang dan sore selalu ada notifikasi
+            # Selalu trigger notifikasi untuk update di jam 12:00+ tanpa kondisi apapun
             check_milk_production_and_notify()
             check_milk_expiry_and_notify()
         
@@ -766,22 +763,22 @@ def export_daily_summaries_pdf():
                 pdf.cell(25, 10, str(round(total_all, 2)), border=1, align='R', fill=True)
 
         # Output PDF file
-            buffer = BytesIO()
-            pdf_bytes = pdf.output(dest='S').encode('latin-1')
-            buffer.write(pdf_bytes)
-            buffer.seek(0)
-            
-            # Generate filename
-            if is_male_cow:
-                filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
-            else:
-                filename = "daily_milk_production.pdf"
-                if start_date and end_date:
-                    filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
-                elif cow_id:
-                    filename = f"milk_production_cow_{cow_id}.pdf"
-            
-            return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+        buffer = BytesIO()
+        pdf_bytes = pdf.output(dest='S').encode('latin-1')
+        buffer.write(pdf_bytes)
+        buffer.seek(0)
+        
+        # Generate filename
+        if is_male_cow:
+            filename = f"bull_report_{cow_info.name.replace(' ', '_')}.pdf"
+        else:
+            filename = "daily_milk_production.pdf"
+            if start_date and end_date:
+                filename = f"milk_production_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.pdf"
+            elif cow_id:
+                filename = f"milk_production_cow_{cow_id}.pdf"
+        
+        return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
