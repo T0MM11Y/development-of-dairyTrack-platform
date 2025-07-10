@@ -725,60 +725,68 @@ const CattleDistribution = () => {
                             </div>
                           </td>
                           <td>
-                            {Array.isArray(farmer.cows) &&
-                            farmer.cows.length > 0 ? (
-                              <div className="d-flex flex-wrap gap-1">
-                                {farmer.cows.map((cow) => (
-                                  <Badge
-                                    key={cow.id}
-                                    bg="info"
-                                    className="d-flex align-items-center gap-1"
-                                    style={{
-                                      padding: "0.25rem 0.5rem",
-                                      borderRadius: "12px",
-                                      fontSize: "12px",
-                                    }}
-                                  >
-                                    {cow.name} ({cow.breed})
-                                    <OverlayTrigger
-                                      overlay={<Tooltip>Unassign Cow</Tooltip>}
-                                    >
-                                      <span>
-                                        <Button
-                                          variant="danger"
-                                          size="sm"
-                                          className="p-0 d-flex align-items-center justify-content-center"
-                                          style={{
-                                            width: "20px",
-                                            height: "20px",
-                                            borderRadius: "50%",
-                                          }}
-                                          onClick={() =>
-                                            !isSupervisor &&
-                                            handleUnassignCow(
-                                              farmer.user.id,
-                                              cow.id
-                                            )
-                                          }
-                                          disabled={isSupervisor}
-                                          tabIndex={isSupervisor ? -1 : 0}
-                                          aria-disabled={isSupervisor}
-                                        >
-                                          <i
-                                            className="fas fa-times"
-                                            style={{ fontSize: "10px" }}
-                                          ></i>
-                                        </Button>
-                                      </span>
-                                    </OverlayTrigger>
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-muted fst-italic">
-                                No cattle assigned
-                              </span>
-                            )}
+                           {Array.isArray(farmer.cows) && farmer.cows.length > 0 ? (
+  <div className="d-flex flex-wrap gap-1">
+    {farmer.cows.map((cow) => {
+      const isDeleted = cow.is_active === false || cow.is_active === 0;
+
+      return (
+        <OverlayTrigger
+          key={cow.id}
+          overlay={
+            isDeleted ? (
+              <Tooltip>Sapi ini telah dihapus</Tooltip>
+            ) : (
+              <></>
+            )
+          }
+        >
+          <span>
+            <Badge
+              bg={isDeleted ? "danger" : "info"}
+              className="d-flex align-items-center gap-1"
+              style={{
+                padding: "0.25rem 0.5rem",
+                borderRadius: "12px",
+                fontSize: "12px",
+                opacity: isDeleted ? 0.8 : 1,
+              }}
+            >
+              {cow.name} ({cow.breed})
+              {!isDeleted && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  className="p-0 d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                  }}
+                  onClick={() =>
+                    !isSupervisor &&
+                    handleUnassignCow(farmer.user.id, cow.id)
+                  }
+                  disabled={isSupervisor}
+                  tabIndex={isSupervisor ? -1 : 0}
+                  aria-disabled={isSupervisor}
+                >
+                  <i
+                    className="fas fa-times text-danger"
+                    style={{ fontSize: "10px" }}
+                  ></i>
+                </Button>
+              )}
+            </Badge>
+          </span>
+        </OverlayTrigger>
+      );
+    })}
+  </div>
+) : (
+  <span className="text-muted fst-italic">No cattle assigned</span>
+)}
+
                           </td>
                         </tr>
                       ))
@@ -1141,36 +1149,37 @@ const CattleDistribution = () => {
                 // Single Select Mode with Assignment Status
                 <div>
                   <Form.Select
-                    value={selectedCowIds[0] || ""}
-                    onChange={(e) =>
-                      setSelectedCowIds(e.target.value ? [e.target.value] : [])
-                    }
-                    aria-label="Select a cow to assign to the farmer"
-                    style={{
-                      fontSize: "14px",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #ced4da",
-                    }}
-                  >
-                    <option value="">-- Select Cow --</option>
-                    {allCows.map((cow) => {
-                      const managingFarmer = usersWithCows.find((farmer) =>
-                        farmer.cows.some(
-                          (assignedCow) => assignedCow.id === cow.id
-                        )
-                      );
+  value={selectedCowIds[0] || ""}
+  onChange={(e) =>
+    setSelectedCowIds(e.target.value ? [e.target.value] : [])
+  }
+  aria-label="Select a cow to assign to the farmer"
+  style={{
+    fontSize: "14px",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ced4da",
+  }}
+>
+  <option value="">-- Select Cow --</option>
+  {allCows
+    .filter((cow) => cow.is_active !== false) // ✅ Saring sapi yang aktif saja
+    .map((cow) => {
+      const managingFarmer = usersWithCows.find((farmer) =>
+        farmer.cows.some((assignedCow) => assignedCow.id === cow.id)
+      );
 
-                      return (
-                        <option key={cow.id} value={cow.id}>
-                          {cow.name} ({cow.breed}, {cow.gender}){" "}
-                          {managingFarmer
-                            ? `- Managed by ${managingFarmer.user.username}`
-                            : "- Available"}
-                        </option>
-                      );
-                    })}
-                  </Form.Select>
+      return (
+        <option key={cow.id} value={cow.id}>
+          {cow.name} ({cow.breed}, {cow.gender}){" "}
+          {managingFarmer
+            ? `- Managed by ${managingFarmer.user.username}`
+            : "- Available"}
+        </option>
+      );
+    })}
+</Form.Select>
+
 
                   {/* Show detailed assignment status for selected cow */}
                   {selectedCowIds[0] && (

@@ -86,7 +86,7 @@ def list_cows():
     Mendapatkan daftar semua sapi.
     """
     try:
-        cows = Cow.query.all()
+        cows = Cow.query.all()  # tampilkan semua, baik aktif maupun tidak
         cows_list = [{
             "id": cow.id,
             "name": cow.name,
@@ -94,7 +94,8 @@ def list_cows():
             "breed": cow.breed,
             "lactation_phase": cow.lactation_phase,
             "weight": cow.weight,
-            "gender": cow.gender
+            "gender": cow.gender,
+            "is_active": cow.is_active
         } for cow in cows]
 
         return jsonify({"cows": cows_list}), 200
@@ -184,7 +185,7 @@ def delete_cow(cow_id):
         print(f"[DEBUG] [DELETE COW] Semua daily_feed_schedule terkait telah dihapus dengan paksa.")
 
         # Hapus data sapi
-        db.session.delete(cow)
+        cow.is_active = False
         
         # Re-enable foreign key checks
         db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))

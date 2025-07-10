@@ -93,7 +93,9 @@ def list_cows_by_user(user_id):
             "breed": cow.breed,
             "lactation_phase": cow.lactation_phase,
             "weight": cow.weight,
-            "gender": cow.gender
+            "gender": cow.gender,
+            "is_active": cow.is_active  # ✅ tambahkan ini
+
         } for cow in cows]
 
         return jsonify({"user_id": user_id, "cows": cows_list}), 200
@@ -122,6 +124,7 @@ def get_farmers_with_cows():
                 "lactation_phase": cow.lactation_phase,
                 "weight": cow.weight,
                 "gender": cow.gender,
+                "is_active": cow.is_active,  # ✅ tambahkan ini
                 "farmerName": farmer.name if hasattr(farmer, 'name') and farmer.name else farmer.username  # Tambahkan farmerName
             } for cow in cows]
 
@@ -175,7 +178,9 @@ def get_all_users_and_all_cows():
             "breed": cow.breed,
             "lactation_phase": cow.lactation_phase,
             "weight": cow.weight,
-            "gender": cow.gender
+            "gender": cow.gender,
+            "is_active": cow.is_active  # ✅ penting agar frontend bisa filter
+
         } for cow in cows]
 
         return jsonify({"users": users_list, "cows": cows_list}), 200
