@@ -221,7 +221,7 @@ const availableCows = Array.isArray(rawCows)
         const status = (h?.status || "").toLowerCase();
         return h?.cow?.id === cow.id && status !== "handled" && status !== "healthy";
       });
-      return !hasActiveCheck;
+      return !hasActiveCheck && cow.is_active !== false; // ✅ hanya ambil sapi aktif
     })
   : [];
 

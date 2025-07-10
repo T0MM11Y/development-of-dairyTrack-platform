@@ -193,10 +193,13 @@ placeholder="Search cow name..."
         if (isAdmin || isSupervisor) return;
 
         const femaleCows =
-          Array.isArray(userManagedCows) &&
-          userManagedCows.filter(
-            (cow) => cow.gender?.toLowerCase() === "female"
-          );
+  Array.isArray(userManagedCows) &&
+  userManagedCows.filter(
+    (cow) =>
+      cow.gender?.toLowerCase() === "female" &&
+      cow.is_active !== false // ✅ hanya yang aktif
+  );
+
 
         if (!femaleCows || femaleCows.length === 0) {
           Swal.fire({

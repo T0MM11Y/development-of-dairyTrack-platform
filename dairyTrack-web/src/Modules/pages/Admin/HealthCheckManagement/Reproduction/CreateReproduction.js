@@ -168,13 +168,17 @@ console.log("Reproduction payload sent:", payload);
 >
   <option value="">-- Select Cow --</option>
   {Array.isArray(cows) &&
-    cows
-      .filter((cow) => cow.gender?.toLowerCase() === "female") // ✅ hanya betina
-      .map((cow) => (
-        <option key={cow.id} value={cow.id}>
-          {cow.name} ({cow.breed})
-        </option>
-      ))}
+  cows
+    .filter(
+      (cow) =>
+        cow.gender?.toLowerCase() === "female" &&
+        cow.is_active !== false // ✅ hanya sapi betina yang aktif
+    )
+    .map((cow) => (
+      <option key={cow.id} value={cow.id}>
+        {cow.name} ({cow.breed})
+      </option>
+    ))}
 </select>
  {/* ⚠️ Tampilkan peringatan jika tidak ada sapi betina */}
   {Array.isArray(cows) && cows.filter((cow) => cow.gender?.toLowerCase() === "female").length === 0 && (
