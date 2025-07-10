@@ -20,7 +20,7 @@ const formatFeedItemResponse = (item) => ({
   updated_by: item.Updater ? { id: item.Updater.id, name: item.Updater.name } : null,
   created_at: item.createdAt,
   updated_at: item.updatedAt,
-  deleted_at: item.deletedAt, // Opsional untuk debugging atau admin
+  deleted_at: item.deletedAt,
   nutrients: item.Feed?.FeedNutrisiRecords
     ? item.Feed.FeedNutrisiRecords.map((n) => ({
         nutrisi_id: n.nutrisi_id,
@@ -98,54 +98,95 @@ exports.addFeedItem = async (req, res) => {
       });
     }
 
-    const existingFeedIds = dailyFeed.DailyFeedItems.map((item) => item.feed_id);
-    const duplicateFeedIds = feedIdsInRequest.filter((id) => existingFeedIds.includes(id));
-    if (duplicateFeedIds.length > 0) {
-      const duplicateFeedNames = await Feed.findAll({
-        where: { id: duplicateFeedIds },
-        attributes: ["id", "name"],
-        transaction,
-      });
+    const existingFeedIds = dailyFeed.DailyFeedItems
+      .filter((item) => !item.deletedAt)
+      .map((item) => item.feed_id);
+    const softDeletedItems = await DailyFeedItems.findAll({
+      where: {
+        daily_feed_id,
+        feed_id: { [Op.in]: feedIdsInRequest },
+        deletedAt: { [Op.ne]: null },
+      },
+      transaction,
+      paranoid: false,
+    });
 
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: `Jenis pakan sudah ada dalam sesi ini: ${duplicateFeedNames.map((f) => f.name).join(", ")}`,
-        duplicates: duplicateFeedNames.map((f) => ({ id: f.id, name: f.name })),
-      });
-    }
+    const feedItems = [];
+    const restoredItems = [];
 
-    const feedItems = feed_items
-      .map((item) => {
-        const qtyNum = parseFloat(item.quantity);
-        if (!item.feed_id || isNaN(qtyNum) || qtyNum <= 0) {
-          return null;
-        }
-        return {
+    for (const item of feed_items) {
+      const qtyNum = parseFloat(item.quantity);
+      if (!item.feed_id || isNaN(qtyNum) || qtyNum <= 0) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: `Item dengan feed_id ${item.feed_id || "tidak diketahui"} memiliki quantity tidak valid`,
+        });
+      }
+
+      const feed = await Feed.findByPk(item.feed_id, { transaction });
+      if (!feed) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: `Pakan dengan ID ${item.feed_id} tidak ditemukan`,
+        });
+      }
+
+      if (existingFeedIds.includes(item.feed_id)) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: `Jenis pakan ${feed.name} sudah ada dalam sesi ini`,
+          duplicates: [{ id: item.feed_id, name: feed.name }],
+        });
+      }
+
+      const softDeletedItem = softDeletedItems.find(
+        (sdi) => sdi.feed_id === item.feed_id
+      );
+      if (softDeletedItem) {
+        await softDeletedItem.restore({ transaction });
+        await softDeletedItem.update(
+          {
+            quantity: qtyNum,
+            user_id: userId,
+            updated_by: userId,
+          },
+          { transaction }
+        );
+        restoredItems.push(softDeletedItem);
+      } else {
+        feedItems.push({
           daily_feed_id,
           feed_id: item.feed_id,
           quantity: qtyNum,
           user_id: userId,
           created_by: userId,
           updated_by: userId,
-        };
-      })
-      .filter((item) => item !== null);
+        });
+      }
+    }
 
-    if (feedItems.length === 0) {
+    let createdItems = [];
+    if (feedItems.length > 0) {
+      createdItems = await DailyFeedItems.bulkCreate(feedItems, {
+        transaction,
+        validate: true,
+        individualHooks: true,
+        userId,
+      });
+    }
+
+    const allItems = [...createdItems, ...restoredItems];
+
+    if (allItems.length === 0) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
         message: "Tidak ada item pakan yang valid untuk ditambahkan",
       });
     }
-
-    const createdItems = await DailyFeedItems.bulkCreate(feedItems, {
-      transaction,
-      validate: true,
-      individualHooks: true,
-      userId,
-    });
 
     await transaction.commit();
 
@@ -163,7 +204,9 @@ exports.addFeedItem = async (req, res) => {
                 {
                   model: FeedNutrisi,
                   as: "FeedNutrisiRecords",
-                  include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+                  include: [
+                    { model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] },
+                  ],
                   required: false,
                 },
               ],
@@ -177,7 +220,11 @@ exports.addFeedItem = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `${createdItems.length} item pakan berhasil ditambahkan untuk sesi pakan harian`,
+      message: `${
+        restoredItems.length
+          ? `${restoredItems.length} item dipulihkan dan `
+          : ""
+      }${createdItems.length} item pakan berhasil ditambahkan untuk sesi pakan harian`,
       data: updatedFeed.DailyFeedItems.map(formatFeedItemResponse),
     });
   } catch (error) {
@@ -186,7 +233,7 @@ exports.addFeedItem = async (req, res) => {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({
         success: false,
-        message: `Validasi gagal: ${error.errors.map(e => e.message).join(", ")}`,
+        message: `Validasi gagal: ${error.errors.map((e) => e.message).join(", ")}`,
       });
     }
     if (error.name === "SequelizeForeignKeyConstraintError") {
@@ -204,7 +251,7 @@ exports.addFeedItem = async (req, res) => {
 
 exports.updateFeedItem = async (req, res) => {
   const { id } = req.params;
-  const { quantity } = req.body;
+  const { feed_id, quantity } = req.body;
   const userId = req.user?.id;
   let transaction;
 
@@ -216,7 +263,8 @@ exports.updateFeedItem = async (req, res) => {
       });
     }
 
-    if (!quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
+    const qtyNum = parseFloat(quantity);
+    if (!quantity || isNaN(qtyNum) || qtyNum <= 0) {
       return res.status(400).json({
         success: false,
         message: "Quantity harus berupa angka lebih dari 0",
@@ -253,14 +301,79 @@ exports.updateFeedItem = async (req, res) => {
       });
     }
 
-    await item.update(
-      { quantity: parseFloat(quantity), updated_by: userId },
-      { transaction, userId }
-    );
+    let targetFeedId = feed_id || item.feed_id;
+    const feed = await Feed.findByPk(targetFeedId, { transaction });
+    if (!feed) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: `Pakan dengan ID ${targetFeedId} tidak ditemukan`,
+      });
+    }
+
+    if (feed_id && feed_id !== item.feed_id) {
+      const existingItem = await DailyFeedItems.findOne({
+        where: {
+          daily_feed_id: item.daily_feed_id,
+          feed_id: targetFeedId,
+          deletedAt: { [Op.ne]: null },
+        },
+        transaction,
+        paranoid: false,
+      });
+
+      if (existingItem) {
+        await existingItem.restore({ transaction });
+        await existingItem.update(
+          {
+            quantity: qtyNum,
+            user_id: userId,
+            updated_by: userId,
+          },
+          { transaction }
+        );
+        await item.destroy({ transaction });
+        targetFeedId = existingItem.id;
+      } else {
+        const nonDeletedItem = await DailyFeedItems.findOne({
+          where: {
+            daily_feed_id: item.daily_feed_id,
+            feed_id: targetFeedId,
+          },
+          transaction,
+        });
+        if (nonDeletedItem) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Jenis pakan ${feed.name} sudah ada dalam sesi ini`,
+            duplicates: [{ id: targetFeedId, name: feed.name }],
+          });
+        }
+        await item.update(
+          {
+            feed_id: targetFeedId,
+            quantity: qtyNum,
+            user_id: userId,
+            updated_by: userId,
+          },
+          { transaction }
+        );
+      }
+    } else {
+      await item.update(
+        {
+          quantity: qtyNum,
+          user_id: userId,
+          updated_by: userId,
+        },
+        { transaction }
+      );
+    }
 
     await transaction.commit();
 
-    const updatedItem = await DailyFeedItems.findByPk(id, {
+    const updatedItem = await DailyFeedItems.findByPk(targetFeedId, {
       include: [
         {
           model: Feed,
@@ -270,7 +383,9 @@ exports.updateFeedItem = async (req, res) => {
             {
               model: FeedNutrisi,
               as: "FeedNutrisiRecords",
-              include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+              include: [
+                { model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] },
+              ],
               required: false,
             },
           ],
@@ -292,7 +407,7 @@ exports.updateFeedItem = async (req, res) => {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({
         success: false,
-        message: `Validasi gagal: ${error.errors.map(e => e.message).join(", ")}`,
+        message: `Validasi gagal: ${error.errors.map((e) => e.message).join(", ")}`,
       });
     }
     return res.status(500).json({
@@ -341,14 +456,14 @@ exports.deleteFeedItem = async (req, res) => {
       await transaction.rollback();
       return res.status(403).json({
         success: false,
-        message: `Anda tidak memiliki izin untuk mengelola pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
+        message: `Anda tidak memiliki izin untuk menghapus pakan sapi dengan ID ${item.DailyFeedSchedule.cow_id}`,
       });
     }
 
     const feedName = item.Feed ? item.Feed.name : "item ini";
     const deletedQuantity = parseFloat(item.quantity);
 
-    await item.destroy({ transaction, userId });
+    await item.destroy({ transaction });
 
     await transaction.commit();
 
@@ -392,13 +507,23 @@ exports.bulkUpdateFeedItems = async (req, res) => {
     const affectedDailyFeeds = new Set();
 
     for (const item of items) {
-      const { id, quantity } = item;
+      const { id, feed_id, quantity } = item;
 
       if (!id || !quantity) {
         results.push({
           id,
           success: false,
           message: "ID dan quantity diperlukan",
+        });
+        continue;
+      }
+
+      const qtyNum = parseFloat(quantity);
+      if (isNaN(qtyNum) || qtyNum <= 0) {
+        results.push({
+          id,
+          success: false,
+          message: "Quantity harus lebih dari 0",
         });
         continue;
       }
@@ -433,27 +558,94 @@ exports.bulkUpdateFeedItems = async (req, res) => {
         continue;
       }
 
-      const newQuantity = parseFloat(quantity);
-      if (isNaN(newQuantity) || newQuantity <= 0) {
+      let targetFeedId = feed_id || feedItem.feed_id;
+      const feed = await Feed.findByPk(targetFeedId, { transaction });
+      if (!feed) {
         results.push({
           id,
           success: false,
-          message: "Quantity harus lebih dari 0",
+          message: `Pakan dengan ID ${targetFeedId} tidak ditemukan`,
         });
         continue;
       }
 
       try {
-        await feedItem.update(
-          { quantity: newQuantity, updated_by: userId },
-          { transaction, userId }
-        );
-        affectedDailyFeeds.add(feedItem.daily_feed_id);
-        results.push({
-          id,
-          success: true,
-          message: `${feedItem.Feed.name} berhasil diperbarui`,
-        });
+        if (feed_id && feed_id !== feedItem.feed_id) {
+          const existingItem = await DailyFeedItems.findOne({
+            where: {
+              daily_feed_id: feedItem.daily_feed_id,
+              feed_id: targetFeedId,
+              deletedAt: { [Op.ne]: null },
+            },
+            transaction,
+            paranoid: false,
+          });
+
+          if (existingItem) {
+            await existingItem.restore({ transaction });
+            await existingItem.update(
+              {
+                quantity: qtyNum,
+                user_id: userId,
+                updated_by: userId,
+              },
+              { transaction }
+            );
+            await feedItem.destroy({ transaction });
+            affectedDailyFeeds.add(feedItem.daily_feed_id);
+            results.push({
+              id,
+              success: true,
+              message: `${feed.name} berhasil dipulihkan`,
+            });
+          } else {
+            const nonDeletedItem = await DailyFeedItems.findOne({
+              where: {
+                daily_feed_id: feedItem.daily_feed_id,
+                feed_id: targetFeedId,
+              },
+              transaction,
+            });
+            if (nonDeletedItem) {
+              results.push({
+                id,
+                success: false,
+                message: `Jenis pakan ${feed.name} sudah ada dalam sesi ini`,
+              });
+              continue;
+            }
+            await feedItem.update(
+              {
+                feed_id: targetFeedId,
+                quantity: qtyNum,
+                user_id: userId,
+                updated_by: userId,
+              },
+              { transaction }
+            );
+            affectedDailyFeeds.add(feedItem.daily_feed_id);
+            results.push({
+              id,
+              success: true,
+              message: `${feed.name} berhasil diperbarui`,
+            });
+          }
+        } else {
+          await feedItem.update(
+            {
+              quantity: qtyNum,
+              user_id: userId,
+              updated_by: userId,
+            },
+            { transaction }
+          );
+          affectedDailyFeeds.add(feedItem.daily_feed_id);
+          results.push({
+            id,
+            success: true,
+            message: `${feedItem.Feed.name} berhasil diperbarui`,
+          });
+        }
       } catch (error) {
         results.push({ id, success: false, message: error.message });
       }
@@ -796,346 +988,3 @@ exports.getFeedUsageByDate = async (req, res) => {
     });
   }
 };
-
-// exports.addFeedItem = async (req, res) => {
-//   const body = req.body;
-//   const userId = req.user?.id;
-//   let transaction;
-
-//   try {
-//     if (!userId) {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Autentikasi gagal. Silakan login kembali.",
-//       });
-//     }
-
-//     // Jika body adalah array, proses sebagai batch; jika object, ubah jadi array
-//     const dailyFeedRequests = Array.isArray(body)
-//       ? body
-//       : [{ daily_feed_id: body.daily_feed_id, feed_items: body.feed_items }];
-
-//     // Validasi dasar untuk setiap request
-//     for (const request of dailyFeedRequests) {
-//       if (
-//         !request.daily_feed_id ||
-//         !Array.isArray(request.feed_items) ||
-//         request.feed_items.length === 0
-//       ) {
-//         return res.status(400).json({
-//           success: false,
-//           message: `daily_feed_id dan feed_items (array non-kosong) diperlukan untuk daily_feed_id ${
-//             request.daily_feed_id || "tidak diketahui"
-//           }`,
-//         });
-//       }
-//     }
-
-//     // Validasi total jumlah feed_items
-//     const totalFeedItems = dailyFeedRequests.reduce(
-//       (sum, req) => sum + req.feed_items.length,
-//       0
-//     );
-//     if (totalFeedItems > 1000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Total item pakan maksimum adalah 1000 per permintaan",
-//       });
-//     }
-
-//     transaction = await sequelize.transaction();
-
-//     // Mengumpulkan semua daily_feed_id untuk validasi
-//     const dailyFeedIds = dailyFeedRequests.map((req) => req.daily_feed_id);
-//     const dailyFeeds = await DailyFeedSchedule.findAll({
-//       where: { id: { [Op.in]: dailyFeedIds } },
-//       attributes: ["id", "cow_id"],
-//       include: [
-//         {
-//           model: DailyFeedItems,
-//           as: "DailyFeedItems",
-//           attributes: ["feed_id"],
-//         },
-//       ],
-//       transaction,
-//     });
-
-//     const dailyFeedMap = new Map(dailyFeeds.map((df) => [df.id, df]));
-//     const invalidDailyFeedIds = dailyFeedIds.filter(
-//       (id) => !dailyFeedMap.has(id)
-//     );
-//     if (invalidDailyFeedIds.length > 0) {
-//       await transaction.rollback();
-//       return res.status(404).json({
-//         success: false,
-//         message: `Sesi pakan harian dengan ID ${invalidDailyFeedIds.join(
-//           ", "
-//         )} tidak ditemukan`,
-//       });
-//     }
-
-//     // Validasi izin user untuk semua cow_id
-//     const cowIds = dailyFeeds.map((df) => df.cow_id);
-//     const userCowAssociations = await UserCowAssociation.findAll({
-//       where: { user_id: userId, cow_id: { [Op.in]: cowIds } },
-//       attributes: ["user_id", "cow_id"],
-//       transaction,
-//     });
-
-//     const allowedCowIds = new Set(userCowAssociations.map((uca) => uca.cow_id));
-//     const unauthorizedDailyFeeds = dailyFeeds.filter(
-//       (df) => !allowedCowIds.has(df.cow_id)
-//     );
-//     if (unauthorizedDailyFeeds.length > 0) {
-//       await transaction.rollback();
-//       return res.status(403).json({
-//         success: false,
-//         message: `Anda tidak memiliki izin untuk mengelola pakan sapi dengan ID ${unauthorizedDailyFeeds
-//           .map((df) => df.cow_id)
-//           .join(", ")}`,
-//       });
-//     }
-
-//     // Mengumpulkan semua feed_id untuk validasi
-//     const allFeedIds = dailyFeedRequests.flatMap((req) =>
-//       req.feed_items.map((item) => item.feed_id)
-//     );
-//     const uniqueFeedIds = [...new Set(allFeedIds)];
-//     const feeds = await Feed.findAll({
-//       where: { id: uniqueFeedIds },
-//       attributes: ["id", "name"],
-//       include: [
-//         {
-//           model: FeedStock,
-//           as: "FeedStock",
-//           attributes: ["id", "stock"], // Ubah dari 'quantity' ke 'stock'
-//           required: false,
-//         },
-//       ],
-//       transaction,
-//     });
-
-//     const feedMap = new Map(feeds.map((f) => [f.id, f]));
-//     const invalidFeedIds = uniqueFeedIds.filter((id) => !feedMap.has(id));
-//     if (invalidFeedIds.length > 0) {
-//       await transaction.rollback();
-//       return res.status(400).json({
-//         success: false,
-//         message: `Pakan dengan ID ${invalidFeedIds.join(", ")} tidak ditemukan`,
-//       });
-//     }
-
-//     // Validasi duplikasi dan stok
-//     const feedItemsToCreate = [];
-//     const errors = [];
-//     for (const request of dailyFeedRequests) {
-//       const { daily_feed_id, feed_items } = request;
-//       const dailyFeed = dailyFeedMap.get(daily_feed_id);
-//       const existingFeedIds = dailyFeed.DailyFeedItems.map(
-//         (item) => item.feed_id
-//       );
-
-//       // Validasi duplikasi feed_id dalam request
-//       const feedIdsInRequest = feed_items.map((item) => item.feed_id);
-//       const feedIdCounts = {};
-//       feedIdsInRequest.forEach((id) => {
-//         feedIdCounts[id] = (feedIdCounts[id] || 0) + 1;
-//       });
-//       const duplicateFeedIds = Object.keys(feedIdCounts)
-//         .filter((id) => feedIdCounts[id] > 1)
-//         .map(Number);
-
-//       if (duplicateFeedIds.length > 0) {
-//         const duplicateFeedNames = feeds.filter((f) =>
-//           duplicateFeedIds.includes(f.id)
-//         );
-//         errors.push({
-//           daily_feed_id,
-//           message: `Terdapat jenis pakan yang sama dalam permintaan: ${duplicateFeedNames
-//             .map((f) => f.name)
-//             .join(", ")}`,
-//           duplicates: duplicateFeedNames.map((f) => ({
-//             id: f.id,
-//             name: f.name,
-//           })),
-//         });
-//         continue;
-//       }
-
-//       // Validasi duplikasi dengan data yang sudah ada
-//       const duplicatesWithExisting = feedIdsInRequest.filter((id) =>
-//         existingFeedIds.includes(id)
-//       );
-//       if (duplicatesWithExisting.length > 0) {
-//         const duplicateFeedNames = feeds.filter((f) =>
-//           duplicatesWithExisting.includes(f.id)
-//         );
-//         errors.push({
-//           daily_feed_id,
-//           message: `Jenis pakan sudah ada dalam sesi ini: ${duplicateFeedNames
-//             .map((f) => f.name)
-//             .join(", ")}`,
-//           duplicates: duplicateFeedNames.map((f) => ({
-//             id: f.id,
-//             name: f.name,
-//           })),
-//         });
-//         continue;
-//       }
-
-//       // Validasi quantity dan stok
-//       for (const item of feed_items) {
-//         const qtyNum = parseFloat(item.quantity);
-//         if (!item.feed_id || isNaN(qtyNum) || qtyNum <= 0) {
-//           errors.push({
-//             daily_feed_id,
-//             message: `Item pakan tidak valid untuk feed_id ${
-//               item.feed_id || "tidak diketahui"
-//             }: quantity harus lebih dari 0`,
-//           });
-//           continue;
-//         }
-//         const feed = feedMap.get(item.feed_id);
-//         const stock = feed.FeedStock ? parseFloat(feed.FeedStock.stock) : 0; // Ubah dari 'quantity' ke 'stock'
-//         if (stock < qtyNum) {
-//           errors.push({
-//             daily_feed_id,
-//             message: `Stok pakan tidak cukup untuk ${feed.name}: Diminta ${qtyNum} kg, tersedia ${stock} kg`,
-//           });
-//           continue;
-//         }
-//         feedItemsToCreate.push({
-//           daily_feed_id,
-//           feed_id: item.feed_id,
-//           quantity: qtyNum,
-//           user_id: userId,
-//           created_by: userId,
-//           updated_by: userId,
-//         });
-//       }
-//     }
-
-//     if (errors.length > 0) {
-//       await transaction.rollback();
-//       return res.status(400).json({
-//         success: false,
-//         message: "Terdapat kesalahan dalam beberapa permintaan",
-//         errors,
-//       });
-//     }
-
-//     if (feedItemsToCreate.length === 0) {
-//       await transaction.rollback();
-//       return res.status(400).json({
-//         success: false,
-//         message: "Tidak ada item pakan yang valid untuk ditambahkan",
-//       });
-//     }
-
-//     // Batch create dengan ukuran batch 500
-//     const BATCH_SIZE = 500;
-//     const createdItems = [];
-//     for (let i = 0; i < feedItemsToCreate.length; i += BATCH_SIZE) {
-//       const batch = feedItemsToCreate.slice(i, i + BATCH_SIZE);
-//       const batchItems = await DailyFeedItems.bulkCreate(batch, {
-//         transaction,
-//         validate: true,
-//         individualHooks: false,
-//         returning: true,
-//       });
-//       createdItems.push(...batchItems);
-//     }
-
-//     // Update stok pakan
-//     const stockUpdates = feedItemsToCreate.reduce((acc, item) => {
-//       acc[item.feed_id] = (acc[item.feed_id] || 0) + item.quantity;
-//       return acc;
-//     }, {});
-//     for (const [feed_id, quantity] of Object.entries(stockUpdates)) {
-//       await FeedStock.update(
-//         { stock: sequelize.literal(`stock - ${quantity}`) }, // Ubah dari 'quantity' ke 'stock'
-//         { where: { feed_id }, transaction }
-//       );
-//     }
-
-//     await transaction.commit();
-
-//     // Mengambil data hasil
-//     const createdItemIds = createdItems.map((item) => item.id);
-//     const updatedFeedItems = await DailyFeedItems.findAll({
-//       where: { id: { [Op.in]: createdItemIds } },
-//       include: [
-//         {
-//           model: Feed,
-//           as: "Feed",
-//           attributes: ["id", "name"],
-//           include: [
-//             {
-//               model: FeedNutrisi,
-//               as: "FeedNutrisiRecords",
-//               attributes: ["nutrisi_id", "amount"],
-//               include: [
-//                 {
-//                   model: Nutrisi,
-//                   as: "Nutrisi",
-//                   attributes: ["id", "name", "unit"],
-//                 },
-//               ],
-//               required: false,
-//             },
-//           ],
-//         },
-//         {
-//           model: User,
-//           as: "Creator",
-//           attributes: ["id", "name"],
-//           required: false,
-//         },
-//         {
-//           model: User,
-//           as: "Updater",
-//           attributes: ["id", "name"],
-//           required: false,
-//         },
-//       ],
-//     });
-
-//     // Mengelompokkan hasil berdasarkan daily_feed_id
-//     const resultMap = dailyFeedRequests.reduce((acc, req) => {
-//       acc[req.daily_feed_id] = { daily_feed_id: req.daily_feed_id, items: [] };
-//       return acc;
-//     }, {});
-//     updatedFeedItems.forEach((item) => {
-//       resultMap[item.daily_feed_id].items.push(formatFeedItemResponse(item));
-//     });
-
-//     return res.status(201).json({
-//       success: true,
-//       message: `${createdItems.length} item pakan berhasil ditambahkan untuk ${
-//         Object.keys(resultMap).length
-//       } sesi pakan harian`,
-//       data: Object.values(resultMap),
-//     });
-//   } catch (error) {
-//     if (transaction) await transaction.rollback();
-//     console.error("Error adding feed items:", error);
-//     if (error.name === "SequelizeValidationError") {
-//       return res.status(400).json({
-//         success: false,
-//         message: `Validasi gagal: ${error.errors
-//           .map((e) => e.message)
-//           .join(", ")}`,
-//       });
-//     }
-//     if (error.name === "SequelizeForeignKeyConstraintError") {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Data tidak valid: pakan atau sesi pakan tidak ditemukan.",
-//       });
-//     }
-//     return res.status(500).json({
-//       success: false,
-//       message: "Terjadi kesalahan pada server",
-//     });
-//   }
-// };

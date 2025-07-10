@@ -12,15 +12,15 @@ const formatFeedTypeResponse = (feedType) => ({
   updated_by: feedType.Updater ? { id: feedType.Updater.id, name: feedType.Updater.name } : null,
   created_at: feedType.createdAt,
   updated_at: feedType.updatedAt,
-  deleted_at: feedType.deletedAt, // Opsional: tambahkan untuk debugging atau admin
+  deleted_at: feedType.deletedAt,
 });
 
 exports.addFeedType = async (req, res) => {
   const { name } = req.body;
-  const userId = req.user.id; // Dari middleware verifyToken
+  const userId = req.user.id; // From middleware verifyToken
 
   try {
-    // Validasi input
+    // Validate input
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -28,7 +28,7 @@ exports.addFeedType = async (req, res) => {
       });
     }
 
-    // Cek apakah user valid
+    // Check if user is valid
     const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
       return res.status(400).json({
@@ -37,15 +37,32 @@ exports.addFeedType = async (req, res) => {
       });
     }
 
-    // Buat FeedType
-    const feedType = await FeedType.create({
-      name,
-      user_id: userId,
-      created_by: userId,
-      updated_by: userId,
+    // Check for soft-deleted FeedType with the same name
+    const existingSoftDeleted = await FeedType.findOne({
+      where: { name, deletedAt: { [Sequelize.Op.ne]: null } },
+      paranoid: false, // Include soft-deleted records
     });
 
-    // Ambil data lengkap beserta nama user
+    let feedType;
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        user_id: userId,
+        updated_by: userId,
+      });
+      feedType = existingSoftDeleted;
+    } else {
+      // Create new FeedType
+      feedType = await FeedType.create({
+        name,
+        user_id: userId,
+        created_by: userId,
+        updated_by: userId,
+      });
+    }
+
+    // Fetch complete data with user details
     const feedTypeWithUsers = await FeedType.findByPk(feedType.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -56,13 +73,15 @@ exports.addFeedType = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Jenis pakan berhasil ditambahkan",
+      message: existingSoftDeleted
+        ? "Jenis pakan berhasil dipulihkan"
+        : "Jenis pakan berhasil ditambahkan",
       data: formatFeedTypeResponse(feedTypeWithUsers),
     });
   } catch (err) {
     console.error("Error in addFeedType:", err);
 
-    // Penanganan nama duplikat
+    // Handle duplicate name error (for non-deleted records)
     if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -70,7 +89,7 @@ exports.addFeedType = async (req, res) => {
       });
     }
 
-    // Penanganan foreign key error
+    // Handle foreign key error
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
@@ -78,7 +97,7 @@ exports.addFeedType = async (req, res) => {
       });
     }
 
-    // Error umum
+    // General error
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
@@ -90,7 +109,7 @@ exports.deleteFeedType = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Cari FeedType
+    // Find FeedType
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
       return res.status(404).json({
@@ -100,7 +119,7 @@ exports.deleteFeedType = async (req, res) => {
     }
 
     // Soft delete
-    await feedType.destroy(); // Tanpa force: true untuk soft delete
+    await feedType.destroy(); // Without force: true for soft delete
 
     return res.status(200).json({
       success: true,
@@ -109,7 +128,7 @@ exports.deleteFeedType = async (req, res) => {
   } catch (err) {
     console.error("Error in deleteFeedType:", err);
 
-    // Penanganan error umum
+    // Handle general error
     return res.status(500).json({
       success: false,
       message: err.message || "Terjadi kesalahan pada server",
@@ -123,7 +142,7 @@ exports.updateFeedType = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Validasi input
+    // Validate input
     if (!name) {
       return res.status(400).json({
         success: false,
@@ -131,7 +150,7 @@ exports.updateFeedType = async (req, res) => {
       });
     }
 
-    // Cari FeedType
+    // Find FeedType
     const feedType = await FeedType.findByPk(id);
     if (!feedType) {
       return res.status(404).json({
@@ -140,7 +159,7 @@ exports.updateFeedType = async (req, res) => {
       });
     }
 
-    // Cek apakah user valid
+    // Check if user is valid
     const user = await User.findByPk(userId, { attributes: ["id"] });
     if (!user) {
       return res.status(400).json({
@@ -149,14 +168,36 @@ exports.updateFeedType = async (req, res) => {
       });
     }
 
-    // Update FeedType
-    await feedType.update({
-      name,
-      updated_by: userId,
+    // Check for soft-deleted FeedType with the same name
+    const existingSoftDeleted = await FeedType.findOne({
+      where: {
+        name,
+        deletedAt: { [Sequelize.Op.ne]: null },
+        id: { [Sequelize.Op.ne]: id }, // Exclude the current record
+      },
+      paranoid: false, // Include soft-deleted records
     });
 
-    // Ambil data lengkap beserta nama user
-    const feedTypeWithUsers = await FeedType.findByPk(id, {
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record and update it
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        user_id: userId,
+        updated_by: userId,
+      });
+      // Soft delete the current record to avoid duplicate
+      await feedType.destroy();
+      feedType.id = existingSoftDeleted.id; // Update ID for response
+    } else {
+      // Update current FeedType
+      await feedType.update({
+        name,
+        updated_by: userId,
+      });
+    }
+
+    // Fetch complete data with user details
+    const feedTypeWithUsers = await FeedType.findByPk(feedType.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -166,13 +207,15 @@ exports.updateFeedType = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Jenis pakan berhasil diperbarui",
+      message: existingSoftDeleted
+        ? "Jenis pakan berhasil dipulihkan dan diperbarui"
+        : "Jenis pakan berhasil diperbarui",
       data: formatFeedTypeResponse(feedTypeWithUsers),
     });
   } catch (err) {
     console.error("Error in updateFeedType:", err);
 
-    // Penanganan nama duplikat
+    // Handle duplicate name error (for non-deleted records)
     if (err.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({
         success: false,
@@ -180,7 +223,7 @@ exports.updateFeedType = async (req, res) => {
       });
     }
 
-    // Penanganan foreign key error
+    // Handle foreign key error
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
@@ -188,7 +231,7 @@ exports.updateFeedType = async (req, res) => {
       });
     }
 
-    // Error umum
+    // General error
     return res.status(500).json({
       success: false,
       message: err.message || "Terjadi kesalahan pada server",

@@ -18,7 +18,7 @@ const formatNutrisiResponse = (nutrisi) => ({
     : null,
   created_at: nutrisi.createdAt,
   updated_at: nutrisi.updatedAt,
-  deleted_at: nutrisi.deletedAt, // Opsional untuk debugging atau admin
+  deleted_at: nutrisi.deletedAt,
 });
 
 exports.addNutrisi = async (req, res) => {
@@ -48,27 +48,43 @@ exports.addNutrisi = async (req, res) => {
     }
 
     const trimmedName = name.trim();
-    const existingNutrisi = await Nutrisi.findOne({
-      where: Sequelize.where(
-        Sequelize.fn("LOWER", Sequelize.col("name")),
-        trimmedName.toLowerCase()
-      ),
+
+    // Check for soft-deleted Nutrisi with the same name (case-insensitive)
+    const existingSoftDeleted = await Nutrisi.findOne({
+      where: {
+        [Op.and]: [
+          Sequelize.where(
+            Sequelize.fn("LOWER", Sequelize.col("name")),
+            trimmedName.toLowerCase()
+          ),
+          { deletedAt: { [Op.ne]: null } },
+        ],
+      },
+      paranoid: false, // Include soft-deleted records
     });
-    if (existingNutrisi) {
-      return res.status(400).json({
-        success: false,
-        message: `Nutrisi dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama yang berbeda.`,
+
+    let nutrisi;
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        unit,
+        user_id: userId,
+        updated_by: userId,
+      });
+      nutrisi = existingSoftDeleted;
+    } else {
+      // Create new Nutrisi
+      nutrisi = await Nutrisi.create({
+        name: trimmedName,
+        unit,
+        user_id: userId,
+        created_by: userId,
+        updated_by: userId,
       });
     }
 
-    const nutrisi = await Nutrisi.create({
-      name: trimmedName,
-      unit,
-      user_id: userId,
-      created_by: userId,
-      updated_by: userId,
-    });
-
+    // Fetch complete data with user details
     const nutrisiWithUsers = await Nutrisi.findByPk(nutrisi.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
@@ -79,7 +95,9 @@ exports.addNutrisi = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Nutrisi berhasil ditambahkan",
+      message: existingSoftDeleted
+        ? "Nutrisi berhasil dipulihkan"
+        : "Nutrisi berhasil ditambahkan",
       data: formatNutrisiResponse(nutrisiWithUsers),
     });
   } catch (err) {
@@ -117,7 +135,7 @@ exports.updateNutrisi = async (req, res) => {
       JSON.stringify(req.body, null, 2)
     );
 
-    // Validasi: Pastikan setidaknya satu field dikirim
+    // Validate: Ensure at least one field is provided
     if (!name && !unit) {
       return res.status(400).json({
         success: false,
@@ -141,11 +159,11 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // Gunakan nilai yang sudah ada jika field tidak dikirim
+    // Use existing values if fields are not provided
     const trimmedName = name ? name.trim() : nutrisi.name;
     const updateUnit = unit !== undefined ? unit : nutrisi.unit;
 
-    // Validasi nama tidak kosong
+    // Validate name is not empty
     if (!trimmedName) {
       return res.status(400).json({
         success: false,
@@ -153,7 +171,7 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // Validasi satuan tidak kosong
+    // Validate unit is not empty
     if (!updateUnit) {
       return res.status(400).json({
         success: false,
@@ -161,36 +179,47 @@ exports.updateNutrisi = async (req, res) => {
       });
     }
 
-    // Cek duplikat nama, kecuali untuk ID nutrisi yang sedang diedit
+    // Check for soft-deleted Nutrisi with the same name (case-insensitive), excluding current record
+    let existingSoftDeleted = null;
     if (trimmedName.toLowerCase() !== nutrisi.name.toLowerCase()) {
-      const existingNutrisi = await Nutrisi.findOne({
+      existingSoftDeleted = await Nutrisi.findOne({
         where: {
           [Op.and]: [
             Sequelize.where(
               Sequelize.fn("LOWER", Sequelize.col("name")),
               trimmedName.toLowerCase()
             ),
+            { deletedAt: { [Op.ne]: null } },
             { id: { [Op.ne]: id } },
           ],
         },
+        paranoid: false, // Include soft-deleted records
       });
-      if (existingNutrisi) {
-        return res.status(400).json({
-          success: false,
-          message: `Nutrisi dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama yang berbeda.`,
-        });
-      }
     }
 
-    // Lakukan pembaruan
-    await nutrisi.update({
-      name: trimmedName,
-      unit: updateUnit,
-      updated_by: userId,
-    });
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record and update it
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        name: trimmedName,
+        unit: updateUnit,
+        user_id: userId,
+        updated_by: userId,
+      });
+      // Soft delete the current record to avoid duplicate
+      await nutrisi.destroy();
+      nutrisi.id = existingSoftDeleted.id; // Update ID for response
+    } else {
+      // Update current Nutrisi
+      await nutrisi.update({
+        name: trimmedName,
+        unit: updateUnit,
+        updated_by: userId,
+      });
+    }
 
-    // Ambil data nutrisi yang diperbarui beserta relasi user
-    const nutrisiWithUsers = await Nutrisi.findByPk(id, {
+    // Fetch updated data with user details
+    const nutrisiWithUsers = await Nutrisi.findByPk(nutrisi.id, {
       include: [
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -200,7 +229,9 @@ exports.updateNutrisi = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Nutrisi berhasil diperbarui",
+      message: existingSoftDeleted
+        ? "Nutrisi berhasil dipulihkan dan diperbarui"
+        : "Nutrisi berhasil diperbarui",
       data: formatNutrisiResponse(nutrisiWithUsers),
     });
   } catch (err) {

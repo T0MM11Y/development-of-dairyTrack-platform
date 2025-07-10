@@ -98,16 +98,59 @@ const createFeed = async (req, res) => {
       });
     }
 
-    const existingFeed = await Feed.findOne({
-      where: Sequelize.where(
-        Sequelize.fn("LOWER", Sequelize.col("name")),
-        trimmedName.toLowerCase()
-      ),
+    // Check for soft-deleted Feed with the same name (case-insensitive)
+    const existingSoftDeleted = await Feed.findOne({
+      where: {
+        [Op.and]: [
+          Sequelize.where(
+            Sequelize.fn("LOWER", Sequelize.col("name")),
+            trimmedName.toLowerCase()
+          ),
+          { deletedAt: { [Op.ne]: null } },
+        ],
+      },
+      paranoid: false, // Include soft-deleted records
     });
-    if (existingFeed) {
-      return res.status(400).json({
-        success: false,
-        message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
+
+    let feed;
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        typeId,
+        name: trimmedName,
+        unit,
+        min_stock,
+        price,
+        user_id: userId,
+        updated_by: userId,
+      });
+      feed = existingSoftDeleted;
+    } else {
+      // Check for existing non-deleted Feed with the same name
+      const existingFeed = await Feed.findOne({
+        where: Sequelize.where(
+          Sequelize.fn("LOWER", Sequelize.col("name")),
+          trimmedName.toLowerCase()
+        ),
+      });
+      if (existingFeed) {
+        return res.status(400).json({
+          success: false,
+          message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
+        });
+      }
+
+      // Create new Feed
+      feed = await Feed.create({
+        typeId,
+        name: trimmedName,
+        unit,
+        min_stock,
+        price,
+        user_id: userId,
+        created_by: userId,
+        updated_by: userId,
       });
     }
 
@@ -121,17 +164,6 @@ const createFeed = async (req, res) => {
         });
       }
     }
-
-    const feed = await Feed.create({
-      typeId,
-      name: trimmedName,
-      unit,
-      min_stock,
-      price,
-      user_id: userId,
-      created_by: userId,
-      updated_by: userId,
-    });
 
     let nutrisiRecordsCreated = [];
     if (nutrisiList && Array.isArray(nutrisiList) && nutrisiList.length > 0) {
@@ -151,6 +183,10 @@ const createFeed = async (req, res) => {
           });
         }
 
+        // Delete existing FeedNutrisi records for the feed
+        await FeedNutrisi.destroy({ where: { feed_id: feed.id } });
+
+        // Create new FeedNutrisi records
         const feedNutrisiData = nutrisiList.map((n) => ({
           feed_id: feed.id,
           nutrisi_id: n.nutrisi_id,
@@ -195,11 +231,17 @@ const createFeed = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Pakan "${trimmedName}" berhasil ditambahkan${
-        nutrisiRecordsCreated.length > 0
-          ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
-          : "."
-      }`,
+      message: existingSoftDeleted
+        ? `Pakan "${trimmedName}" berhasil dipulihkan${
+            nutrisiRecordsCreated.length > 0
+              ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+              : "."
+          }`
+        : `Pakan "${trimmedName}" berhasil ditambahkan${
+            nutrisiRecordsCreated.length > 0
+              ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+              : "."
+          }`,
       data: formatFeedResponse(createdFeed),
     });
   } catch (error) {
@@ -358,24 +400,72 @@ const updateFeed = async (req, res) => {
       });
     }
 
+    // Check for soft-deleted Feed with the same name (case-insensitive), excluding current record
+    let existingSoftDeleted = null;
     if (trimmedName.toLowerCase() !== feed.name.toLowerCase()) {
-      const existingFeed = await Feed.findOne({
+      existingSoftDeleted = await Feed.findOne({
         where: {
           [Op.and]: [
             Sequelize.where(
               Sequelize.fn("LOWER", Sequelize.col("name")),
               trimmedName.toLowerCase()
             ),
+            { deletedAt: { [Op.ne]: null } },
             { id: { [Op.ne]: id } },
           ],
         },
+        paranoid: false, // Include soft-deleted records
       });
-      if (existingFeed) {
-        return res.status(400).json({
-          success: false,
-          message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
+    }
+
+    let updatedFeedId = feed.id;
+    if (existingSoftDeleted) {
+      // Restore the soft-deleted record
+      await existingSoftDeleted.restore();
+      await existingSoftDeleted.update({
+        typeId: typeId !== undefined ? typeId : feed.typeId,
+        name: trimmedName,
+        unit: unit !== undefined ? unit : feed.unit,
+        min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
+        price: price !== undefined ? price : feed.price,
+        user_id: userId,
+        updated_by: userId,
+      });
+      // Soft delete the current record to avoid duplicate
+      await feed.destroy();
+      updatedFeedId = existingSoftDeleted.id; // Update ID for response and nutrisi handling
+    } else {
+      // Check for existing non-deleted Feed with the same name
+      if (trimmedName.toLowerCase() !== feed.name.toLowerCase()) {
+        const existingFeed = await Feed.findOne({
+          where: {
+            [Op.and]: [
+              Sequelize.where(
+                Sequelize.fn("LOWER", Sequelize.col("name")),
+                trimmedName.toLowerCase()
+              ),
+              { id: { [Op.ne]: id } },
+            ],
+          },
         });
+        if (existingFeed) {
+          return res.status(400).json({
+            success: false,
+            message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
+          });
+        }
       }
+
+      // Update current Feed
+      await feed.update({
+        typeId: typeId !== undefined ? typeId : feed.typeId,
+        name: trimmedName,
+        unit: unit !== undefined ? unit : feed.unit,
+        min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
+        price: price !== undefined ? price : feed.price,
+        user_id: userId,
+        updated_by: userId,
+      });
     }
 
     let feedType = null;
@@ -388,16 +478,6 @@ const updateFeed = async (req, res) => {
         });
       }
     }
-
-    await feed.update({
-      typeId: typeId !== undefined ? typeId : feed.typeId,
-      name: trimmedName,
-      unit: unit !== undefined ? unit : feed.unit,
-      min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
-      price: price !== undefined ? price : feed.price,
-      user_id: userId,
-      updated_by: userId,
-    });
 
     let nutrisiRecordsCreated = [];
     if (nutrisiList && Array.isArray(nutrisiList)) {
@@ -417,34 +497,14 @@ const updateFeed = async (req, res) => {
           });
         }
 
-        // Get existing FeedNutrisi records
-        const existingNutrisiRecords = await FeedNutrisi.findAll({
-          where: { feed_id: id },
-        });
+        // Delete existing FeedNutrisi records
+        await FeedNutrisi.destroy({ where: { feed_id: updatedFeedId } });
 
-        // Identify nutrisi to delete (not in new nutrisiList)
-        const existingNutrisiIds = existingNutrisiRecords.map(
-          (r) => r.nutrisi_id
-        );
-        const nutrisiIdsToDelete = existingNutrisiIds.filter(
-          (id) => !nutrisiIds.includes(id)
-        );
-
-        // Delete removed nutrisi
-        if (nutrisiIdsToDelete.length > 0) {
-          await FeedNutrisi.destroy({
-            where: {
-              feed_id: id,
-              nutrisi_id: { [Op.in]: nutrisiIdsToDelete },
-            },
-          });
-        }
-
-        // Prepare nutrisi to create or update
+        // Create new FeedNutrisi records
         const feedNutrisiData = nutrisiList
           .filter((n) => n.nutrisi_id)
           .map((n) => ({
-            feed_id: id,
+            feed_id: updatedFeedId,
             nutrisi_id: n.nutrisi_id,
             amount: n.amount !== undefined ? n.amount : 0.0,
             user_id: userId,
@@ -452,35 +512,13 @@ const updateFeed = async (req, res) => {
             updated_by: userId,
           }));
 
-        // Update or create nutrisi records
-        for (const nutrisiData of feedNutrisiData) {
-          const existingRecord = existingNutrisiRecords.find(
-            (r) => r.nutrisi_id === nutrisiData.nutrisi_id
-          );
-          if (existingRecord) {
-            await FeedNutrisi.update(
-              { amount: nutrisiData.amount, updated_by: userId },
-              { where: { feed_id: id, nutrisi_id: nutrisiData.nutrisi_id } }
-            );
-          } else {
-            await FeedNutrisi.create(nutrisiData);
-          }
-        }
-
-        nutrisiRecordsCreated = await FeedNutrisi.findAll({
-          where: { feed_id: id },
-          include: [
-            {
-              model: Nutrisi,
-              as: "Nutrisi",
-              attributes: ["id", "name", "unit"],
-            },
-          ],
+        nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
+          validate: true,
         });
       }
     }
 
-    const updatedFeed = await Feed.findByPk(id, {
+    const updatedFeed = await Feed.findByPk(updatedFeedId, {
       include: [
         { model: FeedType, as: "FeedType", attributes: ["id", "name"] },
         {
@@ -509,11 +547,17 @@ const updateFeed = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Pakan "${updatedFeed.name}" berhasil diperbarui${
-        nutrisiRecordsCreated.length > 0
-          ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
-          : "."
-      }`,
+      message: existingSoftDeleted
+        ? `Pakan "${updatedFeed.name}" berhasil dipulihkan${
+            nutrisiRecordsCreated.length > 0
+              ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+              : "."
+          }`
+        : `Pakan "${updatedFeed.name}" berhasil diperbarui${
+            nutrisiRecordsCreated.length > 0
+              ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+              : "."
+          }`,
       data: formatFeedResponse(updatedFeed),
     });
   } catch (error) {
