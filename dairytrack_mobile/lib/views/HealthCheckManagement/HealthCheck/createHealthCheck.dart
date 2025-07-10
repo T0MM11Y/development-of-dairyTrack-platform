@@ -70,15 +70,19 @@ class _CreateHealthCheckViewState extends State<CreateHealthCheckView> {
 
  List<Map<String, dynamic>> get _availableCows {
   return _cows.where((cow) {
+    // ❌ Jangan tampilkan sapi yang tidak aktif
+    if (cow['is_active'] == false) return false;
+
     final hasActiveCheck = _healthChecks.any((h) {
       final cowId = h['cow'] is Map ? h['cow']['id'] : h['cow'];
       final status = (h['status'] ?? '').toLowerCase();
-      // jika status !== 'handled' dan !== 'healthy' → anggap masih aktif
       return cowId == cow['id'] && status != 'handled' && status != 'healthy';
     });
-    return !hasActiveCheck; // hanya tampilkan sapi yg tidak punya check aktif
+
+    return !hasActiveCheck;
   }).toList();
 }
+
 
 
   Future<void> _submit() async {

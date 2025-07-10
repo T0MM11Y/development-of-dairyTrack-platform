@@ -735,7 +735,7 @@ const CattleDistribution = () => {
           key={cow.id}
           overlay={
             isDeleted ? (
-              <Tooltip>Sapi ini telah dihapus</Tooltip>
+<Tooltip>This cow has been deleted</Tooltip>
             ) : (
               <></>
             )

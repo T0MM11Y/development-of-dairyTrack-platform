@@ -13,6 +13,8 @@ class Cow {
   final String lactationPhase;
   final double weight;
   final String gender;
+  final bool isActive;
+
   // Calculate age property
   int get age {
     try {
@@ -41,6 +43,7 @@ class Cow {
     required this.lactationPhase,
     required this.weight,
     required this.gender,
+    this.isActive = true, // Default value, tidak perlu disupply jika tidak perlu
   });
 
   factory Cow.fromJson(Map<String, dynamic> json) {
@@ -54,6 +57,8 @@ class Cow {
           ? (json['weight'] as int).toDouble()
           : json['weight'] as double,
       gender: json['gender'] as String,
+      isActive: json['is_active'] ?? true,
+
     );
   }
 

@@ -463,8 +463,8 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_isFabExpanded) ...[
-            _buildFabGroup('Products & Sales', Icons.storefront,
-                Colors.deepPurple, productsSales),
+            // _buildFabGroup('Products & Sales', Icons.storefront,
+            //     Colors.deepPurple, productsSales),
             _buildFabGroup(
                 'Feed Management', Icons.grass, Colors.green, feedManagement),
             _buildFabGroup('Health Check Management', Icons.medical_services,

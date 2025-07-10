@@ -244,56 +244,56 @@ const AdminSidebar = ({ collapsed, activeMenu, onMenuToggle }) => {
         ],
         showForRoles: [1, 2], // Admin & Supervisor
       },
-      {
-        id: "salesAndFinancial",
-        title: "Sales And Financial",
-        icon: "far fa-chart-bar",
-        submenu: [
-          {
-            id: "product-type",
-            title: "Product Type",
-            link: getRoleBasedLink("/product-type", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "product",
-            title: "Product",
-            link: getRoleBasedLink("/product", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "product-history",
-            title: "Product History",
-            link: getRoleBasedLink("/product-history", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "sales",
-            title: "Sales",
-            link: getRoleBasedLink("/sales", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "salesTransaction",
-            title: "Sales Transaction",
-            link: getRoleBasedLink("/sales-transaction", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "finance",
-            title: "Finance",
-            link: getRoleBasedLink("/finance", userRoleId),
-            showForRoles: [1, 2],
-          },
-          {
-            id: "finance-record",
-            title: "Finance Record",
-            link: getRoleBasedLink("/finance-record", userRoleId),
-            showForRoles: [1, 2],
-          },
-        ],
-        showForRoles: [1, 2], // Admin & Supervisor
-      },
+      // {
+      //   id: "salesAndFinancial",
+      //   title: "Sales And Financial",
+      //   icon: "far fa-chart-bar",
+      //   submenu: [
+      //     {
+      //       id: "product-type",
+      //       title: "Product Type",
+      //       link: getRoleBasedLink("/product-type", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "product",
+      //       title: "Product",
+      //       link: getRoleBasedLink("/product", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "product-history",
+      //       title: "Product History",
+      //       link: getRoleBasedLink("/product-history", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "sales",
+      //       title: "Sales",
+      //       link: getRoleBasedLink("/sales", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "salesTransaction",
+      //       title: "Sales Transaction",
+      //       link: getRoleBasedLink("/sales-transaction", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "finance",
+      //       title: "Finance",
+      //       link: getRoleBasedLink("/finance", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //     {
+      //       id: "finance-record",
+      //       title: "Finance Record",
+      //       link: getRoleBasedLink("/finance-record", userRoleId),
+      //       showForRoles: [1, 2],
+      //     },
+      //   ],
+      //   showForRoles: [1, 2], // Admin & Supervisor
+      // },
     ],
     [userRoleId]
   );

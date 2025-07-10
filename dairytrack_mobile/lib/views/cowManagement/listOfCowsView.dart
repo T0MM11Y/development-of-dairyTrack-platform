@@ -169,10 +169,11 @@ class _ListOfCowsViewState extends State<ListOfCowsView> {
       }
 
       setState(() {
-        _cows = cows;
-        _applyFiltersAndSort();
-        _isLoading = false;
-      });
+  _cows = cows.where((cow) => cow.isActive == true).toList();
+  _applyFiltersAndSort();
+  _isLoading = false;
+});
+
     } catch (e) {
       setState(() {
         _errorMessage = 'Error: ${e.toString()}';

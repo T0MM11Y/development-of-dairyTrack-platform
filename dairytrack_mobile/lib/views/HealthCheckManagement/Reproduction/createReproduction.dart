@@ -58,11 +58,15 @@ class _ReproductionCreateViewState extends State<ReproductionCreateView> {
     final allCows = rawData is Map && rawData['cows'] is List ? rawData['cows'] : [];
 
     setState(() {
-      _currentUser = user;
-      _form['created_by'] = user['id'];
-      _cows = allCows.where((c) => (c['gender'] ?? '').toLowerCase() == 'female').toList();
-      _loading = false;
-    });
+  _currentUser = user;
+  _form['created_by'] = user['id'];
+  _cows = allCows.where((c) =>
+    (c['gender'] ?? '').toLowerCase() == 'female' &&
+    c['is_active'] != false // ✅ hanya ambil sapi betina yang aktif
+  ).toList();
+  _loading = false;
+});
+
   }
 
   Future<void> _submit() async {
