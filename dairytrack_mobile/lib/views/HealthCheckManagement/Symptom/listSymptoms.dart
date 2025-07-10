@@ -100,25 +100,66 @@ class _SymptomListViewState extends State<SymptomListView> {
 }
 
 
-  List<Map<String, dynamic>> get _filteredSymptoms {
-    final filtered = _symptoms.where((s) {
-      final hc = _healthChecks.firstWhere((h) => h['id'] == s['health_check'], orElse: () => {});
-      if (hc.isEmpty) return false;
-      final cowId = hc['cow'] is Map ? hc['cow']['id'] : hc['cow'];
-      final cow = _cows.firstWhere((c) => c['id'] == cowId, orElse: () => {});
-      if (cow.isEmpty) return false;
-      return (cow['name'] ?? '').toString().toLowerCase().contains(_search.toLowerCase());
-    }).toList();
+ List<Map<String, dynamic>> get _filteredSymptoms {
+  final keyword = _search.toLowerCase();
 
-    filtered.sort((a, b) {
-      final dateA = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(2000);
-      final dateB = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(2000);
-      return dateB.compareTo(dateA);
-    });
+  final statusAliases = {
+    'pending': ['pending', 'belum ditangani', 'not handled'],
+    'handled': ['handled', 'sudah ditangani'],
+    'healthy': ['healthy', 'sehat'],
+  };
 
-    final start = (_currentPage - 1) * _pageSize;
-    return filtered.skip(start).take(_pageSize).toList();
-  }
+  final filtered = _symptoms.where((symptom) {
+    final hc = _healthChecks.firstWhere(
+      (h) => h['id'] == symptom['health_check'],
+      orElse: () => {},
+    );
+    if (hc.isEmpty) return false;
+
+    final cowId = hc['cow'] is Map ? hc['cow']['id'] : hc['cow'];
+    final cow = _cows.firstWhere((c) => c['id'] == cowId, orElse: () => {});
+    if (cow.isEmpty) return false;
+
+    final cowName = (cow['name'] ?? '').toString().toLowerCase();
+    final status = (hc['status'] ?? '').toString().toLowerCase();
+
+    // Apakah keyword cocok dengan alias status
+    final matchesStatusAlias = statusAliases.entries.any((entry) =>
+      entry.key == status &&
+      entry.value.any((alias) => alias.contains(keyword))
+    );
+
+    // Semua field yang bisa dicari
+    final searchableValues = [
+      cowName,
+      (symptom['eye_condition'] ?? '').toString(),
+      (symptom['mouth_condition'] ?? '').toString(),
+      (symptom['nose_condition'] ?? '').toString(),
+      (symptom['anus_condition'] ?? '').toString(),
+      (symptom['leg_condition'] ?? '').toString(),
+      (symptom['skin_condition'] ?? '').toString(),
+      (symptom['behavior'] ?? '').toString(),
+      (symptom['weight_condition'] ?? '').toString(),
+      (symptom['reproductive_condition'] ?? '').toString(),
+      (symptom['created_by']?['name'] ?? '').toString(),
+      status,
+    ];
+
+    return searchableValues.any((val) => val.toLowerCase().contains(keyword)) || matchesStatusAlias;
+  }).toList();
+
+  // 🔽 Urutkan dari terbaru
+  filtered.sort((a, b) {
+    final dateA = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(2000);
+    final dateB = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(2000);
+    return dateB.compareTo(dateA);
+  });
+
+  // 🔄 Pagination
+  final start = (_currentPage - 1) * _pageSize;
+  return filtered.skip(start).take(_pageSize).toList();
+}
+
 
  bool _isEditable(Map<String, dynamic> hc) {
   return !_isAdmin && !_isSupervisor && hc['status'] != 'handled' && hc['status'] != 'healthy';

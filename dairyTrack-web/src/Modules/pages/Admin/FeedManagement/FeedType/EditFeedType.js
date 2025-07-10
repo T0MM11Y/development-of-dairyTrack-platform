@@ -1,28 +1,30 @@
 // EditFeedType.js
 import { useState, useEffect } from "react";
-import { useParams, useHistory } from "react-router-dom"; // Changed to useHistory
+import { useParams, useHistory } from "react-router-dom";
 import { getFeedTypeById, updateFeedType } from "../../../../controllers/feedTypeController";
 import Swal from "sweetalert2";
+import { Modal, Button, Form } from "react-bootstrap";
 
 const EditFeedType = () => {
   const { id } = useParams();
-  const history = useHistory(); // Use history instead of navigate
+  const history = useHistory();
   const [form, setForm] = useState(null);
   const [originalName, setOriginalName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [show, setShow] = useState(true);
 
   useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  if (userData.user_id && userData.token) {
-    setCurrentUser(userData);
-  } else {
-    localStorage.removeItem("user");
-    history.push("/");
-  }
-}, [history]);
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id && userData.token) {
+      setCurrentUser(userData);
+    } else {
+      localStorage.removeItem("user");
+      history.push("/");
+    }
+  }, [history]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,7 +42,6 @@ const EditFeedType = () => {
         }
       } catch (err) {
         setError("Gagal memuat data jenis pakan.");
-        console.error(err);
         Swal.fire({
           icon: "error",
           title: "Gagal Memuat",
@@ -83,7 +84,7 @@ const EditFeedType = () => {
     });
 
     if (!result.isConfirmed) {
-      history.push("/admin/list-feedType"); // Use history.push
+      setShow(false);
       return;
     }
 
@@ -99,12 +100,12 @@ const EditFeedType = () => {
           timer: 1500,
           showConfirmButton: false,
         });
-        history.push("/admin/list-feedType"); // Use history.push
+        setShow(false);
+        history.push("/admin/list-feedType");
       } else {
         throw new Error(response.message || "Gagal memperbarui jenis pakan.");
       }
     } catch (err) {
-      console.error("Update error:", err);
       Swal.fire({
         icon: "error",
         title: "Gagal Memperbarui",
@@ -116,86 +117,84 @@ const EditFeedType = () => {
   };
 
   const handleClose = () => {
-    history.push("/admin/list-feedType"); // Use history.push
+    setShow(false);
+    history.push("/admin/list-feedType");
   };
 
+  useEffect(() => {
+    if (!show) {
+      history.push("/admin/list-feedType");
+    }
+  }, [show, history]);
+
   return (
-    <div
-      className="modal fade show d-block"
-      style={{ background: "rgba(0,0,0,0.5)", minHeight: "100vh" }}
-      tabIndex="-1"
+    <Modal
+      show={show}
+      onHide={handleClose}
+      backdrop="static"
+      keyboard={false}
+      size="lg"
+      centered
     >
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title text-info fw-bold">Edit Jenis Pakan</h4>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={handleClose}
-              aria-label="Close"
-            ></button>
+      <Modal.Header closeButton>
+        <Modal.Title className="text-info fw-bold">Edit Jenis Pakan</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && <p className="text-danger text-center">{error}</p>}
+        {loading || !form ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-info" role="status" />
+            <p className="mt-2">Memuat data...</p>
           </div>
-          <div className="modal-body">
-            {error && <p className="text-danger text-center">{error}</p>}
-            {loading || !form ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-info" role="status" />
-                <p className="mt-2">Memuat data...</p>
+        ) : (
+          <Form onSubmit={handleSubmit}>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <Form.Label className="form-label fw-bold">Nama Jenis Pakan</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Nama Jenis Pakan</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      className="form-control"
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Diperbarui oleh</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={currentUser?.name || "Tidak diketahui"}
-                      readOnly
-                      disabled
-                    />
-                    <input type="hidden" name="updated_by" value={form.updated_by} />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label fw-bold">Tanggal Diperbarui</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={
-                        form.updated_at
-                          ? new Date(form.updated_at).toLocaleString("id-ID")
-                          : "Belum diperbarui"
-                      }
-                      readOnly
-                      disabled
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-info w-100"
-                  disabled={submitting}
-                >
-                  {submitting ? "Menyimpan..." : "Simpan Perubahan"}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              <div className="col-md-6 mb-3">
+                <Form.Label className="form-label fw-bold">Diperbarui oleh</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={currentUser?.name || "Tidak diketahui"}
+                  readOnly
+                  disabled
+                />
+                <Form.Control type="hidden" name="updated_by" value={form.updated_by} />
+              </div>
+              <div className="col-md-6 mb-3">
+                <Form.Label className="form-label fw-bold">Tanggal Diperbarui</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={
+                    form.updated_at
+                      ? new Date(form.updated_at).toLocaleString("id-ID")
+                      : "Belum diperbarui"
+                  }
+                  readOnly
+                  disabled
+                />
+              </div>
+            </div>
+            <Button
+              type="submit"
+              variant="info"
+              className="w-100"
+              disabled={submitting}
+            >
+              {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </Form>
+        )}
+      </Modal.Body>
+    </Modal>
   );
 };
 

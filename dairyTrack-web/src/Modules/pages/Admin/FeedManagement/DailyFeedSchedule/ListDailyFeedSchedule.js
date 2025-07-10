@@ -41,14 +41,12 @@ const DailyFeedListPage = () => {
 
       let feedData = [];
       if (feedResponse.success && Array.isArray(feedResponse.data)) {
-        // For farmers, filter feeds to include only those for associated cows
         if (isFarmer && cowResponse.success && Array.isArray(cowResponse.cows)) {
           const cowIds = cowResponse.cows.map((cow) => cow.id);
           feedData = feedResponse.data.filter((feed) =>
             cowIds.includes(parseInt(feed.cow_id))
           );
         } else {
-          // For admin/supervisor, use all feeds
           feedData = feedResponse.data;
         }
         setFeeds(feedData);
@@ -165,14 +163,14 @@ const DailyFeedListPage = () => {
   };
 
   useEffect(() => {
-  if (!user.token || !user.user_id || !user.role) {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  } else {
-    fetchData();
-    console.log("User:", user);
-  }
-}, [selectedDate]);
+    if (!user.token || !user.user_id || !user.role) {
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } else {
+      fetchData();
+      console.log("User:", user);
+    }
+  }, [selectedDate]);
 
   const groupedFeeds = feeds.reduce((acc, feed) => {
     const key = `${feed.cow_id}_${feed.date}`;
@@ -188,6 +186,7 @@ const DailyFeedListPage = () => {
       id: feed.id,
       session: feed.session,
       weather: feed.weather || "Tidak ada data",
+      items: feed.items || [],
     });
     return acc;
   }, {});
@@ -230,8 +229,8 @@ const DailyFeedListPage = () => {
                 max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" })}
               />
             </Form.Group>
-            {isFarmer && (
-              <div className="mb-2">
+            <div className="mb-2">
+              {isFarmer && (
                 <Button
                   variant="primary"
                   onClick={() => setModalType("create")}
@@ -239,24 +238,15 @@ const DailyFeedListPage = () => {
                 >
                   <i className="fas fa-plus me-2" /> Tambah Jadwal
                 </Button>
-                <Button
-                  variant="success"
-                  onClick={() => setShowCowModal(true)}
-                >
-                  <i className="fas fa-cow me-2" /> Sapi Tanpa Jadwal
-                </Button>
-              </div>
-            )}
-            {!isFarmer && (
-              <div className="mb-2">
-                <Button
-                  variant="success"
-                  onClick={() => setShowCowModal(true)}
-                >
-                  <i className="fas fa-cow me-2" /> Sapi Tanpa Jadwal
-                </Button>
-              </div>
-            )}
+              )}
+              <Button
+                variant="success"
+                onClick={() => setShowCowModal(true)}
+                className="me-2"
+              >
+                <i className="fas fa-cow me-2" /> Sapi Tanpa Jadwal
+              </Button>
+            </div>
           </div>
 
           {loading ? (

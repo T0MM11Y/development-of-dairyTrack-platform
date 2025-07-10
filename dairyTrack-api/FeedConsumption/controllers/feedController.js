@@ -17,11 +17,15 @@ const formatFeedResponse = (feed) => ({
   price: feed.price,
   user_id: feed.user_id,
   user_name: feed.User ? feed.User.name : null,
-  created_by: feed.Creator ? { id: feed.Creator.id, name: feed.Creator.name } : null,
-  updated_by: feed.Updater ? { id: feed.Updater.id, name: feed.Updater.name } : null,
+  created_by: feed.Creator
+    ? { id: feed.Creator.id, name: feed.Creator.name }
+    : null,
+  updated_by: feed.Updater
+    ? { id: feed.Updater.id, name: feed.Updater.name }
+    : null,
   created_at: feed.createdAt,
   updated_at: feed.updatedAt,
-  deleted_at: feed.deletedAt, // Opsional untuk debugging atau admin
+  deleted_at: feed.deletedAt,
   nutrisi_records: feed.FeedNutrisiRecords
     ? feed.FeedNutrisiRecords.map((record) => ({
         nutrisi_id: record.nutrisi_id,
@@ -54,6 +58,15 @@ const createFeed = async (req, res) => {
     const { typeId, name, unit, min_stock, price, nutrisiList } = req.body;
     const userId = req.user?.id;
 
+    console.log("createFeed - Data yang diterima:", {
+      typeId,
+      name,
+      unit,
+      min_stock,
+      price,
+      nutrisiList,
+    });
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -64,7 +77,8 @@ const createFeed = async (req, res) => {
     if (!name || !unit || min_stock === undefined || price === null) {
       return res.status(400).json({
         success: false,
-        message: "Harap lengkapi semua field wajib: nama, unit, stok minimum, dan harga.",
+        message:
+          "Harap lengkapi semua field wajib: nama, unit, stok minimum, dan harga.",
       });
     }
 
@@ -76,13 +90,24 @@ const createFeed = async (req, res) => {
       });
     }
 
+    const trimmedName = name ? name.trim() : "";
+    if (!trimmedName) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama pakan tidak boleh kosong.",
+      });
+    }
+
     const existingFeed = await Feed.findOne({
-      where: Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), name.trim().toLowerCase()),
+      where: Sequelize.where(
+        Sequelize.fn("LOWER", Sequelize.col("name")),
+        trimmedName.toLowerCase()
+      ),
     });
     if (existingFeed) {
       return res.status(400).json({
         success: false,
-        message: `Pakan dengan nama "${name.trim()}" sudah ada. Silakan gunakan nama lain.`,
+        message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
       });
     }
 
@@ -99,7 +124,7 @@ const createFeed = async (req, res) => {
 
     const feed = await Feed.create({
       typeId,
-      name: name.trim(),
+      name: trimmedName,
       unit,
       min_stock,
       price,
@@ -110,30 +135,35 @@ const createFeed = async (req, res) => {
 
     let nutrisiRecordsCreated = [];
     if (nutrisiList && Array.isArray(nutrisiList) && nutrisiList.length > 0) {
-      const nutrisiIds = nutrisiList.map((n) => n.nutrisi_id);
-      const nutritions = await Nutrisi.findAll({
-        where: { id: { [Op.in]: nutrisiIds } },
-      });
+      const nutrisiIds = nutrisiList
+        .map((n) => n.nutrisi_id)
+        .filter((id) => id);
+      if (nutrisiIds.length > 0) {
+        const nutritions = await Nutrisi.findAll({
+          where: { id: { [Op.in]: nutrisiIds } },
+        });
 
-      if (nutritions.length !== nutrisiList.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
+        if (nutritions.length !== nutrisiIds.length) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
+          });
+        }
+
+        const feedNutrisiData = nutrisiList.map((n) => ({
+          feed_id: feed.id,
+          nutrisi_id: n.nutrisi_id,
+          amount: n.amount || 0.0,
+          user_id: userId,
+          created_by: userId,
+          updated_by: userId,
+        }));
+
+        nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
+          validate: true,
         });
       }
-
-      const feedNutrisiData = nutrisiList.map((n) => ({
-        feed_id: feed.id,
-        nutrisi_id: n.nutrisi_id,
-        amount: n.amount || 0.0,
-        user_id: userId,
-        created_by: userId,
-        updated_by: userId,
-      }));
-
-      nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
-        validate: true,
-      });
     }
 
     const createdFeed = await Feed.findByPk(feed.id, {
@@ -142,7 +172,13 @@ const createFeed = async (req, res) => {
         {
           model: FeedNutrisi,
           as: "FeedNutrisiRecords",
-          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+          include: [
+            {
+              model: Nutrisi,
+              as: "Nutrisi",
+              attributes: ["id", "name", "unit"],
+            },
+          ],
         },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -159,7 +195,11 @@ const createFeed = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Pakan "${name.trim()}" berhasil ditambahkan${nutrisiRecordsCreated.length > 0 ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.` : "."}`,
+      message: `Pakan "${trimmedName}" berhasil ditambahkan${
+        nutrisiRecordsCreated.length > 0
+          ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+          : "."
+      }`,
       data: formatFeedResponse(createdFeed),
     });
   } catch (error) {
@@ -178,7 +218,9 @@ const createFeed = async (req, res) => {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({
         success: false,
-        message: `Validasi gagal: ${error.errors.map(e => e.message).join(", ")}`,
+        message: `Validasi gagal: ${error.errors
+          .map((e) => e.message)
+          .join(", ")}`,
       });
     }
     return handleError(res, error);
@@ -191,9 +233,12 @@ const getAllFeeds = async (req, res) => {
     const filter = {};
     if (typeId) filter.typeId = typeId;
     if (name) {
-      filter.name = Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), {
-        [Op.like]: `%${name.toLowerCase()}%`,
-      });
+      filter.name = Sequelize.where(
+        Sequelize.fn("LOWER", Sequelize.col("name")),
+        {
+          [Op.like]: `%${name.toLowerCase()}%`,
+        }
+      );
     }
 
     const feeds = await Feed.findAll({
@@ -203,7 +248,13 @@ const getAllFeeds = async (req, res) => {
         {
           model: FeedNutrisi,
           as: "FeedNutrisiRecords",
-          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+          include: [
+            {
+              model: Nutrisi,
+              as: "Nutrisi",
+              attributes: ["id", "name", "unit"],
+            },
+          ],
         },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -234,7 +285,13 @@ const getFeedById = async (req, res) => {
         {
           model: FeedNutrisi,
           as: "FeedNutrisiRecords",
-          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+          include: [
+            {
+              model: Nutrisi,
+              as: "Nutrisi",
+              attributes: ["id", "name", "unit"],
+            },
+          ],
         },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -265,6 +322,11 @@ const updateFeed = async (req, res) => {
     const { typeId, name, unit, min_stock, price, nutrisiList } = req.body;
     const userId = req.user?.id;
 
+    console.log(
+      "updateFeed - Data yang diterima:",
+      JSON.stringify(req.body, null, 2)
+    );
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -288,11 +350,22 @@ const updateFeed = async (req, res) => {
       });
     }
 
-    if (name && name.trim() !== feed.name) {
+    const trimmedName = name ? name.trim() : feed.name;
+    if (!trimmedName) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama pakan tidak boleh kosong.",
+      });
+    }
+
+    if (trimmedName.toLowerCase() !== feed.name.toLowerCase()) {
       const existingFeed = await Feed.findOne({
         where: {
           [Op.and]: [
-            Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), name.trim().toLowerCase()),
+            Sequelize.where(
+              Sequelize.fn("LOWER", Sequelize.col("name")),
+              trimmedName.toLowerCase()
+            ),
             { id: { [Op.ne]: id } },
           ],
         },
@@ -300,7 +373,7 @@ const updateFeed = async (req, res) => {
       if (existingFeed) {
         return res.status(400).json({
           success: false,
-          message: `Pakan dengan nama "${name.trim()}" sudah ada. Silakan gunakan nama lain.`,
+          message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
         });
       }
     }
@@ -317,43 +390,94 @@ const updateFeed = async (req, res) => {
     }
 
     await feed.update({
-      typeId: typeId || feed.typeId,
-      name: name ? name.trim() : feed.name,
-      unit: unit || feed.unit,
+      typeId: typeId !== undefined ? typeId : feed.typeId,
+      name: trimmedName,
+      unit: unit !== undefined ? unit : feed.unit,
       min_stock: min_stock !== undefined ? min_stock : feed.min_stock,
-      price: price !== null ? price : feed.price,
+      price: price !== undefined ? price : feed.price,
       user_id: userId,
       updated_by: userId,
     });
 
     let nutrisiRecordsCreated = [];
-    if (nutrisiList && Array.isArray(nutrisiList) && nutrisiList.length > 0) {
-      await FeedNutrisi.destroy({ where: { feed_id: id } });
+    if (nutrisiList && Array.isArray(nutrisiList)) {
+      const nutrisiIds = nutrisiList
+        .map((n) => n.nutrisi_id)
+        .filter((id) => id);
+      if (nutrisiIds.length > 0) {
+        const nutritions = await Nutrisi.findAll({
+          where: { id: { [Op.in]: nutrisiIds } },
+        });
 
-      const nutrisiIds = nutrisiList.map((n) => n.nutrisi_id);
-      const nutritions = await Nutrisi.findAll({
-        where: { id: { [Op.in]: nutrisiIds } },
-      });
+        if (nutritions.length !== nutrisiIds.length) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
+          });
+        }
 
-      if (nutritions.length !== nutrisiList.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Satu atau lebih nutrisi tidak ditemukan. Periksa nutrisi_id.",
+        // Get existing FeedNutrisi records
+        const existingNutrisiRecords = await FeedNutrisi.findAll({
+          where: { feed_id: id },
+        });
+
+        // Identify nutrisi to delete (not in new nutrisiList)
+        const existingNutrisiIds = existingNutrisiRecords.map(
+          (r) => r.nutrisi_id
+        );
+        const nutrisiIdsToDelete = existingNutrisiIds.filter(
+          (id) => !nutrisiIds.includes(id)
+        );
+
+        // Delete removed nutrisi
+        if (nutrisiIdsToDelete.length > 0) {
+          await FeedNutrisi.destroy({
+            where: {
+              feed_id: id,
+              nutrisi_id: { [Op.in]: nutrisiIdsToDelete },
+            },
+          });
+        }
+
+        // Prepare nutrisi to create or update
+        const feedNutrisiData = nutrisiList
+          .filter((n) => n.nutrisi_id)
+          .map((n) => ({
+            feed_id: id,
+            nutrisi_id: n.nutrisi_id,
+            amount: n.amount !== undefined ? n.amount : 0.0,
+            user_id: userId,
+            created_by: userId,
+            updated_by: userId,
+          }));
+
+        // Update or create nutrisi records
+        for (const nutrisiData of feedNutrisiData) {
+          const existingRecord = existingNutrisiRecords.find(
+            (r) => r.nutrisi_id === nutrisiData.nutrisi_id
+          );
+          if (existingRecord) {
+            await FeedNutrisi.update(
+              { amount: nutrisiData.amount, updated_by: userId },
+              { where: { feed_id: id, nutrisi_id: nutrisiData.nutrisi_id } }
+            );
+          } else {
+            await FeedNutrisi.create(nutrisiData);
+          }
+        }
+
+        nutrisiRecordsCreated = await FeedNutrisi.findAll({
+          where: { feed_id: id },
+          include: [
+            {
+              model: Nutrisi,
+              as: "Nutrisi",
+              attributes: ["id", "name", "unit"],
+            },
+          ],
         });
       }
-
-      const feedNutrisiData = nutrisiList.map((n) => ({
-        feed_id: id,
-        nutrisi_id: n.nutrisi_id,
-        amount: n.amount || 0.0,
-        user_id: userId,
-        created_by: userId,
-        updated_by: userId,
-      }));
-
-      nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
-        validate: true,
-      });
     }
 
     const updatedFeed = await Feed.findByPk(id, {
@@ -362,7 +486,13 @@ const updateFeed = async (req, res) => {
         {
           model: FeedNutrisi,
           as: "FeedNutrisiRecords",
-          include: [{ model: Nutrisi, as: "Nutrisi", attributes: ["id", "name", "unit"] }],
+          include: [
+            {
+              model: Nutrisi,
+              as: "Nutrisi",
+              attributes: ["id", "name", "unit"],
+            },
+          ],
         },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
@@ -379,7 +509,11 @@ const updateFeed = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Pakan "${updatedFeed.name}" berhasil diperbarui${nutrisiRecordsCreated.length > 0 ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.` : "."}`,
+      message: `Pakan "${updatedFeed.name}" berhasil diperbarui${
+        nutrisiRecordsCreated.length > 0
+          ? ` dengan ${nutrisiRecordsCreated.length} nutrisi.`
+          : "."
+      }`,
       data: formatFeedResponse(updatedFeed),
     });
   } catch (error) {
@@ -398,7 +532,9 @@ const updateFeed = async (req, res) => {
     if (error.name === "SequelizeValidationError") {
       return res.status(400).json({
         success: false,
-        message: `Validasi gagal: ${error.errors.map(e => e.message).join(", ")}`,
+        message: `Validasi gagal: ${error.errors
+          .map((e) => e.message)
+          .join(", ")}`,
       });
     }
     return handleError(res, error);

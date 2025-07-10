@@ -12,5 +12,8 @@ router.get('/daily-feeds/:daily_feed_id/',verifyToken, dailyFeedItemsController.
 router.put('/:id',verifyToken,validateFarmerOnly, dailyFeedItemsController.updateFeedItem);
 router.delete('/:id',verifyToken,validateFarmerOnly, dailyFeedItemsController.deleteFeedItem);
 router.post('/bulk-update',verifyToken,validateFarmerOnly, dailyFeedItemsController.bulkUpdateFeedItems);
+// router.get('/export/pdf', verifyToken, dailyFeedItemsController.exportFeedItemsToPDF);
+// router.get('/export/excel', verifyToken, dailyFeedItemsController.exportFeedItemsToExcel);
+
 
 module.exports = router;

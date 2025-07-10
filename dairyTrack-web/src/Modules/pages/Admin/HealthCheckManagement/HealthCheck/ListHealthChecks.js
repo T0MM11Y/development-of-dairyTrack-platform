@@ -30,6 +30,8 @@ const HealthCheckListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 7;
   const [searchTerm, setSearchTerm] = useState("");
+const [filterRecordedBy, setFilterRecordedBy] = useState('');
+const [filterStatus, setFilterStatus] = useState('');
 
   const user = JSON.parse(localStorage.getItem("user"));
   const [userManagedCows, setUserManagedCows] = useState([]);
@@ -125,11 +127,54 @@ const disableIfAdminOrSupervisor = (isAdmin || isSupervisor)
     }
   };
 
-  const paginatedData = data
-    .filter((item) =>
-      ListCowName(item.cow).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+const paginatedData = data
+  .filter((item) => {
+    const search = searchTerm.toLowerCase();
+    const cowName = ListCowName(item.cow).toLowerCase();
+    const temperature = String(item.rectal_temperature || "").toLowerCase();
+    const heartRate = String(item.heart_rate || "").toLowerCase();
+    const respiration = String(item.respiration_rate || "").toLowerCase();
+    const rumination = String(item.rumination || "").toLowerCase();
+    const recordedBy = item?.checked_by?.name?.toLowerCase?.() || "";
+    const rawStatus = (item?.status || "").toLowerCase();
+
+    const statusAliases = {
+      pending: ["pending", "belum ditangani", "not handled"],
+      handled: ["handled", "sudah ditangani"],
+      healthy: ["healthy", "sehat"],
+    };
+
+    const matchedStatus = Object.entries(statusAliases).some(
+      ([key, aliases]) =>
+        key === rawStatus && aliases.some((alias) => alias.includes(search))
+    );
+
+    const matchesSearch =
+      cowName.includes(search) ||
+      temperature.includes(search) ||
+      heartRate.includes(search) ||
+      respiration.includes(search) ||
+      rumination.includes(search) ||
+      recordedBy.includes(search) ||
+      matchedStatus;
+
+    const matchesRecorder = filterRecordedBy
+      ? item.checked_by?.name === filterRecordedBy
+      : true;
+
+    const matchesStatus = filterStatus
+      ? rawStatus === filterStatus
+      : true;
+
+    return matchesSearch && matchesRecorder && matchesStatus;
+  })
+  .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+const recordedByOptions = Array.from(
+  new Set(data.map((item) => item.checked_by?.name).filter(Boolean))
+);
+
+const statusOptions = ["pending", "handled", "healthy"];
 
 useEffect(() => {
   if (!currentUser) return;
@@ -190,58 +235,108 @@ const availableCows = Array.isArray(rawCows)
           </h4>
         </Card.Header>
 
-        <Card.Body>
-          <div className="d-flex justify-content-between mb-3">
-            <InputGroup style={{ maxWidth: "300px" }}>
-              <FormControl
-                placeholder="Search cow name..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </InputGroup>
-        <OverlayTrigger
-  placement="top"
-  overlay={
-    <Tooltip id="tooltip-disabled">
-      {(isAdmin || isSupervisor)
-        ? (isAdmin
-            ? "Admin cannot add health checks"
-            : "Supervisor cannot add health checks")
-        : ""}
-    </Tooltip>
-  }
->
-  <span className="d-inline-block">
-    <Button
-      variant="primary"
-      onClick={() => {
-       if (availableCows.length === 0) {
-  Swal.fire({
-    icon: "warning",
-    title: "Cannot Add Health Check",
-    text: "No cows are available for examination. All cows are either being checked or not ready yet.",
-  });
-  return;
-}
+     <Card.Body>
+  <div className="row mb-3 align-items-end g-2">
+    <div className="col-md-3">
+      <InputGroup>
+        <FormControl
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </InputGroup>
+    </div>
 
+    <div className="col-md-3">
+      <FormControl
+        as="select"
+        value={filterRecordedBy}
+        onChange={(e) => {
+          setFilterRecordedBy(e.target.value);
+          setCurrentPage(1);
+        }}
+      >
+        <option value="">All Recorders</option>
+        {recordedByOptions.map((name, idx) => (
+          <option key={idx} value={name}>
+            {name}
+          </option>
+        ))}
+      </FormControl>
+    </div>
 
-        if (!isSupervisor && !isAdmin) {
-          setModalType("create");
+    <div className="col-md-3">
+      <FormControl
+        as="select"
+        value={filterStatus}
+        onChange={(e) => {
+          setFilterStatus(e.target.value);
+          setCurrentPage(1);
+        }}
+      >
+        <option value="">All Status</option>
+       {statusOptions.map((status) => {
+  const labelAlias = {
+    pending: "Not Handled",
+    handled: "Handled",
+    healthy: "Healthy",
+  };
+
+  return (
+    <option key={status} value={status}>
+      {labelAlias[status] || status}
+    </option>
+  );
+})}
+
+      </FormControl>
+    </div>
+
+    <div className="col-md-3 text-md-end text-start">
+      <OverlayTrigger
+        placement="top"
+        overlay={
+          <Tooltip id="tooltip-disabled">
+            {(isAdmin || isSupervisor)
+              ? isAdmin
+                ? "Admin cannot add health checks"
+                : "Supervisor cannot add health checks"
+              : ""}
+          </Tooltip>
         }
-      }}
-      {...disableIfAdminOrSupervisor}
-      style={{ pointerEvents: (isAdmin || isSupervisor) ? "none" : "auto" }}
-    >
-      <i className="fas fa-plus me-2" /> Add Data
-    </Button>
-  </span>
-</OverlayTrigger>
+      >
+        <span className="d-inline-block">
+          <Button
+            variant="primary"
+            onClick={() => {
+              if (availableCows.length === 0) {
+                Swal.fire({
+                  icon: "warning",
+                  title: "Cannot Add Health Check",
+                  text: "No cows are available for examination. All cows are either being checked or not ready yet.",
+                });
+                return;
+              }
 
+              if (!isSupervisor && !isAdmin) {
+                setModalType("create");
+              }
+            }}
+            {...disableIfAdminOrSupervisor}
+            style={{
+              pointerEvents: isAdmin || isSupervisor ? "none" : "auto",
+            }}
+          >
+            <i className="fas fa-plus me-2" /> Add Data
+          </Button>
+        </span>
+      </OverlayTrigger>
+    </div>
+  </div>
 
-          </div>
 
           {loading ? (
             <div className="text-center py-5">

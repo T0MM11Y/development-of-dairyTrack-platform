@@ -1,10 +1,9 @@
-// src/pages/Admin/FeedManagement/Feed/CreateFeed.js
 import { useState, useEffect } from "react";
-import { addFeed } from "../../../../controllers/feedController";
+import { addFeed, updateFeed } from "../../../../controllers/feedController";
 import Swal from "sweetalert2";
-import { Button } from "react-bootstrap";
+import { Modal, Button, Form } from "react-bootstrap";
 
-const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
+const FeedCreatePage = ({ show, feedTypes, nutritions, feed, onClose, onSaved }) => {
   const [form, setForm] = useState({
     typeId: "",
     name: "",
@@ -12,6 +11,7 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
     min_stock: "",
     price: "",
     created_by: "",
+    updated_by: "",
     nutrisiList: [],
   });
   const [currentUser, setCurrentUser] = useState(null);
@@ -19,26 +19,47 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  if (userData.user_id && userData.token) {
-    setCurrentUser(userData);
-    setForm((prev) => ({
-      ...prev,
-      created_by: userData.user_id || userData.id || "",
-    }));
-  } else {
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  }
-}, []);
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    if (userData.user_id && userData.token) {
+      setCurrentUser(userData);
+      setForm((prev) => ({
+        ...prev,
+        created_by: userData.user_id || "",
+        updated_by: userData.user_id || "",
+        typeId: feed?.type_id || "",
+        name: feed?.name || "",
+        unit: feed?.unit || "",
+        min_stock: feed?.min_stock || "",
+        price: feed?.price || "",
+        nutrisiList: feed?.nutrisi_records?.map((n) => ({
+          nutrisi_id: n.nutrisi_id,
+          amount: n.amount || "",
+          nutrisi_name: nutritions.find((nut) => nut.id === n.nutrisi_id)?.name || "Tidak diketahui",
+        })) || [],
+      }));
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan. Silakan login kembali.",
+      });
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    }
+  }, [feed, nutritions]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "price") {
-      const rawValue = value.replace(/[^0-9]/g, "");
+    if (name === "price" || name === "min_stock") {
       setForm((prev) => ({
         ...prev,
-        [name]: rawValue,
+        [name]: value === "" ? "" : parseFloat(value) || 0,
+      }));
+    } else if (name === "typeId") {
+      setForm((prev) => ({
+        ...prev,
+        typeId: value,
+        typeName: feedTypes.find((t) => t.id === parseInt(value))?.name || "Tidak diketahui",
       }));
     } else {
       setForm((prev) => ({
@@ -53,6 +74,7 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
     updatedNutrisiList[index] = {
       ...updatedNutrisiList[index],
       [field]: field === "amount" ? (value === "" ? "" : parseFloat(value) || 0) : value,
+      nutrisi_name: field === "nutrisi_id" ? nutritions.find((nut) => nut.id === parseInt(value))?.name || "Tidak diketahui" : updatedNutrisiList[index].nutrisi_name,
     };
     setForm((prev) => ({
       ...prev,
@@ -63,7 +85,7 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
   const addNutrisi = () => {
     setForm((prev) => ({
       ...prev,
-      nutrisiList: [...prev.nutrisiList, { nutrisi_id: "", amount: "" }],
+      nutrisiList: [...prev.nutrisiList, { nutrisi_id: "", amount: "", nutrisi_name: "" }],
     }));
   };
 
@@ -74,24 +96,44 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
     }));
   };
 
-  const formatPrice = (value) => {
-    if (!value) return "";
-    const number = parseInt(value, 10);
-    if (isNaN(number)) return "";
-    return number.toLocaleString("id-ID");
+  const formatNumber = (value) => {
+    if (value === "" || isNaN(value)) return "";
+    const num = parseFloat(value);
+    if (Number.isInteger(num)) return num.toString();
+    return num.toString();
   };
 
-  // Filter available nutritions for a given dropdown based on previous selections
   const getAvailableNutritions = (currentIndex) => {
     const selectedNutrisiIds = form.nutrisiList
-      .filter((_, index) => index !== currentIndex) // Exclude the current index
+      .filter((_, index) => index !== currentIndex)
       .map((n) => n.nutrisi_id)
-      .filter((id) => id); // Only include non-empty IDs
+      .filter((id) => id);
     return nutritions.filter((n) => !selectedNutrisiIds.includes(n.id.toString()));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isEdit = !!feed;
+    const confirmText = isEdit
+      ? `Apakah Anda yakin ingin mengubah pakan "${feed.name}"?`
+      : `Apakah Anda yakin ingin menambahkan pakan "${form.name}"?`;
+
+    const result = await Swal.fire({
+      title: "Konfirmasi",
+      text: confirmText,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: isEdit ? "Ya, Ubah!" : "Ya, Simpan",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -108,27 +150,26 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
         })),
       };
 
-      const response = await addFeed(payload);
-      console.log("FeedCreatePage - addFeed Response:", response);
+      const response = isEdit ? await updateFeed(feed.id, payload) : await addFeed(payload);
       if (response.success) {
         Swal.fire({
           icon: "success",
           title: "Berhasil",
-          text: response.message || "Pakan berhasil disimpan.",
+          text: isEdit ? "Pakan berhasil diperbarui." : "Pakan berhasil disimpan.",
           timer: 1500,
           showConfirmButton: false,
         });
         if (onSaved) onSaved();
         onClose();
       } else {
-        throw new Error(response.message || "Gagal menyimpan pakan.");
+        throw new Error(response.message || (isEdit ? "Gagal memperbarui pakan." : "Gagal menyimpan pakan."));
       }
     } catch (err) {
-      const message = err.message || "Terjadi kesalahan saat menyimpan pakan.";
+      const message = err.message || (isEdit ? "Gagal memperbarui pakan." : "Gagal menyimpan pakan.");
       setError(message);
       Swal.fire({
         icon: "error",
-        title: "Gagal Menyimpan",
+        title: "Gagal",
         text: message,
       });
     } finally {
@@ -137,191 +178,189 @@ const FeedCreatePage = ({ feedTypes, nutritions, onClose, onSaved }) => {
   };
 
   return (
-    <div
-      className="modal show d-block"
-      style={{
-        background: submitting ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.5)",
-        minHeight: "100vh",
-        paddingTop: "3rem",
-      }}
+    <Modal
+      show={show}
+      onHide={onClose}
+      backdrop="static"
+      keyboard={false}
+      size="lg"
+      centered
     >
-      <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-content">
-          <div className="modal-header bg-light border-bottom">
-            <h4 className="modal-title text-info fw-bold">Tambah Pakan</h4>
-            <button
-              className="btn-close"
-              onClick={onClose}
-              disabled={submitting}
-            ></button>
-          </div>
-          <div className="modal-body p-4">
-            {error && <p className="text-danger text-center mb-4">{error}</p>}
+      <Modal.Header closeButton>
+        <Modal.Title className="text-info fw-bold">
+          {feed ? "Edit Pakan" : "Tambah Pakan"}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && <p className="text-danger text-center">{error}</p>}
 
-            <form onSubmit={handleSubmit}>
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Jenis Pakan</label>
-                  <select
-                    name="typeId"
-                    value={form.typeId}
-                    onChange={handleChange}
-                    className="form-control"
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Jenis Pakan</Form.Label>
+            <Form.Select
+              name="typeId"
+              value={form.typeId}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Pilih Jenis Pakan</option>
+              {feedTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </Form.Select>
+            {feed && (
+              <Form.Text className="text-muted">
+                Jenis saat ini: {form.typeName || "Tidak diketahui"}
+              </Form.Text>
+            )}
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Nama Pakan</Form.Label>
+            <Form.Control
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Satuan</Form.Label>
+            <Form.Control
+              type="text"
+              name="unit"
+              value={form.unit}
+              onChange={handleChange}
+              required
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Stok Minimum</Form.Label>
+            <Form.Control
+              type="number"
+              name="min_stock"
+              value={formatNumber(form.min_stock)}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">Harga</Form.Label>
+            <div className="input-group">
+              <span className="input-group-text">Rp</span>
+              <Form.Control
+                type="number"
+                name="price"
+                value={formatNumber(form.price)}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold">{feed ? "Diperbarui oleh" : "Dibuat oleh"}</Form.Label>
+            <Form.Control
+              type="text"
+              className="bg-light"
+              value={currentUser?.name || "Tidak diketahui"}
+              disabled
+            />
+            <Form.Control
+              type="hidden"
+              name={feed ? "updated_by" : "created_by"}
+              value={form[feed ? "updated_by" : "created_by"]}
+            />
+          </Form.Group>
+
+          {feed && (
+            <Form.Group className="mb-3">
+              <Form.Label className="form-label fw-bold">Tanggal Diperbarui</Form.Label>
+              <Form.Control
+                type="text"
+                value={new Date(feed.updated_at).toLocaleString("id-ID")}
+                readOnly
+                disabled
+              />
+            </Form.Group>
+          )}
+
+          <Form.Group className="mb-3">
+            <Form.Label className="form-label fw-bold d-block">Nutrisi</Form.Label>
+            {form.nutrisiList.map((nutrisi, index) => (
+              <div key={index} className="row mb-2 align-items-center">
+                <div className="col-md-5">
+                  {index === 0 && <Form.Label className="form-label mb-1">Pilih Nutrisi</Form.Label>}
+                  <Form.Select
+                    value={nutrisi.nutrisi_id}
+                    onChange={(e) => handleNutrisiChange(index, "nutrisi_id", e.target.value)}
                     required
                   >
-                    <option value="">Pilih Jenis Pakan</option>
-                    {feedTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
+                    <option value="">Pilih Nutrisi</option>
+                    {getAvailableNutritions(index).map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.name} ({n.unit})
                       </option>
                     ))}
-                  </select>
+                  </Form.Select>
+                  {nutrisi.nutrisi_name && (
+                    <Form.Text className="text-muted">
+                      Nutrisi saat ini: {nutrisi.nutrisi_name}
+                    </Form.Text>
+                  )}
                 </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Nama Pakan</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Satuan</label>
-                  <input
-                    type="text"
-                    name="unit"
-                    value={form.unit}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                  />
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Stok Minimum</label>
-                  <input
+                <div className="col-md-5">
+                  {index === 0 && <Form.Label className="form-label mb-1">Jumlah</Form.Label>}
+                  <Form.Control
                     type="number"
-                    name="min_stock"
-                    value={form.min_stock}
-                    onChange={handleChange}
-                    className="form-control"
+                    value={formatNumber(nutrisi.amount)}
+                    onChange={(e) => handleNutrisiChange(index, "amount", e.target.value)}
                     required
                     min="0"
+                    step="0.01"
                   />
                 </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Harga</label>
-                  <div className="input-group">
-                    <span className="input-group-text">Rp</span>
-                    <input
-                      type="text"
-                      name="price"
-                      value={formatPrice(form.price)}
-                      onChange={handleChange}
-                      className="form-control"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Dibuat oleh</label>
-                  <input
-                    type="text"
-                    className="form-control bg-light"
-                    value={currentUser?.name || "Tidak diketahui"}
-                    disabled
-                  />
-                  <input
-                    type="hidden"
-                    name="created_by"
-                    value={form.created_by}
-                  />
+                <div className="col-md-2">
+                  <Button
+                    variant="outline-danger"
+                    onClick={() => removeNutrisi(index)}
+                    className="mt-3"
+                  >
+                    <i className="fas fa-trash" />
+                  </Button>
                 </div>
               </div>
+            ))}
+            <Button
+              variant="outline-primary"
+              onClick={addNutrisi}
+              className="mt-2"
+            >
+              Tambah Nutrisi
+            </Button>
+          </Form.Group>
 
-              <div className="mb-3">
-                <label className="form-label fw-bold d-block">Nutrisi</label>
-                {form.nutrisiList.map((nutrisi, index) => (
-                  <div key={index} className="row mb-2 align-items-center">
-                    <div className="col-md-5">
-                      {index === 0 && (
-                        <label className="form-label mb-1">Pilih Nutrisi</label>
-                      )}
-                      <select
-                        className="form-control"
-                        value={nutrisi.nutrisi_id}
-                        onChange={(e) =>
-                          handleNutrisiChange(index, "nutrisi_id", e.target.value)
-                        }
-                        required
-                      >
-                        <option value="">Pilih Nutrisi</option>
-                        {getAvailableNutritions(index).map((n) => (
-                          <option key={n.id} value={n.id}>
-                            {n.name} ({n.unit})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-5">
-                      {index === 0 && (
-                        <label className="form-label mb-1">Jumlah</label>
-                      )}
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={nutrisi.amount}
-                        onChange={(e) =>
-                          handleNutrisiChange(index, "amount", e.target.value)
-                        }
-                        required
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div className="col-md-2">
-                      <Button
-                        variant="outline-danger"
-                        onClick={() => removeNutrisi(index)}
-                        className="mt-3"
-                      >
-                        <i className="fas fa-trash" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <Button
-                  variant="outline-primary"
-                  onClick={addNutrisi}
-                  className="mt-2"
-                >
-                  Tambah Nutrisi
-                </Button>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-info w-100 mt-3"
-                disabled={submitting}
-              >
-                {submitting ? "Menyimpan..." : "Simpan"}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+          <Button
+            type="submit"
+            variant="info"
+            className="w-100"
+            disabled={submitting}
+          >
+            {submitting ? "Menyimpan..." : feed ? "Simpan Perubahan" : "Simpan"}
+          </Button>
+        </Form>
+      </Modal.Body>
+    </Modal>
   );
 };
 

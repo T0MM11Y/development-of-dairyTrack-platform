@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { getAllFeedStocks, getAllFeedStockHistory, deleteFeedStockHistory } from "../../../../controllers/feedStockController";
+import {
+  getAllFeedStocks,
+  getAllFeedStockHistory,
+  deleteFeedStockHistory,
+  getFeedStockById,
+} from "../../../../controllers/feedStockController";
 import { listFeeds } from "../../../../controllers/feedController";
 import AddFeedStock from "./AddStock";
-import EditFeedStock from "./EditStock";
 import Swal from "sweetalert2";
 import {
   Button,
@@ -13,6 +17,8 @@ import {
   FormControl,
   Tabs,
   Tab,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 
 const FeedStockListPage = () => {
@@ -20,7 +26,7 @@ const FeedStockListPage = () => {
   const [historyData, setHistoryData] = useState([]);
   const [feeds, setFeeds] = useState([]);
   const [modalType, setModalType] = useState(null);
-  const [editId, setEditId] = useState(null);
+  const [editStock, setEditStock] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
@@ -29,12 +35,14 @@ const FeedStockListPage = () => {
   const PAGE_SIZE = 6;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isSupervisor = user?.role === "Supervisor";
+  const isSupervisor = user?.role?.toLowerCase() === "supervisor";
+  const isAdmin = user?.role?.toLowerCase() === "admin";
 
+  // Disable actions only for Supervisor
   const disableIfSupervisor = isSupervisor
     ? {
         disabled: true,
-        title: "Supervisor tidak dapat mengedit atau menghapus data",
+        title: "Hanya Admin dan Farmer yang dapat mengedit atau menambah stok",
         style: { opacity: 0.5, cursor: "not-allowed" },
       }
     : {};
@@ -78,6 +86,20 @@ const FeedStockListPage = () => {
     }
   };
 
+  const handleEdit = async (id) => {
+    try {
+      const response = await getFeedStockById(id);
+      if (response.success) {
+        setEditStock(response.data);
+        setModalType("edit");
+      } else {
+        Swal.fire("Error", response.message || "Gagal memuat data stok pakan.", "error");
+      }
+    } catch (err) {
+      Swal.fire("Error", "Terjadi kesalahan saat memuat data stok pakan.", "error");
+    }
+  };
+
   const handleDeleteHistory = async (id, feedName) => {
     const result = await Swal.fire({
       title: "Konfirmasi Hapus",
@@ -110,13 +132,16 @@ const FeedStockListPage = () => {
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const paginatedHistoryData = historyData
-    .filter((item) =>
-      item.feed_name.toLowerCase().includes(historySearchTerm.toLowerCase())
-    )
+    .filter((item) => item.feed_name.toLowerCase().includes(historySearchTerm.toLowerCase()))
     .slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
 
   useEffect(() => {
-    if (!user.token) {
+    if (!user.token || !user.user_id || !user.role) {
+      Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Token tidak ditemukan. Silakan login kembali.",
+      });
       localStorage.removeItem("user");
       window.location.href = "/";
     } else {
@@ -260,7 +285,6 @@ const FeedStockListPage = () => {
                           <th>#</th>
                           <th>Nama Pakan</th>
                           <th>Stok</th>
-                          <th>Pemilik</th>
                           <th>Dibuat Oleh</th>
                           <th>Tanggal Diperbarui</th>
                           <th>Aksi</th>
@@ -269,7 +293,7 @@ const FeedStockListPage = () => {
                       <tbody>
                         {paginatedData.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="text-center text-muted">
+                            <td colSpan={6} className="text-center text-muted">
                               Tidak ada data ditemukan.
                             </td>
                           </tr>
@@ -279,7 +303,6 @@ const FeedStockListPage = () => {
                               <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                               <td>{item.name}</td>
                               <td>{item.stock ? item.stock.stock : "0"}</td>
-                              <td>{item.stock?.user_name || "Tidak diketahui"}</td>
                               <td>{item.stock?.created_by?.name || "Tidak diketahui"}</td>
                               <td>
                                 {item.stock?.updated_at
@@ -287,21 +310,18 @@ const FeedStockListPage = () => {
                                   : "Belum diperbarui"}
                               </td>
                               <td>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  className="custom-button"
-                                  onClick={() => {
-                                    if (!isSupervisor && item.stock) {
-                                      setEditId(item.stock.id);
-                                      setModalType("edit");
-                                    }
-                                  }}
-                                  {...disableIfSupervisor}
-                                  disabled={!item.stock}
-                                >
-                                  <i className="fas fa-edit" />
-                                </Button>
+                                <OverlayTrigger overlay={<Tooltip>Edit</Tooltip>}>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    className="custom-button"
+                                    onClick={() => !isSupervisor && item.stock && handleEdit(item.stock.id)}
+                                    {...disableIfSupervisor}
+                                    disabled={!item.stock}
+                                  >
+                                    <i className="fas fa-edit" />
+                                  </Button>
+                                </OverlayTrigger>
                               </td>
                             </tr>
                           ))
@@ -367,13 +387,13 @@ const FeedStockListPage = () => {
                         <tr>
                           <th>Tanggal</th>
                           <th>Keterangan</th>
-                          <th>Aksi</th>
+                          {isAdmin && <th>Aksi</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {paginatedHistoryData.length === 0 ? (
                           <tr>
-                            <td colSpan={3} className="text-center text-muted">
+                            <td colSpan={isAdmin ? 3 : 2} className="text-center text-muted">
                               Tidak ada riwayat ditemukan.
                             </td>
                           </tr>
@@ -392,17 +412,20 @@ const FeedStockListPage = () => {
                                   ? `${item.user_name || "Pengguna Tidak Diketahui"} menambah stok pakan ${item.feed_name || "Tidak Diketahui"} sebanyak ${item.stock} kg`
                                   : `${item.user_name || "Pengguna Tidak Diketahui"} mengubah stok pakan ${item.feed_name || "Tidak Diketahui"} dari ${item.previous_stock}kg menjadi ${item.stock}kg`}
                               </td>
-                              <td>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  className="custom-button"
-                                  onClick={() => !isSupervisor && handleDeleteHistory(item.id, item.feed_name)}
-                                  {...disableIfSupervisor}
-                                >
-                                  <i className="fas fa-trash" />
-                                </Button>
-                              </td>
+                              {isAdmin && (
+                                <td>
+                                  <OverlayTrigger overlay={<Tooltip>Hapus</Tooltip>}>
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      className="custom-button"
+                                      onClick={() => handleDeleteHistory(item.id, item.feed_name)}
+                                    >
+                                      <i className="fas fa-trash" />
+                                    </Button>
+                                  </OverlayTrigger>
+                                </td>
+                              )}
                             </tr>
                           ))
                         )}
@@ -440,28 +463,19 @@ const FeedStockListPage = () => {
             </Tab>
           </Tabs>
 
-          {modalType === "add" && (
+          {(modalType === "add" || modalType === "edit") && (
             <AddFeedStock
+              show={true}
               feeds={feeds}
-              onClose={() => setModalType(null)}
-              onSaved={() => {
-                fetchData();
-                setModalType(null);
-              }}
-            />
-          )}
-
-          {modalType === "edit" && editId && (
-            <EditFeedStock
-              id={editId}
+              stock={modalType === "edit" ? editStock : null}
               onClose={() => {
                 setModalType(null);
-                setEditId(null);
+                setEditStock(null);
               }}
               onSaved={() => {
                 fetchData();
                 setModalType(null);
-                setEditId(null);
+                setEditStock(null);
               }}
             />
           )}

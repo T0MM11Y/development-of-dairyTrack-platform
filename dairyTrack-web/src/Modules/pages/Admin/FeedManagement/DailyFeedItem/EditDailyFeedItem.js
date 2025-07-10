@@ -529,19 +529,17 @@ const FeedItemDetailEditPage = ({ dailyFeedId, onUpdateSuccess, onClose }) => {
       className="modal show d-block"
       style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
     >
-      <div className="modal-dialog modal-lg">
+      <div className="modal-dialog modal-lg modal-dialog-centered">
         <div className="modal-content shadow-lg">
-          <div className="modal-header">
-            <h5 className="modal-title fw-bold text-info">
-              Detail Pakan Harian
-            </h5>
+          <div className="modal-header bg-primary text-white">
+            <h5 className="modal-title fw-bold text-info">Detail Pakan Harian</h5>
             <button
               className="btn-close"
               onClick={onClose}
               disabled={loading || actionLoading}
             ></button>
           </div>
-          <div className="modal-body">
+          <div className="modal-body p-4">
             {error && <div className="alert alert-danger">{error}</div>}
 
             {loading ? (
