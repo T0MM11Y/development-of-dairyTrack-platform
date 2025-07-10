@@ -670,28 +670,30 @@ class _CattleDistributionState extends State<CattleDistribution>
                                   spacing: 4,
                                   runSpacing: 4,
                                   children: cows.map<Widget>((cow) {
-                                    return Chip(
-                                      label: Text(
-                                        '${cow['name']} (${cow['breed']})',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      deleteIcon: _isSupervisor
-                                          ? null
-                                          : const Icon(
-                                              Icons.close,
-                                              size: 14,
-                                            ),
-                                      onDeleted: _isSupervisor
-                                          ? null
-                                          : () => _unassignCow(
-                                                user['id'],
-                                                cow['id'],
-                                              ),
-                                      backgroundColor: Colors.blue[100],
-                                    );
-                                  }).toList(),
+  final isDeleted = cow['is_active'] == false;
+
+  final chip = Chip(
+    label: Text(
+      '${cow['name']} (${cow['breed']})',
+      style: const TextStyle(fontSize: 12),
+    ),
+    deleteIcon: (!isDeleted && !_isSupervisor)
+        ? const Icon(Icons.close, size: 14)
+        : null,
+    onDeleted: (!isDeleted && !_isSupervisor)
+        ? () => _unassignCow(user['id'], cow['id'])
+        : null,
+    backgroundColor: isDeleted ? Colors.red[100] : Colors.blue[100],
+  );
+
+  return isDeleted
+      ? Tooltip(
+          message: 'This cow has been deleted',
+          child: chip,
+        )
+      : chip;
+}).toList(),
+
                                 ),
                         ),
                       );
@@ -1048,15 +1050,18 @@ class _CattleDistributionState extends State<CattleDistribution>
               ),
             ),
             style: const TextStyle(color: Colors.white),
-            items: _allCows.map<DropdownMenuItem<int>>((cow) {
-              return DropdownMenuItem<int>(
-                value: cow['id'],
-                child: Text(
-                  '${cow['name']} (${cow['breed']}, ${cow['gender']})',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              );
-            }).toList(),
+           items: _allCows
+    .where((cow) => cow['is_active'] != false) // ✅ hanya sapi aktif
+    .map<DropdownMenuItem<int>>((cow) {
+      return DropdownMenuItem<int>(
+        value: cow['id'],
+        child: Text(
+          '${cow['name']} (${cow['breed']}, ${cow['gender']})',
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }).toList(),
+
             hint: const Text(
               '-- Select Cow --',
               style: TextStyle(color: Colors.white70),

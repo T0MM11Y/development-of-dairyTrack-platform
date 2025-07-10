@@ -747,8 +747,11 @@ const Cows = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentCows.length > 0 ? (
-                  currentCows.map((cow, index) => (
+                {currentCows.filter((cow) => cow.is_active !== false).length > 0 ? (
+  currentCows
+    .filter((cow) => cow.is_active !== false)
+    .map((cow, index) => (
+
                     <React.Fragment key={cow.id}>
                       <tr
                         className={`align-middle ${

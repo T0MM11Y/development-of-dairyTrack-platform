@@ -148,15 +148,20 @@ List<Map<String, dynamic>> get _filteredChecks {
 }
 
   List<Map<String, dynamic>> get _availableCows {
-    return _cows.where((cow) {
-      final hasActiveCheck = _healthChecks.any((h) {
-        final cowId = h['cow'] is Map ? h['cow']['id'] : h['cow'];
-        final status = (h['status'] ?? '').toLowerCase();
-        return cowId == cow['id'] && status != 'handled' && status != 'healthy';
-      });
-      return !hasActiveCheck;
-    }).toList();
-  }
+  return _cows.where((cow) {
+    // ✅ Jangan tampilkan sapi yang tidak aktif
+    if (cow['is_active'] == false) return false;
+
+    final hasActiveCheck = _healthChecks.any((h) {
+      final cowId = h['cow'] is Map ? h['cow']['id'] : h['cow'];
+      final status = (h['status'] ?? '').toLowerCase();
+      return cowId == cow['id'] && status != 'handled' && status != 'healthy';
+    });
+
+    return !hasActiveCheck;
+  }).toList();
+}
+
 
  Future<void> _deleteCheck(int id) async {
   final result = await _controller.deleteHealthCheck(id);
