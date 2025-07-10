@@ -31,34 +31,41 @@ const DailyFeedListPage = () => {
 
       // Fetch feed schedules
       const feedResponse = await getAllDailyFeeds({ date: selectedDate });
-      console.log("Feed response:", feedResponse);
+      console.log(
+        "Feed response details:",
+        JSON.stringify(
+          feedResponse.data?.map((f) => ({
+            id: f.id,
+            cow_id: f.cow_id,
+            cow_name: f.cow_name,
+            is_active: f.is_active,
+            date: f.date,
+            session: f.session,
+          })) || [],
+          null,
+          2
+        )
+      );
 
-      // Fetch cows (all for admin/supervisor, associated for farmer)
+      // Fetch cows (for create/edit actions, filter to active cows)
       const cowResponse = isReadOnly
         ? await listCows()
         : await listCowsByUser(user.user_id);
       console.log("Cow response:", cowResponse);
 
-      let feedData = [];
       if (feedResponse.success && Array.isArray(feedResponse.data)) {
-        if (isFarmer && cowResponse.success && Array.isArray(cowResponse.cows)) {
-          const cowIds = cowResponse.cows.map((cow) => cow.id);
-          feedData = feedResponse.data.filter((feed) =>
-            cowIds.includes(parseInt(feed.cow_id))
-          );
-        } else {
-          feedData = feedResponse.data;
-        }
-        setFeeds(feedData);
-        console.log("Filtered feeds:", feedData);
+        setFeeds(feedResponse.data);
+        console.log("Feeds set:", feedResponse.data.length, "records");
       } else {
         setFeeds([]);
         console.log("Feed fetch failed:", feedResponse.message || "No data");
       }
 
       if (cowResponse.success && Array.isArray(cowResponse.cows)) {
-        setCows(cowResponse.cows);
-        console.log("Cows:", cowResponse.cows);
+        // Filter to active cows only
+        const activeCows = cowResponse.cows.filter((cow) => cow.is_active === true);
+        setCows(activeCows);
+        console.log("Active cows set:", activeCows.length, "records");
       } else {
         setCows([]);
         console.log("Cow fetch failed:", cowResponse.message || "No cows");
@@ -85,6 +92,19 @@ const DailyFeedListPage = () => {
 
   const handleDelete = async (id, cowName, date, session) => {
     try {
+      const feed = feeds.find((f) => f.id === id);
+      if (!feed) {
+        throw new Error("Jadwal pakan tidak ditemukan.");
+      }
+      if (feed.is_active === false) {
+        Swal.fire(
+          "Error",
+          "Sapi ini tidak aktif. Tidak dapat menghapus jadwal pakan.",
+          "error"
+        );
+        return;
+      }
+
       const result = await Swal.fire({
         title: "Konfirmasi Hapus",
         text: `Apakah Anda yakin ingin menghapus jadwal pakan untuk sapi ${cowName} pada ${date} sesi ${session}?`,
@@ -120,7 +140,7 @@ const DailyFeedListPage = () => {
     try {
       const selectedCow = cows.find((cow) => cow.id === parseInt(cowId));
       if (!selectedCow) {
-        throw new Error("Anda tidak memiliki izin untuk mengelola sapi ini.");
+        throw new Error("Sapi tidak ditemukan atau tidak aktif.");
       }
 
       const formattedDate = new Date(selectedDate).toLocaleDateString("id-ID");
@@ -175,9 +195,14 @@ const DailyFeedListPage = () => {
   const groupedFeeds = feeds.reduce((acc, feed) => {
     const key = `${feed.cow_id}_${feed.date}`;
     if (!acc[key]) {
+      const cowName = feed.cow_name || `Sapi ID ${feed.cow_id}`;
+      if (!feed.cow_name) {
+        console.warn(`Missing cow_name for cow_id: ${feed.cow_id}, is_active: ${feed.is_active}`);
+      }
       acc[key] = {
         cow_id: feed.cow_id,
-        cow_name: feed.cow_name,
+        cow_name: cowName,
+        is_active: feed.is_active !== undefined ? feed.is_active : true,
         date: feed.date,
         sessions: [],
       };
@@ -190,7 +215,7 @@ const DailyFeedListPage = () => {
     });
     return acc;
   }, {});
-  console.log("Grouped feeds:", groupedFeeds);
+  console.log("Grouped feeds:", JSON.stringify(groupedFeeds, null, 2));
 
   const sessions = ["Pagi", "Siang", "Sore"];
   const cowsWithMissingSessions = cows.map((cow) => {
@@ -291,6 +316,14 @@ const DailyFeedListPage = () => {
                                 size="sm"
                                 className="me-2"
                                 onClick={() => {
+                                  if (group.is_active === false) {
+                                    Swal.fire(
+                                      "Error",
+                                      "Sapi ini tidak aktif. Tidak dapat mengedit jadwal pakan.",
+                                      "error"
+                                    );
+                                    return;
+                                  }
                                   setEditId(session.id);
                                   setModalType("edit");
                                 }}
@@ -326,7 +359,7 @@ const DailyFeedListPage = () => {
 
       {isFarmer && modalType === "create" && (
         <CreateDailyFeed
-          cows={cows}
+          cows={cows} // Active cows only
           defaultDate={selectedDate}
           onClose={() => setModalType(null)}
           onSaved={() => {
@@ -339,7 +372,7 @@ const DailyFeedListPage = () => {
       {isFarmer && modalType === "edit" && editId && (
         <EditDailyFeed
           id={editId}
-          cows={cows}
+          cows={cows} // Active cows only
           onClose={() => {
             setModalType(null);
             setEditId(null);
@@ -366,8 +399,8 @@ const DailyFeedListPage = () => {
           {cowsWithMissingSessions.length === 0 ? (
             <p className="text-center text-muted">
               {cows.length === 0
-                ? "Tidak ada sapi yang tersedia."
-                : "Semua sapi memiliki jadwal pakan lengkap untuk tanggal ini."}
+                ? "Tidak ada sapi aktif yang tersedia."
+                : "Semua sapi aktif memiliki jadwal pakan lengkap untuk tanggal ini."}
             </p>
           ) : (
             <ListGroup>

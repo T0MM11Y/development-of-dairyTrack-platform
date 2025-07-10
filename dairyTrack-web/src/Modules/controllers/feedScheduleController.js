@@ -134,4 +134,28 @@ const deleteDailyFeed = async (id) => {
   }
 };
 
-export { getAllDailyFeeds, getDailyFeedById, createDailyFeed, updateDailyFeed, deleteDailyFeed };
+// New function to fetch cow details by ID
+const getCowById = async (cowId) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = user.token || null;
+
+  try {
+    const response = await fetch(`${API_URL4}/cows/${cowId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+    return response.ok
+      ? result
+      : { success: false, message: result.message || `Gagal mengambil data sapi dengan ID ${cowId}` };
+  } catch (error) {
+    console.error("getCowById - Error:", error);
+    return { success: false, message: `Terjadi kesalahan saat mengambil data sapi dengan ID ${cowId}` };
+  }
+};
+
+export { getAllDailyFeeds, getDailyFeedById, createDailyFeed, updateDailyFeed, deleteDailyFeed, getCowById };

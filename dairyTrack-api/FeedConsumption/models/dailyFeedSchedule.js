@@ -16,7 +16,7 @@ const DailyFeedSchedule = sequelize.define(
         model: "cows",
         key: "id",
       },
-      onDelete: "SET NULL",
+      onDelete: "RESTRICT", // Changed to RESTRICT to prevent cow_id changes
       onUpdate: "CASCADE",
       validate: {
         isInt: { msg: "ID sapi harus berupa angka" },
@@ -48,7 +48,7 @@ const DailyFeedSchedule = sequelize.define(
     total_nutrients: {
       type: DataTypes.JSON,
       allowNull: true,
-      defaultValue: {},
+      defaultValue: [], // Consistent with controller
     },
     user_id: {
       type: DataTypes.INTEGER,
@@ -80,28 +80,26 @@ const DailyFeedSchedule = sequelize.define(
       onDelete: "RESTRICT",
       onUpdate: "CASCADE",
     },
-    createdAt: {
+    created_at: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      field: "created_at",
     },
-    updatedAt: {
+    updated_at: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      field: "updated_at",
     },
-    deletedAt: {
+    deleted_at: {
       type: DataTypes.DATE,
       allowNull: true,
-      field: "deleted_at",
     },
   },
   {
     tableName: "daily_feed_schedule",
     timestamps: true,
     paranoid: true,
+    underscored: true,
     indexes: [
       {
         unique: true,

@@ -54,22 +54,26 @@ const Cow = sequelize.define(
         },
       },
     },
-    createdAt: {
-      type: DataTypes.DATE,
+    is_active: {
+      type: DataTypes.BOOLEAN, // Maps to TINYINT(1) in MySQL
       allowNull: false,
-      defaultValue: DataTypes.NOW,
-      field: "created_at",
+      defaultValue: true, // Matches DEFAULT '1' in the table
     },
-    updatedAt: {
+    created_at: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      field: "updated_at",
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
     tableName: "cows",
     timestamps: true,
+    underscored: true, // Ensures Sequelize uses snake_case for field names
   }
 );
 

@@ -19,42 +19,36 @@ const LATITUDE = process.env.WEATHER_LATITUDE || "2.288682100442301";
 const LONGITUDE = process.env.WEATHER_LONGITUDE || "98.62536951589614";
 
 // Helper function to format response
+
 const formatFeedResponse = (feed) => ({
   id: feed.id,
   cow_id: feed.cow_id,
-  cow_name: feed.Cow ? feed.Cow.name : null,
+  cow_name: feed.Cow ? feed.Cow.name : `Sapi ID ${feed.cow_id}`,
+  is_active: feed.Cow ? feed.Cow.is_active : false, // Default to false if Cow is null
   date: feed.date,
   session: feed.session,
   weather: feed.weather,
-  total_nutrients: feed.total_nutrients || [],
+  items: feed.DailyFeedItems?.map((item) => ({
+    id: item.id,
+    feed_id: item.feed_id,
+    feed_name: item.Feed?.name,
+    feed_price: item.Feed?.price,
+    quantity: item.quantity,
+    nutrisi: item.Feed?.FeedNutrisiRecords?.map((nutrisi) => ({
+      id: nutrisi.Nutrisi?.id,
+      name: nutrisi.Nutrisi?.name,
+      unit: nutrisi.Nutrisi?.unit,
+      value: nutrisi.value,
+    })),
+  })) || [],
   user_id: feed.user_id,
-  user_name: feed.User ? feed.User.name : null,
-  created_by: feed.Creator
-    ? { id: feed.Creator.id, name: feed.Creator.name }
-    : null,
-  updated_by: feed.Updater
-    ? { id: feed.Updater.id, name: feed.Updater.name }
-    : null,
+  user_name: feed.User?.name,
+  creator_id: feed.creator_id,
+  creator_name: feed.Creator?.name,
+  updater_id: feed.updater_id,
+  updater_name: feed.Updater?.name,
   created_at: feed.createdAt,
   updated_at: feed.updatedAt,
-  deleted_at: feed.deletedAt,
-  items: feed.DailyFeedItems
-    ? feed.DailyFeedItems.map((item) => ({
-        id: item.id,
-        feed_id: item.feed_id,
-        feed_name: item.Feed ? item.Feed.name : null,
-        quantity: parseFloat(item.quantity),
-        price: item.Feed ? parseFloat(item.Feed.price) : null,
-        nutrients: item.Feed?.FeedNutrisiRecords
-          ? item.Feed.FeedNutrisiRecords.map((n) => ({
-              nutrisi_id: n.nutrisi_id,
-              nutrisi_name: n.Nutrisi ? n.Nutrisi.name : null,
-              unit: n.Nutrisi ? n.Nutrisi.unit : null,
-              amount: parseFloat(n.amount),
-            }))
-          : [],
-      }))
-    : [],
 });
 
 // Get current weather
@@ -218,6 +212,14 @@ exports.createDailyFeed = async (req, res) => {
       });
     }
 
+    if (!cow.is_active) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: `Sapi dengan ID ${cow_id} tidak aktif. Tidak dapat membuat jadwal pakan.`,
+      });
+    }
+
     const userCowAssociation = await UserCowAssociation.findOne({
       where: { user_id: userId, cow_id },
       transaction,
@@ -230,17 +232,15 @@ exports.createDailyFeed = async (req, res) => {
       });
     }
 
-    // Check for existing feed, including soft-deleted records
     console.log("Checking for existing feed:", { cow_id, date, session });
     const existingFeed = await DailyFeedSchedule.findOne({
       where: { cow_id, date, session },
       transaction,
-      paranoid: false, // Include soft-deleted records
+      paranoid: false,
     });
 
     let newFeed;
     if (existingFeed && existingFeed.deletedAt) {
-      // Restore the soft-deleted record
       await existingFeed.restore({ transaction });
       await existingFeed.update(
         {
@@ -250,13 +250,12 @@ exports.createDailyFeed = async (req, res) => {
           weather: await getCurrentWeather(),
           user_id: userId,
           updated_by: userId,
-          total_nutrients: [], // Initialize to avoid null issues
+          total_nutrients: [],
         },
         { transaction }
       );
       newFeed = existingFeed;
     } else if (existingFeed) {
-      // Non-deleted record exists
       await transaction.rollback();
       console.log("Existing non-deleted feed found:", existingFeed.toJSON());
       return res.status(409).json({
@@ -265,7 +264,6 @@ exports.createDailyFeed = async (req, res) => {
         existing: formatFeedResponse(existingFeed),
       });
     } else {
-      // Create new record
       console.log("Creating DailyFeedSchedule with:", {
         cow_id,
         date,
@@ -285,7 +283,7 @@ exports.createDailyFeed = async (req, res) => {
           user_id: userId,
           created_by: userId,
           updated_by: userId,
-          total_nutrients: [], // Initialize to avoid null issues
+          total_nutrients: [],
         },
         { transaction }
       );
@@ -312,7 +310,6 @@ exports.createDailyFeed = async (req, res) => {
         }
       }
 
-      // Delete existing DailyFeedItems for the feed
       await DailyFeedItems.destroy({
         where: { daily_feed_id: newFeed.id },
         transaction,
@@ -333,7 +330,6 @@ exports.createDailyFeed = async (req, res) => {
       totalNutrients = await calculateTotalNutrients(feedItems, transaction);
       await newFeed.update({ total_nutrients: totalNutrients }, { transaction });
     } else {
-      // Ensure no items exist if items array is empty
       await DailyFeedItems.destroy({
         where: { daily_feed_id: newFeed.id },
         transaction,
@@ -398,7 +394,7 @@ exports.createDailyFeed = async (req, res) => {
     if (error.name === "SequelizeUniqueConstraintError") {
       const existingFeed = await DailyFeedSchedule.findOne({
         where: { cow_id, date, session },
-        paranoid: false, // Include soft-deleted records
+        paranoid: false,
         transaction,
       });
       return res.status(409).json({
@@ -419,7 +415,7 @@ exports.createDailyFeed = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Data tidak valid: ${
-          error.parent?.sqlMessage || "Foreign key constraint violation"
+          error.parent?.sqlMessage || "Tidak dapat membuat jadwal pakan karena referensi sapi atau pengguna tidak valid."
         }`,
       });
     }
@@ -475,6 +471,14 @@ exports.updateDailyFeed = async (req, res) => {
       });
     }
 
+    if (!cow.is_active) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: `Sapi dengan ID ${targetCowId} tidak aktif. Tidak dapat memperbarui jadwal pakan.`,
+      });
+    }
+
     const userCowAssociation = await UserCowAssociation.findOne({
       where: { user_id: userId, cow_id: targetCowId },
       transaction,
@@ -509,7 +513,6 @@ exports.updateDailyFeed = async (req, res) => {
       session: session || feed.session,
     };
 
-    // Check for existing feed, including soft-deleted records, excluding current record
     const existingFeed = await DailyFeedSchedule.findOne({
       where: {
         cow_id: checkFields.cow_id,
@@ -518,12 +521,11 @@ exports.updateDailyFeed = async (req, res) => {
         id: { [Op.ne]: id },
       },
       transaction,
-      paranoid: false, // Include soft-deleted records
+      paranoid: false,
     });
 
     let updatedFeedId = feed.id;
     if (existingFeed && existingFeed.deletedAt) {
-      // Restore the soft-deleted record
       await existingFeed.restore({ transaction });
       await existingFeed.update(
         {
@@ -533,15 +535,13 @@ exports.updateDailyFeed = async (req, res) => {
           weather: await getCurrentWeather(),
           user_id: userId,
           updated_by: userId,
-          total_nutrients: [], // Initialize to avoid null issues
+          total_nutrients: [],
         },
         { transaction }
       );
-      // Soft delete the current record to avoid duplicate
       await feed.destroy({ transaction });
-      updatedFeedId = existingFeed.id; // Update ID for response and item handling
+      updatedFeedId = existingFeed.id;
     } else if (existingFeed) {
-      // Non-deleted record exists
       await transaction.rollback();
       return res.status(409).json({
         success: false,
@@ -549,7 +549,6 @@ exports.updateDailyFeed = async (req, res) => {
         existing: formatFeedResponse(existingFeed),
       });
     } else {
-      // Update current record
       await feed.update(
         {
           cow_id: checkFields.cow_id,
@@ -584,7 +583,6 @@ exports.updateDailyFeed = async (req, res) => {
         }
       }
 
-      // Delete existing DailyFeedItems
       await DailyFeedItems.destroy({
         where: { daily_feed_id: updatedFeedId },
         transaction,
@@ -608,7 +606,6 @@ exports.updateDailyFeed = async (req, res) => {
         { where: { id: updatedFeedId }, transaction }
       );
     } else {
-      // Ensure no items exist if items array is empty
       await DailyFeedItems.destroy({
         where: { daily_feed_id: updatedFeedId },
         transaction,
@@ -683,7 +680,7 @@ exports.updateDailyFeed = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Data tidak valid: ${
-          error.parent?.sqlMessage || "Foreign key constraint violation"
+          error.parent?.sqlMessage || "Tidak dapat memperbarui jadwal pakan karena referensi sapi atau pengguna tidak valid."
         }`,
       });
     }
@@ -752,7 +749,12 @@ exports.getAllDailyFeeds = async (req, res) => {
             },
           ],
         },
-        { model: Cow, as: "Cow", attributes: ["id", "name"] },
+        {
+          model: Cow,
+          as: "Cow",
+          attributes: ["id", "name", "is_active"], // Include is_active
+          required: false, // Use LEFT JOIN to include all schedules
+        },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
         { model: User, as: "Updater", attributes: ["id", "name"] },
@@ -826,7 +828,12 @@ exports.getDailyFeedById = async (req, res) => {
             },
           ],
         },
-        { model: Cow, as: "Cow", attributes: ["id", "name"] },
+        {
+          model: Cow,
+          as: "Cow",
+          attributes: ["id", "name", "is_active"],
+          required: false, // Use LEFT JOIN for consistency
+        },
         { model: User, as: "User", attributes: ["id", "name"] },
         { model: User, as: "Creator", attributes: ["id", "name"] },
         { model: User, as: "Updater", attributes: ["id", "name"] },
@@ -894,6 +901,23 @@ exports.deleteDailyFeed = async (req, res) => {
       });
     }
 
+    const cow = await Cow.findByPk(feed.cow_id, { transaction });
+    if (!cow) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: `Sapi dengan ID ${feed.cow_id} tidak ditemukan.`,
+      });
+    }
+
+    if (!cow.is_active) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: `Sapi dengan ID ${feed.cow_id} tidak aktif. Tidak dapat menghapus jadwal pakan.`,
+      });
+    }
+
     const userCowAssociation = await UserCowAssociation.findOne({
       where: { user_id: userId, cow_id: feed.cow_id },
       transaction,
@@ -906,7 +930,6 @@ exports.deleteDailyFeed = async (req, res) => {
       });
     }
 
-    const cow = await Cow.findByPk(feed.cow_id, { transaction });
     await feed.destroy({ transaction });
     await transaction.commit();
 
@@ -922,6 +945,14 @@ exports.deleteDailyFeed = async (req, res) => {
       stack: error.stack,
       details: JSON.stringify(error, null, 2),
     });
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({
+        success: false,
+        message: `Data tidak valid: ${
+          error.parent?.sqlMessage || "Tidak dapat menghapus jadwal pakan karena referensi tidak valid."
+        }`,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: `Terjadi kesalahan pada server: ${error.message}`,
