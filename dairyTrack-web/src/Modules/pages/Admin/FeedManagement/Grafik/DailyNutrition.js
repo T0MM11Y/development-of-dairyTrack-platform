@@ -16,6 +16,7 @@ const NutritionSummaryPage = () => {
   });
   const [filterType, setFilterType] = useState("today");
   const [intervalType, setIntervalType] = useState("day");
+  const [barCount, setBarCount] = useState(7);
   const chartRef = useRef(null);
 
   // Fetch data
@@ -66,13 +67,13 @@ const NutritionSummaryPage = () => {
     };
   }, [dateRange.startDate, dateRange.endDate]);
 
-  // Unique cows
+  // Unique cows (hanya sapi aktif)
   const uniqueCows = useMemo(() => {
     const cows = [
       ...new Set(
-        dailyFeeds.map((feed) =>
-          JSON.stringify({ id: feed.cow_id, name: feed.cow_name })
-        )
+        dailyFeeds
+          .filter((feed) => feed.is_active) // Hanya sapi aktif
+          .map((feed) => JSON.stringify({ id: feed.cow_id, name: feed.cow_name }))
       ),
     ].map((cow) => JSON.parse(cow));
     return cows;
@@ -86,26 +87,22 @@ const NutritionSummaryPage = () => {
     switch (filterType) {
       case "today":
         start = end = today.toISOString().split("T")[0];
+        setIntervalType("day");
         break;
       case "week":
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay());
-        start = weekStart.toISOString().split("T")[0];
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        end = weekEnd.toISOString().split("T")[0];
+        start = new Date(today.setDate(today.getDate() - today.getDay())).toISOString().split("T")[0];
+        end = new Date(today.setDate(today.getDate() + 6)).toISOString().split("T")[0];
+        setIntervalType("day");
         break;
       case "month":
-        start = new Date(today.getFullYear(), today.getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-        end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
+        start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
+        setIntervalType("week");
         break;
       case "year":
         start = new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0];
         end = new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0];
+        setIntervalType("month");
         break;
       case "custom":
         start = dateRange.startDate;
@@ -113,6 +110,7 @@ const NutritionSummaryPage = () => {
         break;
       default:
         start = end = today.toISOString().split("T")[0];
+        setIntervalType("day");
     }
 
     return { start, end };
@@ -149,33 +147,21 @@ const NutritionSummaryPage = () => {
           };
           break;
         case "week":
-          const weekStart = new Date(today);
-          weekStart.setDate(today.getDate() - today.getDay());
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekStart.getDate() + 6);
           newDateRange = {
-            startDate: weekStart.toISOString().split("T")[0],
-            endDate: weekEnd.toISOString().split("T")[0],
+            startDate: new Date(today.setDate(today.getDate() - today.getDay())).toISOString().split("T")[0],
+            endDate: new Date(today.setDate(today.getDate() + 6)).toISOString().split("T")[0],
           };
           break;
         case "month":
           newDateRange = {
-            startDate: new Date(today.getFullYear(), today.getMonth(), 1)
-              .toISOString()
-              .split("T")[0],
-            endDate: new Date(today.getFullYear(), today.getMonth() + 1, 0)
-              .toISOString()
-              .split("T")[0],
+            startDate: new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0],
+            endDate: new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0],
           };
           break;
         case "year":
           newDateRange = {
-            startDate: new Date(today.getFullYear(), 0, 1)
-              .toISOString()
-              .split("T")[0],
-            endDate: new Date(today.getFullYear(), 11, 31)
-              .toISOString()
-              .split("T")[0],
+            startDate: new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0],
+            endDate: new Date(today.getFullYear(), 11, 31).toISOString().split("T")[0],
           };
           break;
         default:
@@ -184,23 +170,8 @@ const NutritionSummaryPage = () => {
       setDateRange(newDateRange);
     }
 
+    setBarCount(7);
     fetchData();
-  };
-
-  // Helper function to get week range string
-  const getWeekRangeString = (date) => {
-    const weekStart = new Date(date);
-    weekStart.setDate(date.getDate() - date.getDay());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-
-    return `${weekStart.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-    })} - ${weekEnd.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-    })}`;
   };
 
   // Calculate nutrition summary with time-based grouping
@@ -215,36 +186,23 @@ const NutritionSummaryPage = () => {
       feedDate.setHours(0, 0, 0, 0);
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
-      return (
-        feed.cow_id === parseInt(selectedCow) &&
-        feedDate >= startDate &&
-        feedDate <= endDate
-      );
+      return feed.cow_id === parseInt(selectedCow) && feedDate >= startDate && feedDate <= endDate;
     });
 
     let periods = [];
     const nutrientMap = new Map();
 
-    // Determine grouping interval based on filter type
-    let groupingInterval = "day";
-    if (filterType === "week") {
-      groupingInterval = "day"; // Show daily data for week
-    } else if (filterType === "month") {
-      groupingInterval = "week"; // Show weekly data for month
-    } else if (filterType === "year") {
-      groupingInterval = "month"; // Show monthly data for year
-    } else if (filterType === "custom") {
-      groupingInterval = intervalType; // Use selected interval for custom
-    }
+    // Mock nutrient data for "Ampas Tahu" (contoh: 100 kcal per unit)
+    const feedNutritionMap = {
+      "Ampas Tahu": { name: "Energi", unit: "kcal", amountPerUnit: 100 },
+    };
 
     const groupByInterval = (data, interval) => {
       const grouped = {};
-
       data.forEach((item) => {
         const itemDate = new Date(item.date);
         itemDate.setHours(0, 0, 0, 0);
         let key;
-
         switch (interval) {
           case "day":
             key = itemDate.toISOString().split("T")[0];
@@ -252,12 +210,16 @@ const NutritionSummaryPage = () => {
           case "week":
             const weekStart = new Date(itemDate);
             weekStart.setDate(itemDate.getDate() - itemDate.getDay());
-            key = weekStart.toISOString().split("T")[0]; // Use week start as key
+            key = `${weekStart.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            })} - ${new Date(weekStart.setDate(weekStart.getDate() + 6)).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            })}`;
             break;
           case "month":
-            key = `${itemDate.getFullYear()}-${String(
-              itemDate.getMonth() + 1
-            ).padStart(2, "0")}`;
+            key = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, "0")}`;
             break;
           case "year":
             key = itemDate.getFullYear().toString();
@@ -265,7 +227,6 @@ const NutritionSummaryPage = () => {
           default:
             key = itemDate.toISOString().split("T")[0];
         }
-
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push(item);
       });
@@ -282,56 +243,72 @@ const NutritionSummaryPage = () => {
         .map(([date, items]) => {
           const nutrients = {};
           items.forEach((feed) => {
-            feed.items.forEach((item) => {
-              item.nutrients.forEach((nutrient) => {
-                const key = `${nutrient.nutrisi_name}-${nutrient.unit}`;
-                if (!nutrientMap.has(key)) {
-                  nutrientMap.set(key, {
-                    name: nutrient.nutrisi_name,
-                    unit: nutrient.unit,
+            // Pastikan items adalah array dan tidak kosong
+            if (Array.isArray(feed.items) && feed.items.length > 0) {
+              feed.items.forEach((item) => {
+                // Pastikan nutrisi adalah array dan tidak kosong
+                if (Array.isArray(item.nutrisi) && item.nutrisi.length > 0) {
+                  item.nutrisi.forEach((nutrient) => {
+                    const key = `${nutrient.name}-${nutrient.unit}`;
+                    if (!nutrientMap.has(key)) {
+                      nutrientMap.set(key, { name: nutrient.name, unit: nutrient.unit });
+                    }
+                    if (!nutrients[key]) nutrients[key] = 0;
+                    const feedNutrition = feedNutritionMap[item.feed_name] || { amountPerUnit: 0 };
+                    nutrients[key] += parseFloat(item.quantity || 0) * feedNutrition.amountPerUnit;
                   });
                 }
-                if (!nutrients[key]) nutrients[key] = 0;
-                nutrients[key] += parseFloat(nutrient.amount || 0);
               });
-            });
+            }
           });
-
-          // Format label based on interval
-          let label;
-          switch (interval) {
-            case "day":
-              label = new Date(date).toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              });
-              break;
-            case "week":
-              label = getWeekRangeString(new Date(date));
-              break;
-            case "month":
-              label = new Date(`${date}-01`).toLocaleString("id-ID", {
-                month: "long",
-                year: "numeric",
-              });
-              break;
-            case "year":
-              label = date;
-              break;
-            default:
-              label = date;
-          }
-
           return {
-            label,
+            label: interval === "month" ? new Date(`${date}-01`).toLocaleString("id-ID", { month: "long" }) : date,
             nutrients,
-            date: date,
           };
         });
     };
 
-    periods = groupByInterval(filteredFeeds, groupingInterval);
+    if (filterType === "year") {
+      const year = new Date(start).getFullYear();
+      for (let month = 0; month < 12; month++) {
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+        monthStart.setHours(0, 0, 0, 0);
+        monthEnd.setHours(23, 59, 59, 999);
+
+        const monthData = filteredFeeds.filter((feed) => {
+          const feedDate = new Date(feed.date);
+          feedDate.setHours(0, 0, 0, 0);
+          return feedDate >= monthStart && feedDate <= monthEnd;
+        });
+
+        const monthlyNutrients = {};
+        monthData.forEach((feed) => {
+          if (Array.isArray(feed.items) && feed.items.length > 0) {
+            feed.items.forEach((item) => {
+              if (Array.isArray(item.nutrisi) && item.nutrisi.length > 0) {
+                item.nutrisi.forEach((nutrient) => {
+                  const key = `${nutrient.name}-${nutrient.unit}`;
+                  if (!nutrientMap.has(key)) {
+                    nutrientMap.set(key, { name: nutrient.name, unit: nutrient.unit });
+                  }
+                  if (!monthlyNutrients[key]) monthlyNutrients[key] = 0;
+                  const feedNutrition = feedNutritionMap[item.feed_name] || { amountPerUnit: 0 };
+                  monthlyNutrients[key] += parseFloat(item.quantity || 0) * feedNutrition.amountPerUnit;
+                });
+              }
+            });
+          }
+        });
+
+        periods.push({
+          label: monthStart.toLocaleString("id-ID", { month: "long" }),
+          nutrients: monthlyNutrients,
+        });
+      }
+    } else if (filterType === "today" || filterType === "week" || filterType === "month" || filterType === "custom") {
+      periods = groupByInterval(filteredFeeds, filterType === "custom" ? intervalType : filterType === "month" ? "week" : "day");
+    }
 
     const nutrients = Array.from(nutrientMap.entries()).map(([key, value]) => ({
       key,
@@ -345,8 +322,7 @@ const NutritionSummaryPage = () => {
   // Prepare chart data for grouped bar chart
   const chartData = useMemo(() => {
     const { periods, nutrients } = nutritionSummary;
-    if (periods.length === 0 || nutrients.length === 0)
-      return { series: [], categories: [] };
+    if (periods.length === 0 || nutrients.length === 0) return { series: [], categories: [] };
 
     const series = nutrients.map((nutrient) => ({
       name: `${nutrient.name} (${nutrient.unit})`,
@@ -366,70 +342,58 @@ const NutritionSummaryPage = () => {
     return parseFloat(num.toFixed(2)).toString();
   };
 
-  // Calculate chart width based on number of categories
-  const getChartWidth = () => {
-    const categoryCount = chartData.categories.length;
-    const minBarWidth = 80; // Minimum width per bar group
-    const padding = 200; // Extra padding for labels and legend
-    return Math.max(800, categoryCount * minBarWidth + padding);
-  };
-
   const chartOptions = useMemo(() => {
+    const visibleBars = Math.min(barCount, chartData.categories.length);
+
     return {
       chart: {
-        height: 450,
+        height: 400,
         type: "bar",
-        toolbar: {
-          show: true,
-          tools: {
-            download: true,
-            selection: true,
-            zoom: true,
-            zoomin: true,
-            zoomout: true,
-            pan: true,
-            reset: true,
-          },
-        },
+        toolbar: { show: false },
         zoom: {
           enabled: true,
           type: "x",
           autoScaleYaxis: true,
+          zoomedArea: {
+            fill: { color: "#90CAF9", opacity: 0.4 },
+            stroke: { color: "#0D47A1", opacity: 0.4, width: 1 },
+          },
         },
         animations: {
           enabled: true,
           easing: "easeinout",
           speed: 800,
         },
+        events: {
+          mounted: (chart) => {
+            chart.windowResizeHandler();
+            if (chartData.categories.length > 0) {
+              const totalBars = chartData.categories.length;
+              const minX = 0;
+              const maxX = Math.min(visibleBars - 1, totalBars - 1);
+              chart.updateOptions({
+                xaxis: { min: minX, max: maxX },
+              });
+            }
+          },
+          zoomed: (chart, { xaxis }) => {
+            const zoomedBars = Math.round(xaxis.max - xaxis.min + 1);
+            setBarCount(zoomedBars);
+          },
+        },
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: "70%",
+          columnWidth: `${Math.max(30, 100 - visibleBars * 5)}%`,
           borderRadius: 6,
-          dataLabels: {
-            position: "top",
-          },
         },
       },
-      colors: [
-        "#007bff",
-        "#28a745",
-        "#17a2b8",
-        "#ffc107",
-        "#dc3545",
-        "#6c757d",
-        "#ff69b4",
-        "#20c997",
-      ],
+      colors: ["#007bff", "#28a745", "#17a2b8", "#ffc107", "#dc3545", "#6c757d", "#ff69b4", "#20c997"],
       dataLabels: {
         enabled: true,
         formatter: (val) => formatNumber(val),
-        style: {
-          fontSize: "11px",
-          fontWeight: "bold",
-          colors: ["#333"],
-        },
+        style: { fontSize: "12px", fontWeight: "bold", colors: ["#333"] },
         offsetY: -20,
       },
       stroke: {
@@ -441,15 +405,9 @@ const NutritionSummaryPage = () => {
         categories: chartData.categories,
         labels: {
           rotate: -45,
-          style: {
-            fontSize: "12px",
-            fontWeight: 500,
-            colors: "#333",
-          },
-          trim: false,
-          hideOverlappingLabels: false,
+          style: { fontSize: "12px", fontWeight: 500, colors: "#333" },
+          formatter: (value) => value,
         },
-        tickAmount: undefined,
       },
       yaxis: {
         title: {
@@ -460,19 +418,15 @@ const NutritionSummaryPage = () => {
           formatter: (val) => formatNumber(val),
         },
         min: 0,
+        max: Math.max(...chartData.series.flatMap((s) => s.data.filter((val) => val !== null)), 0) * 1.2 || 10,
       },
       fill: { opacity: 0.9 },
       legend: {
         position: "top",
         horizontalAlign: "center",
-        fontSize: "12px",
+        fontSize: "14px",
         fontWeight: 500,
         labels: { colors: "#333" },
-        markers: {
-          width: 12,
-          height: 12,
-          radius: 6,
-        },
       },
       tooltip: {
         y: {
@@ -482,27 +436,35 @@ const NutritionSummaryPage = () => {
           },
         },
       },
-      grid: {
-        borderColor: "#eee",
-        strokeDashArray: 3,
-      },
-      responsive: [
-        {
-          breakpoint: 768,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: "80%",
-              },
-            },
-            legend: {
-              position: "bottom",
-            },
-          },
-        },
-      ],
+      grid: { borderColor: "#eee" },
     };
-  }, [chartData, nutritionSummary]);
+  }, [chartData, nutritionSummary, barCount]);
+
+  const handleZoomIn = () => {
+    if (chartRef.current && chartData.categories.length > 0) {
+      const newBarCount = Math.max(barCount - 2, 3);
+      setBarCount(newBarCount);
+      const totalBars = chartData.categories.length;
+      const minX = 0;
+      const maxX = Math.min(newBarCount - 1, totalBars - 1);
+      chartRef.current.chart.updateOptions({
+        xaxis: { min: minX, max: maxX },
+      });
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (chartRef.current && chartData.categories.length > 0) {
+      const newBarCount = Math.min(barCount + 2, chartData.categories.length);
+      setBarCount(newBarCount);
+      const totalBars = chartData.categories.length;
+      const minX = 0;
+      const maxX = Math.min(newBarCount - 1, totalBars - 1);
+      chartRef.current.chart.updateOptions({
+        xaxis: { min: minX, max: maxX },
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -513,12 +475,8 @@ const NutritionSummaryPage = () => {
     >
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
-            Ringkasan Nutrisi Sapi
-          </h2>
-          <p className="text-muted">
-            Lihat total nutrisi yang dikonsumsi sapi berdasarkan jadwal pakan
-          </p>
+          <h2 className="text-xl font-bold text-gray-800">Ringkasan Nutrisi Sapi</h2>
+          <p className="text-muted">Lihat total nutrisi yang dikonsumsi sapi berdasarkan jadwal pakan</p>
         </div>
         <button
           onClick={fetchData}
@@ -606,8 +564,7 @@ const NutritionSummaryPage = () => {
                 disabled={loading}
                 style={{
                   borderRadius: "8px",
-                  background:
-                    "linear-gradient(90deg, #3498db 0%, #2c3e50 100%)",
+                  background: "linear-gradient(90deg, #3498db 0%, #2c3e50 100%)",
                   border: "none",
                   letterSpacing: "1.3px",
                   fontWeight: "600",
@@ -680,8 +637,7 @@ const NutritionSummaryPage = () => {
           transition={{ duration: 0.3 }}
         >
           <i className="ri-error-warning-line me-2"></i>
-          Tidak ada data jadwal pakan tersedia untuk rentang tanggal yang
-          dipilih.
+          Tidak ada data jadwal pakan tersedia untuk rentang tanggal yang dipilih.
         </motion.div>
       ) : !selectedCow ? (
         <motion.div
@@ -701,8 +657,7 @@ const NutritionSummaryPage = () => {
           transition={{ duration: 0.3 }}
         >
           <i className="ri-error-warning-line me-2"></i>
-          Tidak ada data nutrisi tersedia untuk sapi yang dipilih pada rentang
-          tanggal ini.
+          Tidak ada data nutrisi tersedia untuk sapi yang dipilih pada rentang tanggal ini.
         </motion.div>
       ) : (
         <motion.div
@@ -716,45 +671,46 @@ const NutritionSummaryPage = () => {
               className="shadow-sm border-0"
               style={{
                 background: "linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)",
+                overflowX: "auto",
               }}
             >
               <div className="card-body">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="card-title text-gray-800 fw-bold">
                     Ringkasan Nutrisi untuk{" "}
-                    {
-                      uniqueCows.find((cow) => cow.id === parseInt(selectedCow))
-                        ?.name
-                    }
+                    {uniqueCows.find((cow) => cow.id === parseInt(selectedCow))?.name}
                   </h5>
-                  <div className="d-flex align-items-center gap-2">
-                    <small className="text-muted">
-                      {chartData.categories.length} periode data
-                    </small>
-                    <i
-                      className="ri-information-line text-info"
-                      title="Gunakan toolbar chart untuk zoom dan pan"
-                    ></i>
+                  <div>
+                    <Button
+                      variant="outline-secondary"
+                      onClick={handleZoomIn}
+                      className="me-2"
+                      style={{ borderRadius: "8px", padding: "4px 8px" }}
+                      disabled={barCount <= 3}
+                    >
+                      <i className="ri-zoom-in-line"></i> +
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      onClick={handleZoomOut}
+                      style={{ borderRadius: "8px", padding: "4px 8px" }}
+                      disabled={barCount >= chartData.categories.length}
+                    >
+                      <i className="ri-zoom-out-line"></i> –
+                    </Button>
                   </div>
                 </div>
-
-                {/* Scrollable Chart Container */}
                 <div
-                  className="chart-container"
                   style={{
                     overflowX: "auto",
-                    overflowY: "hidden",
-                    width: "100%",
-                    border: "1px solid #e9ecef",
-                    borderRadius: "8px",
-                    padding: "10px",
-                    backgroundColor: "#fafafa",
+                    whiteSpace: "nowrap",
+                    position: "relative",
+                    minWidth: "100%",
                   }}
                 >
                   <div
                     style={{
-                      width: `${getChartWidth()}px`,
-                      minWidth: "100%",
+                      minWidth: `${Math.max(1000, chartData.categories.length * 150)}px`,
                     }}
                   >
                     <ReactApexChart
@@ -762,25 +718,13 @@ const NutritionSummaryPage = () => {
                       options={chartOptions}
                       series={chartData.series}
                       type="bar"
-                      height={450}
+                      height={400}
                       width="100%"
                     />
                   </div>
                 </div>
-
-                {/* Info about scrolling */}
-                <div className="mt-2">
-                  <small className="text-muted">
-                    <i className="ri-arrow-left-right-line me-1"></i>
-                    Scroll horizontal untuk melihat lebih banyak data atau
-                    gunakan toolbar zoom pada chart
-                  </small>
-                </div>
-
                 <div className="mt-4">
-                  <h6 className="mb-3 text-gray-800 fw-bold">
-                    Detail Data Nutrisi
-                  </h6>
+                  <h6 className="mb-3 text-gray-800 fw-bold">Detail Data Nutrisi</h6>
                   <div style={{ overflowX: "auto" }}>
                     <Table striped bordered hover responsive>
                       <thead>
@@ -797,9 +741,7 @@ const NutritionSummaryPage = () => {
                             <td>{`${nutrient.name} (${nutrient.unit})`}</td>
                             {nutritionSummary.periods.map((period, pIndex) => (
                               <td key={pIndex}>
-                                {formatNumber(
-                                  period.nutrients[nutrient.key] || 0
-                                )}
+                                {formatNumber(period.nutrients[nutrient.key] || 0)}
                               </td>
                             ))}
                           </tr>
