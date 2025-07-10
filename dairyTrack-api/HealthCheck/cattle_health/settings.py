@@ -86,34 +86,34 @@ WSGI_APPLICATION = 'cattle_health.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # ...existing code...
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'tthsanbe_t5th',
-        'USER': 'tthsanbe_TA',
-        'PASSWORD': 'Cy2U0x1JJRFY',
-        'HOST': '178.248.73.218',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
-    }
-}
-
-# # #local
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dairy_track',  # Nama database MySQL
-#         'USER': 'root',  # Username MySQL
-#         'PASSWORD': '',  # Password MySQL (kosong)
-#         'HOST': 'localhost',  # Host MySQL
-#         'PORT': '3306',  # Port default MySQL
+#         'NAME': 'tthsanbe_t5th',
+#         'USER': 'tthsanbe_TA',
+#         'PASSWORD': 'Cy2U0x1JJRFY',
+#         'HOST': '178.248.73.218',
+#         'PORT': '3306',
 #         'OPTIONS': {
-#             'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
+#             'charset': 'utf8mb4',
 #         },
 #     }
 # }
+
+# # #local
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dairy_track',  # Nama database MySQL
+        'USER': 'root',  # Username MySQL
+        'PASSWORD': '',  # Password MySQL (kosong)
+        'HOST': 'localhost',  # Host MySQL
+        'PORT': '3306',  # Port default MySQL
+        'OPTIONS': {
+            'charset': 'utf8mb4',  # Menggunakan utf8mb4 agar mendukung emoji dan karakter khusus
+        },
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

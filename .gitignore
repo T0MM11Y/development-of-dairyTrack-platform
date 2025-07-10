@@ -8,3 +8,7 @@ dairyTrack-api/MilkProduction/config.py
 dairyTrack-api/MilkProduction/__pycache__/config.cpython-313.pyc
 dairyTrack-api/Selling/sales_and_finance/settings.py
 dairyTrack-api/Selling/sales_and_finance/__pycache__/settings.cpython-313.pyc
+dairyTrack-web/src/api/apiController.js
+dairyTrack-web/package.json
+dairytrack_mobile/lib/api/apiController.dart
+dairyTrack-api/Selling/stock/__pycache__/tasks.cpython-313.pyc

@@ -123,6 +123,7 @@ const EditCow = () => {
       }
     }
 
+    // Weight validation - Updated to match CreateCows.js
     if (!formData.weight) {
       newErrors.weight = "Weight is required";
       isValid = false;
@@ -132,19 +133,11 @@ const EditCow = () => {
       if (isNaN(weight) || weight <= 0) {
         newErrors.weight = "Weight must be a positive number";
         isValid = false;
-      } else if (
-        formData.gender === "Female" &&
-        (weight < 400 || weight > 700)
-      ) {
-        newErrors.weight =
-          "For female cows, weight must be between 400 kg and 700 kg";
+      } else if (formData.gender === "Female" && weight > 700) {
+        newErrors.weight = "For female cows, weight cannot exceed 700 kg";
         isValid = false;
-      } else if (
-        formData.gender === "Male" &&
-        (weight < 800 || weight > 1200)
-      ) {
-        newErrors.weight =
-          "For male cows, weight must be between 800 kg and 1200 kg";
+      } else if (formData.gender === "Male" && weight > 1200) {
+        newErrors.weight = "For male cows, weight cannot exceed 1200 kg";
         isValid = false;
       }
     }
@@ -364,7 +357,7 @@ const EditCow = () => {
                       name="weight"
                       value={formData.weight}
                       onChange={handleChange}
-                      min={formData.gender === "Female" ? 400 : 800}
+                      /* min={formData.gender === "Female" ? 400 : 800} */ // Removed min attribute to match CreateCows.js
                       max={formData.gender === "Female" ? 700 : 1200}
                       required
                     />
@@ -373,8 +366,8 @@ const EditCow = () => {
                     )}
                     <div className="form-text">
                       {formData.gender === "Female"
-                        ? "Enter weight between 400-700 kg for female cows."
-                        : "Enter weight between 800-1200 kg for male cows."}
+                        ? "Enter weight up to 700 kg for female cows."
+                        : "Enter weight up to 1200 kg for male cows."}
                     </div>
                   </div>
                 </div>

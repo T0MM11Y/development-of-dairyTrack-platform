@@ -1801,56 +1801,41 @@ class _InitialAdminDashboardState extends State<InitialAdminDashboard>
                   if (isUnread && notification['id'] != null) {
                     await _notificationController
                         .markAsRead(notification['id']);
-                    // Update state lokal agar UI langsung berubah
                     setState(() {
                       notification['is_read'] = true;
                     });
-                    // Refresh notifikasi (opsional, agar badge & list update)
                     _loadNotifications();
                   }
-                  // Tampilkan detail notifikasi (opsional)
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: Row(
-                        children: [
-                          Icon(Icons.notifications,
-                              color: Colors.blueGrey, size: 24),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              notification['title'] ?? 'Notification',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blueGrey[800],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      content: Text(
-                        notification['message'] ?? '',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.blueGrey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text('Tutup'),
-                        ),
-                      ],
+
+                  // Redirect sesuai tipe notifikasi
+                  Widget? targetPage;
+                  switch (type) {
+                    case 'milking_reminder':
+                    case 'milk_quality':
+                      targetPage = MilkingView();
+                      break;
+                    case 'feed':
+                    case 'feed_stock':
+                    case 'feed_schedule':
+                      targetPage = FeedStockList();
+                      break;
+                    case 'cow_health':
+                    case 'health_check':
+                      targetPage = HealthCheckListView();
+                      break;
+                    case 'sales':
+                    case 'order':
+                    case 'sales_transaction':
+                      targetPage = ListOrderView();
+                      break;
+                    default:
+                      targetPage = MilkingView();
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => targetPage!,
                     ),
                   );
                 },

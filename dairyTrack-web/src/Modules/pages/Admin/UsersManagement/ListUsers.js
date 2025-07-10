@@ -23,7 +23,7 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(8);
+  const [usersPerPage] = useState(10);
   const [selectedRole, setSelectedRole] = useState("");
   // Add loading states for different processes
   const [isDeleting, setIsDeleting] = useState(false);

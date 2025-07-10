@@ -84,22 +84,24 @@ const CreateCows = () => {
         const ageInMilliseconds = currentDate - birthDate;
         const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
 
-        // Check if age is reasonable (between 0 and 20 years)
-        if (ageInYears > 20) {
-          newErrors.birth =
-            "The cow's age exceeds 20 years, which is unusual for cattle";
+        // Check if age is between 3 and 15 years
+        if (ageInYears < 3) {
+          newErrors.birth = "Cow must be at least 3 years old";
+          isValid = false;
+        } else if (ageInYears > 15) {
+          newErrors.birth = "Cow cannot be older than 15 years";
           isValid = false;
         }
 
-        // For a female cow in lactation, ensure minimum age of 2 years (typical age for first calving)
+        // For a female cow in lactation, ensure minimum age of 3 years (typical age for first calving)
         if (
           formData.gender === "Female" &&
           formData.lactation_phase !== "Dry" &&
           formData.lactation_phase !== "" &&
-          ageInYears < 2
+          ageInYears < 3
         ) {
           newErrors.birth =
-            "A female cow in lactation should be at least 2 years old";
+            "A female cow in lactation should be at least 3 years old";
           isValid = false;
         }
       }
@@ -115,19 +117,11 @@ const CreateCows = () => {
       if (isNaN(weight) || weight <= 0) {
         newErrors.weight = "Weight must be a positive number";
         isValid = false;
-      } else if (
-        formData.gender === "Female" &&
-        (weight < 400 || weight > 700)
-      ) {
-        newErrors.weight =
-          "For female cows, weight must be between 400 kg and 700 kg";
+      } else if (formData.gender === "Female" && weight > 700) {
+        newErrors.weight = "For female cows, weight cannot exceed 700 kg";
         isValid = false;
-      } else if (
-        formData.gender === "Male" &&
-        (weight < 800 || weight > 1200)
-      ) {
-        newErrors.weight =
-          "For male cows, weight must be between 800 kg and 1200 kg";
+      } else if (formData.gender === "Male" && weight > 1200) {
+        newErrors.weight = "For male cows, weight cannot exceed 1200 kg";
         isValid = false;
       }
     }
@@ -254,7 +248,16 @@ const CreateCows = () => {
                       errors.birth ? "is-invalid" : ""
                     }`}
                     dateFormat="yyyy-MM-dd"
-                    maxDate={new Date()}
+                    minDate={
+                      new Date(
+                        new Date().setFullYear(new Date().getFullYear() - 15)
+                      )
+                    }
+                    maxDate={
+                      new Date(
+                        new Date().setFullYear(new Date().getFullYear() - 3)
+                      )
+                    }
                     showYearDropdown
                     showMonthDropdown
                     dropdownMode="select"
@@ -265,8 +268,7 @@ const CreateCows = () => {
                     <div className="invalid-feedback">{errors.birth}</div>
                   )}
                   <div className="form-text">
-                    Select a valid birth date (cannot be in the future, and must
-                    be reasonable for the cow's age).
+                    Select a valid birth date (cow must be 3-15 years old).
                   </div>
                 </div>
                 <div className="col-md-6">
@@ -356,7 +358,7 @@ const CreateCows = () => {
                     name="weight"
                     value={formData.weight}
                     onChange={handleChange}
-                    min={formData.gender === "Female" ? 400 : 800}
+                    /* min={formData.gender === "Female" ? 400 : 800} */ // Hapus baris ini
                     max={formData.gender === "Female" ? 700 : 1200}
                     required
                   />
@@ -365,8 +367,8 @@ const CreateCows = () => {
                   )}
                   <div className="form-text">
                     {formData.gender === "Female"
-                      ? "Enter weight between 400-700 kg for female cows."
-                      : "Enter weight between 800-1200 kg for male cows."}
+                      ? "Enter weight up to 700 kg for female cows."
+                      : "Enter weight up to 1200 kg for male cows."}
                   </div>
                 </div>
               </div>

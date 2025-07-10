@@ -1053,58 +1053,91 @@ class _InitialSupervisorDashboardState extends State<InitialSupervisorDashboard>
                   if (isUnread && notification['id'] != null) {
                     await _notificationController
                         .markAsRead(notification['id']);
-                    // Update state lokal agar UI langsung berubah
                     setState(() {
                       notification['is_read'] = true;
                     });
-                    // Refresh notifikasi (opsional, agar badge & list update)
                     _loadNotifications();
                   }
-                  // Tampilkan detail notifikasi (opsional)
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+
+                  // Navigasi otomatis sesuai tipe notifikasi
+                  Widget? targetPage;
+                  switch (type) {
+                    case 'milking_reminder':
+                    case 'milk_quality':
+                      targetPage = MilkingView();
+                      break;
+                    case 'feed':
+                    case 'feed_stock':
+                    case 'feed_schedule':
+                      targetPage = FeedStockList();
+                      break;
+                    case 'cow_health':
+                    case 'health_check':
+                      targetPage = HealthCheckListView();
+                      break;
+                    case 'sales':
+                    case 'order':
+                    case 'sales_transaction':
+                      targetPage = ListOrderView();
+                      break;
+                    default:
+                      targetPage = null;
+                  }
+
+                  if (targetPage != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => targetPage!,
                       ),
-                      title: Row(
-                        children: [
-                          Icon(Icons.notifications,
-                              color: Colors.teal, size: 24),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              notification['title'] ?? 'Notification',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.teal[800],
+                    );
+                  } else {
+                    // Tampilkan detail notifikasi jika tidak ada targetPage
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Row(
+                          children: [
+                            Icon(Icons.notifications,
+                                color: Colors.teal, size: 24),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                notification['title'] ?? 'Notification',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal[800],
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                        content: Text(
+                          notification['message'] ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.teal,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text('Close'),
                           ),
                         ],
                       ),
-                      content: Text(
-                        notification['message'] ?? '',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.teal,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text('Close'),
-                        ),
-                      ],
-                    ),
-                  );
+                    );
+                  }
                 },
                 child: Container(
                   margin: EdgeInsets.only(bottom: 8),

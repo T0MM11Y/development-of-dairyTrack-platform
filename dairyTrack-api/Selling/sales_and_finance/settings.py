@@ -136,33 +136,33 @@ CORS_ALLOW_HEADERS = [
 
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dairy_track',
-#         'USER': 'root',
-#         'PASSWORD': '',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'charset': 'utf8mb4',
-#         },
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'tthsanbe_k3l11',
-        'USER': 'tthsanbe_TA',
-        'PASSWORD': 'Cy2U0x1JJRFY',
-        'HOST': '178.248.73.218',
+        'NAME': 'dairy_track',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'tthsanbe_t5th',
+#         'USER': 'tthsanbe_TA',
+#         'PASSWORD': 'Cy2U0x1JJRFY',
+#         'HOST': '178.248.73.218',
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#         },
+#     }
+# }
 
 
 # Password validation

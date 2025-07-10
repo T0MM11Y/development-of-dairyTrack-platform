@@ -25,6 +25,9 @@ class _MakeCowsViewState extends State<MakeCowsView> {
   // State to track changes
   bool _hasChanges = false;
 
+  // Weight validation error message
+  String? _weightErrorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -79,15 +82,19 @@ class _MakeCowsViewState extends State<MakeCowsView> {
     final ageInMilliseconds = currentDate.difference(birthDate).inMilliseconds;
     final ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
 
-    if (ageInYears > 20) {
-      return "The cow's age exceeds 20 years, which is unusual for cattle";
+    // Minimal 3 tahun, maksimal 15 tahun
+    if (ageInYears < 3) {
+      return "Cow must be at least 3 years old";
+    }
+    if (ageInYears > 15) {
+      return "Cow cannot be older than 15 years";
     }
 
     if (_gender == "Female" &&
         _lactationPhase != "Dry" &&
         _lactationPhase != "" &&
-        ageInYears < 2) {
-      return "A female cow in lactation should be at least 2 years old";
+        ageInYears < 3) {
+      return "A female cow in lactation should be at least 3 years old";
     }
 
     return null;
@@ -100,15 +107,31 @@ class _MakeCowsViewState extends State<MakeCowsView> {
 
     final weight = double.tryParse(value);
 
-    if (weight == null || weight <= 0) {
-      return 'Weight must be a positive number';
-    } else if (_gender == "Female" && (weight < 400 || weight > 700)) {
-      return 'For female cows, weight between 400 & 700 kg';
-    } else if (_gender == "Male" && (weight < 800 || weight > 1200)) {
-      return 'For male cows, weight between 800 & 1200 kg';
+    if (weight == null) {
+      return 'Please enter a valid number';
+    }
+
+    if (weight <= 0) {
+      return 'Weight must be greater than 0 kg';
+    }
+
+    if (_gender == "Female" && weight > 700) {
+      return 'For female cows, weight cannot exceed 700 kg';
+    }
+
+    if (_gender == "Male" && weight > 1200) {
+      return 'For male cows, weight cannot exceed 1200 kg';
     }
 
     return null;
+  }
+
+  // Update weight error message for real-time feedback
+  void _updateWeightErrorMessage(String value) {
+    final errorMessage = _validateWeight(value);
+    setState(() {
+      _weightErrorMessage = errorMessage;
+    });
   }
 
   String? _validateLactationPhase(String? value) {
@@ -116,6 +139,14 @@ class _MakeCowsViewState extends State<MakeCowsView> {
       return 'Lactation phase is required for female cows';
     }
     return null;
+  }
+
+  // Calculate if the weight is valid for showing the checkmark
+  bool get _isWeightValid {
+    if (_weight <= 0) return false;
+    if (_gender == "Female" && _weight > 700) return false;
+    if (_gender == "Male" && _weight > 1200) return false;
+    return true;
   }
 
   @override
@@ -126,8 +157,10 @@ class _MakeCowsViewState extends State<MakeCowsView> {
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(widget.initialCowData == null ? 'Add New Cow' : 'Edit Cow',
-            style: TextStyle(color: Colors.white)),
+        title: Text(
+          widget.initialCowData == null ? 'Add New Cow' : 'Edit Cow',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.blueGrey[800],
         iconTheme: IconThemeData(color: Colors.white),
       ),
@@ -148,7 +181,9 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: 'Name',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                       prefixIcon: Icon(Icons.person),
                     ),
                     initialValue: _name,
@@ -156,7 +191,7 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                     onSaved: (value) => _name = value!,
                     onChanged: (value) {
                       setState(() {
-                        _name = value!;
+                        _name = value;
                         _hasChanges = true;
                       });
                     },
@@ -166,9 +201,22 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                     onTap: () async {
                       DateTime? pickedDate = await showDatePicker(
                         context: context,
-                        initialDate: _birth ?? DateTime.now(),
+                        initialDate: _birth ??
+                            DateTime.now().subtract(Duration(days: 365 * 3)),
                         firstDate: DateTime(1900),
                         lastDate: DateTime.now(),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: Colors.blueGrey[800]!,
+                                onPrimary: Colors.white,
+                                onSurface: Colors.blueGrey[900]!,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (pickedDate != null) {
                         setState(() {
@@ -180,11 +228,15 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                     child: InputDecorator(
                       decoration: InputDecoration(
                         labelText: 'Birth Date',
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                         hintText: _birth == null
                             ? 'Select Birth Date'
                             : DateFormat('yyyy-MM-dd').format(_birth!),
                         prefixIcon: Icon(Icons.calendar_today),
+                        errorText:
+                            _birth == null ? 'Birth date is required' : null,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -193,6 +245,11 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                             _birth == null
                                 ? 'Select Birth Date'
                                 : DateFormat('yyyy-MM-dd').format(_birth!),
+                            style: TextStyle(
+                              color: _birth == null
+                                  ? Colors.grey[600]
+                                  : Colors.black87,
+                            ),
                           ),
                           Icon(Icons.arrow_drop_down, color: Colors.grey),
                         ],
@@ -203,8 +260,12 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: 'Breed',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                       prefixIcon: Icon(Icons.grass),
+                      filled: true,
+                      fillColor: Colors.grey[100],
                     ),
                     initialValue: _breed,
                     readOnly: true,
@@ -213,7 +274,9 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: 'Gender',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                       prefixIcon: Icon(Icons.wc),
                     ),
                     value: _gender,
@@ -228,6 +291,10 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                         _gender = value!;
                         _lactationPhase =
                             _gender == 'Male' ? '-' : _lactationPhase;
+
+                        // Reset weight validation when gender changes
+                        _updateWeightErrorMessage(_weight.toString());
+
                         _hasChanges = true;
                       });
                     },
@@ -239,8 +306,14 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       labelText: 'Lactation Phase',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                       prefixIcon: Icon(Icons.local_drink),
+                      helperText: _gender == 'Female'
+                          ? 'Required for female cows'
+                          : 'Not applicable for male cows',
+                      helperStyle: TextStyle(fontSize: 12),
                     ),
                     value: _gender == 'Male'
                         ? (_lactationPhase == '-' ? '-' : null)
@@ -282,22 +355,94 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                     onSaved: (value) => _lactationPhase = value ?? '',
                   ),
                   SizedBox(height: 20),
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Weight (kg)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.fitness_center),
-                    ),
-                    keyboardType: TextInputType.number,
-                    initialValue: _weight.toString(),
-                    validator: _validateWeight,
-                    onSaved: (value) => _weight = double.parse(value!),
-                    onChanged: (value) {
-                      setState(() {
-                        _weight = double.tryParse(value) ?? 0;
-                        _hasChanges = true;
-                      });
-                    },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Weight (kg)',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          prefixIcon: Icon(Icons.fitness_center),
+                          suffixIcon: _weight > 0
+                              ? Icon(
+                                  _isWeightValid
+                                      ? Icons.check_circle
+                                      : Icons.error,
+                                  color: _isWeightValid
+                                      ? Colors.green
+                                      : Colors.red[300],
+                                )
+                              : null,
+                          helperText: _gender == "Female"
+                              ? "Maximum weight for female cows: 700 kg"
+                              : "Maximum weight for male cows: 1200 kg",
+                          helperStyle: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          errorStyle: TextStyle(
+                            color: Colors.red[700],
+                          ),
+                        ),
+                        keyboardType:
+                            TextInputType.numberWithOptions(decimal: true),
+                        initialValue: _weight.toString(),
+                        validator: _validateWeight,
+                        onSaved: (value) =>
+                            _weight = double.tryParse(value ?? '0') ?? 0,
+                        onChanged: (value) {
+                          setState(() {
+                            _weight = double.tryParse(value) ?? 0;
+                            _updateWeightErrorMessage(value);
+                            _hasChanges = true;
+                          });
+                        },
+                      ),
+                      if (_weightErrorMessage != null && _weight != 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, left: 12.0),
+                          child: Text(
+                            _weightErrorMessage!,
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      // Weight slider for easier input
+                      if (_weight > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 10.0, left: 4.0, right: 4.0),
+                          child: SliderTheme(
+                            data: SliderThemeData(
+                              thumbColor: Colors.blueGrey[800],
+                              activeTrackColor: Colors.blueGrey[600],
+                              inactiveTrackColor: Colors.grey[300],
+                              overlayColor:
+                                  Colors.blueGrey[800]?.withOpacity(0.2),
+                            ),
+                            child: Slider(
+                              min: 0,
+                              max: _gender == 'Female' ? 700 : 1200,
+                              value: _weight.clamp(
+                                  0, _gender == 'Female' ? 700 : 1200),
+                              divisions: _gender == 'Female' ? 70 : 120,
+                              label: '${_weight.toStringAsFixed(1)} kg',
+                              onChanged: (value) {
+                                setState(() {
+                                  _weight =
+                                      double.parse(value.toStringAsFixed(1));
+                                  _updateWeightErrorMessage(_weight.toString());
+                                  _hasChanges = true;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   SizedBox(height: 30),
                   ElevatedButton(
@@ -308,8 +453,11 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
+                      disabledBackgroundColor: Colors.grey[400],
                     ),
-                    onPressed: _isLoading || !_hasChanges
+                    onPressed: (_isLoading ||
+                            !_hasChanges ||
+                            _weightErrorMessage != null)
                         ? null
                         : () async {
                             // Show confirmation dialog
@@ -317,19 +465,16 @@ class _MakeCowsViewState extends State<MakeCowsView> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  backgroundColor:
-                                      Colors.grey[900], // Dark theme background
+                                  backgroundColor: Colors.grey[900],
                                   title: Text(
                                     'Confirm',
-                                    style: TextStyle(
-                                        color: Colors.white), // White text
+                                    style: TextStyle(color: Colors.white),
                                   ),
                                   content: Text(
                                     widget.initialCowData == null
                                         ? 'Are you sure you want to add this cow?'
                                         : 'Are you sure you want to update this cow?',
-                                    style: TextStyle(
-                                        color: Colors.white70), // Lighter text
+                                    style: TextStyle(color: Colors.white70),
                                   ),
                                   actions: <Widget>[
                                     TextButton(

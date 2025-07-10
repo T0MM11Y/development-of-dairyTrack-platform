@@ -7,8 +7,7 @@ from werkzeug.security import check_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
-# Konfigurasi waktu kedaluwarsa token (dalam detik)
-TOKEN_EXPIRATION = 3600  # 1 jam
+TOKEN_EXPIRATION = 7200 # 2 jam
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -24,13 +23,16 @@ def login():
     if not user:
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
-  
     if check_password_hash(user.password, password):
         # Generate token dan update user
         token = str(uuid.uuid4())
+        token_created_at = datetime.utcnow()
         user.token = token
-        user.token_created_at = datetime.utcnow()
+        user.token_created_at = token_created_at
         db.session.commit()
+
+        # Hitung expired dari token_created_at + TOKEN_EXPIRATION
+        token_expires_at = token_created_at + timedelta(seconds=TOKEN_EXPIRATION)
 
         return jsonify({
             "success": True,
@@ -42,7 +44,9 @@ def login():
             "role": user.role.name,
             "role_id": user.role.id,
             "email": user.email,
-            "expires_in": TOKEN_EXPIRATION
+            "expires_in": TOKEN_EXPIRATION,
+            "token_created_at": token_created_at.isoformat() + "Z",
+            "token_expires_at": token_expires_at.isoformat() + "Z"
         }), 200
 
     return jsonify({"success": False, "message": "Invalid credentials"}), 401

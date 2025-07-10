@@ -150,10 +150,10 @@ const CreateUser = () => {
   const validateBirthDate = (birth) => {
     const birthDate = new Date(birth);
     const today = new Date();
-    const hundredYearsAgo = new Date();
+    const sixtyYearsAgo = new Date();
     const fifteenYearsAgo = new Date();
 
-    hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+    sixtyYearsAgo.setFullYear(today.getFullYear() - 60);
     fifteenYearsAgo.setFullYear(today.getFullYear() - 15);
 
     today.setHours(0, 0, 0, 0);
@@ -167,10 +167,10 @@ const CreateUser = () => {
       };
     if (birthDate > fifteenYearsAgo)
       return { isValid: false, message: "User must be at least 15 years old" };
-    if (birthDate < hundredYearsAgo)
+    if (birthDate < sixtyYearsAgo)
       return {
         isValid: false,
-        message: "Birthdate cannot be more than 100 years ago",
+        message: "Birthdate cannot be more than 60 years ago",
       };
     return { isValid: true, message: "" };
   };
@@ -288,7 +288,7 @@ const CreateUser = () => {
         history.push("/admin/list-users");
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create user");
+        throw new Error(errorData.error);
       }
     } catch (error) {
       Swal.fire("Error", error.message, "error");
@@ -396,9 +396,14 @@ const CreateUser = () => {
                         : ""
                     }`}
                     placeholderText="Select your birth date"
+                    minDate={
+                      new Date(
+                        new Date().setFullYear(new Date().getFullYear() - 60)
+                      )
+                    }
                     maxDate={
                       new Date(
-                        new Date().setFullYear(new Date().getFullYear() - 10)
+                        new Date().setFullYear(new Date().getFullYear() - 15)
                       )
                     }
                     showYearDropdown
@@ -415,7 +420,7 @@ const CreateUser = () => {
                     </div>
                   )}
                   <div className="form-text text-muted">
-                    Please select a date at least 15 years ago.
+                    Please select a date between 15 and 60 years ago.
                   </div>
                 </div>
                 <div className="col-md-6">

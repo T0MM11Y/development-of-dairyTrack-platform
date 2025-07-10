@@ -9,18 +9,21 @@ import React, {
 import io from "socket.io-client";
 import { API_URL1 } from "../api/apiController";
 
+// Membuat context untuk socket agar bisa digunakan di seluruh aplikasi React
 const SocketContext = createContext();
 
+// Custom hook untuk mengakses context socket
 export const useSocket = () => useContext(SocketContext);
 
+// Provider utama untuk socket dan notifikasi
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [fetchCooldown, setFetchCooldown] = useState(false);
+  const [socket, setSocket] = useState(null); // State untuk menyimpan objek socket
+  const [notifications, setNotifications] = useState([]); // State daftar notifikasi
+  const [unreadCount, setUnreadCount] = useState(0); // State jumlah notifikasi belum dibaca
+  const [loading, setLoading] = useState(false); // State loading fetch notifikasi
+  const [fetchCooldown, setFetchCooldown] = useState(false); // State cooldown fetch notifikasi
 
-  // Memoize user data to prevent unnecessary re-renders
+  // Mengambil data user dari localStorage dan memoize agar tidak re-render
   const user = useMemo(() => {
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
@@ -39,7 +42,7 @@ export const SocketProvider = ({ children }) => {
 
   const userId = user?.user_id;
 
-  // Fetch notifications function with cooldown - REMOVE fetchCooldown from dependencies
+  // Fungsi untuk fetch notifikasi dari API, dengan cooldown agar tidak spam request
   const fetchNotifications = useCallback(
     async (userIdParam = null) => {
       const targetUserId = userIdParam || userId;
@@ -59,6 +62,7 @@ export const SocketProvider = ({ children }) => {
           const data = await response.json();
           console.log("Fetched notifications:", data);
           setNotifications(data.notifications || []);
+          // Hitung jumlah notifikasi belum dibaca
           const unread = (data.notifications || []).filter(
             (n) => !n.is_read
           ).length;
@@ -70,14 +74,14 @@ export const SocketProvider = ({ children }) => {
         console.error("Error fetching notifications:", error);
       } finally {
         setLoading(false);
-        // Release cooldown after 2 seconds
+        // Cooldown 2 detik sebelum bisa fetch lagi
         setTimeout(() => setFetchCooldown(false), 2000);
       }
     },
-    [userId] // Remove fetchCooldown from dependencies
+    [userId] // fetchCooldown tidak perlu di-dependencies
   );
 
-  // Mark notification as read
+  // Fungsi untuk menandai notifikasi sudah dibaca
   const markAsRead = useCallback(
     async (notificationId) => {
       if (!userId) return;
@@ -109,7 +113,7 @@ export const SocketProvider = ({ children }) => {
     [userId]
   );
 
-  // Clear all notifications
+  // Fungsi untuk menghapus semua notifikasi
   const clearAllNotifications = useCallback(async () => {
     if (!userId) return;
 
@@ -131,7 +135,7 @@ export const SocketProvider = ({ children }) => {
     }
   }, [userId]);
 
-  // MAIN FIX: Remove fetchNotifications from useEffect dependencies
+  // useEffect untuk menginisialisasi koneksi socket saat userId tersedia
   useEffect(() => {
     if (!userId) {
       console.log("No user ID found, skipping socket connection");
@@ -141,6 +145,7 @@ export const SocketProvider = ({ children }) => {
     console.log("Connecting to socket server with user ID:", userId);
     console.log("User role:", user?.role_id);
 
+    // Membuka koneksi ke server socket.io backend
     const newSocket = io(API_URL1, {
       transports: ["websocket", "polling"],
       timeout: 20000,
@@ -153,6 +158,7 @@ export const SocketProvider = ({ children }) => {
 
     setSocket(newSocket);
 
+    // Saat terkoneksi, register user ke backend
     newSocket.on("connect", () => {
       console.log("Connected to notification server");
       console.log("Registering user with ID:", userId);
@@ -163,14 +169,17 @@ export const SocketProvider = ({ children }) => {
       });
     });
 
+    // Event jika disconnect dari server
     newSocket.on("disconnect", (reason) => {
       console.log("Disconnected from notification server:", reason);
     });
 
+    // Event jika terjadi error koneksi
     newSocket.on("connect_error", (error) => {
       console.error("Socket connection error:", error);
     });
 
+    // Jika reconnect, register ulang user
     newSocket.on("reconnect", () => {
       console.log("Reconnected to notification server");
       newSocket.emit("register", {
@@ -180,6 +189,7 @@ export const SocketProvider = ({ children }) => {
       });
     });
 
+    // Event menerima notifikasi baru dari backend
     newSocket.on("new_notification", (notification) => {
       console.log("New notification received:", notification);
       console.log(
@@ -189,8 +199,10 @@ export const SocketProvider = ({ children }) => {
         userId
       );
 
+      // Hanya tambahkan jika notifikasi untuk user ini
       if (String(notification.user_id) === String(userId)) {
         setNotifications((prev) => {
+          // Cegah duplikasi notifikasi
           const exists = prev.find((n) => n.id === notification.id);
           if (exists) {
             return prev;
@@ -199,6 +211,7 @@ export const SocketProvider = ({ children }) => {
         });
         setUnreadCount((count) => count + 1);
 
+        // Tampilkan browser notification jika diizinkan
         if (Notification.permission === "granted") {
           new Notification("New DairyTrack Notification", {
             body: notification.message,
@@ -208,16 +221,17 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
-    // Load initial notifications - call directly here
+    // Fetch notifikasi awal saat socket connect
     fetchNotifications(userId);
 
+    // Cleanup: disconnect socket saat komponen unmount
     return () => {
       console.log("Cleaning up socket connection");
       newSocket.disconnect();
     };
-  }, [userId, user?.role_id]); // Remove fetchNotifications from dependencies
+  }, [userId, user?.role_id]); // fetchNotifications tidak perlu di-dependencies
 
-  // Memoize context value to prevent unnecessary re-renders
+  // Memoize context value agar tidak re-render berlebihan
   const contextValue = useMemo(
     () => ({
       socket,
@@ -240,6 +254,7 @@ export const SocketProvider = ({ children }) => {
     ]
   );
 
+  // Provider context agar bisa digunakan di seluruh aplikasi
   return (
     <SocketContext.Provider value={contextValue}>
       {children}

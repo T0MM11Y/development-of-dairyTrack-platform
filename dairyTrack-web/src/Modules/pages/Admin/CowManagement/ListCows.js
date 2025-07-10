@@ -73,7 +73,7 @@ const Cows = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [cowsPerPage] = useState(8);
+  const [cowsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
