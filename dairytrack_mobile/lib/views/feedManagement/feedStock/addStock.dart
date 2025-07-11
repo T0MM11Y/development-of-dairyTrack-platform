@@ -29,6 +29,7 @@ class _FeedStockAddState extends State<FeedStockAdd> {
   double _stock = 0.0;
   bool _isSubmitting = false;
   bool _showFeedDropdown = false;
+  String _searchFeedQuery = ''; // Variabel untuk pencarian pakan
   final int _userId = 13; // TODO: Replace with dynamic user ID from SharedPreferences
 
   @override
@@ -271,7 +272,8 @@ class _FeedStockAddState extends State<FeedStockAdd> {
                                           child: Text(
                                             _feedId == null
                                                 ? 'Pilih Pakan'
-                                                : widget.feedList.firstWhere((feed) => feed.id == _feedId).name + ' (${widget.feedList.firstWhere((feed) => feed.id == _feedId).unit})',
+                                                : widget.feedList.firstWhere((feed) => feed.id == _feedId).name +
+                                                    ' (${widget.feedList.firstWhere((feed) => feed.id == _feedId).unit})',
                                             style: TextStyle(
                                               fontSize: 16,
                                               color: _feedId == null ? Colors.grey[600] : Colors.black,
@@ -291,24 +293,60 @@ class _FeedStockAddState extends State<FeedStockAdd> {
                                     elevation: 8,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     child: Container(
-                                      constraints: const BoxConstraints(maxHeight: 200),
+                                      constraints: const BoxConstraints(maxHeight: 300),
                                       margin: const EdgeInsets.only(top: 8),
-                                      child: ListView(
-                                        shrinkWrap: true,
-                                        children: widget.feedList.map((feed) {
-                                          return ListTile(
-                                            title: Text(
-                                              '${feed.name} (${feed.unit})',
-                                              style: const TextStyle(fontSize: 14),
+                                      child: Column(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: TextField(
+                                              decoration: InputDecoration(
+                                                hintText: 'Cari nama pakan...',
+                                                prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                                ),
+                                                contentPadding: const EdgeInsets.symmetric(
+                                                    vertical: 10, horizontal: 12),
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  _searchFeedQuery = value.toLowerCase();
+                                                });
+                                              },
                                             ),
-                                            onTap: () {
-                                              setState(() {
-                                                _feedId = feed.id;
-                                                _showFeedDropdown = false;
-                                              });
-                                            },
-                                          );
-                                        }).toList(),
+                                          ),
+                                          Expanded(
+                                            child: ListView(
+                                              shrinkWrap: true,
+                                              children: widget.feedList
+                                                  .asMap()
+                                                  .entries
+                                                  .where((entry) {
+                                                    final feed = entry.value;
+                                                    return feed.name.toLowerCase().contains(_searchFeedQuery);
+                                                  })
+                                                  .map((entry) {
+                                                    final feed = entry.value;
+                                                    return ListTile(
+                                                      title: Text(
+                                                        '${feed.name} (${feed.unit})',
+                                                        style: const TextStyle(fontSize: 14),
+                                                      ),
+                                                      onTap: () {
+                                                        setState(() {
+                                                          _feedId = feed.id;
+                                                          _showFeedDropdown = false;
+                                                          _searchFeedQuery = '';
+                                                        });
+                                                      },
+                                                    );
+                                                  })
+                                                  .toList(),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

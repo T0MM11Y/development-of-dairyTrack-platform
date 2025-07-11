@@ -34,6 +34,7 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
   Map<String, bool> _sessions = {'Pagi': false, 'Siang': false, 'Sore': false};
   bool _isSubmitting = false;
   bool _showCowDropdown = false;
+  String _searchQuery = ''; // Variabel untuk pencarian
 
   @override
   void initState() {
@@ -45,8 +46,12 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
         final parsedDate = DateTime.parse(widget.defaultDate);
         setState(() {
           _date = DateFormat('yyyy-MM-dd').format(parsedDate);
-          if (widget.cows.isNotEmpty) {
-            _cowId = widget.cows.first.id;
+          // Pilih sapi aktif pertama (jika ada)
+          final activeCows = widget.cows.where((cow) => cow.isActive).toList();
+          if (activeCows.isNotEmpty) {
+            _cowId = activeCows.first.id;
+          } else {
+            widget.onError('Tidak ada sapi aktif yang tersedia.');
           }
         });
         print('Initialized date: $_date');
@@ -210,6 +215,9 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter sapi aktif
+    final activeCows = widget.cows.where((cow) => cow.isActive).toList();
+
     return Material(
       color: Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -260,11 +268,13 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
                       child: Column(
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showCowDropdown = !_showCowDropdown;
-                              });
-                            },
+                            onTap: activeCows.isEmpty
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _showCowDropdown = !_showCowDropdown;
+                                    });
+                                  },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                               decoration: BoxDecoration(
@@ -278,8 +288,8 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
                                   Expanded(
                                     child: Text(
                                       _cowId == null
-                                          ? 'Pilih Sapi'
-                                          : widget.cows.firstWhere((cow) => cow.id == _cowId).name,
+                                          ? (activeCows.isEmpty ? 'Tidak ada sapi aktif' : 'Pilih Sapi')
+                                          : activeCows.firstWhere((cow) => cow.id == _cowId).name,
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _cowId == null ? Colors.grey[600] : Colors.black,
@@ -288,35 +298,71 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
                                   ),
                                   Icon(
                                     _showCowDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                    color: Colors.teal,
+                                    color: activeCows.isEmpty ? Colors.grey : Colors.teal,
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          if (_showCowDropdown)
+                          if (_showCowDropdown && activeCows.isNotEmpty)
                             Card(
                               elevation: 4,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: Container(
-                                constraints: const BoxConstraints(maxHeight: 150),
+                                constraints: const BoxConstraints(maxHeight: 300),
                                 width: double.infinity,
-                                child: ListView(
-                                  shrinkWrap: true,
-                                  children: widget.cows.map((cow) {
-                                    return ListTile(
-                                      title: Text(
-                                        cow.name,
-                                        style: const TextStyle(fontSize: 12),
+                                child: Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextField(
+                                        decoration: InputDecoration(
+                                          hintText: 'Cari nama sapi...',
+                                          prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: BorderSide(color: Colors.grey[300]!),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 12),
+                                        ),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value.toLowerCase();
+                                          });
+                                        },
                                       ),
-                                      onTap: () {
-                                        setState(() {
-                                          _cowId = cow.id;
-                                          _showCowDropdown = false;
-                                        });
-                                      },
-                                    );
-                                  }).toList(),
+                                    ),
+                                    Expanded(
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        children: activeCows
+                                            .asMap()
+                                            .entries
+                                            .where((entry) {
+                                              final cow = entry.value;
+                                              return cow.name.toLowerCase().contains(_searchQuery);
+                                            })
+                                            .map((entry) {
+                                              final cow = entry.value;
+                                              return ListTile(
+                                                title: Text(
+                                                  cow.name,
+                                                  style: const TextStyle(fontSize: 12),
+                                                ),
+                                                onTap: () {
+                                                  setState(() {
+                                                    _cowId = cow.id;
+                                                    _showCowDropdown = false;
+                                                    _searchQuery = '';
+                                                  });
+                                                },
+                                              );
+                                            })
+                                            .toList(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -412,7 +458,7 @@ class _AddDailyFeedFormState extends State<AddDailyFeedForm> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _isSubmitting ? null : _submit,
+                      onPressed: _isSubmitting || activeCows.isEmpty ? null : _submit,
                       child: _isSubmitting
                           ? const CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),

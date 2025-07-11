@@ -43,6 +43,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
   String? _userRole;
   bool _showDailyFeedDropdown = false;
   bool _showFeedDropdown = false;
+  String _searchQuery = ''; // Deklarasi variabel pencarian
 
   @override
   void initState() {
@@ -72,8 +73,10 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
       print('Stock Response: $stockResponse');
 
       if (feedResponse['success'] && stockResponse['success']) {
+        final activeCows = widget.cows.where((cow) => cow.isActive).toList();
         final feeds = (feedResponse['data'] as List<dynamic>)
             .map((json) => DailyFeed.fromJson(json as Map<String, dynamic>))
+            .where((feed) => activeCows.any((cow) => cow.id == feed.cowId))
             .toList();
         final feedStocks = (stockResponse['data'] as List<dynamic>)
             .map((json) {
@@ -100,6 +103,11 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
           _dailyFeeds = feeds;
           _feedStocks = feedStocks;
           _isLoading = false;
+          if (activeCows.isEmpty) {
+            _errorMessage = 'Tidak ada sapi aktif yang tersedia.';
+          } else if (feeds.isEmpty) {
+            _errorMessage = 'Tidak ada sesi pakan untuk sapi aktif pada tanggal ini.';
+          }
         });
       } else {
         setState(() {
@@ -120,7 +128,6 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
     }
   }
 
-  // Helper function to format stock numbers properly
   String _formatStock(double stock) {
     if (stock == stock.toInt()) {
       return stock.toInt().toString();
@@ -178,6 +185,13 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
   }
 
   Future<void> _showConfirmationDialog() async {
+    if (_selectedDailyFeedId == null) {
+      setState(() {
+        _errorMessage = 'Harap pilih sesi pakan terlebih dahulu.';
+      });
+      return;
+    }
+
     final selectedDailyFeed = _dailyFeeds.firstWhere(
       (feed) => feed.id.toString() == _selectedDailyFeedId,
       orElse: () => DailyFeed(
@@ -196,17 +210,35 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         updatedAt: '',
       ),
     );
-    final cow = widget.cows.firstWhere(
+
+    final activeCows = widget.cows.where((cow) => cow.isActive).toList();
+    if (selectedDailyFeed.id == 0 || !activeCows.any((cow) => cow.id == selectedDailyFeed.cowId)) {
+      setState(() {
+        _errorMessage = 'Sesi pakan tidak valid atau sapi tidak aktif.';
+      });
+      return;
+    }
+
+    final cow = activeCows.firstWhere(
       (c) => c.id == selectedDailyFeed.cowId,
       orElse: () => Cow(
-          id: 0,
-          name: 'Sapi Tidak Diketahui',
-          birth: '',
-          breed: '',
-          lactationPhase: '',
-          weight: 0.0,
-          gender: ''),
+        id: 0,
+        name: 'Sapi Tidak Diketahui',
+        birth: '',
+        breed: '',
+        lactationPhase: '',
+        weight: 0.0,
+        gender: '',
+        isActive: true,
+      ),
     );
+
+    if (cow.id == 0) {
+      setState(() {
+        _errorMessage = 'Sapi tidak ditemukan atau tidak aktif.';
+      });
+      return;
+    }
 
     final feedItemsText = _selectedFeeds
         .map((item) => '${item['name']} - ${item['quantity']} ${item['unit']}')
@@ -224,8 +256,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
             Text('Tanggal: ${selectedDailyFeed.date}'),
             Text('Sesi: ${selectedDailyFeed.session}'),
             const SizedBox(height: 10),
-            const Text('Daftar Pakan:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Daftar Pakan:', style: TextStyle(fontWeight: FontWeight.bold)),
             Text(feedItemsText),
           ],
         ),
@@ -274,8 +305,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         Navigator.pop(context, true);
       } else {
         setState(() {
-          _errorMessage =
-              response['message'] ?? 'Gagal menambahkan item pakan.';
+          _errorMessage = response['message'] ?? 'Gagal menambahkan item pakan.';
           _isLoading = false;
         });
       }
@@ -291,7 +321,8 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_userRole != 'farmer' || widget.cows.isEmpty) {
+    final activeCows = widget.cows.where((cow) => cow.isActive).toList();
+    if (_userRole != 'farmer' || activeCows.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Tambah Item Pakan',
@@ -300,7 +331,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
         ),
         body: const Center(
           child: Text(
-            'Hanya pengguna dengan role "farmer" yang dapat menambah item pakan, dan setidaknya ada satu sapi.',
+            'Hanya pengguna dengan role "farmer" yang dapat menambah item pakan, dan setidaknya ada satu sapi aktif.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
@@ -339,20 +370,20 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                   // Dropdown Sesi Pakan
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showDailyFeedDropdown =
-                                    !_showDailyFeedDropdown;
-                                _showFeedDropdown = false;
-                              });
-                            },
+                            onTap: _dailyFeeds.isEmpty
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _showDailyFeedDropdown = !_showDailyFeedDropdown;
+                                      _showFeedDropdown = false;
+                                    });
+                                  },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   vertical: 12, horizontal: 16),
@@ -361,14 +392,15 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       _selectedDailyFeedId == null
-                                          ? 'Pilih Sesi Pakan'
-                                          : '${widget.cows.firstWhere((cow) => cow.id == _dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).cowId, orElse: () => Cow(id: 0, name: 'Sapi #${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).cowId}', birth: '', breed: '', lactationPhase: '', weight: 0.0, gender: '')).name} - ${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).date} (${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).session})',
+                                          ? (_dailyFeeds.isEmpty
+                                              ? 'Tidak ada sesi pakan aktif'
+                                              : 'Pilih Sesi Pakan')
+                                          : '${activeCows.firstWhere((cow) => cow.id == _dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).cowId, orElse: () => Cow(id: 0, name: 'Sapi #${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).cowId}', birth: '', breed: '', lactationPhase: '', weight: 0.0, gender: '', isActive: true)).name} - ${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).date} (${_dailyFeeds.firstWhere((feed) => feed.id.toString() == _selectedDailyFeedId).session})',
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: _selectedDailyFeedId == null
@@ -381,39 +413,88 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                     _showDailyFeedDropdown
                                         ? Icons.keyboard_arrow_up
                                         : Icons.keyboard_arrow_down,
-                                    color: Colors.teal,
+                                    color: _dailyFeeds.isEmpty ? Colors.grey : Colors.teal,
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          if (_showDailyFeedDropdown)
+                          if (_showDailyFeedDropdown && _dailyFeeds.isNotEmpty)
                             Card(
                               elevation: 8,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               child: Container(
-                                constraints:
-                                    const BoxConstraints(maxHeight: 200),
+                                constraints: const BoxConstraints(maxHeight: 300),
                                 margin: const EdgeInsets.only(top: 8),
-                                child: ListView(
-                                  shrinkWrap: true,
-                                  children: _dailyFeeds.map((feed) {
-                                    return ListTile(
-                                      title: Text(
-                                        '${widget.cows.firstWhere((cow) => cow.id == feed.cowId, orElse: () => Cow(id: feed.cowId, name: 'Sapi #${feed.cowId}', birth: '', breed: '', lactationPhase: '', weight: 0.0, gender: '')).name} - ${feed.date} (${feed.session})',
-                                        style: const TextStyle(fontSize: 14),
+                                child: Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextField(
+                                        decoration: InputDecoration(
+                                          hintText: 'Cari sapi, tanggal, atau sesi...',
+                                          prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: BorderSide(color: Colors.grey[300]!),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              vertical: 10, horizontal: 12),
+                                        ),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value.toLowerCase();
+                                          });
+                                        },
                                       ),
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedDailyFeedId =
-                                              feed.id.toString();
-                                          _showDailyFeedDropdown = false;
-                                          _errorMessage = '';
-                                        });
-                                      },
-                                    );
-                                  }).toList(),
+                                    ),
+                                    Expanded(
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        children: _dailyFeeds
+                                            .asMap()
+                                            .entries
+                                            .where((entry) {
+                                              final feed = entry.value;
+                                              final cow = activeCows.firstWhere(
+                                                (cow) => cow.id == feed.cowId,
+                                                orElse: () => Cow(
+                                                  id: feed.cowId,
+                                                  name: 'Sapi #${feed.cowId}',
+                                                  birth: '',
+                                                  breed: '',
+                                                  lactationPhase: '',
+                                                  weight: 0.0,
+                                                  gender: '',
+                                                  isActive: true,
+                                                ),
+                                              );
+                                              final searchText =
+                                                  '${cow.name} ${feed.date} ${feed.session}'
+                                                      .toLowerCase();
+                                              return searchText.contains(_searchQuery);
+                                            })
+                                            .map((entry) {
+                                              final feed = entry.value;
+                                              return ListTile(
+                                                title: Text(
+                                                  '${activeCows.firstWhere((cow) => cow.id == feed.cowId, orElse: () => Cow(id: feed.cowId, name: 'Sapi #${feed.cowId}', birth: '', breed: '', lactationPhase: '', weight: 0.0, gender: '', isActive: true)).name} - ${feed.date} (${feed.session})',
+                                                  style: const TextStyle(fontSize: 14),
+                                                ),
+                                                onTap: () {
+                                                  setState(() {
+                                                    _selectedDailyFeedId = feed.id.toString();
+                                                    _showDailyFeedDropdown = false;
+                                                    _errorMessage = '';
+                                                    _searchQuery = '';
+                                                  });
+                                                },
+                                              );
+                                            })
+                                            .toList(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -425,8 +506,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                   // Dropdown Pakan dan Input Jumlah
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -436,28 +516,30 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                               Expanded(
                                 flex: 2,
                                 child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _showFeedDropdown = !_showFeedDropdown;
-                                      _showDailyFeedDropdown = false;
-                                    });
-                                  },
+                                  onTap: availableFeeds.isEmpty
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _showFeedDropdown = !_showFeedDropdown;
+                                            _showDailyFeedDropdown = false;
+                                          });
+                                        },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),
                                     decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: Colors.grey[300]!),
+                                      border: Border.all(color: Colors.grey[300]!),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             _selectedFeedId == null
-                                                ? 'Pilih Pakan'
+                                                ? (availableFeeds.isEmpty
+                                                    ? 'Tidak ada pakan tersedia'
+                                                    : 'Pilih Pakan')
                                                 : '${availableFeeds.firstWhere((stock) => stock.feedId.toString() == _selectedFeedId).feedName} (Stok: ${_formatStock(availableFeeds.firstWhere((stock) => stock.feedId.toString() == _selectedFeedId).stock)} ${availableFeeds.firstWhere((stock) => stock.feedId.toString() == _selectedFeedId).unit})',
                                             style: TextStyle(
                                               fontSize: 16,
@@ -471,7 +553,9 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                           _showFeedDropdown
                                               ? Icons.keyboard_arrow_up
                                               : Icons.keyboard_arrow_down,
-                                          color: Colors.teal,
+                                          color: availableFeeds.isEmpty
+                                              ? Colors.grey
+                                              : Colors.teal,
                                         ),
                                       ],
                                     ),
@@ -485,29 +569,26 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   decoration: InputDecoration(
                                     labelText: 'Jumlah',
                                     border: const OutlineInputBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(8))),
+                                        borderRadius: BorderRadius.all(Radius.circular(8))),
                                     labelStyle: const TextStyle(fontSize: 16),
                                     suffixText: _selectedFeedId != null
                                         ? _feedStocks
                                             .firstWhere(
-                                                (f) =>
-                                                    f.feedId.toString() ==
-                                                    _selectedFeedId,
-                                                orElse: () => FeedStockModel(
-                                                    id: 0,
-                                                    feedId: 0,
-                                                    feedName: '',
-                                                    stock: 0,
-                                                    unit: 'kg',
-                                                    updatedAt: ''))
+                                              (f) => f.feedId.toString() == _selectedFeedId,
+                                              orElse: () => FeedStockModel(
+                                                  id: 0,
+                                                  feedId: 0,
+                                                  feedName: '',
+                                                  stock: 0,
+                                                  unit: 'kg',
+                                                  updatedAt: ''),
+                                            )
                                             .unit
                                         : 'kg',
                                     suffixStyle: const TextStyle(fontSize: 16),
                                   ),
                                   keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
+                                      const TextInputType.numberWithOptions(decimal: true),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -517,21 +598,19 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.add,
-                                      color: Colors.white),
+                                  icon: const Icon(Icons.add, color: Colors.white),
                                   onPressed: _addFeed,
                                 ),
                               ),
                             ],
                           ),
-                          if (_showFeedDropdown)
+                          if (_showFeedDropdown && availableFeeds.isNotEmpty)
                             Card(
                               elevation: 8,
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               child: Container(
-                                constraints:
-                                    const BoxConstraints(maxHeight: 240),
+                                constraints: const BoxConstraints(maxHeight: 240),
                                 margin: const EdgeInsets.only(top: 8),
                                 child: ListView(
                                   shrinkWrap: true,
@@ -540,19 +619,16 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                       title: Text(
                                         stock.feedName,
                                         style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
+                                            fontSize: 14, fontWeight: FontWeight.w500),
                                       ),
                                       subtitle: Text(
                                         'Stok: ${_formatStock(stock.stock)} ${stock.unit}',
                                         style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600]),
+                                            fontSize: 12, color: Colors.grey[600]),
                                       ),
                                       onTap: () {
                                         setState(() {
-                                          _selectedFeedId =
-                                              stock.feedId.toString();
+                                          _selectedFeedId = stock.feedId.toString();
                                           _showFeedDropdown = false;
                                           _errorMessage = '';
                                         });
@@ -571,8 +647,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                   if (_selectedFeeds.isNotEmpty) ...[
                     Card(
                       elevation: 4,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Column(
                         children: [
                           Container(
@@ -597,8 +672,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                           Container(
                             constraints: const BoxConstraints(maxHeight: 200),
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                               itemCount: _selectedFeeds.length,
                               itemBuilder: (context, index) {
                                 final item = _selectedFeeds[index];
@@ -608,15 +682,13 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                   decoration: BoxDecoration(
                                     color: Colors.grey[50],
                                     borderRadius: BorderRadius.circular(8),
-                                    border:
-                                        Border.all(color: Colors.grey[200]!),
+                                    border: Border.all(color: Colors.grey[200]!),
                                   ),
                                   child: Row(
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               item['name'],
@@ -640,8 +712,7 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline,
                                             color: Colors.red, size: 20),
-                                        onPressed: () =>
-                                            _removeFeed(item['feedId']),
+                                        onPressed: () => _removeFeed(item['feedId']),
                                         constraints: const BoxConstraints(
                                           minWidth: 32,
                                           minHeight: 32,
@@ -699,24 +770,22 @@ class _AddFeedItemPageState extends State<AddFeedItemPage> {
                   ],
                   // Tombol Simpan
                   ElevatedButton(
-                    onPressed:
-                        _selectedFeeds.isEmpty ? null : _showConfirmationDialog,
+                    onPressed: _selectedFeeds.isEmpty || _dailyFeeds.isEmpty
+                        ? null
+                        : _showConfirmationDialog,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       disabledBackgroundColor: Colors.teal[200],
                       elevation: 2,
                     ),
                     child: Text(
-                      _selectedFeeds.isEmpty
-                          ? 'Pilih Pakan Terlebih Dahulu'
+                      _selectedFeeds.isEmpty || _dailyFeeds.isEmpty
+                          ? 'Pilih Pakan dan Sesi Terlebih Dahulu'
                           : 'Simpan (${_selectedFeeds.length} item)',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500),
+                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],

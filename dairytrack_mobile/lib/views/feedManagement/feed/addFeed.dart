@@ -40,6 +40,8 @@ class _AddFeedFormState extends State<AddFeedForm> {
   bool _isSubmitting = false;
   bool _showTypeDropdown = false;
   List<bool> _showNutrisiDropdowns = [];
+  String _searchTypeQuery = ''; // Variabel untuk pencarian jenis pakan
+  List<String> _searchNutrisiQueries = []; // Variabel untuk pencarian nutrisi per baris
   final TextEditingController _priceController = TextEditingController();
 
   @override
@@ -159,6 +161,7 @@ class _AddFeedFormState extends State<AddFeedForm> {
       _selectedNutrisiIds.add(null);
       _amountControllers.add(TextEditingController(text: '0'));
       _showNutrisiDropdowns.add(false);
+      _searchNutrisiQueries.add(''); // Tambahkan query pencarian kosong untuk baris baru
     });
   }
 
@@ -176,6 +179,7 @@ class _AddFeedFormState extends State<AddFeedForm> {
       _amountControllers[index].dispose();
       _amountControllers.removeAt(index);
       _showNutrisiDropdowns.removeAt(index);
+      _searchNutrisiQueries.removeAt(index); // Hapus query pencarian untuk baris yang dihapus
       print('Removed Nutrient at index $index, Selected Nutrisi: $selectedNutrisi');
     });
   }
@@ -238,11 +242,13 @@ class _AddFeedFormState extends State<AddFeedForm> {
                     child: Column(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showTypeDropdown = !_showTypeDropdown;
-                            });
-                          },
+                          onTap: widget.feedTypes.isEmpty
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _showTypeDropdown = !_showTypeDropdown;
+                                  });
+                                },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                             decoration: BoxDecoration(
@@ -256,7 +262,7 @@ class _AddFeedFormState extends State<AddFeedForm> {
                                 Expanded(
                                   child: Text(
                                     typeId == null
-                                        ? 'Pilih Jenis Pakan'
+                                        ? (widget.feedTypes.isEmpty ? 'Tidak ada jenis pakan' : 'Pilih Jenis Pakan')
                                         : widget.feedTypes.firstWhere((type) => type.id == typeId).name,
                                     style: TextStyle(
                                       fontSize: 14,
@@ -266,35 +272,71 @@ class _AddFeedFormState extends State<AddFeedForm> {
                                 ),
                                 Icon(
                                   _showTypeDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                  color: Colors.teal,
+                                  color: widget.feedTypes.isEmpty ? Colors.grey : Colors.teal,
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        if (_showTypeDropdown)
+                        if (_showTypeDropdown && widget.feedTypes.isNotEmpty)
                           Card(
                             elevation: 4,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             child: Container(
-                              constraints: const BoxConstraints(maxHeight: 150),
+                              constraints: const BoxConstraints(maxHeight: 300),
                               width: double.infinity,
-                              child: ListView(
-                                shrinkWrap: true,
-                                children: widget.feedTypes.map((type) {
-                                  return ListTile(
-                                    title: Text(
-                                      type.name,
-                                      style: const TextStyle(fontSize: 12),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        hintText: 'Cari jenis pakan...',
+                                        prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.grey[300]!),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                            vertical: 10, horizontal: 12),
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _searchTypeQuery = value.toLowerCase();
+                                        });
+                                      },
                                     ),
-                                    onTap: () {
-                                      setState(() {
-                                        typeId = type.id;
-                                        _showTypeDropdown = false;
-                                      });
-                                    },
-                                  );
-                                }).toList(),
+                                  ),
+                                  Expanded(
+                                    child: ListView(
+                                      shrinkWrap: true,
+                                      children: widget.feedTypes
+                                          .asMap()
+                                          .entries
+                                          .where((entry) {
+                                            final type = entry.value;
+                                            return type.name.toLowerCase().contains(_searchTypeQuery);
+                                          })
+                                          .map((entry) {
+                                            final type = entry.value;
+                                            return ListTile(
+                                              title: Text(
+                                                type.name,
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                              onTap: () {
+                                                setState(() {
+                                                  typeId = type.id;
+                                                  _showTypeDropdown = false;
+                                                  _searchTypeQuery = '';
+                                                });
+                                              },
+                                            );
+                                          })
+                                          .toList(),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -567,37 +609,66 @@ class _AddFeedFormState extends State<AddFeedForm> {
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Container(
-                    constraints: const BoxConstraints(maxHeight: 150),
+                    constraints: const BoxConstraints(maxHeight: 300),
                     width: double.infinity,
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: widget.nutrisiList
-                          .asMap()
-                          .entries
-                          .where((entry) =>
-                              !_selectedNutrisiIds.contains(entry.value.id) ||
-                              _selectedNutrisiIds[index] == entry.value.id)
-                          .map((entry) {
-                            final nutrisiItem = entry.value;
-                            return ListTile(
-                              title: Text(
-                                nutrisiItem.name,
-                                style: const TextStyle(fontSize: 12),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Cari nutrisi...',
+                              prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
                               ),
-                              onTap: () {
-                                setState(() {
-                                  selectedNutrisi[index] = {
-                                    'id': nutrisiItem.id,
-                                    'name': nutrisiItem.name,
-                                    'unit': nutrisiItem.unit,
-                                    'amount': double.tryParse(_amountControllers[index].text) ?? 0.0,
-                                  };
-                                  _selectedNutrisiIds[index] = nutrisiItem.id;
-                                  _showNutrisiDropdowns[index] = false;
-                                });
-                              },
-                            );
-                          }).toList(),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchNutrisiQueries[index] = value.toLowerCase();
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: widget.nutrisiList
+                                .asMap()
+                                .entries
+                                .where((entry) {
+                                  final nutrisiItem = entry.value;
+                                  return (!_selectedNutrisiIds.contains(nutrisiItem.id) ||
+                                          _selectedNutrisiIds[index] == nutrisiItem.id) &&
+                                      nutrisiItem.name.toLowerCase().contains(_searchNutrisiQueries[index]);
+                                })
+                                .map((entry) {
+                                  final nutrisiItem = entry.value;
+                                  return ListTile(
+                                    title: Text(
+                                      nutrisiItem.name,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        selectedNutrisi[index] = {
+                                          'id': nutrisiItem.id,
+                                          'name': nutrisiItem.name,
+                                          'unit': nutrisiItem.unit,
+                                          'amount': double.tryParse(_amountControllers[index].text) ?? 0.0,
+                                        };
+                                        _selectedNutrisiIds[index] = nutrisiItem.id;
+                                        _showNutrisiDropdowns[index] = false;
+                                        _searchNutrisiQueries[index] = '';
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
