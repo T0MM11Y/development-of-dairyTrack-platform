@@ -20,6 +20,8 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
       DailyFeedItemManagementController();
   List<Map<String, dynamic>> _feedUsageData = [];
   List<Map<String, dynamic>> _dailyData = [];
+  List<String> _feedNames = [];
+  Map<String, Color> _feedColors = {};
   bool _isLoading = true;
   String _errorMessage = '';
   int? _userId;
@@ -33,23 +35,19 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
   double _maxZoom = 3.0;
   ScrollController _horizontalScrollController = ScrollController();
 
-  List<String> _feedNames = [
-    'Ampas Tahu',
-    'Dedak',
-    'Jagung Giling',
-    'Kulit Kacang',
-    'Rumput Gajah',
-    'Vitamin B Complex',
+  // Predefined color palette for dynamic feed colors
+  final List<Color> _colorPalette = [
+    const Color(0xFF4FC3F7),
+    const Color(0xFF66BB6A),
+    const Color(0xFFEF5350),
+    const Color(0xFFFF9800),
+    const Color(0xFFAB47BC),
+    const Color(0xFF26A69A),
+    const Color(0xFFFFCA28),
+    const Color(0xFFEC407A),
+    const Color(0xFF5C6BC0),
+    const Color(0xFF8D6E63),
   ];
-
-  Map<String, Color> _feedColors = {
-    'Ampas Tahu': const Color(0xFF4FC3F7),
-    'Dedak': const Color(0xFF66BB6A),
-    'Jagung Giling': const Color(0xFFEF5350),
-    'Kulit Kacang': const Color(0xFFFF9800),
-    'Rumput Gajah': const Color(0xFFAB47BC),
-    'Vitamin B Complex': const Color(0xFF26A69A),
-  };
 
   @override
   void initState() {
@@ -61,6 +59,28 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
   void dispose() {
     _horizontalScrollController.dispose();
     super.dispose();
+  }
+
+  String _formatFeedName(String name) {
+    return name
+        .split(' ')
+        .map((word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : '')
+        .join(' ');
+  }
+
+  void _assignFeedColors() {
+    _feedColors = {};
+    for (var i = 0; i < _feedNames.length; i++) {
+      if (i < _colorPalette.length) {
+        _feedColors[_feedNames[i]] = _colorPalette[i];
+      } else {
+        final hue = (i * 137.5) % 360; // Golden angle for distinct hues
+        _feedColors[_feedNames[i]] =
+            HSVColor.fromAHSV(1.0, hue, 0.7, 0.9).toColor();
+      }
+    }
   }
 
   void _applyPeriodFilter(FilterPeriod period) {
@@ -91,7 +111,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
           _aggregationInterval = AggregationInterval.monthly;
           break;
         case FilterPeriod.custom:
-          // Keep current dates, let user choose aggregation
           break;
       }
     });
@@ -146,6 +165,22 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
           };
         }).toList();
 
+        // Extract unique feed names from the API response
+        final Set<String> feedNames = {};
+        for (var item in feedUsage) {
+          final feeds = item['feeds'] as List<dynamic>?;
+          if (feeds != null) {
+            for (var feed in feeds) {
+              final feedName = feed['feed_name'] as String?;
+              if (feedName != null && feedName.isNotEmpty) {
+                feedNames.add(_formatFeedName(feedName));
+              }
+            }
+          }
+        }
+        _feedNames = feedNames.toList()..sort();
+        _assignFeedColors();
+
         final dailyData = _processDailyData(feedUsage);
 
         setState(() {
@@ -181,9 +216,7 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
     while (currentDate.isBefore(_selectedEndDate) ||
         currentDate.isAtSameMomentAs(_selectedEndDate)) {
       final dateStr = dateFormat.format(currentDate);
-      if (!groupedFeeds.containsKey(dateStr)) {
-        groupedFeeds[dateStr] = [];
-      }
+      groupedFeeds[dateStr] = [];
       currentDate = currentDate.add(const Duration(days: 1));
     }
 
@@ -196,31 +229,32 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
       }
     }
 
-    // Aggregate data based on selected interval
     return _aggregateData(groupedFeeds);
   }
 
   List<Map<String, dynamic>> _aggregateData(
       Map<String, List<Map<String, dynamic>>> dailyFeeds) {
-    final List<Map<String, dynamic>> result = [];
     final dateFormat = DateFormat('yyyy-MM-dd');
+    final result = <Map<String, dynamic>>[];
 
     switch (_aggregationInterval) {
       case AggregationInterval.daily:
-        for (var entry in dailyFeeds.entries) {
-          final dateStr = entry.key;
+        dailyFeeds.forEach((dateStr, feeds) {
           final date = dateFormat.parse(dateStr);
           final dayName = DateFormat('EEEE', 'id_ID').format(date);
           final dateDisplay = DateFormat('dd MMM').format(date);
 
-          final Map<String, double> feedTotals = {};
-          for (var feedName in _feedNames) {
-            feedTotals[feedName] = 0.0;
-          }
-          for (var feed in entry.value) {
-            final feedName = feed['feed_name'] as String;
-            final quantity = double.parse(feed['quantity_kg'] as String);
-            feedTotals[feedName] = (feedTotals[feedName] ?? 0) + quantity;
+          final Map<String, double> feedTotals = {
+            for (var feedName in _feedNames) feedName: 0.0
+          };
+
+          for (var feed in feeds) {
+            final feedName = _formatFeedName(feed['feed_name'] as String);
+            if (_feedNames.contains(feedName)) {
+              final quantity =
+                  double.tryParse(feed['quantity_kg'].toString()) ?? 0.0;
+              feedTotals[feedName] = (feedTotals[feedName] ?? 0) + quantity;
+            }
           }
 
           result.add({
@@ -229,113 +263,119 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
             'dateDisplay': dateDisplay,
             'feeds': feedTotals,
           });
-        }
+        });
         break;
 
       case AggregationInterval.weekly:
         final Map<String, Map<String, double>> weeklyData = {};
-        for (var entry in dailyFeeds.entries) {
-          final date = dateFormat.parse(entry.key);
+        dailyFeeds.forEach((dateStr, feeds) {
+          final date = dateFormat.parse(dateStr);
           final weekStart = date.subtract(Duration(days: date.weekday - 1));
           final weekKey = dateFormat.format(weekStart);
 
           if (!weeklyData.containsKey(weekKey)) {
-            weeklyData[weekKey] = {};
-            for (var feedName in _feedNames) {
-              weeklyData[weekKey]![feedName] = 0.0;
+            weeklyData[weekKey] = {
+              for (var feedName in _feedNames) feedName: 0.0
+            };
+          }
+
+          for (var feed in feeds) {
+            final feedName = _formatFeedName(feed['feed_name'] as String);
+            if (_feedNames.contains(feedName)) {
+              final quantity =
+                  double.tryParse(feed['quantity_kg'].toString()) ?? 0.0;
+              weeklyData[weekKey]![feedName] =
+                  (weeklyData[weekKey]![feedName] ?? 0) + quantity;
             }
           }
+        });
 
-          for (var feed in entry.value) {
-            final feedName = feed['feed_name'] as String;
-            final quantity = double.parse(feed['quantity_kg'] as String);
-            weeklyData[weekKey]![feedName] =
-                (weeklyData[weekKey]![feedName] ?? 0) + quantity;
-          }
-        }
-
-        for (var entry in weeklyData.entries) {
-          final weekStart = dateFormat.parse(entry.key);
+        weeklyData.forEach((weekKey, feedTotals) {
+          final weekStart = dateFormat.parse(weekKey);
           final weekEnd = weekStart.add(const Duration(days: 6));
           final dateDisplay =
               '${DateFormat('dd MMM').format(weekStart)} - ${DateFormat('dd MMM').format(weekEnd)}';
 
           result.add({
-            'date': entry.key,
+            'date': weekKey,
             'dayName': 'Minggu',
             'dateDisplay': dateDisplay,
-            'feeds': entry.value,
+            'feeds': feedTotals,
           });
-        }
+        });
         break;
 
       case AggregationInterval.monthly:
         final Map<String, Map<String, double>> monthlyData = {};
-        for (var entry in dailyFeeds.entries) {
-          final date = dateFormat.parse(entry.key);
+        dailyFeeds.forEach((dateStr, feeds) {
+          final date = dateFormat.parse(dateStr);
           final monthKey =
               '${date.year}-${date.month.toString().padLeft(2, '0')}-01';
 
           if (!monthlyData.containsKey(monthKey)) {
-            monthlyData[monthKey] = {};
-            for (var feedName in _feedNames) {
-              monthlyData[monthKey]![feedName] = 0.0;
+            monthlyData[monthKey] = {
+              for (var feedName in _feedNames) feedName: 0.0
+            };
+          }
+
+          for (var feed in feeds) {
+            final feedName = _formatFeedName(feed['feed_name'] as String);
+            if (_feedNames.contains(feedName)) {
+              final quantity =
+                  double.tryParse(feed['quantity_kg'].toString()) ?? 0.0;
+              monthlyData[monthKey]![feedName] =
+                  (monthlyData[monthKey]![feedName] ?? 0) + quantity;
             }
           }
+        });
 
-          for (var feed in entry.value) {
-            final feedName = feed['feed_name'] as String;
-            final quantity = double.parse(feed['quantity_kg'] as String);
-            monthlyData[monthKey]![feedName] =
-                (monthlyData[monthKey]![feedName] ?? 0) + quantity;
-          }
-        }
-
-        for (var entry in monthlyData.entries) {
-          final monthStart = dateFormat.parse(entry.key);
+        monthlyData.forEach((monthKey, feedTotals) {
+          final monthStart = dateFormat.parse(monthKey);
           final dateDisplay = DateFormat('MMM yyyy').format(monthStart);
 
           result.add({
-            'date': entry.key,
+            'date': monthKey,
             'dayName': 'Bulan',
             'dateDisplay': dateDisplay,
-            'feeds': entry.value,
+            'feeds': feedTotals,
           });
-        }
+        });
         break;
 
       case AggregationInterval.yearly:
         final Map<String, Map<String, double>> yearlyData = {};
-        for (var entry in dailyFeeds.entries) {
-          final date = dateFormat.parse(entry.key);
+        dailyFeeds.forEach((dateStr, feeds) {
+          final date = dateFormat.parse(dateStr);
           final yearKey = '${date.year}-01-01';
 
           if (!yearlyData.containsKey(yearKey)) {
-            yearlyData[yearKey] = {};
-            for (var feedName in _feedNames) {
-              yearlyData[yearKey]![feedName] = 0.0;
+            yearlyData[yearKey] = {
+              for (var feedName in _feedNames) feedName: 0.0
+            };
+          }
+
+          for (var feed in feeds) {
+            final feedName = _formatFeedName(feed['feed_name'] as String);
+            if (_feedNames.contains(feedName)) {
+              final quantity =
+                  double.tryParse(feed['quantity_kg'].toString()) ?? 0.0;
+              yearlyData[yearKey]![feedName] =
+                  (yearlyData[yearKey]![feedName] ?? 0) + quantity;
             }
           }
+        });
 
-          for (var feed in entry.value) {
-            final feedName = feed['feed_name'] as String;
-            final quantity = double.parse(feed['quantity_kg'] as String);
-            yearlyData[yearKey]![feedName] =
-                (yearlyData[yearKey]![feedName] ?? 0) + quantity;
-          }
-        }
-
-        for (var entry in yearlyData.entries) {
-          final yearStart = dateFormat.parse(entry.key);
+        yearlyData.forEach((yearKey, feedTotals) {
+          final yearStart = dateFormat.parse(yearKey);
           final dateDisplay = DateFormat('yyyy').format(yearStart);
 
           result.add({
-            'date': entry.key,
+            'date': yearKey,
             'dayName': 'Tahun',
             'dateDisplay': dateDisplay,
-            'feeds': entry.value,
+            'feeds': feedTotals,
           });
-        }
+        });
         break;
     }
 
@@ -373,7 +413,7 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
         _selectedEndDate = picked.end;
         _selectedPeriod = FilterPeriod.custom;
       });
-      _showCustomFilterDialog(); // Show aggregation options after date selection
+      _showCustomFilterDialog();
     }
   }
 
@@ -578,7 +618,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Period Filter Section
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16.0),
@@ -655,7 +694,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Chart Section
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -674,7 +712,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Title
                               const Text(
                                 'Grafik Penggunaan Pakan',
                                 style: TextStyle(
@@ -684,10 +721,8 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              // Zoom Controls
                               _buildZoomControls(),
                               const SizedBox(height: 16),
-                              // Feed Legend
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 4,
@@ -736,7 +771,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                                 }).toList(),
                               ),
                               const SizedBox(height: 16),
-                              // Rest of the chart code remains unchanged
                               if (_dailyData.isNotEmpty)
                                 GestureDetector(
                                   onScaleUpdate: (ScaleUpdateDetails details) {
@@ -947,7 +981,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Data Table Section
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -1069,7 +1102,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
       if (total > maxValue) maxValue = total;
     }
 
-    // Adjust maxY based on the maximum data value
     if (maxValue <= 50) {
       return 50.0;
     } else if (maxValue <= 100) {
@@ -1081,7 +1113,6 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
     } else if (maxValue <= 250) {
       return 250.0;
     } else {
-      // For values above 250, round up to the nearest 50 with a 10% margin
       return ((maxValue * 1.1) / 50).ceil() * 50.0;
     }
   }
@@ -1099,7 +1130,7 @@ class _FeedUsagePageState extends State<FeedUsagePage> {
 
         return BarChartRodData(
           toY: value,
-          color: _feedColors[feedName],
+          color: _feedColors[feedName] ?? Colors.grey,
           width: (8 * _zoomLevel).clamp(4, 12),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
         );
