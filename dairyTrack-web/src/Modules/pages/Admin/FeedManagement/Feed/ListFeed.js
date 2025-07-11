@@ -48,6 +48,7 @@ const FeedListPage = () => {
       ]);
 
       if (feedResponse.success) {
+        console.log("Data dari listFeeds:", feedResponse.feeds); // Log untuk debugging
         setData(feedResponse.feeds || []);
       } else {
         if (feedResponse.message?.includes("Token")) {
@@ -132,7 +133,11 @@ const FeedListPage = () => {
   };
 
   const paginatedData = data
-    .filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((item) =>
+      item.name
+        ? item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        : false
+    )
     .slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
@@ -238,19 +243,19 @@ const FeedListPage = () => {
                       <tr key={item.id}>
                         <td>{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
                         <td>{item.type_name || "Tidak diketahui"}</td>
-                        <td>{item.name}</td>
-                        <td>{item.unit}</td>
-                        <td>{item.min_stock}</td>
-                        <td>Rp {item.price.toLocaleString("id-ID")}</td>
+                        <td>{item.name || "Tidak diketahui"}</td>
+                        <td>{item.unit || "Tidak diketahui"}</td>
+                        <td>{item.min_stock ?? "Tidak diketahui"}</td>
+                        <td>Rp {(item.price ?? 0).toLocaleString("id-ID")}</td>
                         <td>{item.created_by ? item.created_by.name : "Tidak diketahui"}</td>
                         <td>{item.updated_by ? item.updated_by.name : "Tidak diketahui"}</td>
                         <td>{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
                         <td>{new Date(item.updated_at).toLocaleDateString("id-ID")}</td>
-                        <  td>
-                          {item.nutrisi_records.length > 0
+                        <td>
+                          {item.nutrisi_records && item.nutrisi_records.length > 0
                             ? item.nutrisi_records.map((n, i) => (
                                 <div key={i}>
-                                  {n.nutrisi_name} ({n.amount} {n.unit})
+                                  {n.nutrisi_name || "Tidak diketahui"} ({n.amount ?? 0} {n.unit || "Tidak diketahui"})
                                 </div>
                               ))
                             : "Tidak ada nutrisi"}

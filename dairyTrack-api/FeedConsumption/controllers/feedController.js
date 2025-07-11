@@ -10,13 +10,13 @@ const { Op } = Sequelize;
 const formatFeedResponse = (feed) => ({
   id: feed.id,
   type_id: feed.typeId,
-  type_name: feed.FeedType ? feed.FeedType.name : null,
-  name: feed.name,
-  unit: feed.unit,
-  min_stock: feed.min_stock,
-  price: feed.price,
+  type_name: feed.FeedType ? feed.FeedType.name : "Tidak diketahui",
+  name: feed.name || "Pakan Tanpa Nama", // Fallback untuk name
+  unit: feed.unit || "Tidak diketahui", // Fallback untuk unit
+  min_stock: feed.min_stock ?? 0, // Fallback untuk min_stock
+  price: feed.price ?? 0, // Fallback untuk price
   user_id: feed.user_id,
-  user_name: feed.User ? feed.User.name : null,
+  user_name: feed.User ? feed.User.name : "Tidak diketahui",
   created_by: feed.Creator
     ? { id: feed.Creator.id, name: feed.Creator.name }
     : null,
@@ -29,9 +29,9 @@ const formatFeedResponse = (feed) => ({
   nutrisi_records: feed.FeedNutrisiRecords
     ? feed.FeedNutrisiRecords.map((record) => ({
         nutrisi_id: record.nutrisi_id,
-        nutrisi_name: record.Nutrisi ? record.Nutrisi.name : null,
-        unit: record.Nutrisi ? record.Nutrisi.unit : null,
-        amount: record.amount,
+        nutrisi_name: record.Nutrisi ? record.Nutrisi.name : "Tidak diketahui",
+        unit: record.Nutrisi ? record.Nutrisi.unit : "Tidak diketahui",
+        amount: record.amount ?? 0,
       }))
     : [],
 });
@@ -109,7 +109,7 @@ const createFeed = async (req, res) => {
           { deletedAt: { [Op.ne]: null } },
         ],
       },
-      paranoid: false, // Include soft-deleted records
+      paranoid: false,
     });
 
     let feed;
@@ -127,14 +127,14 @@ const createFeed = async (req, res) => {
       });
       feed = existingSoftDeleted;
     } else {
-      // Check for existing non-deleted Feed with the same name
-      const existingFeed = await Feed.findOne({
+      // Check for active Feed with the same name
+      const existingActive = await Feed.findOne({
         where: Sequelize.where(
           Sequelize.fn("LOWER", Sequelize.col("name")),
           trimmedName.toLowerCase()
         ),
       });
-      if (existingFeed) {
+      if (existingActive) {
         return res.status(400).json({
           success: false,
           message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
@@ -183,10 +183,7 @@ const createFeed = async (req, res) => {
           });
         }
 
-        // Delete existing FeedNutrisi records for the feed
-        await FeedNutrisi.destroy({ where: { feed_id: feed.id } });
-
-        // Create new FeedNutrisi records
+        // Prepare new FeedNutrisi records
         const feedNutrisiData = nutrisiList.map((n) => ({
           feed_id: feed.id,
           nutrisi_id: n.nutrisi_id,
@@ -196,8 +193,56 @@ const createFeed = async (req, res) => {
           updated_by: userId,
         }));
 
-        nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
-          validate: true,
+        // Check for existing FeedNutrisi records (active or soft-deleted)
+        const existingFeedNutrisi = await FeedNutrisi.findAll({
+          where: {
+            feed_id: feed.id,
+            nutrisi_id: { [Op.in]: nutrisiIds },
+          },
+          paranoid: false, // Include soft-deleted records
+        });
+
+        // Restore or update existing FeedNutrisi records
+        for (const existingRecord of existingFeedNutrisi) {
+          const matchingInput = feedNutrisiData.find(
+            (n) => n.nutrisi_id === existingRecord.nutrisi_id
+          );
+          if (matchingInput) {
+            if (existingRecord.deletedAt) {
+              await existingRecord.restore();
+            }
+            await existingRecord.update({
+              amount: matchingInput.amount,
+              user_id: userId,
+              updated_by: userId,
+            });
+            nutrisiRecordsCreated.push(existingRecord);
+            // Remove from feedNutrisiData to avoid duplicate creation
+            feedNutrisiData.splice(
+              feedNutrisiData.findIndex(
+                (n) => n.nutrisi_id === existingRecord.nutrisi_id
+              ),
+              1
+            );
+          }
+        }
+
+        // Create new FeedNutrisi records for any remaining entries
+        if (feedNutrisiData.length > 0) {
+          const newRecords = await FeedNutrisi.bulkCreate(feedNutrisiData, {
+            validate: true,
+          });
+          nutrisiRecordsCreated = [...nutrisiRecordsCreated, ...newRecords];
+        }
+
+        // Soft-delete any FeedNutrisi records not included in nutrisiList
+        const inputNutrisiIds = nutrisiList.map((n) => n.nutrisi_id);
+        await FeedNutrisi.destroy({
+          where: {
+            feed_id: feed.id,
+            nutrisi_id: { [Op.notIn]: inputNutrisiIds },
+            deletedAt: null, // Only delete active records
+          },
         });
       }
     }
@@ -245,12 +290,6 @@ const createFeed = async (req, res) => {
       data: formatFeedResponse(createdFeed),
     });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({
-        success: false,
-        message: `Pakan dengan nama "${req.body.name}" sudah ada. Silakan gunakan nama lain.`,
-      });
-    }
     if (error.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,
@@ -435,9 +474,9 @@ const updateFeed = async (req, res) => {
       await feed.destroy();
       updatedFeedId = existingSoftDeleted.id; // Update ID for response and nutrisi handling
     } else {
-      // Check for existing non-deleted Feed with the same name
+      // Check for active Feed with the same name
       if (trimmedName.toLowerCase() !== feed.name.toLowerCase()) {
-        const existingFeed = await Feed.findOne({
+        const existingActive = await Feed.findOne({
           where: {
             [Op.and]: [
               Sequelize.where(
@@ -448,7 +487,7 @@ const updateFeed = async (req, res) => {
             ],
           },
         });
-        if (existingFeed) {
+        if (existingActive) {
           return res.status(400).json({
             success: false,
             message: `Pakan dengan nama "${trimmedName}" sudah ada. Silakan gunakan nama lain.`,
@@ -497,10 +536,7 @@ const updateFeed = async (req, res) => {
           });
         }
 
-        // Delete existing FeedNutrisi records
-        await FeedNutrisi.destroy({ where: { feed_id: updatedFeedId } });
-
-        // Create new FeedNutrisi records
+        // Prepare new FeedNutrisi records
         const feedNutrisiData = nutrisiList
           .filter((n) => n.nutrisi_id)
           .map((n) => ({
@@ -512,8 +548,61 @@ const updateFeed = async (req, res) => {
             updated_by: userId,
           }));
 
-        nutrisiRecordsCreated = await FeedNutrisi.bulkCreate(feedNutrisiData, {
-          validate: true,
+        // Check for existing FeedNutrisi records (active or soft-deleted)
+        const existingFeedNutrisi = await FeedNutrisi.findAll({
+          where: {
+            feed_id: updatedFeedId,
+            nutrisi_id: { [Op.in]: nutrisiIds },
+          },
+          paranoid: false, // Include soft-deleted records
+        });
+
+        // Restore or update existing FeedNutrisi records
+        for (const existingRecord of existingFeedNutrisi) {
+          const matchingInput = feedNutrisiData.find(
+            (n) => n.nutrisi_id === existingRecord.nutrisi_id
+          );
+          if (matchingInput) {
+            if (existingRecord.deletedAt) {
+              await existingRecord.restore();
+            }
+            await existingRecord.update({
+              amount: matchingInput.amount,
+              user_id: userId,
+              updated_by: userId,
+            });
+            nutrisiRecordsCreated.push(existingRecord);
+            // Remove from feedNutrisiData to avoid duplicate creation
+            feedNutrisiData.splice(
+              feedNutrisiData.findIndex(
+                (n) => n.nutrisi_id === existingRecord.nutrisi_id
+              ),
+              1
+            );
+          }
+        }
+
+        // Create new FeedNutrisi records for any remaining entries
+        if (feedNutrisiData.length > 0) {
+          const newRecords = await FeedNutrisi.bulkCreate(feedNutrisiData, {
+            validate: true,
+          });
+          nutrisiRecordsCreated = [...nutrisiRecordsCreated, ...newRecords];
+        }
+
+        // Soft-delete any FeedNutrisi records not included in nutrisiList
+        const inputNutrisiIds = nutrisiList.map((n) => n.nutrisi_id);
+        await FeedNutrisi.destroy({
+          where: {
+            feed_id: updatedFeedId,
+            nutrisi_id: { [Op.notIn]: inputNutrisiIds },
+            deletedAt: null, // Only delete active records
+          },
+        });
+      } else {
+        // If nutrisiList is empty, soft-delete all existing FeedNutrisi records
+        await FeedNutrisi.destroy({
+          where: { feed_id: updatedFeedId, deletedAt: null },
         });
       }
     }
@@ -561,12 +650,6 @@ const updateFeed = async (req, res) => {
       data: formatFeedResponse(updatedFeed),
     });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({
-        success: false,
-        message: `Pakan dengan nama "${req.body.name}" sudah ada. Silakan gunakan nama lain.`,
-      });
-    }
     if (error.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({
         success: false,

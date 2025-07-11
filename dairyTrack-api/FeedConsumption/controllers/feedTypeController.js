@@ -17,8 +17,7 @@ const formatFeedTypeResponse = (feedType) => ({
 
 exports.addFeedType = async (req, res) => {
   const { name } = req.body;
-  const userId = req.user.id; // From middleware verifyToken
-
+  const userId = req.user.id; 
   try {
     // Validate input
     if (!name) {
